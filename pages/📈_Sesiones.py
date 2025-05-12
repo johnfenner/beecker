@@ -31,7 +31,7 @@ SHEET_URL_SESIONES_PRINCIPAL_DEFAULT = "https://docs.google.com/spreadsheets/d/1
 SHEET_NAME_SESIONES_PRINCIPAL = "Sesiones 2024-2025"
 
 SHEET_URL_SESIONES_SURAMERICA_DEFAULT = "https://docs.google.com/spreadsheets/d/1MoTUg0sZ76168k4VNajzyrxAa5hUHdWNtGNu9t0Nqnc/edit?gid=278542854#gid=278542854"
-SHEET_NAME_SESIONES_SURAMERICA = "Master Sesiones"
+SHEET_NAME_SESIONES_SURAMERICA = "BD Sesiones 2024"
 
 # --- COLUMNAS CENTRALES ---
 # Definidas según la estructura de la hoja Principal + Derivadas necesarias
