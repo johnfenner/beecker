@@ -134,6 +134,9 @@ def load_sesiones_data():
     """Carga datos de ambas hojas, consolida y devuelve un DataFrame SOLO con COLUMNAS_CENTRALES."""
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     df_final_structure = pd.DataFrame(columns=COLUMNAS_CENTRALES)
+    # Lista para acumular mensajes de advertencia/error no críticos si se decide mostrarlos fuera
+    # processing_warnings = []
+
     try:
         # --- Autenticación ---
         creds_dict = {
@@ -152,11 +155,10 @@ def load_sesiones_data():
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
     except KeyError as e:
-        st.error(f"Error: Falta la clave '{e}' en los 'Secrets' (Sesiones). Revisa la configuración.")
-        return df_final_structure
+        # En lugar de st.error, lanzamos una excepción para que sea manejada fuera o por Streamlit
+        raise ValueError(f"Error de configuración de Secrets: Falta la clave '{e}'. La app no puede continuar.") from e
     except Exception as e:
-        st.error(f"Error al autenticar con Google Sheets (Sesiones): {e}")
-        return df_final_structure
+        raise ValueError(f"Error al autenticar con Google Sheets: {e}. La app no puede continuar.") from e
 
     all_dataframes = []
     df_proc_principal = pd.DataFrame()
@@ -168,11 +170,11 @@ def load_sesiones_data():
         workbook_principal = client.open_by_url(sheet_url_principal_actual)
         sheet_principal = workbook_principal.worksheet(SHEET_NAME_SESIONES_PRINCIPAL)
         raw_data_principal_list = sheet_principal.get_all_values()
-
         if raw_data_principal_list and len(raw_data_principal_list) > 1:
             headers_p = make_unique_headers(raw_data_principal_list[0])
             df_principal_raw = pd.DataFrame(raw_data_principal_list[1:], columns=headers_p)
             df_proc_principal = pd.DataFrame()
+            # Mapeo (igual que antes)
             df_proc_principal["Fecha"] = df_principal_raw.get("Fecha")
             df_proc_principal["Empresa"] = df_principal_raw.get("Empresa")
             df_proc_principal["País"] = df_principal_raw.get("País")
@@ -188,14 +190,11 @@ def load_sesiones_data():
             df_proc_principal["LinkedIn"] = df_principal_raw.get("LinkedIn")
             df_proc_principal["Fuente_Hoja"] = "Principal"
             all_dataframes.append(df_proc_principal)
-        else:
-            st.warning(f"Hoja Principal ('{SHEET_NAME_SESIONES_PRINCIPAL}') vacía o solo con encabezados.")
-    except gspread.exceptions.WorksheetNotFound:
-         st.error(f"ERROR CRÍTICO: No se encontró la hoja Principal llamada '{SHEET_NAME_SESIONES_PRINCIPAL}'. Verifica el nombre.")
-    except gspread.exceptions.GSpreadException as e:
-        st.error(f"Error gspread al cargar Hoja Principal: {e}. Verifica URL, nombre de hoja y permisos.")
+        # else: processing_warnings.append(f"Hoja Principal ('{SHEET_NAME_SESIONES_PRINCIPAL}') vacía o solo con encabezados.")
     except Exception as e:
-        st.error(f"Error general al cargar/procesar Hoja Principal: {e}")
+        # processing_warnings.append(f"No se pudo cargar Hoja Principal: {e}")
+        # Decidir si este error es crítico y debe detener la ejecución o solo ser una advertencia
+        print(f"Advertencia: No se pudo cargar Hoja Principal: {e}") # Log al servidor
 
     # --- 2. Cargar Hoja Suramérica ("BD Sesiones 2024") ---
     sheet_url_suramerica_actual = st.secrets.get("SESIONES_SURAMERICA_SHEET_URL", SHEET_URL_SESIONES_SURAMERICA_DEFAULT)
@@ -207,14 +206,14 @@ def load_sesiones_data():
         if raw_data_suramerica_list and len(raw_data_suramerica_list) > 1:
             headers_sa = make_unique_headers(raw_data_suramerica_list[0])
             df_suramerica_raw = pd.DataFrame(raw_data_suramerica_list[1:], columns=headers_sa)
-        else:
-             st.warning(f"Hoja Suramérica ('{SHEET_NAME_SESIONES_SURAMERICA}') con get_all_values vacía o solo con encabezados.")
+        # else: processing_warnings.append(f"Hoja Suramérica ('{SHEET_NAME_SESIONES_SURAMERICA}') vacía o solo con encabezados.")
 
         if not df_suramerica_raw.empty:
             df_suramerica_processed = pd.DataFrame()
-            # --- Mapeo ---
+            # Mapeo (igual que antes)
             df_suramerica_processed["Fecha"] = df_suramerica_raw.get("Fecha")
             df_suramerica_processed["Empresa"] = df_suramerica_raw.get("Empresa")
+            # ... (resto del mapeo para Suramérica, igual que en tu última versión funcional) ...
             df_suramerica_processed["País"] = df_suramerica_raw.get("País")
             df_suramerica_processed["Siguientes Pasos"] = df_suramerica_raw.get("Siguientes Pasos")
             df_suramerica_processed["SQL"] = df_suramerica_raw.get("SQL")
@@ -229,142 +228,99 @@ def load_sesiones_data():
                  df_suramerica_processed["Puesto"] = nombres_cargos_split.apply(lambda x: x[2])
             else:
                  df_suramerica_processed["Nombre"], df_suramerica_processed["Apellido"], df_suramerica_processed["Puesto"] = pd.NA, pd.NA, "No Especificado"
-            # Columnas extra de Suramérica (se cargarán temporalmente pero no se mapean a df_suramerica_processed si no se usan luego)
-            # --- Fin Mapeo ---
+
             df_suramerica_processed["Fuente_Hoja"] = "Suramérica"
             all_dataframes.append(df_suramerica_processed)
-    except gspread.exceptions.WorksheetNotFound:
-         st.error(f"ERROR CRÍTICO: No se encontró la hoja de Suramérica llamada '{SHEET_NAME_SESIONES_SURAMERICA}'. Verifica el nombre.")
-    except gspread.exceptions.GSpreadException as e:
-        st.error(f"Error gspread al cargar Hoja Suramérica: {e}. Verifica URL, nombre de hoja y permisos.")
     except Exception as e:
-        st.error(f"Error general al cargar/procesar Hoja Suramérica: {e}")
+        # processing_warnings.append(f"No se pudo cargar Hoja Suramérica: {e}")
+        print(f"Advertencia: No se pudo cargar Hoja Suramérica: {e}") # Log al servidor
 
     # --- 3. Consolidación y Limpieza Inicial ---
     if not all_dataframes:
-        st.error("No se pudieron cargar datos de ninguna hoja para consolidar.")
-        return df_final_structure
+        # processing_warnings.append("No se pudieron cargar datos de ninguna hoja para consolidar.")
+        return df_final_structure # Devuelve estructura vacía
 
     df_consolidado = pd.concat(all_dataframes, ignore_index=True, sort=False)
 
     if "Fecha" not in df_consolidado.columns or df_consolidado["Fecha"].isnull().all():
-         st.error("Columna 'Fecha' esencial no encontrada o vacía en los datos consolidados.")
-         return df_final_structure
-
-    # Parsear fechas y eliminar filas con fechas inválidas
-    df_consolidado["Fecha"] = df_consolidado["Fecha"].apply(parse_date_robust)
-    # Guardar el número de filas antes de eliminar
-    rows_before_dropna = len(df_consolidado)
-    df_consolidado.dropna(subset=["Fecha"], inplace=True)
-    rows_after_dropna = len(df_consolidado)
-    rows_dropped = rows_before_dropna - rows_after_dropna
-    if rows_dropped > 0:
-        st.toast(f"{rows_dropped} filas eliminadas por fecha inválida.", icon="⚠️") # Toast no intrusivo
-
-    if df_consolidado.empty:
-        st.warning("No hay sesiones con fechas válidas después de la consolidación y parseo.")
+        # processing_warnings.append("Columna 'Fecha' esencial no encontrada o vacía en los datos consolidados.")
         return df_final_structure
 
- # --- 4. Procesamiento Post-Consolidación ---
+    df_consolidado["Fecha"] = df_consolidado["Fecha"].apply(parse_date_robust)
+    df_consolidado.dropna(subset=["Fecha"], inplace=True)
+
+    if df_consolidado.empty:
+        # processing_warnings.append("No hay sesiones con fechas válidas después de la consolidación y parseo.")
+        return df_final_structure
+
+    # --- 4. Procesamiento Post-Consolidación (Columnas de tiempo) ---
     df_procesado = df_consolidado.copy()
     try:
-        # Crear columnas de tiempo PRIMERO
         df_procesado['Año'] = df_procesado['Fecha'].dt.year.astype('Int64')
         df_procesado['NumSemana'] = df_procesado['Fecha'].dt.isocalendar().week.astype('Int64')
         df_procesado['MesNombre'] = df_procesado['Fecha'].dt.month_name()
         df_procesado['AñoMes'] = df_procesado['Fecha'].dt.strftime('%Y-%m')
     except Exception as e_time:
-        st.error(f"Error al crear columnas de tiempo: {e_time}")
-        return df_final_structure
+        # processing_warnings.append(f"Error al crear columnas de tiempo: {e_time}")
+        # Si esto es crítico, considera devolver df_final_structure o lanzar excepción
+        print(f"Error crítico al crear columnas de tiempo: {e_time}") # Log al servidor
+        return df_final_structure # Podría ser mejor devolver la estructura vacía
 
-    # --- 5. Llenar NaNs y aplicar Defaults (Genérico para la mayoría de columnas) ---
+    # --- 5. Llenar NaNs y aplicar Defaults (Genérico) ---
+    # (Lógica de default_values_fill y bucle for col in COLUMNAS_CENTRALES se mantiene igual que tu versión anterior,
+    # donde se omitía SQL y SQL_Estandarizado del reemplazo genérico de 'NA')
     default_values_fill = {
         "AE": "No Asignado AE", "LG": "No Asignado LG", "Puesto": "No Especificado",
         "Empresa": "No Especificado", "País": "No Especificado", "Nombre": "No Especificado",
         "Apellido": "No Especificado", "Siguientes Pasos": "No Especificado",
         "Email": "No Especificado", "RPA": "No Aplicable",
         "LinkedIn": "No Especificado", "Fuente_Hoja": "Desconocida",
-        # Definir defaults para SQL aquí, pero la lógica específica viene después
-        "SQL": "SIN CALIFICACIÓN SQL",
-        "SQL_Estandarizado": "SIN CALIFICACIÓN SQL"
+        "SQL": "SIN CALIFICACIÓN SQL", "SQL_Estandarizado": "SIN CALIFICACIÓN SQL"
     }
-
-    # Lista de valores a reemplazar genéricamente (representan vacío/NA)
-    generic_empty_na_values = ['', 'nan', 'none', 'NaN', 'None', '<NA>', '#N/A', 'N/A'] # Incluye 'NA', 'N/A'
-
-    # Iterar sobre columnas centrales para limpieza genérica
+    generic_empty_na_values = ['', 'nan', 'none', 'NaN', 'None', '<NA>', '#N/A', 'N/A']
     for col in COLUMNAS_CENTRALES:
-        # Omitir SQL y SQL_Estandarizado en este paso genérico de reemplazo
-        # Se tratarán específicamente después para mantener la lógica de 'NA' vs 'SIN CALIFICACIÓN'
         if col in ["SQL", "SQL_Estandarizado"]:
-            # Solo asegurar que la columna existe y llenar NAs básicos si es necesario
-            if col not in df_procesado.columns:
-                 df_procesado[col] = default_values_fill[col] # Crear con default si falta
-            df_procesado[col] = df_procesado[col].fillna(default_values_fill[col]) # Llenar NAs de Pandas
-            continue # Pasar a la siguiente columna
-
-        # --- Limpieza genérica para OTRAS columnas ---
+            if col not in df_procesado.columns: df_procesado[col] = default_values_fill[col]
+            df_procesado[col] = df_procesado[col].fillna(default_values_fill[col])
+            continue
         if col in df_procesado.columns:
             default_val = default_values_fill.get(col, "No Especificado")
-            df_procesado[col] = df_procesado[col].astype(str) # Convertir a string
-            # Reemplazar valores vacíos/NA genéricos con el default
+            df_procesado[col] = df_procesado[col].astype(str)
             df_procesado[col] = df_procesado[col].replace(generic_empty_na_values, default_val, regex=False)
             df_procesado[col] = df_procesado[col].str.strip()
-            df_procesado.loc[df_procesado[col] == '', col] = default_val # Llenar vacíos post-strip
-            df_procesado[col] = df_procesado[col].fillna(default_val) # Llenar NAs restantes
-        elif col not in df_procesado.columns:
-             # Crear columna si falta (excepto Fecha, Año, NumSemana que ya deberían estar)
-             if col not in ['Fecha', 'Año', 'NumSemana']:
-                  df_procesado[col] = default_values_fill.get(col, "No Disponible")
+            df_procesado.loc[df_procesado[col] == '', col] = default_val
+            df_procesado[col] = df_procesado[col].fillna(default_val)
+        elif col not in df_procesado.columns and col not in ['Fecha', 'Año', 'NumSemana']:
+             df_procesado[col] = default_values_fill.get(col, "No Disponible")
+
 
     # --- 5b. ESTANDARIZACIÓN ESPECÍFICA DE SQL (Restaurando lógica original) ---
-    # Asegurar que las columnas existan (aunque ya deberían por el paso anterior)
+    # (Esta sección se mantiene igual que la última corrección que te di para SQL)
     if "SQL" not in df_procesado.columns: df_procesado["SQL"] = default_values_fill["SQL"]
     if "SQL_Estandarizado" not in df_procesado.columns: df_procesado["SQL_Estandarizado"] = default_values_fill["SQL_Estandarizado"]
-
-    # 1. Limpiar y estandarizar la columna SQL original (fill NA con '', strip, upper)
     df_procesado["SQL"] = df_procesado["SQL"].fillna("").astype(str).str.strip().str.upper()
-
-    # 2. Copiar a SQL_Estandarizado
     df_procesado['SQL_Estandarizado'] = df_procesado['SQL']
-
-    # 3. Definir valores SQL conocidos VÁLIDOS (incluye 'NA' como categoría válida)
-    #    Se excluye 'SIN CALIFICACIÓN SQL' porque es la categoría a la que asignaremos los vacíos.
     known_sql_values = [s for s in SQL_ORDER_OF_IMPORTANCE if s != 'SIN CALIFICACIÓN SQL']
-    # known_sql_values contendrá ['SQL1', 'SQL2', 'MQL', 'NA']
-
-    # 4. Identificar filas que NO son un SQL conocido Y que representan un valor vacío/genérico-NA
-    #    (Esta máscara NO debería seleccionar filas donde el valor es exactamente 'NA' porque 'NA' está en known_sql_values)
-    sql_estandarizado_str = df_procesado['SQL_Estandarizado'].astype(str) # Asegurar string
+    sql_estandarizado_str = df_procesado['SQL_Estandarizado'].astype(str)
     mask_empty_sql = ~sql_estandarizado_str.isin(known_sql_values) & \
-                     (sql_estandarizado_str.isin(['', 'NAN', 'NONE', '<NA>', 'N/A'])) # Lista original de vacíos/genéricos
-
-    # 5. Asignar 'SIN CALIFICACIÓN SQL' a esas filas
+                     (sql_estandarizado_str.isin(['', 'NAN', 'NONE', '<NA>', 'N/A']))
     df_procesado.loc[mask_empty_sql, 'SQL_Estandarizado'] = 'SIN CALIFICACIÓN SQL'
-
-    # 6. Asegurar que cualquier string vacío restante también sea 'SIN CALIFICACIÓN SQL'
     df_procesado.loc[df_procesado['SQL_Estandarizado'] == '', 'SQL_Estandarizado'] = 'SIN CALIFICACIÓN SQL'
 
-    # En este punto:
-    # - Valores originales 'SQL1', 'SQL2', 'MQL', 'NA' se mantienen en SQL_Estandarizado.
-    # - Valores originales '', None, 'nan', '<NA>', 'N/A' se convierten en 'SIN CALIFICACIÓN SQL'.
-    # - Otros valores no reconocidos (typos, etc.) se mantienen como estaban (en mayúsculas).
-
     # --- 6. SELECCIÓN FINAL DE COLUMNAS ---
+    # (Se mantiene igual)
     df_final_filtrado = pd.DataFrame()
     columnas_existentes_en_procesado = df_procesado.columns.tolist()
     for col in COLUMNAS_CENTRALES:
         if col in columnas_existentes_en_procesado:
             df_final_filtrado[col] = df_procesado[col]
         else:
-            # Si falta una columna central, la crea vacía o con default
-            # (Manejo de tipos para Año, NumSemana, Fecha igual que antes)
             if col in ['Año', 'NumSemana']: df_final_filtrado[col] = pd.NA
             elif col == 'Fecha': df_final_filtrado[col] = pd.NaT
             else: df_final_filtrado[col] = default_values_fill.get(col, "No Disponible")
 
     # --- 7. Ajuste Final de Tipos ---
-    # (Se mantiene igual que antes)
+    # (Se mantiene igual)
     try:
         if 'Fecha' in df_final_filtrado.columns:
              df_final_filtrado['Fecha'] = pd.to_datetime(df_final_filtrado['Fecha'], errors='coerce')
@@ -372,12 +328,19 @@ def load_sesiones_data():
              df_final_filtrado['Año'] = pd.to_numeric(df_final_filtrado['Año'], errors='coerce').astype('Int64')
         if 'NumSemana' in df_final_filtrado.columns:
              df_final_filtrado['NumSemana'] = pd.to_numeric(df_final_filtrado['NumSemana'], errors='coerce').astype('Int64')
-        for col in df_final_filtrado.columns:
-             if col not in ['Fecha', 'Año', 'NumSemana']:
-                 if col in df_final_filtrado.columns:
-                     df_final_filtrado[col] = df_final_filtrado[col].astype(str)
+        for col_name in df_final_filtrado.columns:
+             if col_name not in ['Fecha', 'Año', 'NumSemana']:
+                 if col_name in df_final_filtrado.columns:
+                     df_final_filtrado[col_name] = df_final_filtrado[col_name].astype(str)
     except Exception as e_type:
-        st.warning(f"Error al ajustar tipos finales: {e_type}")
+        # processing_warnings.append(f"Error al ajustar tipos finales: {e_type}")
+        print(f"Advertencia: Error al ajustar tipos finales: {e_type}") # Log al servidor
+
+    # Si se recolectaron advertencias no críticas, se podrían mostrar en la app principal
+    # if processing_warnings:
+    #    st.session_state['load_warnings'] = processing_warnings
+    # else:
+    #    st.session_state['load_warnings'] = []
 
     return df_final_filtrado
 
