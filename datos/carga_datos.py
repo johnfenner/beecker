@@ -1,130 +1,128 @@
 import pandas as pd
 import gspread
-import streamlit as st # Importar streamlit para usar st.write y st.error/stop
+import streamlit as st # Importar streamlit para st.secrets, st.error, st.stop
 from oauth2client.service_account import ServiceAccountCredentials
 from collections import Counter
 # Asegúrate de que estas funciones de limpieza estén disponibles en utils.limpieza
 # Es posible que necesites importar st en utils/limpieza.py si esas funciones lo usan.
-from utils.limpieza import calcular_dias_respuesta, estandarizar_avatar
+from utils.limpieza import calcular_dias_respuesta, estandarizar_avatar # Asumo que estas siguen siendo relevantes
 
 def cargar_y_limpiar_datos():
-    # Autenticación y conexión a Google Sheets
-    # Asegúrate de tener el archivo credenciales.json en la ubicación correcta
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    
+    # --- Cargar credenciales desde Streamlit Secrets ---
     try:
-        creds = ServiceAccountCredentials.from_json_keyfile_name("credenciales.json", scope)
+        creds_dict = {
+            "type": st.secrets["google_sheets_credentials"]["type"],
+            "project_id": st.secrets["google_sheets_credentials"]["project_id"],
+            "private_key_id": st.secrets["google_sheets_credentials"]["private_key_id"],
+            "private_key": st.secrets["google_sheets_credentials"]["private_key"], # Asume comillas triples en TOML para private_key
+            "client_email": st.secrets["google_sheets_credentials"]["client_email"],
+            "client_id": st.secrets["google_sheets_credentials"]["client_id"],
+            "auth_uri": st.secrets["google_sheets_credentials"]["auth_uri"],
+            "token_uri": st.secrets["google_sheets_credentials"]["token_uri"],
+            "auth_provider_x509_cert_url": st.secrets["google_sheets_credentials"]["auth_provider_x509_cert_url"],
+            "client_x509_cert_url": st.secrets["google_sheets_credentials"]["client_x509_cert_url"],
+            "universe_domain": st.secrets["google_sheets_credentials"]["universe_domain"]
+        }
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
-    except FileNotFoundError:
-        st.error("Error: El archivo 'credenciales.json' no se encontró.")
-        st.info("Asegúrate de tener el archivo de credenciales de Google Sheets en la misma carpeta que la aplicación.")
-        st.stop() # Detenemos la ejecución si no se encuentran las credenciales
-    except Exception as e:
-        st.error(f"Error al autenticar con Google Sheets: {e}")
-        st.stop()
 
+    except KeyError as e: # Específicamente para claves faltantes en los secrets
+        st.error(f"Error: Falta la clave '{e}' en los 'Secrets' de Streamlit. Verifica la configuración de secrets en Streamlit Cloud.")
+        st.info("Asegúrate de haber configurado una sección [google_sheets_credentials] con todas las claves necesarias como se muestra en la documentación o ejemplos.")
+        st.stop()
+    except Exception as e: # Para cualquier otro error al cargar credenciales
+        st.error(f"Error al autenticar con Google Sheets usando Streamlit Secrets: {e}")
+        st.info("Verifica la configuración de tus 'Secrets' en Streamlit Community Cloud y los permisos de tu cuenta de servicio.")
+        st.stop()
+    # --- Fin de la carga de credenciales ---
 
     # Abrir hoja por URL
-    # Asegúrate de que esta URL sea la correcta para tu hoja de cálculo
+    # Opcional: Leer la URL de la hoja desde secrets también para mayor flexibilidad
+    main_sheet_url = st.secrets.get(
+        "MAIN_SHEET_URL", # Nombre del secret si lo defines
+        "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0" # Valor por defecto
+    )
+
     try:
-        # Abre la hoja por URL y selecciona la primera hoja (sheet1)
-        sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0").sheet1
+        sheet = client.open_by_url(main_sheet_url).sheet1
         raw_data = sheet.get_all_values()
-        headers = raw_data[0]
+        if not raw_data: # Verificar si raw_data está vacío
+            st.error("No se encontraron datos en la hoja de Google Sheets. La hoja podría estar completamente vacía.")
+            return pd.DataFrame() # Retornar DataFrame vacío para evitar más errores
+        
+        headers_list = raw_data[0]
         rows = raw_data[1:]
+
+    except gspread.exceptions.SpreadsheetNotFound:
+        st.error(f"Error: No se encontró la hoja de cálculo en la URL proporcionada: {main_sheet_url}")
+        st.info("Verifica que la URL es correcta y que la cuenta de servicio tiene permisos para acceder a ella.")
+        st.stop()
     except Exception as e:
-        st.error(f"Error al leer la hoja de cálculo de Google Sheets: {e}")
-        st.info("Verifica la URL de la hoja, los permisos de la cuenta de servicio y la conexión a internet.")
+        st.error(f"Error al leer la hoja de cálculo '{main_sheet_url}': {e}")
+        st.info("Verifica la URL, los permisos de la cuenta de servicio y la conexión a internet.")
         st.stop()
 
-
-    def make_unique(headers):
+    def make_unique(headers_input): # Renombrada la variable para evitar conflicto
         counts = Counter()
         new_headers = []
-        for h in headers:
-            h = h.strip()
-            counts[h] += 1
-            if counts[h] == 1:
-                new_headers.append(h)
+        for h_item in headers_input: # Renombrada la variable para evitar conflicto
+            h_stripped = h_item.strip()
+            counts[h_stripped] += 1
+            if counts[h_stripped] == 1:
+                new_headers.append(h_stripped)
             else:
-                # Añadir un sufijo si el encabezado está duplicado
-                new_headers.append(f"{h}_{counts[h]-1}")
+                new_headers.append(f"{h_stripped}_{counts[h_stripped]-1}")
         return new_headers
 
-    headers = make_unique(headers)
+    headers = make_unique(headers_list) # Usar la variable correcta
     df = pd.DataFrame(rows, columns=headers)
 
-    # La validación del nombre de la columna ocurrirá justo después de mostrar las columnas.
-    nombre_columna_fecha_invite = "Fecha de Invite" # Nombre esperado. Lo corregiremos si es necesario.
+    nombre_columna_fecha_invite = "Fecha de Invite"
+    if nombre_columna_fecha_invite not in df.columns:
+        st.error(f"¡ERROR! La columna '{nombre_columna_fecha_invite}' no se encontró. Columnas disponibles: {df.columns.tolist()}")
+        st.info("Por favor, verifica el nombre de la columna de la fecha de invitación en tu Google Sheet.")
+        return pd.DataFrame() # Retornar DataFrame vacío
 
-    if nombre_columna_fecha_invite in df.columns:
-        # Creamos el DataFrame base manteniendo solo las filas donde la representación
-        # de texto de la columna de fecha, sin espacios al inicio/fin, no está vacía.
-        df_base = df[df[nombre_columna_fecha_invite].astype(str).str.strip() != ""].copy()
+    df_base = df[df[nombre_columna_fecha_invite].astype(str).str.strip() != ""].copy()
 
-        # Optional: Add debugging for the size of df_base
-        # st.write(f"DEBUG: Filas en df_base (después del filtro '{nombre_columna_fecha_invite}' no vacía texto): {len(df_base)}")
+    if df_base.empty:
+        st.warning(f"El DataFrame base está vacío después de filtrar por '{nombre_columna_fecha_invite}' no vacía. Verifica los datos en esa columna.")
+        # No necesariamente detener, podría no haber datos que cumplan el criterio.
+        # Se retornará un df_base vacío que las funciones posteriores deben manejar.
 
-        # Convertimos la columna de fecha a datetime *después* del filtro de texto no vacío.
-        # Los valores que no se puedan convertir resultarán en NaT.
-        df_base[nombre_columna_fecha_invite] = pd.to_datetime(df_base[nombre_columna_fecha_invite], format='%d/%m/%Y', errors="coerce")
+    df_base[nombre_columna_fecha_invite] = pd.to_datetime(df_base[nombre_columna_fecha_invite], format='%d/%m/%Y', errors="coerce")
+    # df_base.dropna(subset=[nombre_columna_fecha_invite], inplace=True) # Opcional: eliminar filas donde la fecha no se pudo convertir
 
-
-        if df_base.empty:
-             st.warning(f"El DataFrame base está vacío después de filtrar por '{nombre_columna_fecha_invite}' no vacía.")
-
-    else:
-        st.error(f"¡ERROR! La columna '{nombre_columna_fecha_invite}' no se encontró al cargar los datos.")
-        st.info("Por favor, verifica el nombre de la columna de la fecha de invitación en la salida de debugging.")
-        st.stop()
-
-
-    # --- AHORA REALIZAR LA LIMPIEZA Y CONVERSIÓN DE FECHA EN df_base ---
-
-    # Limpieza y estandarización de 'Avatar' en el DataFrame base
-    # No eliminamos filas basadas en el contenido de Avatar aquí
     if "Avatar" in df_base.columns:
-         # Asegúrate de que estandarizar_avatar esté definida en utils.limpieza
-         df_base["Avatar"] = df_base["Avatar"].astype(str).str.strip().str.title()
-         df_base["Avatar"] = df_base["Avatar"].replace({"Jonh Fenner": "John Bermúdez", "Jonh Bermúdez": "John Bermúdez", "Jonh": "John Bermúdez", "John Fenner": "John Bermúdez"})
-         # REMOVIMOS: df_base = df_base[~df_base["Avatar"].isin(["", "Nan", "None", "Sin Avatar"])]
+        df_base["Avatar"] = df_base["Avatar"].astype(str).str.strip().str.title()
+        df_base["Avatar"] = df_base["Avatar"].replace({
+            "Jonh Fenner": "John Bermúdez", "Jonh Bermúdez": "John Bermúdez",
+            "Jonh": "John Bermúdez", "John Fenner": "John Bermúdez"
+        })
 
-
-    # Limpieza de otras columnas (excluimos la columna de fecha de este loop)
     columnas_a_limpiar = [
         "¿Invite Aceptada?", "Sesion Agendada?", "Respuesta Primer Mensaje",
         "Respuestas Subsecuentes", "Fecha Sesion",
-        # Asegúrate de que el nombre de la columna de fecha NO esté en esta lista
     ]
-    # Filtramos la lista columnas_a_limpiar para asegurarnos de que la columna de fecha no esté incluida
     columnas_a_limpiar_filtrada = [col for col in columnas_a_limpiar if col != nombre_columna_fecha_invite]
-
 
     for col in columnas_a_limpiar_filtrada:
         if col in df_base.columns:
-            # Llenamos NaN/cadenas vacías/solo espacios con "No" para estas columnas
             df_base[col] = df_base[col].fillna("No").replace(r'^\s*$', "No", regex=True)
 
-    # La conversión de fecha a datetime ya se hizo antes del debug de NaT
-
-    # df_base ahora es el conjunto de datos filtrado por "Fecha de Invite" no vacía como texto,
-    # con otras columnas limpiadas y la columna de fecha convertida (con NaT para errores).
-    # Esta es la base que se pasará a cargar_y_procesar_datos.
     return df_base
 
 
-def cargar_y_procesar_datos(df):
-    # Esta función realiza procesamiento adicional en el DataFrame base.
-    # df aquí es el df_base retornado por cargar_y_limpiar_datos.
-    # Asegúrate de que calcular_dias_respuesta esté definida en utils.limpieza
-    # Si calcular_dias_respuesta usa columnas como Fecha de Invite o Fecha Primer Mensaje,
-    # operará en el df_base que ya tiene esas columnas procesadas.
+def cargar_y_procesar_datos(df): # df aquí es df_base
+    if df.empty: # Si df_base estaba vacío, no hay nada que procesar
+        return df
     try:
-        # Asegúrate de que calcular_dias_respuesta no espere la columna con el nombre exacto "Fecha de Invite"
-        # Si usa el nombre literal, también deberás corregirlo allí.
-        df = calcular_dias_respuesta(df) # Esta función necesita implementación si no la tiene
+        # La función calcular_dias_respuesta no se usa activamente en el dashboard principal según los últimos cambios
+        # Si la necesitas para otras páginas o análisis, asegúrate que esté bien implementada.
+        # df = calcular_dias_respuesta(df) 
+        pass # Por ahora, esta función no hace mucho más si calcular_dias_respuesta no se usa.
     except Exception as e:
-         st.warning(f"Error al ejecutar calcular_dias_respuesta: {e}")
-         # Si esta función falla, retornamos el df como está hasta ahora
-         pass # Si calcular_dias_respuesta no está implementada o falla, simplemente seguimos
-
+        st.warning(f"Error al ejecutar procesamiento adicional de datos: {e}")
     return df
