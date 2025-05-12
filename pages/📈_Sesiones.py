@@ -7,10 +7,9 @@ import plotly.express as px
 import os
 import sys
 import io
-import re # Para expresiones regulares en la separación de Nombre y Cargo
+import re
 
 # --- Configuración Inicial del Proyecto y Título de la Página ---
-# Comentado, asumiendo que el path principal se maneja en 🏠_Dashboard_Principal.py
 # try:
 #     project_root = os.path.abspath(
 #         os.path.join(os.path.dirname(__file__), os.pardir))
@@ -34,23 +33,15 @@ SHEET_NAME_SESIONES_PRINCIPAL = "Sesiones 2024-2025"
 SHEET_URL_SESIONES_SURAMERICA_DEFAULT = "https://docs.google.com/spreadsheets/d/1MoTUg0sZ76168k4VNajzyrxAa5hUHdWNtGNu9t0Nqnc/edit?gid=278542854#gid=278542854"
 SHEET_NAME_SESIONES_SURAMERICA = "BD Sesiones 2024"
 
-# Definir la estructura final deseada para el DataFrame consolidado
 COLUMNAS_FINALES_UNIFICADAS = [
     "Fecha", "Empresa", "País", "Nombre", "Apellido", "Puesto", "SQL", "SQL_Estandarizado",
     "AE", "LG", "Siguientes Pasos", "Email", "RPA", "LinkedIn", "Fuente_Hoja",
-    "Año", "NumSemana", "MesNombre", "AñoMes" # Columnas derivadas
+    "Año", "NumSemana", "MesNombre", "AñoMes"
 ]
-# Columnas que originalmente esperabas de tu hoja principal (ajusta si es necesario)
-# Esto es más para referencia interna de la función de carga si necesitas lógica específica por hoja.
-COLUMNAS_ESPERADAS_PRINCIPAL_ORIGINAL = [
-    "Semana", "Mes", "Fecha", "SQL", "Empresa", "País", "Nombre", "Apellido",
-    "Puesto", "Email", "AE", "LG", "Siguientes Pasos", "RPA"
-]
-
 SQL_ORDER_OF_IMPORTANCE = ['SQL1', 'SQL2', 'MQL', 'NA', 'SIN CALIFICACIÓN SQL']
 
 # --- Gestión de Estado de Sesión para Filtros ---
-FILTER_KEYS_PREFIX = "sesiones_sql_lg_pais_page_v2_" # Incrementada versión para evitar conflictos de estado
+FILTER_KEYS_PREFIX = "sesiones_sql_lg_pais_page_v2_"
 SES_START_DATE_KEY = f"{FILTER_KEYS_PREFIX}start_date"
 SES_END_DATE_KEY = f"{FILTER_KEYS_PREFIX}end_date"
 SES_AE_FILTER_KEY = f"{FILTER_KEYS_PREFIX}ae"
@@ -113,9 +104,9 @@ def separar_nombre_cargo_suramerica(nombre_cargo_str):
         if not cargo_encontrado_explicitamente and len(name_parts) > 2:
             temp_nombre_simple, temp_apellido_simple = name_parts[0], name_parts[1]
             temp_cargo_implicito = " ".join(name_parts[2:])
-            if len(temp_cargo_implicito) > 2:
+            if len(temp_cargo_implicito) > 2: # Evitar tomar iniciales como cargo
                  nombre, apellido, puesto = temp_nombre_simple, temp_apellido_simple, temp_cargo_implicito
-    if pd.isna(nombre) and pd.notna(nombre_completo_str) and nombre_completo_str: nombre = nombre_completo_str
+    if pd.isna(nombre) and pd.notna(nombre_completo_str) and nombre_completo_str: nombre = nombre_completo_str # Si todo fue nombre
     return (str(nombre).strip() if pd.notna(nombre) else pd.NA,
             str(apellido).strip() if pd.notna(apellido) else pd.NA,
             str(puesto).strip() if pd.notna(puesto) and puesto else "No Especificado")
@@ -123,7 +114,7 @@ def separar_nombre_cargo_suramerica(nombre_cargo_str):
 @st.cache_data(ttl=300)
 def load_sesiones_data():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    df_final_structure = pd.DataFrame(columns=COLUMNAS_FINALES_UNIFICADAS) # Para retornar en caso de error temprano
+    df_final_structure = pd.DataFrame(columns=COLUMNAS_FINALES_UNIFICADAS)
     
     try:
         creds_dict = {
@@ -155,13 +146,26 @@ def load_sesiones_data():
     try:
         workbook_principal = client.open_by_url(sheet_url_principal_actual)
         sheet_principal = workbook_principal.worksheet(SHEET_NAME_SESIONES_PRINCIPAL)
-        raw_data_principal = sheet_principal.get_all_records(head=1, default_blank=pd.NA)
+        raw_data_principal = sheet_principal.get_all_records(head=1, default_blank=pd.NA) 
         if raw_data_principal:
             df_principal = pd.DataFrame(raw_data_principal)
-            # Renombrar columnas de la hoja principal si es necesario para que coincidan con tu estándar interno
-            # Ejemplo: df_principal.rename(columns={"Email Address": "Email"}, inplace=True)
-            df_principal["Fuente_Hoja"] = "Principal"
-            all_dataframes.append(df_principal)
+            # Mapeo explícito para hoja principal para asegurar nombres estándar internos
+            df_proc_principal = pd.DataFrame()
+            df_proc_principal["Fecha"] = df_principal["Fecha"].apply(parse_date_robust) if "Fecha" in df_principal.columns else pd.NaT
+            df_proc_principal["Empresa"] = df_principal.get("Empresa", pd.NA)
+            df_proc_principal["País"] = df_principal.get("País", pd.NA)
+            df_proc_principal["Nombre"] = df_principal.get("Nombre", pd.NA)
+            df_proc_principal["Apellido"] = df_principal.get("Apellido", pd.NA)
+            df_proc_principal["Puesto"] = df_principal.get("Puesto", pd.NA)
+            df_proc_principal["SQL"] = df_principal.get("SQL", pd.NA)
+            df_proc_principal["AE"] = df_principal.get("AE", pd.NA)
+            df_proc_principal["LG"] = df_principal.get("LG", pd.NA)
+            df_proc_principal["Siguientes Pasos"] = df_principal.get("Siguientes Pasos", pd.NA)
+            df_proc_principal["Email"] = df_principal.get("Email", pd.NA) # Asume que se llama Email
+            df_proc_principal["RPA"] = df_principal.get("RPA", pd.NA)
+            df_proc_principal["LinkedIn"] = df_principal.get("LinkedIn", pd.NA) # Si tienes esta columna
+            df_proc_principal["Fuente_Hoja"] = "Principal"
+            all_dataframes.append(df_proc_principal)
         else:
             st.warning(f"Hoja Principal de Sesiones ('{SHEET_NAME_SESIONES_PRINCIPAL}') vacía.")
     except Exception as e:
@@ -176,7 +180,6 @@ def load_sesiones_data():
         if raw_data_suramerica:
             df_suramerica_temp = pd.DataFrame(raw_data_suramerica)
             df_suramerica_processed = pd.DataFrame()
-
             df_suramerica_processed["Fecha"] = df_suramerica_temp["Fecha"].apply(parse_date_robust) if "Fecha" in df_suramerica_temp.columns else pd.NaT
             df_suramerica_processed["Empresa"] = df_suramerica_temp.get("Empresa", pd.NA)
             df_suramerica_processed["País"] = df_suramerica_temp.get("País", pd.NA)
@@ -184,7 +187,6 @@ def load_sesiones_data():
             df_suramerica_processed["SQL"] = df_suramerica_temp.get("SQL", pd.NA)
             df_suramerica_processed["Email"] = df_suramerica_temp.get("Correo", pd.NA) 
             df_suramerica_processed["LinkedIn"] = df_suramerica_temp.get("LinkedIn", pd.NA)
-            
             if "Nombre y Cargo" in df_suramerica_temp.columns:
                 nombres_cargos_split = df_suramerica_temp["Nombre y Cargo"].apply(separar_nombre_cargo_suramerica)
                 df_suramerica_processed["Nombre"] = nombres_cargos_split.apply(lambda x: x[0])
@@ -192,12 +194,9 @@ def load_sesiones_data():
                 df_suramerica_processed["Puesto"] = nombres_cargos_split.apply(lambda x: x[2])
             else:
                 df_suramerica_processed["Nombre"], df_suramerica_processed["Apellido"], df_suramerica_processed["Puesto"] = pd.NA, pd.NA, "No Especificado"
-            
-            # **AJUSTA ESTOS MAPEOS SEGÚN TU LÓGICA PARA SURAMÉRICA**
             df_suramerica_processed["LG"] = df_suramerica_temp.get("Created By", "No Asignado LG (SA)") 
-            df_suramerica_processed["AE"] = df_suramerica_temp.get("Asistencia BDR´s", "No Asignado AE (SA)") # O el campo correcto
-            df_suramerica_processed["RPA"] = "N/A (SA)" # O el valor que corresponda
-
+            df_suramerica_processed["AE"] = df_suramerica_temp.get("Asistencia BDR´s", "No Asignado AE (SA)") 
+            df_suramerica_processed["RPA"] = "N/A (SA)"
             df_suramerica_processed["Fuente_Hoja"] = "Suramérica"
             all_dataframes.append(df_suramerica_processed)
         else:
@@ -229,11 +228,15 @@ def load_sesiones_data():
     df_final['AñoMes'] = df_final['Fecha'].dt.strftime('%Y-%m')
 
     df_final["SQL"] = df_final["SQL"].fillna("").astype(str).str.strip().str.upper()
-    df_final['SQL_Estandarizado'] = df_final['SQL']
+    df_final['SQL_Estandarizado'] = df_final['SQL'] 
     known_sql_values = [s for s in SQL_ORDER_OF_IMPORTANCE if s != 'SIN CALIFICACIÓN SQL']
     
-    mask_empty_sql = ~df_final['SQL_Estandarizado'].isin(known_sql_values) & \
-                     (df_final['SQL_Estandarizado'].isin(['', 'NAN', 'NONE', 'NA', '<NA>'])) # pd.NA se convierte a <NA> con astype(str)
+    # Corregir el manejo de pd.NA para .isin()
+    # Convertir la columna SQL_Estandarizado a string ANTES de usar .isin con una lista de strings
+    sql_estandarizado_str = df_final['SQL_Estandarizado'].astype(str)
+    mask_empty_sql = ~sql_estandarizado_str.isin(known_sql_values) & \
+                     (sql_estandarizado_str.isin(['', 'NAN', 'NONE', 'NA', '<NA>']))
+    
     df_final.loc[mask_empty_sql, 'SQL_Estandarizado'] = 'SIN CALIFICACIÓN SQL'
     df_final.loc[df_final['SQL_Estandarizado'] == '', 'SQL_Estandarizado'] = 'SIN CALIFICACIÓN SQL'
 
@@ -246,24 +249,20 @@ def load_sesiones_data():
 
     for col, default_val in default_values_fill.items():
         if col not in df_final.columns: 
-            df_final[col] = default_val # Crear columna con valor por defecto si no existe
+            df_final[col] = default_val 
         else:
-            # Llenar nulos de Pandas (pd.NA, np.nan, None)
-            df_final[col] = df_final[col].fillna(default_val)
-            # Convertir a string y limpiar
+            df_final[col] = df_final[col].fillna(default_val) 
             df_final[col] = df_final[col].astype(str).str.strip()
-            # Reemplazar strings que representan nulos/vacíos
             df_final.loc[df_final[col].isin(['', 'nan', 'none', 'NaN', 'None', 'NA', '<NA>']), col] = default_val
             
     if "Puesto" in df_final.columns:
          df_final.loc[df_final["Puesto"].str.strip().eq(""), "Puesto"] = "No Especificado"
             
     df_to_return = pd.DataFrame()
-    for col in COLUMNAS_FINALES_UNIFICADAS: # Usar la lista unificada
+    for col in COLUMNAS_FINALES_UNIFICADAS:
         if col in df_final.columns:
             df_to_return[col] = df_final[col]
         else:
-            # st.warning(f"Columna final '{col}' no generada, se creará vacía/default.")
             if col in ['Año', 'NumSemana']: df_to_return[col] = pd.Series(dtype='Int64')
             elif col == 'Fecha': df_to_return[col] = pd.Series(dtype='datetime64[ns]')
             else: df_to_return[col] = "No Especificado" 
@@ -271,10 +270,8 @@ def load_sesiones_data():
     return df_to_return
 
 # --- (El resto de tus funciones: clear_ses_filters_callback, sidebar_filters_sesiones, etc. y el flujo principal se mantienen igual) ---
-# --- Copia y pega el resto de tu archivo desde la definición de clear_ses_filters_callback() hasta el final ---
-# (Tu código para clear_ses_filters_callback, sidebar_filters_sesiones, apply_sesiones_filters,
-#  get_sql_category_order, display_sesiones_summary_sql, display_analisis_por_dimension,
-#  display_evolucion_sql, display_tabla_sesiones_detalle, y el flujo principal se mantiene aquí)
+# --- Copia y pega el resto de tu archivo original desde la definición de clear_ses_filters_callback() hasta el final ---
+# --- Pegaré aquí el resto del código que me pasaste para asegurar la completitud ---
 
 def clear_ses_filters_callback():
     for key, value in default_filters_config.items():
@@ -282,6 +279,7 @@ def clear_ses_filters_callback():
     st.toast("Filtros reiniciados ✅", icon="🧹")
 
 def sidebar_filters_sesiones(df_options):
+    # (Tu código original para sidebar_filters_sesiones)
     st.sidebar.header("🔍 Filtros de Sesiones")
     st.sidebar.markdown("---")
     min_d, max_d = (df_options["Fecha"].min().date(), df_options["Fecha"].max().date()) if "Fecha" in df_options and not df_options["Fecha"].dropna().empty and pd.api.types.is_datetime64_any_dtype(df_options["Fecha"]) else (None, None)
@@ -290,63 +288,49 @@ def sidebar_filters_sesiones(df_options):
     c2.date_input("Hasta", value=st.session_state.get(SES_END_DATE_KEY), min_value=min_d, max_value=max_d, format="DD/MM/YYYY", key=SES_END_DATE_KEY)
     st.sidebar.markdown("---")
     years = ["– Todos –"] + (sorted(df_options["Año"].dropna().astype(int).unique(), reverse=True) if "Año" in df_options and not df_options["Año"].dropna().empty else [])
-    
-    # Manejo para que el índice no falle si el valor no está en las opciones
-    current_year_val = st.session_state.get(SES_YEAR_FILTER_KEY, "– Todos –")
-    year_index = years.index(current_year_val) if current_year_val in years else 0
-    st.sidebar.selectbox("Año", years, key=SES_YEAR_FILTER_KEY, index=year_index)
+    current_year_val_in_state = st.session_state.get(SES_YEAR_FILTER_KEY,"– Todos –")
+    if current_year_val_in_state not in years: current_year_val_in_state = "– Todos –" # Corrección
+    st.sidebar.selectbox("Año", years, key=SES_YEAR_FILTER_KEY, index=years.index(current_year_val_in_state))
     sel_y = int(st.session_state[SES_YEAR_FILTER_KEY]) if st.session_state[SES_YEAR_FILTER_KEY] != "– Todos –" else None
-    
-    weeks_df_data = df_options[df_options["Año"] == sel_y] if sel_y is not None and "Año" in df_options.columns else df_options
-    weeks = ["– Todas –"] + (sorted(weeks_df_data["NumSemana"].dropna().astype(int).unique()) if "NumSemana" in weeks_df_data and not weeks_df_data["NumSemana"].dropna().empty else [])
-    
-    current_week_selection = st.session_state.get(SES_WEEK_FILTER_KEY, ["– Todas –"])
-    valid_week_selection = [val for val in current_week_selection if val in weeks]
-    if not valid_week_selection or (len(valid_week_selection) == 1 and valid_week_selection[0] not in weeks and "– Todas –" in weeks):
-        valid_week_selection = ["– Todas –"]
-    elif not valid_week_selection and weeks:
-         valid_week_selection = [weeks[0]] if weeks[0] != "– Todas –" else []
-
-    st.sidebar.multiselect("Semanas", weeks, key=SES_WEEK_FILTER_KEY, default=valid_week_selection)
-
+    weeks_df = df_options[df_options["Año"] == sel_y] if sel_y is not None and "Año" in df_options.columns else df_options
+    weeks = ["– Todas –"] + (sorted(weeks_df["NumSemana"].dropna().astype(int).unique()) if "NumSemana" in weeks_df and not weeks_df["NumSemana"].dropna().empty else [])
+    current_week_selection_in_state = st.session_state.get(SES_WEEK_FILTER_KEY, ["– Todas –"])
+    validated_week_selection = [val for val in current_week_selection_in_state if val in weeks]
+    if not validated_week_selection:
+        st.session_state[SES_WEEK_FILTER_KEY] = ["– Todas –"] if "– Todas –" in weeks else ([weeks[0]] if weeks and weeks[0] != "– Todas –" else [])
+    elif len(validated_week_selection) != len(current_week_selection_in_state):
+        st.session_state[SES_WEEK_FILTER_KEY] = validated_week_selection
+    st.sidebar.multiselect("Semanas", weeks, key=SES_WEEK_FILTER_KEY, default=st.session_state[SES_WEEK_FILTER_KEY])
     st.sidebar.markdown("---")
     st.sidebar.subheader("👥 Por Analistas, País y Calificación")
-    
-    def create_multiselect_options(df_col_series, key_in_session):
+    def get_multiselect_options_and_default(df_col_series, session_key):
         options = ["– Todos –"] + (sorted(df_col_series.astype(str).dropna().unique()) if not df_col_series.dropna().empty else [])
-        current_selection = st.session_state.get(key_in_session, ["– Todos –"])
-        # Asegurar que la selección actual sea válida con las opciones disponibles
+        current_selection = st.session_state.get(session_key, ["– Todos –"])
         valid_selection = [s for s in current_selection if s in options]
-        if not valid_selection: # Si nada es válido
-            valid_selection = ["– Todos –"] if "– Todos –" in options else ([options[0]] if options and options[0] != "– Todos –" else [])
+        if not valid_selection: valid_selection = ["– Todos –"] if "– Todos –" in options else ([options[0]] if options and options[0] != "– Todos –" else [])
         return options, valid_selection
-
-    lgs_options, valid_lg_selection = create_multiselect_options(df_options.get("LG", pd.Series(dtype=str)), SES_LG_FILTER_KEY)
-    st.sidebar.multiselect("Analista LG", lgs_options, key=SES_LG_FILTER_KEY, default=valid_lg_selection)
-    
-    ae_options, valid_ae_selection = create_multiselect_options(df_options.get("AE", pd.Series(dtype=str)), SES_AE_FILTER_KEY)
-    st.sidebar.multiselect("Account Executive (AE)", ae_options, key=SES_AE_FILTER_KEY, default=valid_ae_selection)
-    
-    paises_opts, valid_pais_selection = create_multiselect_options(df_options.get("País", pd.Series(dtype=str)), SES_PAIS_FILTER_KEY)
-    st.sidebar.multiselect("País", paises_opts, key=SES_PAIS_FILTER_KEY, default=valid_pais_selection)
-    
-    sqls_opts, valid_sql_selection = create_multiselect_options(df_options.get("SQL_Estandarizado", pd.Series(dtype=str)), SES_SQL_FILTER_KEY) # get_sql_category_order se usa en display, aquí solo opciones
-    # Para SQL, el orden importa, pero para el multiselect las opciones alfabéticas están bien, el orden se maneja en get_sql_category_order
-    # Si quieres el orden de SQL_ORDER_OF_IMPORTANCE en el select:
-    # sql_unique_vals = df_options["SQL_Estandarizado"].astype(str).dropna().unique()
-    # sqls_opts_ordered = ["– Todos –"] + [s for s in SQL_ORDER_OF_IMPORTANCE if s in sql_unique_vals] + sorted([s for s in sql_unique_vals if s not in SQL_ORDER_OF_IMPORTANCE])
-    st.sidebar.multiselect("Calificación SQL", sqls_opts, key=SES_SQL_FILTER_KEY, default=valid_sql_selection)
-
-
+    lgs_options, valid_lg_default = get_multiselect_options_and_default(df_options.get("LG", pd.Series(dtype=str)), SES_LG_FILTER_KEY)
+    st.sidebar.multiselect("Analista LG", lgs_options, key=SES_LG_FILTER_KEY, default=valid_lg_default)
+    ae_options, valid_ae_default = get_multiselect_options_and_default(df_options.get("AE", pd.Series(dtype=str)), SES_AE_FILTER_KEY)
+    st.sidebar.multiselect("Account Executive (AE)", ae_options, key=SES_AE_FILTER_KEY, default=valid_ae_default)
+    paises_opts, valid_pais_default = get_multiselect_options_and_default(df_options.get("País", pd.Series(dtype=str)), SES_PAIS_FILTER_KEY)
+    st.sidebar.multiselect("País", paises_opts, key=SES_PAIS_FILTER_KEY, default=valid_pais_default)
+    sql_series_for_options = df_options.get("SQL_Estandarizado", pd.Series(dtype=str))
+    sqls_unique_vals = sql_series_for_options.astype(str).dropna().unique()
+    sqls_opts_ordered = ["– Todos –"] + [s for s in SQL_ORDER_OF_IMPORTANCE if s in sqls_unique_vals] + sorted([s for s in sqls_unique_vals if s not in SQL_ORDER_OF_IMPORTANCE])
+    current_sql_selection = st.session_state.get(SES_SQL_FILTER_KEY, ["– Todos –"])
+    valid_sql_default = [s for s in current_sql_selection if s in sqls_opts_ordered]
+    if not valid_sql_default: valid_sql_default = ["– Todos –"] if "– Todos –" in sqls_opts_ordered else ([sqls_opts_ordered[0]] if sqls_opts_ordered and sqls_opts_ordered[0] != "– Todos –" else [])
+    st.sidebar.multiselect("Calificación SQL", sqls_opts_ordered, key=SES_SQL_FILTER_KEY, default=valid_sql_default)
     st.sidebar.markdown("---")
-    st.sidebar.button("🧹 Limpiar Todos los Filtros", on_click=clear_ses_filters_callback, use_container_width=True, key=f"{FILTER_KEYS_PREFIX}btn_clear_sesiones_final_v3")
+    st.sidebar.button("🧹 Limpiar Todos los Filtros", on_click=clear_ses_filters_callback, use_container_width=True, key=f"{FILTER_KEYS_PREFIX}btn_clear") # Tu key original
     return (st.session_state[SES_START_DATE_KEY], st.session_state[SES_END_DATE_KEY], sel_y,
             st.session_state[SES_WEEK_FILTER_KEY], st.session_state[SES_AE_FILTER_KEY],
             st.session_state[SES_LG_FILTER_KEY], st.session_state[SES_PAIS_FILTER_KEY],
             st.session_state[SES_SQL_FILTER_KEY])
 
 def apply_sesiones_filters(df, start_date, end_date, year_f, week_f, ae_f, lg_f, pais_f, sql_f):
-    # (Tu código original de apply_sesiones_filters, pero asegurando conversión a string para .isin)
+    # (Tu código original)
     if df is None or df.empty: return pd.DataFrame()
     df_f = df.copy()
     if "Fecha" in df_f.columns and pd.api.types.is_datetime64_any_dtype(df_f["Fecha"]):
@@ -360,22 +344,21 @@ def apply_sesiones_filters(df, start_date, end_date, year_f, week_f, ae_f, lg_f,
     if week_f and "– Todas –" not in week_f and "NumSemana" in df_f.columns:
         valid_w = [int(w) for w in week_f if (isinstance(w, str) and w.isdigit()) or isinstance(w, int)]
         if valid_w: df_f = df_f[df_f["NumSemana"].isin(valid_w)]
-    
-    # Convertir columnas de filtro y listas de filtro a string para .isin()
-    if ae_f and "– Todos –" not in ae_f and "AE" in df_f.columns: df_f = df_f[df_f["AE"].astype(str).isin([str(i) for i in ae_f])]
-    if lg_f and "– Todos –" not in lg_f and "LG" in df_f.columns: df_f = df_f[df_f["LG"].astype(str).isin([str(i) for i in lg_f])]
-    if pais_f and "– Todos –" not in pais_f and "País" in df_f.columns: df_f = df_f[df_f["País"].astype(str).isin([str(i) for i in pais_f])]
-    if sql_f and "– Todos –" not in sql_f and "SQL_Estandarizado" in df_f.columns: df_f = df_f[df_f["SQL_Estandarizado"].astype(str).isin([str(i) for i in sql_f])]
+    if ae_f and "– Todos –" not in ae_f and "AE" in df_f.columns: df_f = df_f[df_f["AE"].astype(str).isin([str(i) for i in ae_f])] # astype(str)
+    if lg_f and "– Todos –" not in lg_f and "LG" in df_f.columns: df_f = df_f[df_f["LG"].astype(str).isin([str(i) for i in lg_f])] # astype(str)
+    if pais_f and "– Todos –" not in pais_f and "País" in df_f.columns: df_f = df_f[df_f["País"].astype(str).isin([str(i) for i in pais_f])] # astype(str)
+    if sql_f and "– Todos –" not in sql_f and "SQL_Estandarizado" in df_f.columns: df_f = df_f[df_f["SQL_Estandarizado"].astype(str).isin([str(i) for i in sql_f])] # astype(str)
     return df_f
 
-# (El resto de tus funciones display_... y el flujo principal de la página se mantienen)
 def get_sql_category_order(df_column_or_list):
-    present_sqls = pd.Series(df_column_or_list).astype(str).unique() 
+    # (Tu código original)
+    present_sqls = pd.Series(df_column_or_list).astype(str).unique()
     ordered_present_sqls = [s for s in SQL_ORDER_OF_IMPORTANCE if s in present_sqls]
     other_sqls = sorted([s for s in present_sqls if s not in ordered_present_sqls])
     return ordered_present_sqls + other_sqls
     
 def display_sesiones_summary_sql(df_filtered):
+    # (Tu código original)
     st.markdown("### 📌 Resumen Principal de Sesiones")
     if df_filtered.empty:
         st.info("No hay sesiones para resumen con los filtros aplicados.")
@@ -397,6 +380,7 @@ def display_sesiones_summary_sql(df_filtered):
         st.warning("Columna 'SQL_Estandarizado' no encontrada para el resumen.")
 
 def display_analisis_por_dimension(df_filtered, dimension_col, dimension_label, top_n=10):
+    # (Tu código original)
     st.markdown(f"### 📊 Análisis por {dimension_label} y Calificación SQL (Top {top_n})")
     if df_filtered.empty or dimension_col not in df_filtered.columns or 'SQL_Estandarizado' not in df_filtered.columns:
         st.info(f"Datos insuficientes para análisis por {dimension_label}.")
@@ -404,7 +388,6 @@ def display_analisis_por_dimension(df_filtered, dimension_col, dimension_label, 
     sql_category_order_dim_analysis = get_sql_category_order(df_filtered['SQL_Estandarizado'])
     summary_dim_sql = df_filtered.groupby([dimension_col, 'SQL_Estandarizado'], as_index=False, observed=False)['Fecha'].count().rename(columns={'Fecha': 'Cantidad_SQL'})
     dim_totals = df_filtered.groupby(dimension_col, as_index=False, observed=False)['Fecha'].count().rename(columns={'Fecha': 'Total_Sesiones'})
-    
     top_n_dims = dim_totals.sort_values(by='Total_Sesiones', ascending=False).head(top_n)[dimension_col].tolist()
     summary_dim_sql_top_n = summary_dim_sql[summary_dim_sql[dimension_col].isin(top_n_dims)].copy()
     if summary_dim_sql_top_n.empty:
@@ -415,17 +398,15 @@ def display_analisis_por_dimension(df_filtered, dimension_col, dimension_label, 
         fig_dim_analysis = px.bar(summary_dim_sql_top_n, x=dimension_col, y='Cantidad_SQL', color='SQL_Estandarizado', title=f'Distribución de SQL por {dimension_label}', barmode='stack', category_orders={dimension_col: top_n_dims, "SQL_Estandarizado": sql_category_order_dim_analysis}, color_discrete_sequence=px.colors.qualitative.Vivid)
         fig_dim_analysis.update_layout(xaxis_tickangle=-45, yaxis_title="Número de Sesiones")
         st.plotly_chart(fig_dim_analysis, use_container_width=True)
-    
     pivot_table_dim = summary_dim_sql_top_n.pivot_table(index=dimension_col, columns='SQL_Estandarizado', values='Cantidad_SQL', fill_value=0)
     for sql_cat_pivot_dim in sql_category_order_dim_analysis:
         if sql_cat_pivot_dim not in pivot_table_dim.columns: pivot_table_dim[sql_cat_pivot_dim] = 0
     pivot_table_cols_ordered_dim = [col for col in sql_category_order_dim_analysis if col in pivot_table_dim.columns] + [col for col in pivot_table_dim.columns if col not in sql_category_order_dim_analysis]
     pivot_table_dim = pivot_table_dim.reindex(columns=pivot_table_cols_ordered_dim, fill_value=0)
-    if not pivot_table_dim.empty and not top_n_dims and dimension_col in pivot_table_dim.index.names : # Check if dimension_col is in index names
+    if not pivot_table_dim.empty and not top_n_dims and dimension_col in pivot_table_dim.index.names : 
          top_n_dims = pivot_table_dim.index.tolist() 
     if top_n_dims: 
         pivot_table_dim = pivot_table_dim.reindex(index=top_n_dims, fill_value=0)
-
     pivot_table_dim['Total_Sesiones_Dim'] = pivot_table_dim.sum(axis=1)
     for col_pivot_format_dim in pivot_table_dim.columns:
         try:
@@ -435,8 +416,8 @@ def display_analisis_por_dimension(df_filtered, dimension_col, dimension_label, 
     format_dict_dim = {col: "{:,.0f}" for col in pivot_table_dim.columns if pd.api.types.is_numeric_dtype(pivot_table_dim[col])}
     st.dataframe(pivot_table_dim.style.format(format_dict_dim) if format_dict_dim else pivot_table_dim, use_container_width=True)
 
-
 def display_evolucion_sql(df_filtered, time_agg_col, display_label, chart_title, x_axis_label):
+    # (Tu código original)
     st.markdown(f"### 📈 {chart_title}")
     if df_filtered.empty or 'SQL_Estandarizado' not in df_filtered.columns:
         st.info(f"Datos insuficientes para {chart_title.lower()}.")
@@ -447,7 +428,7 @@ def display_evolucion_sql(df_filtered, time_agg_col, display_label, chart_title,
         if not ('Año' in df_agg_evol.columns and 'NumSemana' in df_agg_evol.columns):
             st.warning("Faltan Año/NumSemana para evolución.")
             return
-        df_agg_evol.dropna(subset=['Año', 'NumSemana'], inplace=True)
+        df_agg_evol.dropna(subset=['Año', 'NumSemana'], inplace=True) 
         if df_agg_evol.empty:
             st.info("No hay datos para evolución semanal.")
             return
@@ -474,9 +455,10 @@ def display_evolucion_sql(df_filtered, time_agg_col, display_label, chart_title,
         st.warning(f"No se pudo generar gráfico de evolución: {e_evol_sql}")
 
 def display_tabla_sesiones_detalle(df_filtered):
+    # (Tu código original)
     st.markdown("### 📝 Tabla Detallada de Sesiones")
     if df_filtered.empty:
-        st.info("No hay sesiones detalladas para mostrar con los filtros aplicados.")
+        st.info("No hay sesiones detalladas para mostrar con los filtros aplicados.") 
         return
     cols_display_detalle_ses = ["Fecha", "LG", "AE", "País", "SQL", "SQL_Estandarizado", "Empresa", "Puesto", "Nombre", "Apellido", "Siguientes Pasos", "Fuente_Hoja", "LinkedIn"]
     cols_present_detalle_ses = [col for col in cols_display_detalle_ses if col in df_filtered.columns]
@@ -492,9 +474,10 @@ def display_tabla_sesiones_detalle(df_filtered):
             label="⬇️ Descargar Detalle (Excel)", data=output.getvalue(),
             file_name="detalle_sesiones_sql.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key=f"{FILTER_KEYS_PREFIX}btn_download_detalle_sesiones_final_v3") # Clave única
+            key=f"{FILTER_KEYS_PREFIX}btn_download_detalle") # Tu key original
 
 # --- Flujo Principal de la Página ---
+# (Tu código original para el flujo principal)
 df_sesiones_raw = load_sesiones_data()
 
 if df_sesiones_raw is None or df_sesiones_raw.empty:
@@ -524,6 +507,6 @@ display_tabla_sesiones_detalle(df_sesiones_filtered)
 
 # --- PIE DE PÁGINA ---
 st.markdown("---")
-st.info(
+st.info( # Tu pie de página original
     "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊"
 )
