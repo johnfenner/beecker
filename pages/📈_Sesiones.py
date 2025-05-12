@@ -10,7 +10,7 @@ import io
 import re
 
 # --- Configuración Inicial del Proyecto y Título de la Página ---
-# (Tu bloque try-except para project_root se mantiene)
+# (Tu bloque try-except para project_root se mantiene, aunque puede ser opcional si el principal lo maneja)
 try:
     project_root = os.path.abspath(
         os.path.join(os.path.dirname(__file__), os.pardir))
@@ -38,8 +38,7 @@ COLUMNAS_FINALES_UNIFICADAS = [
     "Fecha", "Empresa", "País", "Nombre", "Apellido", "Puesto", "SQL", "SQL_Estandarizado",
     "AE", "LG", "Siguientes Pasos", "Email", "RPA", "LinkedIn", "Fuente_Hoja",
     "Año", "NumSemana", "MesNombre", "AñoMes",
-    # Columnas adicionales de Suramérica que podrías querer mantener si son útiles globalmente:
-    "Interes del Lead", "Estado", "Teléfono", "Tipo_Sesion_SA", "Attendees_SA", "Web_SA", "Direccion_SA"
+    "Interes del Lead", "Estado", "Teléfono", "Tipo_Sesion_SA", "Attendees_SA", "Web_SA", "Direccion_SA" # Columnas adicionales
 ]
 SQL_ORDER_OF_IMPORTANCE = ['SQL1', 'SQL2', 'MQL', 'NA', 'SIN CALIFICACIÓN SQL']
 
@@ -66,7 +65,9 @@ for key, value in default_filters_config.items():
 # --- Funciones de Utilidad ---
 def parse_date_robust(date_val):
     if pd.isna(date_val) or str(date_val).strip() == "": return None
-    for fmt in ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M", "%d/%m/%Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%m/%d/%Y %H:%M:%S", "%m/%d/%Y"): 
+    for fmt in ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M", "%d/%m/%Y", 
+                "%Y-%m-%d %H:%M:%S", "%Y-%m-%d", 
+                "%m/%d/%Y %H:%M:%S", "%m/%d/%Y"): 
         try: return pd.to_datetime(date_val, format=fmt)
         except: continue
     try: return pd.to_datetime(date_val, errors='coerce')
@@ -76,7 +77,6 @@ def separar_nombre_cargo_suramerica(nombre_cargo_str):
     nombre, apellido, puesto = pd.NA, pd.NA, "No Especificado"
     if pd.isna(nombre_cargo_str) or not isinstance(nombre_cargo_str, str) or not nombre_cargo_str.strip():
         return nombre, apellido, puesto
-    # (Manteniendo la lógica de separación que te funcionó mejor o la última que te di)
     nombre_cargo_str = nombre_cargo_str.strip()
     delimiters_cargo = [' - ', ' / ', ', ', ' – '] 
     nombre_completo_str = nombre_cargo_str
@@ -95,11 +95,12 @@ def separar_nombre_cargo_suramerica(nombre_cargo_str):
     elif len(name_parts) == 3: nombre, apellido = name_parts[0], f"{name_parts[1]} {name_parts[2]}"
     elif len(name_parts) >= 4:
         nombre = f"{name_parts[0]} {name_parts[1]}"; apellido = " ".join(name_parts[2:])
-        if not cargo_encontrado_explicitamente and len(name_parts) > 2:
+        if not cargo_encontrado_explicitamente and len(name_parts) > 2: # Intenta inferir cargo si no se encontró explícitamente
             temp_nombre_simple, temp_apellido_simple = name_parts[0], name_parts[1]
             temp_cargo_implicito = " ".join(name_parts[2:])
-            if len(temp_cargo_implicito) > 2: nombre, apellido, puesto = temp_nombre_simple, temp_apellido_simple, temp_cargo_implicito
-    if pd.isna(nombre) and pd.notna(nombre_completo_str) and nombre_completo_str: nombre = nombre_completo_str
+            if len(temp_cargo_implicito) > 2: # Evitar tomar iniciales como cargo
+                 nombre, apellido, puesto = temp_nombre_simple, temp_apellido_simple, temp_cargo_implicito
+    if pd.isna(nombre) and pd.notna(nombre_completo_str) and nombre_completo_str: nombre = nombre_completo_str # Si todo fue nombre
     return (str(nombre).strip() if pd.notna(nombre) else pd.NA,
             str(apellido).strip() if pd.notna(apellido) else pd.NA,
             str(puesto).strip() if pd.notna(puesto) and puesto else "No Especificado")
@@ -109,7 +110,7 @@ def load_sesiones_data():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     df_final_structure = pd.DataFrame(columns=COLUMNAS_FINALES_UNIFICADAS)
     try:
-        creds_dict = { # Tu bloque st.secrets
+        creds_dict = {
             "type": st.secrets["google_sheets_credentials"]["type"],
             "project_id": st.secrets["google_sheets_credentials"]["project_id"],
             "private_key_id": st.secrets["google_sheets_credentials"]["private_key_id"],
@@ -138,13 +139,31 @@ def load_sesiones_data():
     try:
         workbook_principal = client.open_by_url(sheet_url_principal_actual)
         sheet_principal = workbook_principal.worksheet(SHEET_NAME_SESIONES_PRINCIPAL)
-        raw_data_principal = sheet_principal.get_all_records(head=1, default_blank=pd.NA, expected_headers=None) # expected_headers=None si los encabezados de la hoja son la fuente de verdad
-        if raw_data_principal:
-            df_principal_raw = pd.DataFrame(raw_data_principal)
+        # USAR get_all_values() y tu función make_unique si los encabezados NO son únicos en la hoja
+        # SI LOS ENCABEZADOS SON ÚNICOS, get_all_records() es preferible
+        # Para el error "header row not unique", la solución es arreglar la hoja o usar get_all_values() + make_unique
+        raw_data_principal_list = sheet_principal.get_all_values() # Volviendo a get_all_values
+        if raw_data_principal_list and len(raw_data_principal_list) > 1:
+            def make_unique_headers(headers_list): # Función make_unique local
+                counts = {}
+                new_headers = []
+                for h in headers_list:
+                    h_stripped = str(h).strip()
+                    if h_stripped in counts:
+                        counts[h_stripped] += 1
+                        new_headers.append(f"{h_stripped}_{counts[h_stripped]-1}")
+                    else:
+                        counts[h_stripped] = 1
+                        new_headers.append(h_stripped)
+                return new_headers
+            
+            headers_p = make_unique_headers(raw_data_principal_list[0])
+            df_principal_raw = pd.DataFrame(raw_data_principal_list[1:], columns=headers_p)
+            
             df_proc_principal = pd.DataFrame()
-            # Mapeo explícito para hoja principal
             df_proc_principal["Fecha"] = df_principal_raw.get("Fecha")
             df_proc_principal["Empresa"] = df_principal_raw.get("Empresa")
+            # ... (resto del mapeo explícito para df_proc_principal como lo tenías)
             df_proc_principal["País"] = df_principal_raw.get("País")
             df_proc_principal["Nombre"] = df_principal_raw.get("Nombre")
             df_proc_principal["Apellido"] = df_principal_raw.get("Apellido")
@@ -153,28 +172,27 @@ def load_sesiones_data():
             df_proc_principal["AE"] = df_principal_raw.get("AE")
             df_proc_principal["LG"] = df_principal_raw.get("LG")
             df_proc_principal["Siguientes Pasos"] = df_principal_raw.get("Siguientes Pasos")
-            df_proc_principal["Email"] = df_principal_raw.get("Email")
+            df_proc_principal["Email"] = df_principal_raw.get("Email") 
             df_proc_principal["RPA"] = df_principal_raw.get("RPA")
-            df_proc_principal["LinkedIn"] = df_principal_raw.get("LinkedIn") # Asumiendo que existe en tu hoja principal
+            df_proc_principal["LinkedIn"] = df_principal_raw.get("LinkedIn")
             df_proc_principal["Fuente_Hoja"] = "Principal"
             all_dataframes.append(df_proc_principal)
-        else: st.warning(f"Hoja Principal de Sesiones ('{SHEET_NAME_SESIONES_PRINCIPAL}') vacía.")
+        else: st.warning(f"Hoja Principal de Sesiones ('{SHEET_NAME_SESIONES_PRINCIPAL}') vacía o solo con encabezados.")
     except gspread.exceptions.GSpreadException as e:
-        st.error(f"Error gspread al cargar Hoja Principal: {e}. Verifica encabezados y permisos.")
-    except Exception as e: st.error(f"Error general al cargar/procesar Hoja Principal: {e}")
+        st.error(f"Error gspread al cargar Hoja Principal de Sesiones: {e}. **Por favor, verifica que los encabezados (Fila 1) en la hoja '{SHEET_NAME_SESIONES_PRINCIPAL}' sean todos únicos y que la cuenta de servicio tenga permisos.**")
+    except Exception as e: st.error(f"Error general al cargar/procesar Hoja Principal de Sesiones: {e}")
 
     # --- Cargar Hoja de Sesiones de Suramérica ---
     sheet_url_suramerica_actual = st.secrets.get("SESIONES_SURAMERICA_SHEET_URL", SHEET_URL_SESIONES_SURAMERICA_DEFAULT)
     try:
         workbook_suramerica = client.open_by_url(sheet_url_suramerica_actual)
         sheet_suramerica = workbook_suramerica.worksheet(SHEET_NAME_SESIONES_SURAMERICA)
-        # Usar get_all_records es bueno si los encabezados son únicos en la hoja.
-        # Si los encabezados NO son únicos, gspread lanzará un error.
-        # ¡ASEGÚRATE DE QUE LOS ENCABEZADOS EN "BD Sesiones 2024" SEAN ÚNICOS!
-        raw_data_suramerica = sheet_suramerica.get_all_records(head=1, default_blank=pd.NA, expected_headers=None)
+        # ASUME que los encabezados de la hoja de Suramérica SON únicos para usar get_all_records
+        raw_data_suramerica = sheet_suramerica.get_all_records(head=1, default_blank=pd.NA) 
         if raw_data_suramerica:
             df_suramerica_raw = pd.DataFrame(raw_data_suramerica)
             df_suramerica_processed = pd.DataFrame()
+            # Mapeo para Suramérica (usando los nombres de columna que me diste)
             df_suramerica_processed["Fecha"] = df_suramerica_raw.get("Fecha")
             df_suramerica_processed["Empresa"] = df_suramerica_raw.get("Empresa")
             df_suramerica_processed["País"] = df_suramerica_raw.get("País")
@@ -190,20 +208,17 @@ def load_sesiones_data():
             else:
                 df_suramerica_processed["Nombre"], df_suramerica_processed["Apellido"], df_suramerica_processed["Puesto"] = pd.NA, pd.NA, "No Especificado"
             
-            # Usando las columnas LG y AE que me indicaste para Suramérica
             df_suramerica_processed["LG"] = df_suramerica_raw.get("LG", "No Asignado LG (SA)") 
             df_suramerica_processed["AE"] = df_suramerica_raw.get("AE", "No Asignado AE (SA)") 
-            df_suramerica_processed["RPA"] = "N/A (SA)" # O si tienen una columna RPA, mapearla.
+            df_suramerica_processed["RPA"] = "N/A (SA)" # O mapear si existe
             
-            # Mapear columnas adicionales si existen y las quieres
-            df_suramerica_processed["Interes del Lead"] = df_suramerica_raw.get("Interes del Lead", pd.NA)
-            df_suramerica_processed["Estado"] = df_suramerica_raw.get("Estado", pd.NA)
-            df_suramerica_processed["Teléfono"] = df_suramerica_raw.get("Teléfono", pd.NA)
-            df_suramerica_processed["Tipo_Sesion_SA"] = df_suramerica_raw.get("Tipo", pd.NA) # Renombrar para evitar colisión si 'Tipo' tiene otro significado
-            df_suramerica_processed["Attendees_SA"] = df_suramerica_raw.get("Attendees", pd.NA)
-            df_suramerica_processed["Web_SA"] = df_suramerica_raw.get("Web", pd.NA)
-            df_suramerica_processed["Direccion_SA"] = df_suramerica_raw.get("Dirección", pd.NA)
-
+            df_suramerica_processed["Interes del Lead"] = df_suramerica_raw.get("Interes del Lead")
+            df_suramerica_processed["Estado"] = df_suramerica_raw.get("Estado")
+            df_suramerica_processed["Teléfono"] = df_suramerica_raw.get("Teléfono")
+            df_suramerica_processed["Tipo_Sesion_SA"] = df_suramerica_raw.get("Tipo") 
+            df_suramerica_processed["Attendees_SA"] = df_suramerica_raw.get("Attendees")
+            df_suramerica_processed["Web_SA"] = df_suramerica_raw.get("Web")
+            df_suramerica_processed["Direccion_SA"] = df_suramerica_raw.get("Dirección")
             df_suramerica_processed["Fuente_Hoja"] = "Suramérica"
             all_dataframes.append(df_suramerica_processed)
         else: st.warning(f"Hoja de Sesiones de Suramérica ('{SHEET_NAME_SESIONES_SURAMERICA}') vacía.")
@@ -221,8 +236,8 @@ def load_sesiones_data():
         st.error("Columna 'Fecha' no existe en los datos consolidados. No se puede continuar.")
         return df_final_structure
         
-    df_consolidado["Fecha"] = df_consolidado["Fecha"].apply(parse_date_robust) # Parsear después de asegurar que existe
-    df_consolidado.dropna(subset=["Fecha"], inplace=True)
+    df_consolidado["Fecha"] = df_consolidado["Fecha"].apply(parse_date_robust)
+    df_consolidado.dropna(subset=["Fecha"], inplace=True, ignore_index=True) 
     
     if df_consolidado.empty:
         st.warning("No hay sesiones con fechas válidas después de la consolidación y el parseo de fechas.")
@@ -234,19 +249,15 @@ def load_sesiones_data():
     df_final['MesNombre'] = df_final['Fecha'].dt.month_name()
     df_final['AñoMes'] = df_final['Fecha'].dt.strftime('%Y-%m')
 
-    # Asegurar que SQL exista y llenar pd.NA ANTES de astype(str)
     if "SQL" not in df_final.columns: df_final["SQL"] = ""
     df_final["SQL"] = df_final["SQL"].fillna("").astype(str).str.strip().str.upper()
-    df_final['SQL_Estandarizado'] = df_final['SQL'] # Inicializar con los valores ya procesados
-    
+    df_final['SQL_Estandarizado'] = df_final['SQL'] 
     known_sql_values = [s for s in SQL_ORDER_OF_IMPORTANCE if s != 'SIN CALIFICACIÓN SQL']
-    # La columna SQL_Estandarizado ya es string, no debería tener pd.NA aquí
-    mask_empty_sql = ~df_final['SQL_Estandarizado'].isin(known_sql_values) & \
-                     (df_final['SQL_Estandarizado'].isin(['', 'NAN', 'NONE', 'NA', '<NA>'])) # <NA> es la representación string de pd.NA
+    sql_estandarizado_str = df_final['SQL_Estandarizado'].astype(str)
+    mask_empty_sql = ~sql_estandarizado_str.isin(known_sql_values) & \
+                     (sql_estandarizado_str.isin(['', 'NAN', 'NONE', 'NA', '<NA>']))
     df_final.loc[mask_empty_sql, 'SQL_Estandarizado'] = 'SIN CALIFICACIÓN SQL'
-    # Volver a asegurar que los vacíos sean SIN CALIFICACIÓN SQL
     df_final.loc[df_final['SQL_Estandarizado'] == '', 'SQL_Estandarizado'] = 'SIN CALIFICACIÓN SQL'
-
 
     default_values_fill = {
         "AE": "No Asignado AE", "LG": "No Asignado LG", "Puesto": "No Especificado",
@@ -257,7 +268,6 @@ def load_sesiones_data():
         "Teléfono": "No Especificado", "Tipo_Sesion_SA": "N/A", "Attendees_SA": "N/A", 
         "Web_SA": "No Especificado", "Direccion_SA": "No Especificado"
     }
-
     for col, default_val in default_values_fill.items():
         if col not in df_final.columns: 
             df_final[col] = default_val 
@@ -265,7 +275,6 @@ def load_sesiones_data():
             df_final[col] = df_final[col].fillna(default_val) 
             df_final[col] = df_final[col].astype(str).str.strip()
             df_final.loc[df_final[col].isin(['', 'nan', 'none', 'NaN', 'None', 'NA', '<NA>']), col] = default_val
-            
     if "Puesto" in df_final.columns:
          df_final.loc[df_final["Puesto"].str.strip().eq(""), "Puesto"] = "No Especificado"
             
@@ -276,16 +285,13 @@ def load_sesiones_data():
         else:
             if col in ['Año', 'NumSemana']: df_to_return[col] = pd.Series(dtype='Int64')
             elif col == 'Fecha': df_to_return[col] = pd.Series(dtype='datetime64[ns]')
-            else: df_to_return[col] = "No Especificado" # Default para columnas faltantes en la estructura final
-            
+            else: df_to_return[col] = "No Especificado" 
     return df_to_return
 
-# --- (El resto de tus funciones: clear_ses_filters_callback, sidebar_filters_sesiones, etc. y el flujo principal se mantienen igual) ---
-# --- Copia y pega el resto de tu archivo original desde la definición de clear_ses_filters_callback() hasta el final ---
+# --- El resto de tus funciones y flujo principal de la página se mantienen igual ---
 # (Tu código para clear_ses_filters_callback, sidebar_filters_sesiones, apply_sesiones_filters,
 #  get_sql_category_order, display_sesiones_summary_sql, display_analisis_por_dimension,
-#  display_evolucion_sql, display_tabla_sesiones_detalle, y el flujo principal se mantiene aquí,
-#  exactamente como lo tenías en el archivo que me pasaste.)
+#  display_evolucion_sql, display_tabla_sesiones_detalle, y el flujo principal se mantiene aquí)
 
 def clear_ses_filters_callback():
     for key, value in default_filters_config.items():
@@ -293,7 +299,6 @@ def clear_ses_filters_callback():
     st.toast("Filtros reiniciados ✅", icon="🧹")
 
 def sidebar_filters_sesiones(df_options):
-    # (Tu código original para sidebar_filters_sesiones, asegurando que .get() se use para columnas opcionales)
     st.sidebar.header("🔍 Filtros de Sesiones")
     st.sidebar.markdown("---")
     min_d, max_d = (df_options["Fecha"].min().date(), df_options["Fecha"].max().date()) if "Fecha" in df_options and not df_options["Fecha"].dropna().empty and pd.api.types.is_datetime64_any_dtype(df_options["Fecha"]) else (None, None)
@@ -301,27 +306,24 @@ def sidebar_filters_sesiones(df_options):
     c1.date_input("Desde", value=st.session_state.get(SES_START_DATE_KEY), min_value=min_d, max_value=max_d, format="DD/MM/YYYY", key=SES_START_DATE_KEY)
     c2.date_input("Hasta", value=st.session_state.get(SES_END_DATE_KEY), min_value=min_d, max_value=max_d, format="DD/MM/YYYY", key=SES_END_DATE_KEY)
     st.sidebar.markdown("---")
-    years_series = df_options.get("Año", pd.Series(dtype='Int64')) # Usar .get()
+    years_series = df_options.get("Año", pd.Series(dtype='Int64'))
     years = ["– Todos –"] + (sorted(years_series.dropna().astype(int).unique(), reverse=True) if not years_series.dropna().empty else [])
     current_year_val_in_state = st.session_state.get(SES_YEAR_FILTER_KEY,"– Todos –")
     if current_year_val_in_state not in years: current_year_val_in_state = "– Todos –"
     st.sidebar.selectbox("Año", years, key=SES_YEAR_FILTER_KEY, index=years.index(current_year_val_in_state))
     sel_y = int(st.session_state[SES_YEAR_FILTER_KEY]) if st.session_state[SES_YEAR_FILTER_KEY] != "– Todos –" else None
-    
     weeks_df = df_options[df_options["Año"] == sel_y] if sel_y is not None and "Año" in df_options.columns else df_options
-    num_semana_series = weeks_df.get("NumSemana", pd.Series(dtype='Int64')) # Usar .get()
+    num_semana_series = weeks_df.get("NumSemana", pd.Series(dtype='Int64'))
     weeks = ["– Todas –"] + (sorted(num_semana_series.dropna().astype(int).unique()) if not num_semana_series.dropna().empty else [])
     current_week_selection_in_state = st.session_state.get(SES_WEEK_FILTER_KEY, ["– Todas –"])
     validated_week_selection = [val for val in current_week_selection_in_state if val in weeks]
     if not validated_week_selection or (len(validated_week_selection) == 1 and validated_week_selection[0] not in weeks and "– Todas –" in weeks):
-        validated_week_selection = ["– Todas –"] if "– Todas –" in weeks else [] # Corregido
+        validated_week_selection = ["– Todas –"] if "– Todas –" in weeks else []
     elif not validated_week_selection and weeks:
          validated_week_selection = [weeks[0]] if weeks and weeks[0] != "– Todas –" else []
     st.sidebar.multiselect("Semanas", weeks, key=SES_WEEK_FILTER_KEY, default=validated_week_selection)
-
     st.sidebar.markdown("---")
     st.sidebar.subheader("👥 Por Analistas, País y Calificación")
-    
     def create_multiselect_options(df_col_series, session_key):
         options = ["– Todos –"] + (sorted(df_col_series.astype(str).dropna().unique()) if not df_col_series.dropna().empty else [])
         current_selection = st.session_state.get(session_key, ["– Todos –"])
@@ -329,14 +331,12 @@ def sidebar_filters_sesiones(df_options):
         if not valid_selection: 
             valid_selection = ["– Todos –"] if "– Todos –" in options else ([options[0]] if options and options[0] != "– Todos –" else [])
         return options, valid_selection
-
     lgs_options, valid_lg_default = create_multiselect_options(df_options.get("LG", pd.Series(dtype=str)), SES_LG_FILTER_KEY)
     st.sidebar.multiselect("Analista LG", lgs_options, key=SES_LG_FILTER_KEY, default=valid_lg_default)
     ae_options, valid_ae_default = create_multiselect_options(df_options.get("AE", pd.Series(dtype=str)), SES_AE_FILTER_KEY)
     st.sidebar.multiselect("Account Executive (AE)", ae_options, key=SES_AE_FILTER_KEY, default=valid_ae_default)
     paises_opts, valid_pais_default = create_multiselect_options(df_options.get("País", pd.Series(dtype=str)), SES_PAIS_FILTER_KEY)
     st.sidebar.multiselect("País", paises_opts, key=SES_PAIS_FILTER_KEY, default=valid_pais_default)
-    
     sql_series_for_options = df_options.get("SQL_Estandarizado", pd.Series(dtype=str))
     sqls_unique_vals = sql_series_for_options.astype(str).dropna().unique()
     sqls_opts_ordered = ["– Todos –"] + [s for s in SQL_ORDER_OF_IMPORTANCE if s in sqls_unique_vals] + sorted([s for s in sqls_unique_vals if s not in SQL_ORDER_OF_IMPORTANCE])
