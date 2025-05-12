@@ -265,9 +265,10 @@ def load_sesiones_data():
         st.warning("No hay sesiones con fechas válidas después de la consolidación y parseo.")
         return df_final_structure
 
-    # --- 4. Procesamiento Post-Consolidación ---
+ # --- 4. Procesamiento Post-Consolidación ---
     df_procesado = df_consolidado.copy()
     try:
+        # Crear columnas de tiempo PRIMERO
         df_procesado['Año'] = df_procesado['Fecha'].dt.year.astype('Int64')
         df_procesado['NumSemana'] = df_procesado['Fecha'].dt.isocalendar().week.astype('Int64')
         df_procesado['MesNombre'] = df_procesado['Fecha'].dt.month_name()
@@ -276,33 +277,78 @@ def load_sesiones_data():
         st.error(f"Error al crear columnas de tiempo: {e_time}")
         return df_final_structure
 
-    if "SQL" not in df_procesado.columns: df_procesado["SQL"] = ""
-    df_procesado["SQL"] = df_procesado["SQL"].fillna("").astype(str).str.strip().str.upper()
-    df_procesado['SQL_Estandarizado'] = df_procesado['SQL']
-    known_sql_values = [s for s in SQL_ORDER_OF_IMPORTANCE if s != 'SIN CALIFICACIÓN SQL']
-    sql_estandarizado_str = df_procesado['SQL_Estandarizado'].astype(str)
-    mask_empty_sql = ~sql_estandarizado_str.isin(known_sql_values) & \
-                     (sql_estandarizado_str.isin(['', 'NAN', 'NONE', 'NA', '<NA>', 'N/A']))
-    df_procesado.loc[mask_empty_sql, 'SQL_Estandarizado'] = 'SIN CALIFICACIÓN SQL'
-    df_procesado.loc[df_procesado['SQL_Estandarizado'] == '', 'SQL_Estandarizado'] = 'SIN CALIFICACIÓN SQL'
-
-    # --- 5. Llenar NaNs y aplicar Defaults (SOLO para COLUMNAS_CENTRALES) ---
+    # --- 5. Llenar NaNs y aplicar Defaults (Genérico para la mayoría de columnas) ---
     default_values_fill = {
         "AE": "No Asignado AE", "LG": "No Asignado LG", "Puesto": "No Especificado",
         "Empresa": "No Especificado", "País": "No Especificado", "Nombre": "No Especificado",
         "Apellido": "No Especificado", "Siguientes Pasos": "No Especificado",
         "Email": "No Especificado", "RPA": "No Aplicable",
         "LinkedIn": "No Especificado", "Fuente_Hoja": "Desconocida",
-        "SQL": "SIN CALIFICACIÓN SQL", "SQL_Estandarizado": "SIN CALIFICACIÓN SQL"
+        # Definir defaults para SQL aquí, pero la lógica específica viene después
+        "SQL": "SIN CALIFICACIÓN SQL",
+        "SQL_Estandarizado": "SIN CALIFICACIÓN SQL"
     }
+
+    # Lista de valores a reemplazar genéricamente (representan vacío/NA)
+    generic_empty_na_values = ['', 'nan', 'none', 'NaN', 'None', '<NA>', '#N/A', 'N/A'] # Incluye 'NA', 'N/A'
+
+    # Iterar sobre columnas centrales para limpieza genérica
     for col in COLUMNAS_CENTRALES:
+        # Omitir SQL y SQL_Estandarizado en este paso genérico de reemplazo
+        # Se tratarán específicamente después para mantener la lógica de 'NA' vs 'SIN CALIFICACIÓN'
+        if col in ["SQL", "SQL_Estandarizado"]:
+            # Solo asegurar que la columna existe y llenar NAs básicos si es necesario
+            if col not in df_procesado.columns:
+                 df_procesado[col] = default_values_fill[col] # Crear con default si falta
+            df_procesado[col] = df_procesado[col].fillna(default_values_fill[col]) # Llenar NAs de Pandas
+            continue # Pasar a la siguiente columna
+
+        # --- Limpieza genérica para OTRAS columnas ---
         if col in df_procesado.columns:
             default_val = default_values_fill.get(col, "No Especificado")
-            df_procesado[col] = df_procesado[col].astype(str)
-            df_procesado[col] = df_procesado[col].replace(['', 'nan', 'none', 'NaN', 'None', 'NA', '<NA>', '#N/A', 'N/A'], default_val, regex=False)
+            df_procesado[col] = df_procesado[col].astype(str) # Convertir a string
+            # Reemplazar valores vacíos/NA genéricos con el default
+            df_procesado[col] = df_procesado[col].replace(generic_empty_na_values, default_val, regex=False)
             df_procesado[col] = df_procesado[col].str.strip()
-            df_procesado.loc[df_procesado[col] == '', col] = default_val
-            df_procesado[col] = df_procesado[col].fillna(default_val)
+            df_procesado.loc[df_procesado[col] == '', col] = default_val # Llenar vacíos post-strip
+            df_procesado[col] = df_procesado[col].fillna(default_val) # Llenar NAs restantes
+        elif col not in df_procesado.columns:
+             # Crear columna si falta (excepto Fecha, Año, NumSemana que ya deberían estar)
+             if col not in ['Fecha', 'Año', 'NumSemana']:
+                  df_procesado[col] = default_values_fill.get(col, "No Disponible")
+
+    # --- 5b. ESTANDARIZACIÓN ESPECÍFICA DE SQL (Restaurando lógica original) ---
+    # Asegurar que las columnas existan (aunque ya deberían por el paso anterior)
+    if "SQL" not in df_procesado.columns: df_procesado["SQL"] = default_values_fill["SQL"]
+    if "SQL_Estandarizado" not in df_procesado.columns: df_procesado["SQL_Estandarizado"] = default_values_fill["SQL_Estandarizado"]
+
+    # 1. Limpiar y estandarizar la columna SQL original (fill NA con '', strip, upper)
+    df_procesado["SQL"] = df_procesado["SQL"].fillna("").astype(str).str.strip().str.upper()
+
+    # 2. Copiar a SQL_Estandarizado
+    df_procesado['SQL_Estandarizado'] = df_procesado['SQL']
+
+    # 3. Definir valores SQL conocidos VÁLIDOS (incluye 'NA' como categoría válida)
+    #    Se excluye 'SIN CALIFICACIÓN SQL' porque es la categoría a la que asignaremos los vacíos.
+    known_sql_values = [s for s in SQL_ORDER_OF_IMPORTANCE if s != 'SIN CALIFICACIÓN SQL']
+    # known_sql_values contendrá ['SQL1', 'SQL2', 'MQL', 'NA']
+
+    # 4. Identificar filas que NO son un SQL conocido Y que representan un valor vacío/genérico-NA
+    #    (Esta máscara NO debería seleccionar filas donde el valor es exactamente 'NA' porque 'NA' está en known_sql_values)
+    sql_estandarizado_str = df_procesado['SQL_Estandarizado'].astype(str) # Asegurar string
+    mask_empty_sql = ~sql_estandarizado_str.isin(known_sql_values) & \
+                     (sql_estandarizado_str.isin(['', 'NAN', 'NONE', '<NA>', 'N/A'])) # Lista original de vacíos/genéricos
+
+    # 5. Asignar 'SIN CALIFICACIÓN SQL' a esas filas
+    df_procesado.loc[mask_empty_sql, 'SQL_Estandarizado'] = 'SIN CALIFICACIÓN SQL'
+
+    # 6. Asegurar que cualquier string vacío restante también sea 'SIN CALIFICACIÓN SQL'
+    df_procesado.loc[df_procesado['SQL_Estandarizado'] == '', 'SQL_Estandarizado'] = 'SIN CALIFICACIÓN SQL'
+
+    # En este punto:
+    # - Valores originales 'SQL1', 'SQL2', 'MQL', 'NA' se mantienen en SQL_Estandarizado.
+    # - Valores originales '', None, 'nan', '<NA>', 'N/A' se convierten en 'SIN CALIFICACIÓN SQL'.
+    # - Otros valores no reconocidos (typos, etc.) se mantienen como estaban (en mayúsculas).
 
     # --- 6. SELECCIÓN FINAL DE COLUMNAS ---
     df_final_filtrado = pd.DataFrame()
@@ -312,11 +358,13 @@ def load_sesiones_data():
             df_final_filtrado[col] = df_procesado[col]
         else:
             # Si falta una columna central, la crea vacía o con default
+            # (Manejo de tipos para Año, NumSemana, Fecha igual que antes)
             if col in ['Año', 'NumSemana']: df_final_filtrado[col] = pd.NA
             elif col == 'Fecha': df_final_filtrado[col] = pd.NaT
             else: df_final_filtrado[col] = default_values_fill.get(col, "No Disponible")
 
     # --- 7. Ajuste Final de Tipos ---
+    # (Se mantiene igual que antes)
     try:
         if 'Fecha' in df_final_filtrado.columns:
              df_final_filtrado['Fecha'] = pd.to_datetime(df_final_filtrado['Fecha'], errors='coerce')
