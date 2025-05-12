@@ -174,8 +174,8 @@ def load_sesiones_data():
         return df_final_structure
 
     all_dataframes = []
-    df_proc_principal = pd.DataFrame() # Inicializar fuera del try
-    df_suramerica_processed = pd.DataFrame() # Inicializar fuera del try
+    df_proc_principal = pd.DataFrame()
+    df_suramerica_processed = pd.DataFrame()
 
     # --- 1. Cargar Hoja Principal ("Sesiones 2024-2025") ---
     sheet_url_principal_actual = st.secrets.get("SESIONES_PRINCIPAL_SHEET_URL", SHEET_URL_SESIONES_PRINCIPAL_DEFAULT)
@@ -187,8 +187,7 @@ def load_sesiones_data():
         if raw_data_principal_list and len(raw_data_principal_list) > 1:
             headers_p = make_unique_headers(raw_data_principal_list[0])
             df_principal_raw = pd.DataFrame(raw_data_principal_list[1:], columns=headers_p)
-
-            df_proc_principal = pd.DataFrame() # Reinicializar para esta carga
+            df_proc_principal = pd.DataFrame()
             df_proc_principal["Fecha"] = df_principal_raw.get("Fecha")
             df_proc_principal["Empresa"] = df_principal_raw.get("Empresa")
             df_proc_principal["País"] = df_principal_raw.get("País")
@@ -203,8 +202,8 @@ def load_sesiones_data():
             df_proc_principal["RPA"] = df_principal_raw.get("RPA")
             df_proc_principal["LinkedIn"] = df_principal_raw.get("LinkedIn")
             df_proc_principal["Fuente_Hoja"] = "Principal"
-            st.write(f"1. Filas cargadas y procesadas de Principal: {len(df_proc_principal)}") # DEBUG
-            all_dataframes.append(df_proc_principal) # Añadir a la lista solo si se procesó
+            st.write(f"1. Filas cargadas y procesadas de Principal: {len(df_proc_principal)}")
+            all_dataframes.append(df_proc_principal)
         else:
             st.warning(f"Hoja Principal ('{SHEET_NAME_SESIONES_PRINCIPAL}') vacía o solo con encabezados.")
     except gspread.exceptions.WorksheetNotFound:
@@ -214,40 +213,31 @@ def load_sesiones_data():
     except Exception as e:
         st.error(f"Error general al cargar/procesar Hoja Principal: {e}")
 
-
     # --- 2. Cargar Hoja Suramérica ("BD Sesiones 2024") ---
     sheet_url_suramerica_actual = st.secrets.get("SESIONES_SURAMERICA_SHEET_URL", SHEET_URL_SESIONES_SURAMERICA_DEFAULT)
     try:
         workbook_suramerica = client.open_by_url(sheet_url_suramerica_actual)
-        sheet_suramerica = workbook_suramerica.worksheet(SHEET_NAME_SESIONES_SURAMERICA) # Nombre correcto
-
-        # ***** Usando get_all_values para Suramérica *****
+        sheet_suramerica = workbook_suramerica.worksheet(SHEET_NAME_SESIONES_SURAMERICA)
         raw_data_suramerica_list = sheet_suramerica.get_all_values()
-
-        df_suramerica_raw = pd.DataFrame() # Inicializar vacío
+        df_suramerica_raw = pd.DataFrame()
         if raw_data_suramerica_list and len(raw_data_suramerica_list) > 1:
             headers_sa = make_unique_headers(raw_data_suramerica_list[0])
             df_suramerica_raw = pd.DataFrame(raw_data_suramerica_list[1:], columns=headers_sa)
-            st.write(f"2. Filas leídas Suramérica (raw con get_all_values): {len(df_suramerica_raw)}") # DEBUG
+            st.write(f"2. Filas leídas Suramérica (raw con get_all_values): {len(df_suramerica_raw)}")
         else:
              st.warning(f"Hoja Suramérica ('{SHEET_NAME_SESIONES_SURAMERICA}') con get_all_values vacía o solo con encabezados.")
 
-        # Continuar solo si df_suramerica_raw tiene datos
         if not df_suramerica_raw.empty:
-            df_suramerica_processed = pd.DataFrame() # Reinicializar para esta carga
-
-            # --- Mapeo ---
+            df_suramerica_processed = pd.DataFrame()
             df_suramerica_processed["Fecha"] = df_suramerica_raw.get("Fecha")
             df_suramerica_processed["Empresa"] = df_suramerica_raw.get("Empresa")
             df_suramerica_processed["País"] = df_suramerica_raw.get("País")
             df_suramerica_processed["Siguientes Pasos"] = df_suramerica_raw.get("Siguientes Pasos")
             df_suramerica_processed["SQL"] = df_suramerica_raw.get("SQL")
-            df_suramerica_processed["Email"] = df_suramerica_raw.get("Correo") # Desde "Correo"
+            df_suramerica_processed["Email"] = df_suramerica_raw.get("Correo")
             df_suramerica_processed["LinkedIn"] = df_suramerica_raw.get("LinkedIn")
             df_suramerica_processed["LG"] = df_suramerica_raw.get("LG")
             df_suramerica_processed["AE"] = df_suramerica_raw.get("AE")
-
-            # Procesar "Nombre y Cargo"
             if "Nombre y Cargo" in df_suramerica_raw.columns:
                  nombres_cargos_split = df_suramerica_raw["Nombre y Cargo"].apply(separar_nombre_cargo_suramerica)
                  df_suramerica_processed["Nombre"] = nombres_cargos_split.apply(lambda x: x[0])
@@ -255,8 +245,6 @@ def load_sesiones_data():
                  df_suramerica_processed["Puesto"] = nombres_cargos_split.apply(lambda x: x[2])
             else:
                  df_suramerica_processed["Nombre"], df_suramerica_processed["Apellido"], df_suramerica_processed["Puesto"] = pd.NA, pd.NA, "No Especificado"
-
-            # Columnas extra de Suramérica (se cargarán temporalmente)
             df_suramerica_processed["Interes_del_Lead_SA"] = df_suramerica_raw.get("Interes del Lead")
             df_suramerica_processed["Estado_SA"] = df_suramerica_raw.get("Estado")
             df_suramerica_processed["Telefono_SA"] = df_suramerica_raw.get("Teléfono")
@@ -264,13 +252,9 @@ def load_sesiones_data():
             df_suramerica_processed["Asistencia_BDRs_SA"] = df_suramerica_raw.get("Asistencia BDR´s")
             df_suramerica_processed["Web_SA"] = df_suramerica_raw.get("Web")
             df_suramerica_processed["Direccion_SA"] = df_suramerica_raw.get("Dirección")
-            # --- Fin Mapeo ---
-
             df_suramerica_processed["Fuente_Hoja"] = "Suramérica"
-            st.write(f"3. Filas procesadas Suramérica: {len(df_suramerica_processed)}") # DEBUG
-            all_dataframes.append(df_suramerica_processed) # Añadir a la lista solo si se procesó
-        # else: No hacer nada si df_suramerica_raw estaba vacío
-
+            st.write(f"3. Filas procesadas Suramérica: {len(df_suramerica_processed)}")
+            all_dataframes.append(df_suramerica_processed)
     except gspread.exceptions.WorksheetNotFound:
          st.error(f"ERROR CRÍTICO: No se encontró la hoja de Suramérica llamada '{SHEET_NAME_SESIONES_SURAMERICA}'. Verifica el nombre.")
     except gspread.exceptions.GSpreadException as e:
@@ -283,44 +267,45 @@ def load_sesiones_data():
         st.error("No se pudieron cargar datos de ninguna hoja para consolidar.")
         return df_final_structure
 
-    st.write(f"4. DataFrames a consolidar: {len(all_dataframes)}") # DEBUG
+    st.write(f"4. DataFrames a consolidar: {len(all_dataframes)}")
     df_consolidado = pd.concat(all_dataframes, ignore_index=True, sort=False)
-    st.write(f"5. Filas consolidadas: {len(df_consolidado)}") # DEBUG
+    st.write(f"5. Filas consolidadas: {len(df_consolidado)}")
     if not df_consolidado.empty:
-         st.write("6. Distribución Fuente_Hoja post-consolidación:") # DEBUG
-         st.write(df_consolidado['Fuente_Hoja'].value_counts()) # DEBUG
-
+         st.write("6. Distribución Fuente_Hoja ANTES de dropna(Fecha):") # MODIFICADO
+         st.dataframe(df_consolidado['Fuente_Hoja'].value_counts(dropna=False).reset_index()) # MODIFICADO para mostrar mejor
 
     # Validar y parsear 'Fecha'
     if "Fecha" not in df_consolidado.columns or df_consolidado["Fecha"].isnull().all():
          st.error("Columna 'Fecha' esencial no encontrada o vacía en los datos consolidados.")
          return df_final_structure
 
-    # Aplicar parseo robusto
     df_consolidado["Fecha_Original"] = df_consolidado["Fecha"] # Guardar original para debug
     df_consolidado["Fecha"] = df_consolidado["Fecha"].apply(parse_date_robust)
 
-    # Contar cuántas fechas fallaron el parseo
     failed_date_parses = df_consolidado["Fecha"].isna().sum()
     if failed_date_parses > 0:
-        st.warning(f"7. {failed_date_parses} filas no pudieron parsear la fecha y serán eliminadas.") # DEBUG
-        # st.write("Ejemplos de fechas no parseadas:", df_consolidado.loc[df_consolidado["Fecha"].isna(), "Fecha_Original"].head()) # DEBUG opcional
+        st.warning(f"7. {failed_date_parses} filas no pudieron parsear la fecha y serán eliminadas.")
+        # **** MODIFICADO: Mostrar ejemplos de fechas no parseadas Y SU FUENTE ****
+        st.write("Ejemplos de fechas (originales) NO PARSEADAS y su Fuente_Hoja (hasta 20):")
+        problematic_dates_df = df_consolidado.loc[df_consolidado["Fecha"].isna(), ["Fecha_Original", "Fuente_Hoja"]].head(20)
+        st.dataframe(problematic_dates_df) # MODIFICADO para mostrar mejor
+        # **** FIN MODIFICACIÓN ****
 
-    # Eliminar filas donde la fecha no se pudo parsear
     df_consolidado.dropna(subset=["Fecha"], inplace=True)
-    st.write(f"8. Filas después de eliminar fechas inválidas: {len(df_consolidado)}") # DEBUG
+    st.write(f"8. Filas después de eliminar fechas inválidas: {len(df_consolidado)}")
     if not df_consolidado.empty:
-         st.write("9. Distribución Fuente_Hoja post-dropna(Fecha):") # DEBUG
-         st.write(df_consolidado['Fuente_Hoja'].value_counts()) # DEBUG
+         st.write("9. Distribución Fuente_Hoja DESPUÉS de dropna(Fecha):") # MODIFICADO
+         st.dataframe(df_consolidado['Fuente_Hoja'].value_counts(dropna=False).reset_index()) # MODIFICADO para mostrar mejor
 
     if df_consolidado.empty:
         st.warning("No hay sesiones con fechas válidas después de la consolidación y parseo.")
         return df_final_structure
 
     # --- 4. Procesamiento Post-Consolidación ---
+    # (El resto de la función load_sesiones_data, y las demás funciones del script se mantienen igual)
+    # ... (código para df_procesado, columnas de tiempo, SQL_Estandarizado, llenado de NaNs, selección final, etc.) ...
+    # ... (esto es igual a la última versión completa que te di) ...
     df_procesado = df_consolidado.copy()
-
-    # Crear columnas derivadas (Año, Semana, Mes, SQL Estandarizado)
     try:
         df_procesado['Año'] = df_procesado['Fecha'].dt.year.astype('Int64')
         df_procesado['NumSemana'] = df_procesado['Fecha'].dt.isocalendar().week.astype('Int64')
@@ -328,9 +313,8 @@ def load_sesiones_data():
         df_procesado['AñoMes'] = df_procesado['Fecha'].dt.strftime('%Y-%m')
     except Exception as e_time:
         st.error(f"Error al crear columnas de tiempo: {e_time}")
-        return df_final_structure # Salir si falla aquí
+        return df_final_structure
 
-    # Estandarizar SQL
     if "SQL" not in df_procesado.columns: df_procesado["SQL"] = ""
     df_procesado["SQL"] = df_procesado["SQL"].fillna("").astype(str).str.strip().str.upper()
     df_procesado['SQL_Estandarizado'] = df_procesado['SQL']
@@ -341,7 +325,6 @@ def load_sesiones_data():
     df_procesado.loc[mask_empty_sql, 'SQL_Estandarizado'] = 'SIN CALIFICACIÓN SQL'
     df_procesado.loc[df_procesado['SQL_Estandarizado'] == '', 'SQL_Estandarizado'] = 'SIN CALIFICACIÓN SQL'
 
-    # --- 5. Llenar NaNs y aplicar Defaults (SOLO para COLUMNAS_CENTRALES) ---
     default_values_fill = {
         "AE": "No Asignado AE", "LG": "No Asignado LG", "Puesto": "No Especificado",
         "Empresa": "No Especificado", "País": "No Especificado", "Nombre": "No Especificado",
@@ -353,15 +336,12 @@ def load_sesiones_data():
     for col in COLUMNAS_CENTRALES:
         if col in df_procesado.columns:
             default_val = default_values_fill.get(col, "No Especificado")
-            # Convertir a string ANTES de reemplazar/llenar
             df_procesado[col] = df_procesado[col].astype(str)
-            # Reemplazar varios tipos de "vacío" con el default
             df_procesado[col] = df_procesado[col].replace(['', 'nan', 'none', 'NaN', 'None', 'NA', '<NA>', '#N/A', 'N/A'], default_val, regex=False)
             df_procesado[col] = df_procesado[col].str.strip()
-            df_procesado.loc[df_procesado[col] == '', col] = default_val # Asegurar que vacíos post-strip se llenen
-            df_procesado[col] = df_procesado[col].fillna(default_val) # Llenar NAs restantes
+            df_procesado.loc[df_procesado[col] == '', col] = default_val
+            df_procesado[col] = df_procesado[col].fillna(default_val)
 
-    # --- 6. SELECCIÓN FINAL DE COLUMNAS ---
     df_final_filtrado = pd.DataFrame()
     columnas_existentes_en_procesado = df_procesado.columns.tolist()
     for col in COLUMNAS_CENTRALES:
@@ -373,12 +353,11 @@ def load_sesiones_data():
             elif col == 'Fecha': df_final_filtrado[col] = pd.NaT
             else: df_final_filtrado[col] = default_values_fill.get(col, "No Disponible")
 
-    st.write(f"10. Filas en DataFrame final (solo columnas centrales): {len(df_final_filtrado)}") # DEBUG
+    st.write(f"10. Filas en DataFrame final (solo columnas centrales): {len(df_final_filtrado)}")
     if not df_final_filtrado.empty:
-         st.write("11. Distribución Fuente_Hoja en DataFrame final:") # DEBUG
-         st.write(df_final_filtrado['Fuente_Hoja'].value_counts()) # DEBUG
+         st.write("11. Distribución Fuente_Hoja en DataFrame final:")
+         st.dataframe(df_final_filtrado['Fuente_Hoja'].value_counts(dropna=False).reset_index()) # MODIFICADO para mostrar mejor
 
-    # --- 7. Ajuste Final de Tipos ---
     try:
         if 'Fecha' in df_final_filtrado.columns:
              df_final_filtrado['Fecha'] = pd.to_datetime(df_final_filtrado['Fecha'], errors='coerce')
@@ -386,17 +365,20 @@ def load_sesiones_data():
              df_final_filtrado['Año'] = pd.to_numeric(df_final_filtrado['Año'], errors='coerce').astype('Int64')
         if 'NumSemana' in df_final_filtrado.columns:
              df_final_filtrado['NumSemana'] = pd.to_numeric(df_final_filtrado['NumSemana'], errors='coerce').astype('Int64')
-        # Convertir el resto a string para evitar problemas en visualizaciones
         for col in df_final_filtrado.columns:
              if col not in ['Fecha', 'Año', 'NumSemana']:
-                 # Check if column exists before trying to convert
                  if col in df_final_filtrado.columns:
                      df_final_filtrado[col] = df_final_filtrado[col].astype(str)
     except Exception as e_type:
         st.warning(f"Error al ajustar tipos finales: {e_type}")
 
-    st.write("--- Fin Carga y Procesamiento ---") # DEBUG
+    st.write("--- Fin Carga y Procesamiento ---")
     return df_final_filtrado
+
+# --- El resto de tu código (clear_ses_filters_callback, sidebar_filters_sesiones, apply_sesiones_filters, etc.
+# y el flujo principal de la página se mantienen igual que en la última versión completa) ---
+# COPIA Y PEGA AQUÍ EL RESTO DE LAS FUNCIONES Y EL FLUJO PRINCIPAL DE TU SCRIPT
+# DESDE clear_ses_filters_callback() HASTA EL FINAL DEL ARCHIVO.
 
 # --- Funciones de Visualización y Filtros ---
 # (Estas funciones: clear_ses_filters_callback, sidebar_filters_sesiones,
