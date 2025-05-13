@@ -4,7 +4,8 @@ def aplicar_filtros(
     df,
     filtro_fuente_lista, filtro_proceso, filtro_pais, filtro_industria, filtro_avatar,
     filtro_prospectador, filtro_invite_aceptada_simple, filtro_sesion_agendada,
-    fecha_ini, fecha_fin
+    fecha_ini, fecha_fin, # <--- AÑADIMOS UNA COMA AL FINAL DE ESTA LÍNEA
+    nombre_columna_fecha  # <--- ESTE ES EL NUEVO PARÁMETRO
 ):
     df_filtrado = df.copy()
 
@@ -32,11 +33,18 @@ def aplicar_filtros(
             .apply(lambda x: str(x).strip().lower() == filtro_invite_aceptada_simple.strip().lower())
         ]
 
-    if fecha_ini and fecha_fin:
+    # --- SECCIÓN MODIFICADA PARA EL FILTRO DE FECHAS ---
+    if fecha_ini and fecha_fin and nombre_columna_fecha in df_filtrado.columns: # Asegurarse que la columna exista
+        # Convertir a datetime si no lo está ya (importante para .dt)
+        if not pd.api.types.is_datetime64_any_dtype(df_filtrado[nombre_columna_fecha]):
+            df_filtrado[nombre_columna_fecha] = pd.to_datetime(df_filtrado[nombre_columna_fecha], errors='coerce')
+        
+        # Filtrar quitando la hora para comparar solo fechas
         df_filtrado = df_filtrado[
-            (df_filtrado["Fecha de Invite"].dt.date >= fecha_ini) &
-            (df_filtrado["Fecha de Invite"].dt.date <= fecha_fin)
+            (df_filtrado[nombre_columna_fecha].dt.normalize().dt.date >= fecha_ini) & # Usamos normalize() y luego .dt.date
+            (df_filtrado[nombre_columna_fecha].dt.normalize().dt.date <= fecha_fin)
         ]
+    # --- FIN DE LA SECCIÓN MODIFICADA ---
 
     if filtro_sesion_agendada != "– Todos –":
         df_filtrado = df_filtrado[
