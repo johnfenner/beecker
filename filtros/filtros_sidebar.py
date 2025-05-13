@@ -192,3 +192,38 @@ def mostrar_filtros_sidebar(df):
             st.session_state.get("fecha_ini", None),
             st.session_state.get("fecha_fin",
                                  None), st.session_state.get("busqueda", ""))
+
+# ... (otros filtros) ...
+
+    st.sidebar.subheader("Filtro de Fechas")
+    # Agrupar filtros de fecha en columnas (2 columnas)
+    col_f1, col_f2 = st.sidebar.columns(2)
+
+    fecha_min_data = None
+    fecha_max_data = None
+    # AQUÍ ES DONDE SE USA "Fecha de Invite"
+    if "Fecha de Invite" in df.columns and pd.api.types.is_datetime64_any_dtype(
+            df["Fecha de Invite"]):
+        valid_dates = df["Fecha de Invite"].dropna() # <--- USA "Fecha de Invite"
+        if not valid_dates.empty:
+            fecha_min_data = valid_dates.min().date()
+            fecha_max_data = valid_dates.max().date()
+
+    with col_f1:
+        fecha_ini = st.date_input(  # Usar st.date_input
+            "Desde", # ETIQUETA "Desde"
+            value=st.session_state.get("fecha_ini", None),
+            format='DD/MM/YYYY',
+            key="fecha_ini",
+            min_value=fecha_min_data, # Usa fecha_min_data de "Fecha de Invite"
+            max_value=fecha_max_data) # Usa fecha_max_data de "Fecha de Invite"
+    with col_f2:
+        fecha_fin = st.date_input(  # Usar st.date_input
+            "Hasta", # ETIQUETA "Hasta"
+            value=st.session_state.get("fecha_fin", None),
+            format='DD/MM/YYYY',
+            key="fecha_fin",
+            min_value=fecha_min_data, # Usa fecha_min_data de "Fecha de Invite"
+            max_value=fecha_max_data) # Usa fecha_max_data de "Fecha de Invite"
+
+# ... (resto del código) ...
