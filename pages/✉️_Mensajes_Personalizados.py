@@ -243,16 +243,17 @@ if st.session_state.mostrar_tabla_mensajes:
 
         df_mensajes_filtrado_temp = aplicar_filtros(
             df_mensajes_filtrado_temp,
-            st.session_state.mensaje_filtros.get("fuente_lista",
-                                                 ["– Todos –"]),
+            st.session_state.mensaje_filtros.get("fuente_lista", ["– Todos –"]),
             st.session_state.mensaje_filtros.get("proceso", ["– Todos –"]),
             st.session_state.mensaje_filtros.get("pais", ["– Todos –"]),
             st.session_state.mensaje_filtros.get("industria", ["– Todos –"]),
             st.session_state.mensaje_filtros.get("avatar", ["– Todos –"]),
-            st.session_state.mensaje_filtros.get("prospectador",
-                                                 ["– Todos –"]),
+            st.session_state.mensaje_filtros.get("prospectador", ["– Todos –"]),
             "– Todos –",
-            filtro_sesion_para_aplicar,
+            st.session_state.mensaje_filtros.get("sesion_agendada", "– Todos –"),
+            None,
+            None
+        )
             st.session_state.mensaje_filtros.get("fecha_ini", None),
             st.session_state.mensaje_filtros.get("fecha_fin", None),
             "Fecha Primer Mensaje"  # Nombre de la columna para filtrar por fecha
@@ -565,6 +566,5 @@ st.markdown("---")
 st.info(
     "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊"
 )
-
 
 
