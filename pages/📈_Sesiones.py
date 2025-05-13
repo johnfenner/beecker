@@ -106,27 +106,19 @@ def separar_nombre_cargo_suramerica(nombre_cargo_str):
     if pd.isna(nombre) and pd.notna(nombre_completo_str) and nombre_completo_str: nombre = nombre_completo_str
     return (str(nombre).strip() if pd.notna(nombre) else pd.NA, str(apellido).strip() if pd.notna(apellido) else pd.NA, str(puesto).strip() if pd.notna(puesto) and puesto else "No Especificado")
 
-@st.cache_data(ttl=300) # Puedes descomentar esto DESPUÉS de que el error desaparezca
+@st.cache_data(ttl=300)
 def load_sesiones_data():
-    """Carga datos de ambas hojas, consolida y devuelve un DataFrame SOLO con COLUMNAS_CENTRALES.
-       Esta función NO debe hacer llamadas a st.write, st.error, etc."""
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    df_final_structure = pd.DataFrame(columns=COLUMNAS_CENTRALES)
     try:
-        creds_dict = {
-            "type": st.secrets["google_sheets_credentials"]["type"], "project_id": st.secrets["google_sheets_credentials"]["project_id"],
-            "private_key_id": st.secrets["google_sheets_credentials"]["private_key_id"], "private_key": st.secrets["google_sheets_credentials"]["private_key"],
-            "client_email": st.secrets["google_sheets_credentials"]["client_email"], "client_id": st.secrets["google_sheets_credentials"]["client_id"],
-            "auth_uri": st.secrets["google_sheets_credentials"]["auth_uri"], "token_uri": st.secrets["google_sheets_credentials"]["token_uri"],
-            "auth_provider_x509_cert_url": st.secrets["google_sheets_credentials"]["auth_provider_x509_cert_url"],
-            "client_x509_cert_url": st.secrets["google_sheets_credentials"]["client_x509_cert_url"],
-            "universe_domain": st.secrets["google_sheets_credentials"]["universe_domain"]}
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        client = gspread.authorize(creds)
-    except KeyError as e:
-        raise ValueError(f"Error de Configuración (Secrets): Falta la clave '{e}'.") from e
+        # CORRECCIÓN: Usar la sección [gcp_service_account] de tus secretos
+        creds_dict_sesiones = st.secrets["gcp_service_account"] 
+        client = gspread.service_account_from_dict(creds_dict_sesiones)
+    except KeyError:
+        st.error("Error de Configuración (Secrets): Falta la sección [gcp_service_account] o alguna de sus claves en los 'Secrets' de Streamlit (Sesiones).")
+        st.error("Asegúrate de haber configurado correctamente tus secretos en Streamlit Cloud.")
+        st.stop()
     except Exception as e:
-        raise ValueError(f"Error de Autenticación con Google Sheets: {e}.") from e
+        st.error(f"Error al cargar credenciales para Sesiones desde st.secrets: {e}")
+        st.stop()
 
     all_dataframes = []
     # --- Cargar Hoja Principal ---
