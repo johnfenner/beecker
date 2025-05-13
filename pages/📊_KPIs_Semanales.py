@@ -182,7 +182,7 @@ def sidebar_filters_kpis(df_options):
     try:
         selected_index = year_options.index(current_year_selection)
     except ValueError:
-        st.sidebar.warning(f"'{current_year_selection}' no se encontró en las opciones de año. Usando la primera opción.") # <--- CAMBIO: st.sidebar.warning
+        # Ya no mostramos el warning en la sidebar, pero se podría loggear si fuera necesario
         if year_options:
             selected_index = 0
             current_year_selection = year_options[selected_index]
@@ -201,39 +201,24 @@ def sidebar_filters_kpis(df_options):
     )
     selected_year_int = int(selected_year_str) if selected_year_str != "– Todos –" and selected_year_str.isdigit() else None
     
-    # --- INICIO DE CAMBIOS CON DEBUG ---
-    st.sidebar.write(f"Año seleccionado (str): {selected_year_str}") # DEBUG
-    st.sidebar.write(f"Año seleccionado (int): {selected_year_int}") # DEBUG
-
     week_options = ["– Todas –"]
-    # Filtrar df_options por el año seleccionado para obtener las semanas correspondientes
     if selected_year_int is not None:
         df_for_week = df_options[df_options["Año"] == selected_year_int]
-    else: # Si el año es "– Todos –", usar todas las opciones
+    else:
         df_for_week = df_options
     
-    st.sidebar.write(f"Filas en df_for_week (para semanas): {len(df_for_week)}") # DEBUG
-
     if "NumSemana" in df_for_week.columns and not df_for_week["NumSemana"].dropna().empty:
         unique_weeks_for_year = sorted(df_for_week["NumSemana"].dropna().astype(int).unique())
         week_options.extend([str(w) for w in unique_weeks_for_year])
-        st.sidebar.write(f"Semanas únicas para el año '{selected_year_str}': {unique_weeks_for_year}") # DEBUG
-    
-    st.sidebar.write(f"Opciones finales de semana: {week_options}") # DEBUG
-    # --- FIN DE CAMBIOS CON DEBUG ---
     
     current_week_selection = st.session_state.get(WEEK_FILTER_KEY, ["– Todas –"])
-    # Asegurar que la selección actual de semanas sea válida con las nuevas opciones de semana
     valid_week_selection = [s for s in current_week_selection if s in week_options]
-    if not valid_week_selection: # Si ninguna de las selecciones anteriores es válida
+    if not valid_week_selection:
         if "– Todas –" in week_options:
             valid_week_selection = ["– Todas –"]
-        elif week_options: # Si hay opciones pero ninguna es "– Todas –" y la selección previa no es válida
-             valid_week_selection = [] # Dejar vacío o seleccionar la primera opción disponible si se prefiere
-                                     # valid_week_selection = [week_options[0]] # (si week_options[0] no es '– Todas –')
+        elif week_options:
+             valid_week_selection = [] 
     
-    # Si la selección válida es diferente de lo que estaba en el estado de sesión, actualizar el estado.
-    # Esto es importante para resetear la selección de semanas si el año cambia y las semanas previas ya no aplican.
     if set(valid_week_selection) != set(st.session_state.get(WEEK_FILTER_KEY, ["– Todas –"])):
         st.session_state[WEEK_FILTER_KEY] = valid_week_selection
     
@@ -256,8 +241,8 @@ def sidebar_filters_kpis(df_options):
         if not valid_selection_ms:
             if "– Todos –" in options:
                 valid_selection_ms = ["– Todos –"]
-            elif options: # Si hay opciones pero ninguna es "– Todos –"
-                valid_selection_ms = [] # O [options[0]] si se prefiere seleccionar la primera por defecto
+            elif options:
+                valid_selection_ms = []
 
         if set(valid_selection_ms) != set(st.session_state.get(key, ["– Todos –"])):
              st.session_state[key] = valid_selection_ms
@@ -270,7 +255,6 @@ def sidebar_filters_kpis(df_options):
     st.sidebar.markdown("---")
     st.sidebar.button("🧹 Limpiar Filtros de KPIs", on_click=clear_kpis_filters_callback, use_container_width=True, key="btn_clear_kpis_filters_v2")
     return (st.session_state[START_DATE_KEY], st.session_state[END_DATE_KEY], selected_year_int, st.session_state[WEEK_FILTER_KEY], analista_val_kpis, region_val_kpis)
-
 def apply_kpis_filters(df, start_dt, end_dt, year_val, week_list, analista_list, region_list):
     df_f = df.copy()
     if "Fecha" in df_f.columns and pd.api.types.is_datetime64_any_dtype(df_f["Fecha"]):
