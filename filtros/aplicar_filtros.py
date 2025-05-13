@@ -33,10 +33,17 @@ def aplicar_filtros(
         ]
 
     if fecha_ini and fecha_fin:
-        df_filtrado = df_filtrado[
-            (df_filtrado["Fecha de Invite"].dt.date >= fecha_ini) &
-            (df_filtrado["Fecha de Invite"].dt.date <= fecha_fin)
-        ]
+        # Usa Fecha Primer Mensaje si existe, si no usa Fecha de Invite
+        if "Fecha Primer Mensaje" in df_filtrado.columns and pd.api.types.is_datetime64_any_dtype(df_filtrado["Fecha Primer Mensaje"]):
+            df_filtrado = df_filtrado[
+                (df_filtrado["Fecha Primer Mensaje"].dt.date >= fecha_ini) &
+                (df_filtrado["Fecha Primer Mensaje"].dt.date <= fecha_fin)
+            ]
+        elif "Fecha de Invite" in df_filtrado.columns and pd.api.types.is_datetime64_any_dtype(df_filtrado["Fecha de Invite"]):
+            df_filtrado = df_filtrado[
+                (df_filtrado["Fecha de Invite"].dt.date >= fecha_ini) &
+                (df_filtrado["Fecha de Invite"].dt.date <= fecha_fin)
+            ]
 
     if filtro_sesion_agendada != "– Todos –":
         df_filtrado = df_filtrado[
@@ -48,11 +55,3 @@ def aplicar_filtros(
         df_filtrado = df_filtrado[df_filtrado["¿Quién Prospecto?"].isin(filtro_prospectador)]
 
     return df_filtrado
-
-
-    if filtro_prospectador and "– Todos –" not in filtro_prospectador:
-        df_filtrado = df_filtrado[df_filtrado["¿Quién Prospecto?"].isin(
-            filtro_prospectador)]
-
-    return df_filtrado
-
