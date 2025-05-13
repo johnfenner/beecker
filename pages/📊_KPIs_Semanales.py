@@ -147,65 +147,54 @@ def clear_kpis_filters_callback():
     st.toast("Filtros de KPIs reiniciados ✅", icon="🧹")
 
 def sidebar_filters_kpis(df_options):
-    st.sidebar.header("🔍 Filtros de KPIs Semanales")
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("🗓️ Por Fecha")
-    min_date_data, max_date_data = None, None
-    if "Fecha" in df_options.columns and pd.api.types.is_datetime64_any_dtype(df_options["Fecha"]) and not df_options["Fecha"].dropna().empty:
-        min_date_data, max_date_data = df_options["Fecha"].dropna().min().date(), df_options["Fecha"].dropna().max().date()
-    
-    col1_date, col2_date = st.sidebar.columns(2)
-    with col1_date:
-        st.date_input("Desde", value=st.session_state.get(START_DATE_KEY), min_value=min_date_data, max_value=max_date_data, format='DD/MM/YYYY', key=START_DATE_KEY)
-    with col2_date:
-        st.date_input("Hasta", value=st.session_state.get(END_DATE_KEY), min_value=min_date_data, max_value=max_date_data, format='DD/MM/YYYY', key=END_DATE_KEY)
-    
-    st.sidebar.markdown("---")
+    # ... (otras partes de la función) ...
     st.sidebar.subheader("📅 Por Año y Semana")
-    year_options = ["– Todos –"] + (sorted(df_options["Año"].dropna().astype(int).unique(), reverse=True) if "Año" in df_options.columns and not df_options["Año"].dropna().empty else [])
+
+    # Convertir los años a strings al crear year_options
+    if "Año" in df_options.columns and not df_options["Año"].dropna().empty:
+        # Obtener años únicos, convertirlos a int (para ordenarlos numéricamente), luego a str
+        unique_years_int = sorted(df_options["Año"].dropna().astype(int).unique(), reverse=True)
+        year_options = ["– Todos –"] + [str(year) for year in unique_years_int]
+    else:
+        year_options = ["– Todos –"]
+
     current_year_selection = st.session_state.get(YEAR_FILTER_KEY, "– Todos –")
-    # Asegurar que el valor del estado de sesión sea un string para la comparación y el índice
-    if not isinstance(current_year_selection, str): current_year_selection = str(current_year_selection)
-    if current_year_selection not in map(str,year_options):
+
+    # Asegurar que current_year_selection sea una cadena
+    if not isinstance(current_year_selection, str):
+        current_year_selection = str(current_year_selection)
+
+    # Ahora current_year_selection (string) se compara con year_options (lista de strings)
+    if current_year_selection not in year_options: # Ya no necesitas map(str, ...) aquí
         st.session_state[YEAR_FILTER_KEY] = "– Todos –"
-        current_year_selection = "– Todos –"
-    
-    # El índice debe buscar el valor string
-    selected_year_str = st.sidebar.selectbox("Año", year_options, index=year_options.index(current_year_selection), key=YEAR_FILTER_KEY)
-    selected_year_int = int(selected_year_str) if selected_year_str != "– Todos –" else None
-    
-    week_options = ["– Todas –"]
-    df_for_week = df_options[df_options["Año"] == selected_year_int] if selected_year_int is not None and "NumSemana" in df_options.columns and "Año" in df_options.columns else df_options
-    if "NumSemana" in df_for_week.columns and not df_for_week["NumSemana"].dropna().empty:
-        week_options.extend([str(w) for w in sorted(df_for_week["NumSemana"].dropna().astype(int).unique())])
-    
-    current_week_selection = st.session_state.get(WEEK_FILTER_KEY, ["– Todas –"])
-    valid_week_selection = [s for s in current_week_selection if s in week_options] or (["– Todas –"] if "– Todas –" in week_options else [])
-    if valid_week_selection != current_week_selection: st.session_state[WEEK_FILTER_KEY] = valid_week_selection
-    st.sidebar.multiselect("Semanas del Año", week_options, key=WEEK_FILTER_KEY, default=valid_week_selection)
-    
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("👥 Por Analista y Región")
+        current_year_selection = "– Todos –" # Esta es la selección por defecto
 
-    def get_multiselect_val_kpis(col_name, label, key, df_opt):
-        options = ["– Todos –"]
-        if col_name in df_opt.columns and not df_opt[col_name].dropna().empty:
-            unique_vals = df_opt[col_name].astype(str).str.strip().replace('', 'N/D').unique()
-            options.extend(sorted([val for val in unique_vals if val and val != 'N/D']))
-            if 'N/D' in unique_vals and 'N/D' not in options: options.append('N/D')
-        
-        current_selection_ms = st.session_state.get(key, ["– Todos –"])
-        if not isinstance(current_selection_ms, list): current_selection_ms = ["– Todos –"]
-        valid_selection_ms = [s for s in current_selection_ms if s in options] or (["– Todos –"] if "– Todos –" in options else [])
-        if valid_selection_ms != current_selection_ms: st.session_state[key] = valid_selection_ms
-        return st.sidebar.multiselect(label, options, key=key, default=valid_selection_ms)
+    # El índice ahora buscará una cadena (current_year_selection) en una lista de cadenas (year_options)
+    # Es importante que si current_year_selection es "– Todos –", esté en year_options.
+    # Y si es un año como "2023", ese string "2023" debe estar en year_options.
 
-    analista_filter_val = get_multiselect_val_kpis("Analista", "Analista", ANALISTA_FILTER_KEY, df_options)
-    region_filter_val = get_multiselect_val_kpis("Región", "Región", REGION_FILTER_KEY, df_options)
-    
-    st.sidebar.markdown("---")
-    st.sidebar.button("🧹 Limpiar Filtros de KPIs", on_click=clear_kpis_filters_callback, use_container_width=True, key="btn_clear_kpis_filters_v2")
-    return (st.session_state[START_DATE_KEY], st.session_state[END_DATE_KEY], selected_year_int, st.session_state[WEEK_FILTER_KEY], analista_filter_val, region_filter_val)
+    # Para mayor seguridad antes de llamar a .index():
+    try:
+        selected_index = year_options.index(current_year_selection)
+    except ValueError:
+        # Esto no debería ocurrir si la lógica anterior es correcta y year_options no está vacía
+        st.warning(f"'{current_year_selection}' no se encontró en las opciones de año. Usando el primer año.")
+        selected_index = 0 # O el índice de "– Todos –" si es más apropiado
+        if not year_options: # Si year_options está vacía, el selectbox no tendrá opciones
+             year_options = ["– No hay años –"] # Evitar error en selectbox
+             current_year_selection = year_options[0]
+             st.session_state[YEAR_FILTER_KEY] = current_year_selection
+
+    selected_year_str = st.sidebar.selectbox(
+        "Año",
+        year_options,
+        index=selected_index, # Usar el índice seguro
+        key=YEAR_FILTER_KEY
+    )
+
+    selected_year_int = int(selected_year_str) if selected_year_str != "– Todos –" and selected_year_str.isdigit() else None
+    # ...
+    return (st.session_state[START_DATE_KEY], st.session_state[END_DATE_KEY], selected_year_int, st.session_state[WEEK_FILTER_KEY], analista_val_kpis, region_val_kpis)
 
 def apply_kpis_filters(df, start_dt, end_dt, year_val, week_list, analista_list, region_list):
     df_f = df.copy()
