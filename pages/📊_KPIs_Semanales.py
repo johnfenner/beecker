@@ -82,7 +82,6 @@ def load_weekly_kpis_data():
             df['MesNum'] = df['Fecha'].dt.month
             df['AñoMes'] = df['Fecha'].dt.strftime('%Y-%m')
         else:
-            # st.warning("No hay datos con fechas válidas después de la conversión (KPIs Semanales).") # Comentado para no saturar
             for col_time in ['Año', 'NumSemana', 'MesNum']: df[col_time] = pd.Series(dtype='int')
             df['AñoMes'] = pd.Series(dtype='str')
     else:
@@ -120,15 +119,15 @@ START_DATE_KEY = "kpis_page_fecha_inicio_v6"
 END_DATE_KEY = "kpis_page_fecha_fin_v6"
 ANALISTA_FILTER_KEY = "kpis_page_filtro_Analista_v6"
 REGION_FILTER_KEY = "kpis_page_filtro_Región_v6"
-YEAR_FILTER_KEY = "kpis_page_filtro_Año_v6"
-WEEK_FILTER_KEY = "kpis_page_filtro_Semana_v6" # Filtro general de semanas en sidebar
-DETAILED_VIEW_WEEKS_KEY = "kpis_page_detailed_view_weeks_v1" # Nueva key para el multiselect de la vista detallada
+YEAR_FILTER_KEY = "kpis_page_filtro_Año_v6" 
+WEEK_FILTER_KEY = "kpis_page_filtro_Semana_v6" 
+DETAILED_VIEW_WEEKS_KEY = "kpis_page_detailed_view_weeks_v1" 
 
 default_filters_kpis = {
     START_DATE_KEY: None, END_DATE_KEY: None,
     ANALISTA_FILTER_KEY: ["– Todos –"], REGION_FILTER_KEY: ["– Todos –"],
     YEAR_FILTER_KEY: "– Todos –", WEEK_FILTER_KEY: ["– Todas –"],
-    DETAILED_VIEW_WEEKS_KEY: [] # Por defecto, ninguna semana seleccionada para la vista detallada
+    DETAILED_VIEW_WEEKS_KEY: [] 
 }
 for key, default_val in default_filters_kpis.items():
     if key not in st.session_state: st.session_state[key] = default_val
@@ -153,19 +152,49 @@ def sidebar_filters_kpis(df_options):
         st.date_input("Hasta", value=st.session_state.get(END_DATE_KEY), min_value=min_date_data, max_value=max_date_data, format='DD/MM/YYYY', key=END_DATE_KEY)
     
     st.sidebar.markdown("---")
-    st.sidebar.subheader("📅 Por Año y Semana (Filtro General)") # Aclaración del propósito
-    year_options = ["– Todos –"] + (sorted(df_options["Año"].dropna().astype(int).unique(), reverse=True) if "Año" in df_options.columns and not df_options["Año"].dropna().empty else [])
-    current_year_selection = st.session_state.get(YEAR_FILTER_KEY, "– Todos –")
-    if not isinstance(current_year_selection, str): current_year_selection = str(current_year_selection)
-    if current_year_selection not in map(str,year_options):
+    st.sidebar.subheader("📅 Por Año y Semana (Filtro General)")
+
+    # --- SECCIÓN DE FILTRO DE AÑO CORREGIDA ---
+    raw_year_options_int = []
+    if "Año" in df_options.columns and not df_options["Año"].dropna().empty:
+        raw_year_options_int = sorted(df_options["Año"].dropna().astype(int).unique(), reverse=True)
+    
+    # Convertir todos los años a string para el selectbox y la lógica de estado de sesión
+    year_options_str_list = ["– Todos –"] + [str(y) for y in raw_year_options_int]
+
+    current_year_selection_str = st.session_state.get(YEAR_FILTER_KEY, "– Todos –")
+    
+    # Asegurar que current_year_selection_str sea un string y esté en las opciones válidas
+    if not isinstance(current_year_selection_str, str):
+        current_year_selection_str = str(current_year_selection_str)
+    
+    if current_year_selection_str not in year_options_str_list:
         st.session_state[YEAR_FILTER_KEY] = "– Todos –"
-        current_year_selection = "– Todos –"
+        current_year_selection_str = "– Todos –"
     
-    selected_year_str = st.sidebar.selectbox("Año", year_options, index=year_options.index(current_year_selection), key=YEAR_FILTER_KEY)
-    selected_year_int = int(selected_year_str) if selected_year_str != "– Todos –" else None
+    # Obtener el índice para el valor por defecto del selectbox
+    try:
+        default_index_year = year_options_str_list.index(current_year_selection_str)
+    except ValueError: # Como salvaguarda, aunque la lógica anterior debería prevenirlo
+        st.session_state[YEAR_FILTER_KEY] = "– Todos –"
+        current_year_selection_str = "– Todos –"
+        default_index_year = year_options_str_list.index("– Todos –")
+
+    # El selectbox ahora usa y guarda strings consistentemente
+    selected_year_str_from_selectbox = st.sidebar.selectbox(
+        "Año", 
+        year_options_str_list, 
+        index=default_index_year,
+        key=YEAR_FILTER_KEY 
+    )
     
-    week_options_sidebar = ["– Todas –"] # Renombrado para evitar conflicto
-    df_for_week_sidebar = df_options[df_options["Año"] == selected_year_int] if selected_year_int is not None and "NumSemana" in df_options.columns and "Año" in df_options.columns else df_options
+    # Convertir el año seleccionado a entero para el filtrado (si no es "– Todos –")
+    selected_year_int_for_filtering = int(selected_year_str_from_selectbox) if selected_year_str_from_selectbox != "– Todos –" else None
+    # --- FIN DE SECCIÓN DE FILTRO DE AÑO CORREGIDA ---
+
+    week_options_sidebar = ["– Todas –"] 
+    # Usar selected_year_int_for_filtering para filtrar las semanas
+    df_for_week_sidebar = df_options[df_options["Año"] == selected_year_int_for_filtering] if selected_year_int_for_filtering is not None and "NumSemana" in df_options.columns and "Año" in df_options.columns else df_options
     if "NumSemana" in df_for_week_sidebar.columns and not df_for_week_sidebar["NumSemana"].dropna().empty:
         week_options_sidebar.extend([str(w) for w in sorted(df_for_week_sidebar["NumSemana"].dropna().astype(int).unique())])
     
@@ -195,9 +224,11 @@ def sidebar_filters_kpis(df_options):
     
     st.sidebar.markdown("---")
     st.sidebar.button("🧹 Limpiar Filtros de KPIs", on_click=clear_kpis_filters_callback, use_container_width=True, key="btn_clear_kpis_filters_v2")
-    return (st.session_state[START_DATE_KEY], st.session_state[END_DATE_KEY], selected_year_int, st.session_state[WEEK_FILTER_KEY], analista_filter_val, region_filter_val)
+    return (st.session_state[START_DATE_KEY], st.session_state[END_DATE_KEY], selected_year_int_for_filtering, st.session_state[WEEK_FILTER_KEY], analista_filter_val, region_filter_val)
+
 
 def apply_kpis_filters(df, start_dt, end_dt, year_val, week_list, analista_list, region_list):
+    # ... (sin cambios en esta función)
     df_f = df.copy()
     if "Fecha" in df_f.columns and pd.api.types.is_datetime64_any_dtype(df_f["Fecha"]):
         start_dt_date = start_dt.date() if isinstance(start_dt, datetime.datetime) else start_dt
@@ -398,15 +429,14 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
         st.plotly_chart(fig_time, use_container_width=True)
 
 
-# --- MODIFICADA FUNCIÓN PARA LA TABLA ESTILO HOJA DE CÁLCULO ---
-def display_detailed_weekly_analyst_view(df_filtered, semanas_seleccionadas_para_vista): # Nuevo parámetro
-    st.markdown("### 📋 Vista Detallada Semanal por Analista")
+def display_detailed_weekly_analyst_view(df_filtered, semanas_seleccionadas_para_vista):
+    st.markdown("### 📋 Vista Detallada Semanal por Analista (Estilo Anterior)")
 
     if df_filtered.empty:
-        st.info("No hay datos filtrados para mostrar esta vista detallada.")
+        st.info("No hay datos filtrados generales para mostrar esta vista detallada.")
         return
     
-    if not semanas_seleccionadas_para_vista: # Si no se seleccionó ninguna semana
+    if not semanas_seleccionadas_para_vista: 
         st.info("Selecciona una o más semanas del menú desplegable de arriba para ver el detalle.")
         return
 
@@ -451,51 +481,31 @@ def display_detailed_weekly_analyst_view(df_filtered, semanas_seleccionadas_para
         by=['Año', 'NumSemana', 'Analista'], ascending=[False, False, True]
     )
 
-    # Crear etiquetas 'Año-Semana' para el multiselect y para filtrar
-    # Asegurarse que df_analyst_weekly_sorted tenga 'Año' y 'NumSemana' antes de esta operación
     if 'Año' in df_analyst_weekly_sorted.columns and 'NumSemana' in df_analyst_weekly_sorted.columns:
         df_analyst_weekly_sorted['AñoSemanaEtiqueta'] = df_analyst_weekly_sorted['Año'].astype(str) + "-S" + df_analyst_weekly_sorted['NumSemana'].astype(str).str.zfill(2)
     else:
         st.error("Las columnas 'Año' o 'NumSemana' no están disponibles para crear etiquetas para el filtro de semanas.")
         return
 
-    # Filtrar las semanas únicas basadas en la selección del usuario
-    # 'semanas_seleccionadas_para_vista' contendrá las etiquetas 'Año-Semana'
     semanas_a_mostrar_df = df_analyst_weekly_sorted[df_analyst_weekly_sorted['AñoSemanaEtiqueta'].isin(semanas_seleccionadas_para_vista)]
-
-
-    # Iterar sobre las semanas seleccionadas y filtradas
-    # Para mantener el orden original del multiselect, iteramos sobre semanas_seleccionadas_para_vista
-    # y luego filtramos el df_analyst_weekly_sorted para cada una.
     
     if semanas_a_mostrar_df.empty and semanas_seleccionadas_para_vista:
         st.info("No hay datos para las semanas seleccionadas después de aplicar los filtros generales.")
         return
 
-    # Obtener el orden de las semanas tal como fueron seleccionadas por el usuario
-    # y luego agrupar el df para mostrar en ese orden.
-    
-    # Asegurar que se agrupa por la etiqueta para mantener el orden de selección si es posible
-    # o simplemente iterar por las etiquetas seleccionadas.
-
     for etiqueta_semana_seleccionada in semanas_seleccionadas_para_vista:
-        # Extraer Año y NumSemana de la etiqueta para el título si es necesario, o usar la etiqueta directamente
-        # Suponiendo que la etiqueta es "YYYY-SWW"
         try:
             ano_actual_str, num_semana_actual_str = etiqueta_semana_seleccionada.split('-S')
             ano_actual = int(ano_actual_str)
             num_semana_actual = int(num_semana_actual_str)
             st.markdown(f"#### Semana {num_semana_actual} (Año: {ano_actual})")
         except ValueError:
-            st.markdown(f"#### {etiqueta_semana_seleccionada}") # Fallback si el formato no es el esperado
+            st.markdown(f"#### {etiqueta_semana_seleccionada}") 
 
         df_vista_semana = semanas_a_mostrar_df[semanas_a_mostrar_df['AñoSemanaEtiqueta'] == etiqueta_semana_seleccionada]
         
         if df_vista_semana.empty:
-            # Esto podría pasar si una semana seleccionada no tiene datos después de otros filtros, aunque el chequeo anterior debería cubrirlo.
-            # st.caption(f"No hay datos detallados para mostrar para la semana {etiqueta_semana_seleccionada} con los filtros actuales.")
             continue
-
 
         df_display_analistas = df_vista_semana[[
             'Analista', 'Región', '1. Invites enviadas', '2. Mensajes Enviados',
@@ -526,11 +536,10 @@ def display_detailed_weekly_analyst_view(df_filtered, semanas_seleccionadas_para
         
         st.dataframe(df_final_semana.set_index('Analista'), use_container_width=True)
         st.markdown("---") 
-# --- FIN DE LA FUNCIÓN MODIFICADA ---
 
 
 # --- Flujo Principal de la Página ---
-start_date_val_kpis, end_date_val_kpis, year_val_kpis, week_val_kpis_sidebar, analista_val_kpis, region_val_kpis = sidebar_filters_kpis(df_kpis_semanales_raw) # Renombrado week_val_kpis
+start_date_val_kpis, end_date_val_kpis, year_val_kpis, week_val_kpis_sidebar, analista_val_kpis, region_val_kpis = sidebar_filters_kpis(df_kpis_semanales_raw) 
 df_kpis_filtered_page = apply_kpis_filters(df_kpis_semanales_raw, start_date_val_kpis, end_date_val_kpis, year_val_kpis, week_val_kpis_sidebar, analista_val_kpis, region_val_kpis)
 
 if "Analista" in df_kpis_filtered_page.columns and analista_val_kpis and "– Todos –" not in analista_val_kpis:
@@ -549,14 +558,10 @@ st.markdown("---")
 display_filtered_kpis_table(df_kpis_filtered_page) 
 st.markdown("---")
 
-# --- SECCIÓN PARA LA VISTA DETALLADA SEMANAL CON SELECTOR ---
 st.markdown("### 🔬 Control de Vista Detallada Semanal por Analista")
 
-# Preparar opciones para el multiselect de semanas (basado en los datos ya filtrados por el sidebar)
 available_weeks_for_detail_view = []
 if not df_kpis_filtered_page.empty and 'Año' in df_kpis_filtered_page.columns and 'NumSemana' in df_kpis_filtered_page.columns:
-    # Crear etiquetas Año-Semana únicas y ordenadas de los datos filtrados
-    # Ordenar por Año descendente, luego por NumSemana descendente
     unique_year_week_df = df_kpis_filtered_page[['Año', 'NumSemana']].drop_duplicates().sort_values(
         by=['Año', 'NumSemana'], ascending=[False, False]
     )
@@ -564,33 +569,25 @@ if not df_kpis_filtered_page.empty and 'Año' in df_kpis_filtered_page.columns a
         f"{row['Año']}-S{str(row['NumSemana']).zfill(2)}" for index, row in unique_year_week_df.iterrows()
     ]
 
-# Si no hay semanas disponibles después del filtro general, informar al usuario
 if not available_weeks_for_detail_view and not df_kpis_filtered_page.empty :
      st.info("No hay semanas específicas disponibles para la vista detallada con los filtros generales aplicados.")
 elif df_kpis_filtered_page.empty:
     st.info("No hay datos disponibles según los filtros generales para seleccionar semanas para la vista detallada.")
 
-
-# Usar st.multiselect para que el usuario elija las semanas
-# Asegurarse que el default sea una lista vacía o las semanas actualmente en session_state
 selected_weeks_for_detailed_view = st.multiselect(
     "Selecciona las semanas para ver en detalle (Estilo Anterior):",
     options=available_weeks_for_detail_view,
-    default=st.session_state.get(DETAILED_VIEW_WEEKS_KEY, []), # Cargar desde session state
-    key=DETAILED_VIEW_WEEKS_KEY # Guardar en session state
+    default=st.session_state.get(DETAILED_VIEW_WEEKS_KEY, []), 
+    key=DETAILED_VIEW_WEEKS_KEY 
 )
 
-# Llamar a la función de visualización con las semanas seleccionadas
 display_detailed_weekly_analyst_view(df_kpis_filtered_page, selected_weeks_for_detailed_view)
 st.markdown("---")
-# --- FIN DE LA SECCIÓN DE VISTA DETALLADA ---
-
 
 display_time_evolution(df_kpis_filtered_page, 'NumSemana', 'Año-Semana', "Evolución Semanal de KPIs", "Semana", chart_icon="🗓️")
 st.markdown("---")
 display_time_evolution(df_kpis_filtered_page, 'AñoMes', 'AñoMes', "Evolución Mensual de KPIs", "Mes (Año-Mes)", chart_icon="📈")
 
-# --- PIE DE PÁGINA ---
 st.markdown("---")
 st.info(
     "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊"
