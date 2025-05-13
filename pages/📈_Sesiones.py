@@ -33,7 +33,7 @@ SHEET_URL_SESIONES_PRINCIPAL_DEFAULT = "https://docs.google.com/spreadsheets/d/1
 SHEET_NAME_SESIONES_PRINCIPAL = "Sesiones 2024-2025"
 
 SHEET_URL_SESIONES_SURAMERICA_DEFAULT = "https://docs.google.com/spreadsheets/d/1MoTUg0sZ76168k4VNajzyrxAa5hUHdWNtGNu9t0Nqnc/edit?gid=278542854#gid=278542854"
-SHEET_NAME_SESIONES_SURAMERICA = "BD Sesiones 2024" # Asegúrate que este nombre sea EXACTO
+SHEET_NAME_SESIONES_SURAMERICA = "SesionesSA 2024-2025" # Asegúrate que este nombre sea EXACTO
 
 COLUMNAS_CENTRALES = [
     "Fecha", "Empresa", "País", "Nombre", "Apellido", "Puesto", "SQL", "SQL_Estandarizado",
