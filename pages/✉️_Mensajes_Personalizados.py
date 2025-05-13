@@ -55,6 +55,14 @@ st.markdown(
 @st.cache_data
 def get_base_data():
     df_base = cargar_y_limpiar_datos()
+    # <--- MODIFICADO/NUEVO: Asegúrate de que tu nueva columna de fecha ("Fecha Primer Mensaje") se convierta a datetime
+    # Reemplaza "Fecha Primer Mensaje" con el nombre real de tu columna
+    if "Fecha Primer Mensaje" in df_base.columns and not pd.api.types.is_datetime64_any_dtype(
+            df_base["Fecha Primer Mensaje"]):
+        df_base["Fecha Primer Mensaje"] = pd.to_datetime(df_base["Fecha Primer Mensaje"],
+                                                        errors='coerce')
+    # Mantén la conversión de "Fecha de Invite" si aún la necesitas para otros propósitos,
+    # o elimínala si ya no es necesaria en este contexto.
     if "Fecha de Invite" in df_base.columns and not pd.api.types.is_datetime64_any_dtype(
             df_base["Fecha de Invite"]):
         df_base["Fecha de Invite"] = pd.to_datetime(df_base["Fecha de Invite"],
@@ -77,7 +85,6 @@ if 'mostrar_tabla_mensajes' not in st.session_state:
 
 st.subheader("⚙️ Configura los Filtros para tus Mensajes")
 st.write("**1. Invite Aceptada:** (Filtro obligatorio: 'Si')")
-# El filtro se aplica internamente, no se muestra un widget editable para esto.
 st.session_state.mensaje_filtros["invite_aceptada"] = "si"
 
 st.write("**2. Filtros Adicionales (Opcional):**")
@@ -151,9 +158,11 @@ with st.expander("Ver/Ocultar Filtros Adicionales"):
     with st.container():
         st.markdown("---")
         fecha_min_data_val, fecha_max_data_val = None, None
-        if "Fecha de Invite" in df.columns and pd.api.types.is_datetime64_any_dtype(
-                df["Fecha de Invite"]):
-            valid_dates_filt = df["Fecha de Invite"].dropna()
+        # <--- MODIFICADO: Usar "Fecha Primer Mensaje" para determinar el rango del date_input
+        # Reemplaza "Fecha Primer Mensaje" con el nombre real de tu columna
+        if "Fecha Primer Mensaje" in df.columns and pd.api.types.is_datetime64_any_dtype(
+                df["Fecha Primer Mensaje"]):
+            valid_dates_filt = df["Fecha Primer Mensaje"].dropna()
             if not valid_dates_filt.empty:
                 fecha_min_data_val, fecha_max_data_val = valid_dates_filt.min(
                 ).date(), valid_dates_filt.max().date()
@@ -179,19 +188,21 @@ with st.expander("Ver/Ocultar Filtros Adicionales"):
                 key="sb_sesion_agendada_msg_page_v2")
 
         with col_f1_filt:
+            # <--- MODIFICADO: Cambiar la etiqueta del date_input
             st.session_state.mensaje_filtros["fecha_ini"] = st.date_input(
-                "Desde (Fecha de Invite)",
+                "Desde (Fecha Primer Mensaje)", # <--- ETIQUETA MODIFICADA
                 value=st.session_state.mensaje_filtros.get("fecha_ini", None),
                 format='DD/MM/YYYY',
-                key="di_fecha_ini_msg_page_v2",
+                key="di_fecha_ini_msg_page_v2", # Considera actualizar la key si implica la columna anterior
                 min_value=fecha_min_data_val,
                 max_value=fecha_max_data_val)
         with col_f2_filt:
+            # <--- MODIFICADO: Cambiar la etiqueta del date_input
             st.session_state.mensaje_filtros["fecha_fin"] = st.date_input(
-                "Hasta (Fecha de Invite)",
+                "Hasta (Fecha Primer Mensaje)", # <--- ETIQUETA MODIFICADA
                 value=st.session_state.mensaje_filtros.get("fecha_fin", None),
                 format='DD/MM/YYYY',
-                key="di_fecha_fin_msg_page_v2",
+                key="di_fecha_fin_msg_page_v2", # Considera actualizar la key
                 min_value=fecha_min_data_val,
                 max_value=fecha_max_data_val)
 
@@ -231,6 +242,13 @@ if st.session_state.mostrar_tabla_mensajes:
             filtro_sesion_para_aplicar = "si"
         elif filtro_sesion_para_aplicar == "No":
             filtro_sesion_para_aplicar = "no"
+        
+        # IMPORTANTE: Asegúrate que aplicar_filtros use "Fecha Primer Mensaje"
+        # Esto puede requerir modificar la función aplicar_filtros en su archivo de origen.
+        # O, si aplicar_filtros es genérica y toma los nombres de columna como parámetros,
+        # asegúrate de pasar el nombre correcto aquí.
+        # Por ahora, se asume que aplicar_filtros usará fecha_ini y fecha_fin
+        # para filtrar la columna de fecha relevante internamente.
         df_mensajes_filtrado_temp = aplicar_filtros(
             df_mensajes_filtrado_temp,
             st.session_state.mensaje_filtros.get("fuente_lista",
@@ -240,10 +258,14 @@ if st.session_state.mostrar_tabla_mensajes:
             st.session_state.mensaje_filtros.get("industria", ["– Todos –"]),
             st.session_state.mensaje_filtros.get("avatar", ["– Todos –"]),
             st.session_state.mensaje_filtros.get("prospectador",
-                                                 ["– Todos –"]), "– Todos –",
-            filtro_sesion_para_aplicar,
-            st.session_state.mensaje_filtros.get("fecha_ini", None),
-            st.session_state.mensaje_filtros.get("fecha_fin", None))
+                                                 ["– Todos –"]), "– Todos –", # kpi_seguimiento (asumiendo que es esto)
+            filtro_sesion_para_aplicar, # sesion_agendada
+            st.session_state.mensaje_filtros.get("fecha_ini", None), # fecha_ini
+            st.session_state.mensaje_filtros.get("fecha_fin", None), # fecha_fin
+            # <--- NUEVO/OPCIONAL: Si `aplicar_filtros` necesita el nombre de la columna de fecha explícitamente:
+            # date_column_name="Fecha Primer Mensaje" # Reemplaza con el nombre real de tu columna
+            )
+
         busqueda_term_final = st.session_state.mensaje_filtros.get(
             "busqueda", "").lower().strip()
         if busqueda_term_final and not df_mensajes_filtrado_temp.empty:
@@ -280,9 +302,12 @@ if st.session_state.mostrar_tabla_mensajes:
             "No se encontraron prospectos que cumplan todos los criterios.")
     else:
         linkedin_col_nombre = "LinkedIn"
+        # <--- MODIFICADO: Cambiar "Fecha de Invite" por "Fecha Primer Mensaje" en las columnas a mostrar
+        # Reemplaza "Fecha Primer Mensaje" con el nombre real de tu columna
         columnas_necesarias_para_display = [
             "Nombre", "Apellido", "Empresa", "Puesto", "Proceso", "Avatar",
-            "Fecha de Invite", "¿Quién Prospecto?", linkedin_col_nombre,
+            "Fecha Primer Mensaje", # <--- COLUMNA MODIFICADA
+            "¿Quién Prospecto?", linkedin_col_nombre,
             "Sesion Agendada?"
         ]
         for col_exist in columnas_necesarias_para_display:
@@ -298,9 +323,13 @@ if st.session_state.mostrar_tabla_mensajes:
 
         st.markdown("### 📋 Prospectos Encontrados para Mensajes")
         st.write(f"Mostrando **{len(df_mensajes_final_display)}** prospectos.")
+        # <--- MODIFICADO: Cambiar "Fecha de Invite" por "Fecha Primer Mensaje" en las columnas de la tabla
+        # Reemplaza "Fecha Primer Mensaje" con el nombre real de tu columna
         columnas_para_tabla_display = [
             "Nombre_Completo_Display", "Empresa", "Puesto", "Categoría",
-            "Avatar", "Fecha de Invite", "¿Quién Prospecto?",
+            "Avatar", 
+            "Fecha Primer Mensaje", # <--- COLUMNA MODIFICADA
+            "¿Quién Prospecto?",
             "Sesion Agendada?", linkedin_col_nombre
         ]
         cols_realmente_en_df_para_tabla = [
@@ -309,9 +338,12 @@ if st.session_state.mostrar_tabla_mensajes:
         ]
         df_tabla_a_mostrar = df_mensajes_final_display[
             cols_realmente_en_df_para_tabla].copy()
-        if "Fecha de Invite" in df_tabla_a_mostrar.columns:
-            df_tabla_a_mostrar["Fecha de Invite"] = pd.to_datetime(
-                df_tabla_a_mostrar["Fecha de Invite"],
+        
+        # <--- MODIFICADO: Formatear "Fecha Primer Mensaje"
+        # Reemplaza "Fecha Primer Mensaje" con el nombre real de tu columna
+        if "Fecha Primer Mensaje" in df_tabla_a_mostrar.columns:
+            df_tabla_a_mostrar["Fecha Primer Mensaje"] = pd.to_datetime(
+                df_tabla_a_mostrar["Fecha Primer Mensaje"],
                 errors='coerce').dt.strftime('%d/%m/%Y')
         st.dataframe(df_tabla_a_mostrar, use_container_width=True)
 
@@ -339,7 +371,7 @@ if st.session_state.mostrar_tabla_mensajes:
                 "Mensaje 1 General": mensaje_1_general,
                 "Mensaje 2 General": mensaje_2_general,
                 "Plantilla John General": plantilla_john_general
-            }  # Nombre más descriptivo
+            }
         }
         categorias_validas_en_df = sorted(
             df_mensajes_final_display["Categoría"].unique().tolist())
@@ -386,48 +418,28 @@ if st.session_state.mostrar_tabla_mensajes:
                         f"No hay prospectos en la categoría '{categoria_sel}' con los filtros actuales."
                     )
                 else:
-                    # Este bloque va dentro de Prospe/pages/✉️_Mensajes_Personalizados.py
-                    # Específicamente, dentro del if mensaje_final_seleccionado:
-                    # y después de: if df_vista_previa_msg.empty: ... else:
-
-                    # --- Lógica para determinar atento/atenta ---
                     def obtener_atencion_genero(avatar_de_fila):
-                        # Asumimos que avatar_de_fila YA ES el resultado de estandarizar_avatar()
-                        # porque estandarizar_avatar se aplica en get_base_data()
                         avatar_estandarizado_lower = str(
                             avatar_de_fila).lower()
-
-                        # IMPORTANTE: Estas listas deben contener los NOMBRES ESTANDARIZADOS
-                        #             (la salida de tu función utils.limpieza.estandarizar_avatar)
-                        #             convertidos a minúsculas.
-                        # EJEMPLO: Si estandarizar_avatar('Maria R.') devuelve 'María Rivera',
-                        #          entonces aquí debes tener 'maría rivera'.
                         nombres_masculinos_clave = [
-                            "john bermúdez",  # Ejemplo si estandarizar_avatar('John') es 'John Bermúdez'
-                            "johnsito"  # Si 'Johnsito' es un avatar estandarizado posible
-                            # o una palabra clave en un avatar masculino estandarizado.
+                            "john bermúdez",
+                            "johnsito"
                         ]
                         nombres_femeninos_clave = [
-                            "maría rivera",  # Ejemplo si estandarizar_avatar('Maria') es 'María Rivera'
-                            "maria",  # Podrías tenerla si es una salida posible de estandarizar_avatar
-                            # o si quieres una coincidencia más laxa.
+                            "maría rivera",
+                            "maria",
                             "ana",
                             "laura",
-                            "isabella"  # Otros nombres femeninos estandarizados (en minúsculas)
+                            "isabella"
                         ]
-
-                        # Usamos 'any' para ver si alguna de las palabras clave está contenida.
-                        # Esto es más flexible si el avatar estandarizado es, por ejemplo, "María Rivera (Equipo LATAM)"
                         if any(nombre_masc in avatar_estandarizado_lower
                                for nombre_masc in nombres_masculinos_clave):
                             return "atento"
                         if any(nombre_fem in avatar_estandarizado_lower
                                for nombre_fem in nombres_femeninos_clave):
                             return "atenta"
+                        return "atento/a"
 
-                        return "atento/a"  # Default si no se puede determinar el género
-
-                    # Generar mensajes personalizados
                     df_vista_previa_msg[
                         "Mensaje_Personalizado"] = df_vista_previa_msg.apply(
                             lambda row: mensaje_final_seleccionado.replace(
@@ -439,7 +451,7 @@ if st.session_state.mostrar_tabla_mensajes:
                                 "{avatar}",
                                 str(row.get(
                                     "Avatar", "Tu Nombre"
-                                ))  # Muestra el avatar estandarizado de la fila
+                                ))
                             ).replace(
                                 "[Nombre de la empresa]",
                                 str(
@@ -449,10 +461,9 @@ if st.session_state.mostrar_tabla_mensajes:
                                 "{atencion_genero}",
                                 obtener_atencion_genero(
                                     row.get("Avatar")
-                                )  # Pasa el Avatar (ya estandarizado) de la fila
+                                )
                             ),
                             axis=1)
-                    # --- FIN DE LA LÓGICA DE GÉNERO Y REEMPLAZO ---
 
                     st.markdown("### 📟 Vista Previa y Descarga de Mensajes")
                     cols_generador_display = [
@@ -461,7 +472,7 @@ if st.session_state.mostrar_tabla_mensajes:
                         "Puesto",
                         "Avatar",
                         "Sesion Agendada?",
-                        linkedin_col_nombre,  # Asegúrate que linkedin_col_nombre esté definido antes
+                        linkedin_col_nombre, 
                         "Mensaje_Personalizado"
                     ]
                     cols_reales_generador = [
@@ -471,7 +482,6 @@ if st.session_state.mostrar_tabla_mensajes:
                     st.dataframe(df_vista_previa_msg[cols_reales_generador],
                                  use_container_width=True,
                                  height=300)
-                    # El resto del código para el botón de descarga sigue aquí...
 
                     @st.cache_data
                     def convert_df_to_csv_final(df_to_convert):
