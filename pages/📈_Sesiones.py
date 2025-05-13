@@ -44,7 +44,7 @@ SQL_ORDER_OF_IMPORTANCE = ['SQL1', 'SQL2', 'MQL', 'NA', 'SIN CALIFICACIÓN SQL']
 DF_FINAL_STRUCTURE_EMPTY = pd.DataFrame(columns=COLUMNAS_CENTRALES)
 
 # --- Gestión de Estado de Sesión para Filtros ---
-FILTER_KEYS_PREFIX = "sesiones_sql_lg_pais_page_v5_" # Mantener v5 o incrementar si hay más cambios estructurales
+FILTER_KEYS_PREFIX = "sesiones_sql_lg_pais_page_v6_" # Incrementar versión por cambio en manejo de default
 SES_START_DATE_KEY = f"{FILTER_KEYS_PREFIX}start_date"
 SES_END_DATE_KEY = f"{FILTER_KEYS_PREFIX}end_date"
 SES_AE_FILTER_KEY = f"{FILTER_KEYS_PREFIX}ae"
@@ -60,8 +60,10 @@ default_filters_config = {
     SES_PAIS_FILTER_KEY: ["– Todos –"], SES_YEAR_FILTER_KEY: "– Todos –",
     SES_WEEK_FILTER_KEY: ["– Todas –"], SES_SQL_FILTER_KEY: ["– Todos –"]
 }
+# Inicializar el estado de sesión si no existe para cada clave
 for key, value in default_filters_config.items():
-    if key not in st.session_state: st.session_state[key] = value
+    if key not in st.session_state:
+        st.session_state[key] = value
 
 # --- Funciones de Utilidad ---
 def make_unique_headers(headers_list):
@@ -151,14 +153,11 @@ def load_sesiones_data():
             all_dataframes.append(df_proc_p)
         else: processing_warnings.append(f"Hoja Principal ('{SHEET_NAME_SESIONES_PRINCIPAL}') vacía o sin encabezados.")
     except Exception as e:
-        # import traceback # Quitar import si no se usa detailed_error
-        # detailed_error = traceback.format_exc() # Quitar si no se usa
         processing_warnings.append(f"ADVERTENCIA al cargar Hoja Principal. Error: {e}")
-
 
     try: # Hoja Suramérica
         workbook_suramerica = client.open_by_url(SHEET_URL_SESIONES_SURAMERICA_DEFAULT)
-        sheet_suramerica = workbook_suramerica.worksheet(SHEET_NAME_SESIONES_SURAMERICA) # Asegúrate que SHEET_NAME_SESIONES_SURAMERICA sea correcto
+        sheet_suramerica = workbook_suramerica.worksheet(SHEET_NAME_SESIONES_SURAMERICA)
         raw_data_suramerica_list = sheet_suramerica.get_all_values()
         if raw_data_suramerica_list and len(raw_data_suramerica_list) > 1:
             headers_sa = make_unique_headers(raw_data_suramerica_list[0])
@@ -179,10 +178,7 @@ def load_sesiones_data():
                 all_dataframes.append(df_proc_sa)
         else: processing_warnings.append(f"Hoja Suramérica ('{SHEET_NAME_SESIONES_SURAMERICA}') vacía o sin encabezados.")
     except Exception as e:
-        # import traceback # Quitar import si no se usa detailed_error
-        # detailed_error = traceback.format_exc() # Quitar si no se usa
         processing_warnings.append(f"ADVERTENCIA al cargar Hoja Suramérica. Error: {e}")
-
 
     if processing_warnings:
         for warning_msg in processing_warnings: st.warning(warning_msg)
@@ -238,11 +234,9 @@ def load_sesiones_data():
             df_procesado.loc[df_procesado[col_name] == '', col_name] = default_val
             if col_name not in ["SQL_Estandarizado", "Email", "LinkedIn", "RPA", "Fuente_Hoja"]:
                  df_procesado[col_name] = df_procesado[col_name].str.title()
-                 df_procesado[col_name] = df_procesado[col_name].replace(default_val.title(), default_val, regex=False) # Mantener default como está
-                 # Corregir específicamente para los valores que tienen mayúsculas y minúsculas
+                 df_procesado[col_name] = df_procesado[col_name].replace(default_val.title(), default_val, regex=False)
                  df_procesado[col_name] = df_procesado[col_name].replace("No Asignado Ae", "No Asignado AE", regex=False)
                  df_procesado[col_name] = df_procesado[col_name].replace("No Asignado Lg", "No Asignado LG", regex=False)
-
 
     if "SQL" not in df_procesado.columns:
         df_procesado["SQL"] = default_values_fill["SQL"]
@@ -250,17 +244,16 @@ def load_sesiones_data():
     df_procesado["SQL"] = df_procesado["SQL"].fillna(default_values_fill["SQL"])
     df_procesado["SQL"] = df_procesado["SQL"].astype(str).str.strip().str.upper()
 
-    empty_patterns_for_sql = ["", "NAN", "NONE", "<NA>", "N/A", "ND", "N.D", "S/D", "S.D.", "TEMP_EMPTY_SQL", "NO ESPECIFICADO", "NO ASIGNADO SQL"] # Ya están en mayúsculas por el .upper() anterior a la columna SQL
+    empty_patterns_for_sql = ["", "NAN", "NONE", "<NA>", "N/A", "ND", "N.D", "S/D", "S.D.", "TEMP_EMPTY_SQL", "NO ESPECIFICADO", "NO ASIGNADO SQL"]
     
     df_procesado["SQL_Estandarizado"] = df_procesado["SQL"].copy()
 
     for pattern in empty_patterns_for_sql:
-        # No es necesario .upper() en pattern si la columna SQL_Estandarizado ya está en mayúsculas
-        df_procesado.loc[df_procesado["SQL_Estandarizado"] == pattern, "SQL_Estandarizado"] = "PLACEHOLDER_FOR_SIN_CALIFICACION"
+        df_procesado.loc[df_procesado["SQL_Estandarizado"] == pattern.upper(), "SQL_Estandarizado"] = "PLACEHOLDER_FOR_SIN_CALIFICACION"
     
     df_procesado.loc[df_procesado["SQL_Estandarizado"] == "PLACEHOLDER_FOR_SIN_CALIFICACION", "SQL_Estandarizado"] = "SIN CALIFICACIÓN SQL"
 
-    valid_explicit_sql_values = ['SQL1', 'SQL2', 'MQL', 'NA'] # Ya están en mayúsculas
+    valid_explicit_sql_values = ['SQL1', 'SQL2', 'MQL', 'NA'] 
 
     mask_others_to_standardize = ~df_procesado["SQL_Estandarizado"].isin(valid_explicit_sql_values + ["SIN CALIFICACIÓN SQL"])
     df_procesado.loc[mask_others_to_standardize, "SQL_Estandarizado"] = "SIN CALIFICACIÓN SQL"
@@ -307,20 +300,23 @@ def sidebar_filters_sesiones(df_options):
         except ValueError:
             unique_years_str = sorted(df_options["Año"].dropna().astype(str).unique(), reverse=True)
             year_options_ses.extend(unique_years_str)
-    current_year_selection_ses = str(st.session_state.get(SES_YEAR_FILTER_KEY, "– Todos –"))
-    if current_year_selection_ses not in year_options_ses:
-        current_year_selection_ses = "– Todos –"; st.session_state[SES_YEAR_FILTER_KEY] = current_year_selection_ses
-    selected_year_index_ses = 0
+    current_year_selection_ses = str(st.session_state.get(SES_YEAR_FILTER_KEY, "– Todos –")) # Obtener del estado
+    if current_year_selection_ses not in year_options_ses: # Validar
+        current_year_selection_ses = "– Todos –"
+        st.session_state[SES_YEAR_FILTER_KEY] = current_year_selection_ses # Actualizar estado si cambió
+    selected_year_index_ses = 0 # Calcular índice después de validar
     try: selected_year_index_ses = year_options_ses.index(current_year_selection_ses)
-    except ValueError:
-        if year_options_ses: current_year_selection_ses = year_options_ses[0]; st.session_state[SES_YEAR_FILTER_KEY] = current_year_selection_ses
-        else: year_options_ses = ["(No hay años)"]; current_year_selection_ses = year_options_ses[0]; st.session_state[SES_YEAR_FILTER_KEY] = current_year_selection_ses
-        selected_year_index_ses = 0
-    selected_year_str_ses = st.sidebar.selectbox("Año", options=year_options_ses, index=selected_year_index_ses, key=SES_YEAR_FILTER_KEY)
+    except ValueError: # Fallback si algo sale mal
+        if year_options_ses: current_year_selection_ses = year_options_ses[0]; selected_year_index_ses = 0
+        else: year_options_ses = ["(No hay años)"]; current_year_selection_ses = year_options_ses[0]; selected_year_index_ses = 0
+        st.session_state[SES_YEAR_FILTER_KEY] = current_year_selection_ses # Asegurar estado actualizado
+
+    selected_year_str_ses = st.sidebar.selectbox("Año", options=year_options_ses, index=selected_year_index_ses, key=SES_YEAR_FILTER_KEY) # No se usa default
     sel_y = None
     if selected_year_str_ses != "– Todos –":
         try: sel_y = int(selected_year_str_ses)
         except ValueError: sel_y = None
+
     week_options_ses = ["– Todas –"]
     df_for_week_ses = df_options[df_options["Año"] == sel_y] if sel_y is not None and "Año" in df_options.columns else df_options
     num_semana_series = df_for_week_ses.get("NumSemana")
@@ -331,40 +327,47 @@ def sidebar_filters_sesiones(df_options):
         except ValueError:
              unique_weeks_str = sorted(num_semana_series.dropna().astype(str).unique())
              week_options_ses.extend(unique_weeks_str)
-    current_week_selection_state_ses = st.session_state.get(SES_WEEK_FILTER_KEY, ["– Todas –"])
-    if not isinstance(current_week_selection_state_ses, list): current_week_selection_state_ses = ["– Todas –"]
-    valid_week_selection_ses = [s for s in current_week_selection_state_ses if s in week_options_ses]
+    
+    current_week_selection_from_state = st.session_state.get(SES_WEEK_FILTER_KEY, ["– Todas –"])
+    if not isinstance(current_week_selection_from_state, list): current_week_selection_from_state = ["– Todas –"]
+    valid_week_selection_ses = [s for s in current_week_selection_from_state if s in week_options_ses]
     if not valid_week_selection_ses:
         if "– Todas –" in week_options_ses: valid_week_selection_ses = ["– Todas –"]
-        elif week_options_ses and week_options_ses[0] != "– Todas –": valid_week_selection_ses = []
+        elif week_options_ses and week_options_ses[0] != "– Todas –": valid_week_selection_ses = [] # O [week_options_ses[0]]
         else: valid_week_selection_ses = []
-    if set(valid_week_selection_ses) != set(st.session_state.get(SES_WEEK_FILTER_KEY, ["– Todas –"])):
-        st.session_state[SES_WEEK_FILTER_KEY] = valid_week_selection_ses
-    st.sidebar.multiselect("Semanas", options=week_options_ses, key=SES_WEEK_FILTER_KEY, default=valid_week_selection_ses)
+    st.session_state[SES_WEEK_FILTER_KEY] = valid_week_selection_ses # Actualizar estado ANTES del widget
+    st.sidebar.multiselect("Semanas", options=week_options_ses, key=SES_WEEK_FILTER_KEY) # No default
+    
     st.sidebar.markdown("---")
     st.sidebar.subheader("👥 Por Analistas, País y Calificación")
-    def create_multiselect_options(df_col_series, session_key):
+    
+    def create_multiselect_options_and_set_state(df_col_series, session_key): # Renombrado para claridad
         options_list = ["– Todos –"]
         if df_col_series is not None and not df_col_series.dropna().empty:
             unique_vals = df_col_series.astype(str).str.strip().replace('', 'N/D', regex=False).unique()
             unique_vals_cleaned = [val for val in unique_vals if val and val != 'N/D']
             options_list.extend(sorted(list(set(unique_vals_cleaned))))
             if 'N/D' in unique_vals and 'N/D' not in options_list : options_list.append('N/D')
-        current_sel = st.session_state.get(session_key, ["– Todos –"])
-        if not isinstance(current_sel, list): current_sel = ["– Todos –"]
-        valid_sel = [s for s in current_sel if s in options_list]
+        
+        current_sel_from_state = st.session_state.get(session_key, ["– Todos –"])
+        if not isinstance(current_sel_from_state, list): current_sel_from_state = ["– Todos –"]
+        valid_sel = [s for s in current_sel_from_state if s in options_list]
         if not valid_sel:
             if "– Todos –" in options_list: valid_sel = ["– Todos –"]
             elif options_list and options_list[0] != "– Todos –" : valid_sel = []
             else: valid_sel = []
-        if set(valid_sel) != set(st.session_state.get(session_key, ["– Todos –"])): st.session_state[session_key] = valid_sel
-        return options_list, valid_sel
-    lgs_options, valid_lg_default = create_multiselect_options(df_options.get("LG"), SES_LG_FILTER_KEY)
-    st.sidebar.multiselect("Analista LG", lgs_options, key=SES_LG_FILTER_KEY, default=valid_lg_default)
-    ae_options, valid_ae_default = create_multiselect_options(df_options.get("AE"), SES_AE_FILTER_KEY)
-    st.sidebar.multiselect("Account Executive (AE)", ae_options, key=SES_AE_FILTER_KEY, default=valid_ae_default)
-    paises_opts, valid_pais_default = create_multiselect_options(df_options.get("País"), SES_PAIS_FILTER_KEY)
-    st.sidebar.multiselect("País", paises_opts, key=SES_PAIS_FILTER_KEY, default=valid_pais_default)
+        st.session_state[session_key] = valid_sel # Actualizar estado ANTES del widget
+        return options_list
+
+    lgs_options = create_multiselect_options_and_set_state(df_options.get("LG"), SES_LG_FILTER_KEY)
+    st.sidebar.multiselect("Analista LG", lgs_options, key=SES_LG_FILTER_KEY)
+
+    ae_options = create_multiselect_options_and_set_state(df_options.get("AE"), SES_AE_FILTER_KEY)
+    st.sidebar.multiselect("Account Executive (AE)", ae_options, key=SES_AE_FILTER_KEY)
+
+    paises_opts = create_multiselect_options_and_set_state(df_options.get("País"), SES_PAIS_FILTER_KEY)
+    st.sidebar.multiselect("País", paises_opts, key=SES_PAIS_FILTER_KEY)
+
     sql_series_for_options = df_options.get("SQL_Estandarizado")
     sqls_opts_ordered = ["– Todos –"]
     if sql_series_for_options is not None and not sql_series_for_options.dropna().empty:
@@ -373,15 +376,16 @@ def sidebar_filters_sesiones(df_options):
         others_sqls = sorted([s for s in sqls_unique_vals if s not in SQL_ORDER_OF_IMPORTANCE and s != "– Todos –"])
         sqls_opts_ordered.extend(others_sqls)
         sqls_opts_ordered = list(OrderedDict.fromkeys(sqls_opts_ordered))
-    current_sql_selection = st.session_state.get(SES_SQL_FILTER_KEY, ["– Todos –"])
-    if not isinstance(current_sql_selection, list): current_sql_selection = ["– Todos –"]
-    valid_sql_default = [s for s in current_sql_selection if s in sqls_opts_ordered]
-    if not valid_sql_default:
-        if "– Todos –" in sqls_opts_ordered: valid_sql_default = ["– Todos –"]
-        elif sqls_opts_ordered and sqls_opts_ordered[0] != "– Todos –": valid_sql_default = []
-        else: valid_sql_default = []
-    if set(valid_sql_default) != set(st.session_state.get(SES_SQL_FILTER_KEY, ["– Todos –"])): st.session_state[SES_SQL_FILTER_KEY] = valid_sql_default
-    st.sidebar.multiselect("Calificación SQL", sqls_opts_ordered, key=SES_SQL_FILTER_KEY, default=valid_sql_default)
+    current_sql_selection_from_state = st.session_state.get(SES_SQL_FILTER_KEY, ["– Todos –"])
+    if not isinstance(current_sql_selection_from_state, list): current_sql_selection_from_state = ["– Todos –"]
+    valid_sql_selection = [s for s in current_sql_selection_from_state if s in sqls_opts_ordered]
+    if not valid_sql_selection:
+        if "– Todos –" in sqls_opts_ordered: valid_sql_selection = ["– Todos –"]
+        elif sqls_opts_ordered and sqls_opts_ordered[0] != "– Todos –": valid_sql_selection = []
+        else: valid_sql_selection = []
+    st.session_state[SES_SQL_FILTER_KEY] = valid_sql_selection # Actualizar estado ANTES del widget
+    st.sidebar.multiselect("Calificación SQL", sqls_opts_ordered, key=SES_SQL_FILTER_KEY)
+    
     st.sidebar.markdown("---")
     st.sidebar.button("🧹 Limpiar Todos los Filtros", on_click=clear_ses_filters_callback, use_container_width=True, key=f"{FILTER_KEYS_PREFIX}btn_clear")
     return (st.session_state.get(SES_START_DATE_KEY), st.session_state.get(SES_END_DATE_KEY), sel_y,
