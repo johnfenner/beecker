@@ -9,9 +9,6 @@ import os
 import sys
 
 # --- Configuración Inicial del Proyecto y Título de la Página ---
-# La gestión de sys.path usualmente se hace en el script principal (🏠_Dashboard_Principal.py)
-# o es manejada por Streamlit en el entorno de la nube.
-
 st.set_page_config(layout="wide", page_title="KPIs Semanales")
 
 st.title("📊 Dashboard de KPIs y Tasas de Conversión")
@@ -29,7 +26,6 @@ def parse_kpi_value(value_str, column_name=""):
     except ValueError:
         pass
     
-    # Asegúrate que 'Sesiones agendadas' coincida exactamente con el nombre de tu columna en la hoja de KPIs
     if column_name == "Sesiones agendadas": 
         affirmative_session_texts = ['vc', 'si', 'sí', 'yes', 'true', '1', '1.0']
         if cleaned_val in affirmative_session_texts: return 1.0
@@ -46,21 +42,18 @@ def parse_kpi_value(value_str, column_name=""):
 @st.cache_data(ttl=300)
 def load_weekly_kpis_data():
     try:
-        # CORRECCIÓN: Usar la sección [gcp_service_account] de tus secretos
         creds_from_secrets = st.secrets["gcp_service_account"] 
         client = gspread.service_account_from_dict(creds_from_secrets)
     except KeyError:
         st.error("Error de Configuración (Secrets): Falta la sección [gcp_service_account] o alguna de sus claves en los 'Secrets' de Streamlit (KPIs Semanales).")
-        st.error("Asegúrate de haber configurado correctamente tus secretos en Streamlit Cloud.")
         st.stop()
     except Exception as e:
         st.error(f"Error al autenticar con Google Sheets para KPIs Semanales vía Secrets: {e}")
         st.stop()
 
-    # Usar la clave específica para la URL de esta hoja desde tus secretos
     sheet_url_kpis = st.secrets.get(
-        "kpis_sheet_url", # Clave que definiste en tu secrets.toml
-        "https://docs.google.com/spreadsheets/d/1vaJ2lPK7hbWsuikjmycPePKRrFXiOrlwXMXOdoXRY60/edit?gid=0#gid=0" # URL por defecto si no se encuentra la clave
+        "kpis_sheet_url", 
+        "https://docs.google.com/spreadsheets/d/1vaJ2lPK7hbWsuikjmycPePKRrFXiOrlwXMXOdoXRY60/edit?gid=0#gid=0"
     )
     try:
         sheet = client.open_by_url(sheet_url_kpis).sheet1
@@ -89,7 +82,7 @@ def load_weekly_kpis_data():
             df['MesNum'] = df['Fecha'].dt.month
             df['AñoMes'] = df['Fecha'].dt.strftime('%Y-%m')
         else:
-            st.warning("No hay datos con fechas válidas después de la conversión (KPIs Semanales).")
+            # st.warning("No hay datos con fechas válidas después de la conversión (KPIs Semanales).") # Comentado para no saturar
             for col_time in ['Año', 'NumSemana', 'MesNum']: df[col_time] = pd.Series(dtype='int')
             df['AñoMes'] = pd.Series(dtype='str')
     else:
@@ -113,30 +106,29 @@ def load_weekly_kpis_data():
             df[col_str] = df[col_str].astype(str).str.strip().fillna("N/D")
     return df
 
-# --- Función para calcular tasas de forma segura ---
-def calculate_rate(numerator, denominator, round_to=1): # Ajustado round_to a 1 por defecto, como en la tabla negra. Puedes cambiarlo a 2 para la nueva tabla si prefieres más decimales.
+def calculate_rate(numerator, denominator, round_to=1):
     if denominator == 0: return 0.0
     return round((numerator / denominator) * 100, round_to)
 
-# --- Carga de Datos ---
 df_kpis_semanales_raw = load_weekly_kpis_data()
 
 if df_kpis_semanales_raw.empty:
     st.error("El DataFrame de KPIs Semanales está vacío después de la carga. No se puede continuar.")
     st.stop()
 
-# --- Estado de Sesión para Filtros (Usa tus keys originales o renómbralas si es necesario) ---
 START_DATE_KEY = "kpis_page_fecha_inicio_v6" 
 END_DATE_KEY = "kpis_page_fecha_fin_v6"
 ANALISTA_FILTER_KEY = "kpis_page_filtro_Analista_v6"
 REGION_FILTER_KEY = "kpis_page_filtro_Región_v6"
 YEAR_FILTER_KEY = "kpis_page_filtro_Año_v6"
-WEEK_FILTER_KEY = "kpis_page_filtro_Semana_v6"
+WEEK_FILTER_KEY = "kpis_page_filtro_Semana_v6" # Filtro general de semanas en sidebar
+DETAILED_VIEW_WEEKS_KEY = "kpis_page_detailed_view_weeks_v1" # Nueva key para el multiselect de la vista detallada
 
 default_filters_kpis = {
     START_DATE_KEY: None, END_DATE_KEY: None,
     ANALISTA_FILTER_KEY: ["– Todos –"], REGION_FILTER_KEY: ["– Todos –"],
-    YEAR_FILTER_KEY: "– Todos –", WEEK_FILTER_KEY: ["– Todas –"]
+    YEAR_FILTER_KEY: "– Todos –", WEEK_FILTER_KEY: ["– Todas –"],
+    DETAILED_VIEW_WEEKS_KEY: [] # Por defecto, ninguna semana seleccionada para la vista detallada
 }
 for key, default_val in default_filters_kpis.items():
     if key not in st.session_state: st.session_state[key] = default_val
@@ -161,7 +153,7 @@ def sidebar_filters_kpis(df_options):
         st.date_input("Hasta", value=st.session_state.get(END_DATE_KEY), min_value=min_date_data, max_value=max_date_data, format='DD/MM/YYYY', key=END_DATE_KEY)
     
     st.sidebar.markdown("---")
-    st.sidebar.subheader("📅 Por Año y Semana")
+    st.sidebar.subheader("📅 Por Año y Semana (Filtro General)") # Aclaración del propósito
     year_options = ["– Todos –"] + (sorted(df_options["Año"].dropna().astype(int).unique(), reverse=True) if "Año" in df_options.columns and not df_options["Año"].dropna().empty else [])
     current_year_selection = st.session_state.get(YEAR_FILTER_KEY, "– Todos –")
     if not isinstance(current_year_selection, str): current_year_selection = str(current_year_selection)
@@ -172,15 +164,15 @@ def sidebar_filters_kpis(df_options):
     selected_year_str = st.sidebar.selectbox("Año", year_options, index=year_options.index(current_year_selection), key=YEAR_FILTER_KEY)
     selected_year_int = int(selected_year_str) if selected_year_str != "– Todos –" else None
     
-    week_options = ["– Todas –"]
-    df_for_week = df_options[df_options["Año"] == selected_year_int] if selected_year_int is not None and "NumSemana" in df_options.columns and "Año" in df_options.columns else df_options
-    if "NumSemana" in df_for_week.columns and not df_for_week["NumSemana"].dropna().empty:
-        week_options.extend([str(w) for w in sorted(df_for_week["NumSemana"].dropna().astype(int).unique())])
+    week_options_sidebar = ["– Todas –"] # Renombrado para evitar conflicto
+    df_for_week_sidebar = df_options[df_options["Año"] == selected_year_int] if selected_year_int is not None and "NumSemana" in df_options.columns and "Año" in df_options.columns else df_options
+    if "NumSemana" in df_for_week_sidebar.columns and not df_for_week_sidebar["NumSemana"].dropna().empty:
+        week_options_sidebar.extend([str(w) for w in sorted(df_for_week_sidebar["NumSemana"].dropna().astype(int).unique())])
     
-    current_week_selection = st.session_state.get(WEEK_FILTER_KEY, ["– Todas –"])
-    valid_week_selection = [s for s in current_week_selection if s in week_options] or (["– Todas –"] if "– Todas –" in week_options else [])
-    if valid_week_selection != current_week_selection: st.session_state[WEEK_FILTER_KEY] = valid_week_selection
-    st.sidebar.multiselect("Semanas del Año", week_options, key=WEEK_FILTER_KEY, default=valid_week_selection)
+    current_week_selection_sidebar = st.session_state.get(WEEK_FILTER_KEY, ["– Todas –"])
+    valid_week_selection_sidebar = [s for s in current_week_selection_sidebar if s in week_options_sidebar] or (["– Todas –"] if "– Todas –" in week_options_sidebar else [])
+    if valid_week_selection_sidebar != current_week_selection_sidebar: st.session_state[WEEK_FILTER_KEY] = valid_week_selection_sidebar
+    st.sidebar.multiselect("Semanas del Año (Filtro General)", week_options_sidebar, key=WEEK_FILTER_KEY, default=valid_week_selection_sidebar)
     
     st.sidebar.markdown("---")
     st.sidebar.subheader("👥 Por Analista y Región")
@@ -235,20 +227,23 @@ def apply_kpis_filters(df, start_dt, end_dt, year_val, week_list, analista_list,
     return df_f
 
 def display_filtered_kpis_table(df_filtered):
-    st.markdown("### 📝 Datos Detallados Filtrados")
+    # ... (sin cambios en esta función)
+    st.markdown("### 📝 Datos Detallados Filtrados (Vista General)")
     if df_filtered.empty:
         st.info("No se encontraron datos que cumplan los criterios de filtro.")
         return
     st.write(f"Mostrando **{len(df_filtered)}** filas.")
     cols_display = ["Fecha", "Año", "NumSemana", "AñoMes", "Analista", "Región", "Mensajes Enviados", "Respuestas", "Invites enviadas", "Sesiones agendadas"]
-    if "Semana" in df_filtered.columns: cols_display.insert(3, "Semana") # Mantener 'Semana' si existe (nombre original)
+    if "Semana" in df_filtered.columns: cols_display.insert(3, "Semana")
     cols_present = [col for col in cols_display if col in df_filtered.columns]
     df_display_table = df_filtered[cols_present].copy()
     if "Fecha" in df_display_table.columns:
         df_display_table["Fecha"] = df_display_table["Fecha"].dt.strftime('%d/%m/%Y')
     st.dataframe(df_display_table, use_container_width=True, height=300)
 
+
 def display_kpi_summary(df_filtered):
+    # ... (sin cambios en esta función)
     st.markdown("### 🧮 Resumen de KPIs Totales y Tasas Globales (Periodo Filtrado)")
     kpi_cols = ["Mensajes Enviados", "Respuestas", "Invites enviadas", "Sesiones agendadas"]
     icons = ["📤", "💬", "📧", "🤝"]
@@ -279,6 +274,7 @@ def display_kpi_summary(df_filtered):
     col_metrics_rates[2].metric(f"{rate_icons[2]} Tasa Agend. (vs Resp.)", f"{tasa_agen_vs_resp_global:.1f}%")
 
 def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_icon="📊"):
+    # ... (sin cambios en esta función)
     st.markdown(f"### {chart_icon} {title_prefix} - KPIs Absolutos y Tasas")
     if group_by_col not in df_filtered.columns:
         st.warning(f"Columna '{group_by_col}' no encontrada para el desglose.")
@@ -331,6 +327,7 @@ def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_ico
             st.plotly_chart(fig_rate, use_container_width=True)
 
 def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_title, x_axis_label, chart_icon="📈"):
+    # ... (sin cambios en esta función)
     st.markdown(f"### {chart_icon} {chart_title}")
     st.caption(f"KPIs sumados por {x_axis_label.lower()} dentro del período filtrado.")
     required_cols_time = ['Fecha', time_col_agg]
@@ -400,29 +397,30 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
         fig_time.update_layout(title_x=0.5, margin=dict(b=120))
         st.plotly_chart(fig_time, use_container_width=True)
 
-# --- NUEVA FUNCIÓN PARA LA TABLA ESTILO HOJA DE CÁLCULO ---
-def display_detailed_weekly_analyst_view(df_filtered):
+
+# --- MODIFICADA FUNCIÓN PARA LA TABLA ESTILO HOJA DE CÁLCULO ---
+def display_detailed_weekly_analyst_view(df_filtered, semanas_seleccionadas_para_vista): # Nuevo parámetro
     st.markdown("### 📋 Vista Detallada Semanal por Analista (Estilo Anterior)")
 
     if df_filtered.empty:
         st.info("No hay datos filtrados para mostrar esta vista detallada.")
         return
+    
+    if not semanas_seleccionadas_para_vista: # Si no se seleccionó ninguna semana
+        st.info("Selecciona una o más semanas del menú desplegable de arriba para ver el detalle.")
+        return
 
-    # Columnas necesarias de la hoja de cálculo original y para agrupación
     required_cols = ['Año', 'NumSemana', 'Analista', 'Región',
                      'Invites enviadas', 'Mensajes Enviados',
                      'Respuestas', 'Sesiones agendadas']
     
-    # Verificar si todas las columnas necesarias están presentes
     missing_cols = [col for col in required_cols if col not in df_filtered.columns]
     if missing_cols:
         st.warning(f"Faltan las siguientes columnas necesarias para la vista detallada: {', '.join(missing_cols)}")
         return
 
-    # Crear una copia para trabajar solo con las columnas necesarias
-    df_work = df_filtered[required_cols].copy() # Renombrada la variable para evitar confusión
+    df_work = df_filtered[required_cols].copy()
 
-    # Agrupar por Año, Número de Semana, Analista y Región para sumar los KPIs
     df_analyst_weekly = df_work.groupby(
         ['Año', 'NumSemana', 'Analista', 'Región'], as_index=False
     ).agg(
@@ -432,21 +430,16 @@ def display_detailed_weekly_analyst_view(df_filtered):
         sesiones_totales = ('Sesiones agendadas', 'sum')
     )
 
-    # Calcular los KPIs de porcentaje como en la hoja de cálculo anterior
-    # Usamos la función calculate_rate que ya tienes definida, ajustando round_to si es necesario para esta tabla
     df_analyst_weekly['% Mens/Invite'] = df_analyst_weekly.apply(
-        lambda x: calculate_rate(x['mensajes_totales'], x['invites_totales'], round_to=2), axis=1 # Ejemplo con 2 decimales
+        lambda x: calculate_rate(x['mensajes_totales'], x['invites_totales'], round_to=2), axis=1
     )
     df_analyst_weekly['% Resp/Mensaje'] = df_analyst_weekly.apply(
-        lambda x: calculate_rate(x['respuestas_totales'], x['mensajes_totales'], round_to=2), axis=1 # Ejemplo con 2 decimales
+        lambda x: calculate_rate(x['respuestas_totales'], x['mensajes_totales'], round_to=2), axis=1
     )
-    # PARA '% DE ACEPTACIÓN': Asumimos que es (Sesiones / Respuestas) * 100. 
-    # ¡¡¡ AJUSTA 'respuestas_totales' SI LA BASE DE CÁLCULO ES OTRA (ej. 'invites_totales') !!!
     df_analyst_weekly['% de aceptación'] = df_analyst_weekly.apply(
-        lambda x: calculate_rate(x['sesiones_totales'], x['respuestas_totales'], round_to=2), axis=1 # Ejemplo con 2 decimales
+        lambda x: calculate_rate(x['sesiones_totales'], x['respuestas_totales'], round_to=2), axis=1
     )
 
-    # Renombrar columnas para que coincidan con la hoja de cálculo anterior
     df_analyst_weekly.rename(columns={
         'invites_totales': '1. Invites enviadas',
         'mensajes_totales': '2. Mensajes Enviados',
@@ -454,70 +447,91 @@ def display_detailed_weekly_analyst_view(df_filtered):
         'sesiones_totales': '4. Sesiones agendadas'
     }, inplace=True)
 
-    # Ordenar los datos: primero por Año (descendente), luego NumSemana (descendente), luego Analista (ascendente)
     df_analyst_weekly_sorted = df_analyst_weekly.sort_values(
         by=['Año', 'NumSemana', 'Analista'], ascending=[False, False, True]
     )
 
-    # Obtener las semanas únicas para iterar y mostrar tablas separadas
-    semanas_unicas = df_analyst_weekly_sorted[['Año', 'NumSemana']].drop_duplicates().sort_values(
-        by=['Año', 'NumSemana'], ascending=[False, False]
-    )
+    # Crear etiquetas 'Año-Semana' para el multiselect y para filtrar
+    # Asegurarse que df_analyst_weekly_sorted tenga 'Año' y 'NumSemana' antes de esta operación
+    if 'Año' in df_analyst_weekly_sorted.columns and 'NumSemana' in df_analyst_weekly_sorted.columns:
+        df_analyst_weekly_sorted['AñoSemanaEtiqueta'] = df_analyst_weekly_sorted['Año'].astype(str) + "-S" + df_analyst_weekly_sorted['NumSemana'].astype(str).str.zfill(2)
+    else:
+        st.error("Las columnas 'Año' o 'NumSemana' no están disponibles para crear etiquetas para el filtro de semanas.")
+        return
 
-    for index, fila_semana in semanas_unicas.iterrows():
-        ano_actual = fila_semana['Año']
-        num_semana_actual = fila_semana['NumSemana']
+    # Filtrar las semanas únicas basadas en la selección del usuario
+    # 'semanas_seleccionadas_para_vista' contendrá las etiquetas 'Año-Semana'
+    semanas_a_mostrar_df = df_analyst_weekly_sorted[df_analyst_weekly_sorted['AñoSemanaEtiqueta'].isin(semanas_seleccionadas_para_vista)]
 
-        st.markdown(f"#### Semana {num_semana_actual} (Año: {ano_actual})")
 
-        # Filtrar los datos para la semana actual
-        df_vista_semana = df_analyst_weekly_sorted[
-            (df_analyst_weekly_sorted['Año'] == ano_actual) &
-            (df_analyst_weekly_sorted['NumSemana'] == num_semana_actual)
-        ]
+    # Iterar sobre las semanas seleccionadas y filtradas
+    # Para mantener el orden original del multiselect, iteramos sobre semanas_seleccionadas_para_vista
+    # y luego filtramos el df_analyst_weekly_sorted para cada una.
+    
+    if semanas_a_mostrar_df.empty and semanas_seleccionadas_para_vista:
+        st.info("No hay datos para las semanas seleccionadas después de aplicar los filtros generales.")
+        return
 
-        # Seleccionar y ordenar columnas para la tabla de analistas de esta semana
+    # Obtener el orden de las semanas tal como fueron seleccionadas por el usuario
+    # y luego agrupar el df para mostrar en ese orden.
+    
+    # Asegurar que se agrupa por la etiqueta para mantener el orden de selección si es posible
+    # o simplemente iterar por las etiquetas seleccionadas.
+
+    for etiqueta_semana_seleccionada in semanas_seleccionadas_para_vista:
+        # Extraer Año y NumSemana de la etiqueta para el título si es necesario, o usar la etiqueta directamente
+        # Suponiendo que la etiqueta es "YYYY-SWW"
+        try:
+            ano_actual_str, num_semana_actual_str = etiqueta_semana_seleccionada.split('-S')
+            ano_actual = int(ano_actual_str)
+            num_semana_actual = int(num_semana_actual_str)
+            st.markdown(f"#### Semana {num_semana_actual} (Año: {ano_actual})")
+        except ValueError:
+            st.markdown(f"#### {etiqueta_semana_seleccionada}") # Fallback si el formato no es el esperado
+
+        df_vista_semana = semanas_a_mostrar_df[semanas_a_mostrar_df['AñoSemanaEtiqueta'] == etiqueta_semana_seleccionada]
+        
+        if df_vista_semana.empty:
+            # Esto podría pasar si una semana seleccionada no tiene datos después de otros filtros, aunque el chequeo anterior debería cubrirlo.
+            # st.caption(f"No hay datos detallados para mostrar para la semana {etiqueta_semana_seleccionada} con los filtros actuales.")
+            continue
+
+
         df_display_analistas = df_vista_semana[[
             'Analista', 'Región', '1. Invites enviadas', '2. Mensajes Enviados',
             '% Mens/Invite', '3. Respuestas', '% Resp/Mensaje',
             '4. Sesiones agendadas', '% de aceptación'
         ]].copy()
 
-        # Calcular la fila de "Total" para esta semana
         total_invites = df_display_analistas['1. Invites enviadas'].sum()
         total_mensajes = df_display_analistas['2. Mensajes Enviados'].sum()
         total_respuestas = df_display_analistas['3. Respuestas'].sum()
         total_sesiones = df_display_analistas['4. Sesiones agendadas'].sum()
 
         df_fila_total = pd.DataFrame([{
-            'Analista': 'Total',
-            'Región': '', 
+            'Analista': 'Total', 'Región': '', 
             '1. Invites enviadas': total_invites,
             '2. Mensajes Enviados': total_mensajes,
             '% Mens/Invite': calculate_rate(total_mensajes, total_invites, round_to=2),
             '3. Respuestas': total_respuestas,
             '% Resp/Mensaje': calculate_rate(total_respuestas, total_mensajes, round_to=2),
             '4. Sesiones agendadas': total_sesiones,
-            # PARA '% DE ACEPTACIÓN' EN TOTALES:
-            # ¡¡¡ AJUSTA 'total_respuestas' SI LA BASE DE CÁLCULO ES OTRA (ej. 'total_invites') !!!
             '% de aceptación': calculate_rate(total_sesiones, total_respuestas, round_to=2) 
         }])
 
-        # Combinar los datos de los analistas con la fila de total
         df_final_semana = pd.concat([df_display_analistas, df_fila_total], ignore_index=True)
 
-        # Formatear columnas de porcentaje para que se muestren con "%"
         for col_porcentaje in ['% Mens/Invite', '% Resp/Mensaje', '% de aceptación']:
             df_final_semana[col_porcentaje] = df_final_semana[col_porcentaje].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "0.00%")
         
         st.dataframe(df_final_semana.set_index('Analista'), use_container_width=True)
         st.markdown("---") 
-# --- FIN DE LA NUEVA FUNCIÓN ---
+# --- FIN DE LA FUNCIÓN MODIFICADA ---
 
 
 # --- Flujo Principal de la Página ---
-start_date_val_kpis, end_date_val_kpis, year_val_kpis, week_val_kpis, analista_val_kpis, region_val_kpis = sidebar_filters_kpis(df_kpis_semanales_raw)
-df_kpis_filtered_page = apply_kpis_filters(df_kpis_semanales_raw, start_date_val_kpis, end_date_val_kpis, year_val_kpis, week_val_kpis, analista_val_kpis, region_val_kpis)
+start_date_val_kpis, end_date_val_kpis, year_val_kpis, week_val_kpis_sidebar, analista_val_kpis, region_val_kpis = sidebar_filters_kpis(df_kpis_semanales_raw) # Renombrado week_val_kpis
+df_kpis_filtered_page = apply_kpis_filters(df_kpis_semanales_raw, start_date_val_kpis, end_date_val_kpis, year_val_kpis, week_val_kpis_sidebar, analista_val_kpis, region_val_kpis)
 
 if "Analista" in df_kpis_filtered_page.columns and analista_val_kpis and "– Todos –" not in analista_val_kpis:
     if "N/D" not in analista_val_kpis:
@@ -535,10 +549,42 @@ st.markdown("---")
 display_filtered_kpis_table(df_kpis_filtered_page) 
 st.markdown("---")
 
-# --- LLAMADA A LA NUEVA FUNCIÓN PARA MOSTRAR LA TABLA ESTILO HOJA DE CÁLCULO ---
-display_detailed_weekly_analyst_view(df_kpis_filtered_page) # <--- AQUÍ SE AÑADE LA NUEVA TABLA
+# --- SECCIÓN PARA LA VISTA DETALLADA SEMANAL CON SELECTOR ---
+st.markdown("### 🔬 Control de Vista Detallada Semanal por Analista")
+
+# Preparar opciones para el multiselect de semanas (basado en los datos ya filtrados por el sidebar)
+available_weeks_for_detail_view = []
+if not df_kpis_filtered_page.empty and 'Año' in df_kpis_filtered_page.columns and 'NumSemana' in df_kpis_filtered_page.columns:
+    # Crear etiquetas Año-Semana únicas y ordenadas de los datos filtrados
+    # Ordenar por Año descendente, luego por NumSemana descendente
+    unique_year_week_df = df_kpis_filtered_page[['Año', 'NumSemana']].drop_duplicates().sort_values(
+        by=['Año', 'NumSemana'], ascending=[False, False]
+    )
+    available_weeks_for_detail_view = [
+        f"{row['Año']}-S{str(row['NumSemana']).zfill(2)}" for index, row in unique_year_week_df.iterrows()
+    ]
+
+# Si no hay semanas disponibles después del filtro general, informar al usuario
+if not available_weeks_for_detail_view and not df_kpis_filtered_page.empty :
+     st.info("No hay semanas específicas disponibles para la vista detallada con los filtros generales aplicados.")
+elif df_kpis_filtered_page.empty:
+    st.info("No hay datos disponibles según los filtros generales para seleccionar semanas para la vista detallada.")
+
+
+# Usar st.multiselect para que el usuario elija las semanas
+# Asegurarse que el default sea una lista vacía o las semanas actualmente en session_state
+selected_weeks_for_detailed_view = st.multiselect(
+    "Selecciona las semanas para ver en detalle (Estilo Anterior):",
+    options=available_weeks_for_detail_view,
+    default=st.session_state.get(DETAILED_VIEW_WEEKS_KEY, []), # Cargar desde session state
+    key=DETAILED_VIEW_WEEKS_KEY # Guardar en session state
+)
+
+# Llamar a la función de visualización con las semanas seleccionadas
+display_detailed_weekly_analyst_view(df_kpis_filtered_page, selected_weeks_for_detailed_view)
 st.markdown("---")
-# --- FIN DE LA LLAMADA A LA NUEVA FUNCIÓN ---
+# --- FIN DE LA SECCIÓN DE VISTA DETALLADA ---
+
 
 display_time_evolution(df_kpis_filtered_page, 'NumSemana', 'Año-Semana', "Evolución Semanal de KPIs", "Semana", chart_icon="🗓️")
 st.markdown("---")
