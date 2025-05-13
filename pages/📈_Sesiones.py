@@ -14,7 +14,7 @@ from collections import OrderedDict # Para eliminar duplicados manteniendo orden
 # --- Configuración Inicial del Proyecto y Título de la Página ---
 try:
     project_root = os.path.abspath(
-        os.path.join(os.path.dirme(__file__), os.pardir))
+        os.path.join(os.path.dirname(__file__), os.pardir))
     if project_root not in sys.path:
         sys.path.insert(0, project_root)
 except NameError: # Esto ocurre si __file__ no está definido (ej. en un notebook interactivo)
@@ -44,7 +44,7 @@ SQL_ORDER_OF_IMPORTANCE = ['SQL1', 'SQL2', 'MQL', 'NA', 'SIN CALIFICACIÓN SQL']
 DF_FINAL_STRUCTURE_EMPTY = pd.DataFrame(columns=COLUMNAS_CENTRALES)
 
 # --- Gestión de Estado de Sesión para Filtros ---
-FILTER_KEYS_PREFIX = "sesiones_sql_lg_pais_page_v4_" # Incrementado v3 a v4 por cambios en SQL
+FILTER_KEYS_PREFIX = "sesiones_sql_lg_pais_page_v5_" # Incrementado v4 a v5 por debug
 SES_START_DATE_KEY = f"{FILTER_KEYS_PREFIX}start_date"
 SES_END_DATE_KEY = f"{FILTER_KEYS_PREFIX}end_date"
 SES_AE_FILTER_KEY = f"{FILTER_KEYS_PREFIX}ae"
@@ -182,7 +182,6 @@ def load_sesiones_data():
         detailed_error = traceback.format_exc()
         processing_warnings.append(f"ADVERTENCIA al cargar Hoja Suramérica. Tipo: {type(e)}, Error: {e}, Traceback: {detailed_error}")
 
-
     if processing_warnings:
         for warning_msg in processing_warnings: st.warning(warning_msg)
     if not all_dataframes:
@@ -209,7 +208,7 @@ def load_sesiones_data():
         st.error(f"Error creando columnas de tiempo: {e_time}")
         for col_t in ['Año', 'NumSemana', 'MesNombre', 'AñoMes']: df_procesado[col_t] = pd.NA
 
-  # --- INICIO DE CORRECCIÓN LÓGICA SQL (CON DEPURACIÓN) ---
+    # --- INICIO DE CORRECCIÓN LÓGICA SQL (CON DEPURACIÓN) ---
     default_values_fill = {
         "AE": "No Asignado AE", "LG": "No Asignado LG", "Puesto": "No Especificado",
         "Empresa": "No Especificado", "País": "No Especificado", "Nombre": "No Especificado",
@@ -227,7 +226,7 @@ def load_sesiones_data():
         if col_name not in df_procesado.columns:
             df_procesado[col_name] = default_val
         else:
-            if col_name != "SQL": # Manejo especial para SQL más abajo
+            if col_name != "SQL":
                 df_procesado[col_name] = df_procesado[col_name].fillna(default_val)
         df_procesado[col_name] = df_procesado[col_name].astype(str)
         if col_name != "SQL":
@@ -245,9 +244,8 @@ def load_sesiones_data():
     if "SQL" not in df_procesado.columns:
         df_procesado["SQL"] = default_values_fill["SQL"]
     
-    st.write("DEBUG: Valores ÚNICOS en df_procesado['SQL'] ANTES de fillna y limpieza:", df_procesado["SQL"].unique()[:20]) # Muestra los primeros 20 únicos
+    st.write("DEBUG: Valores ÚNICOS en df_procesado['SQL'] ANTES de fillna y limpieza:", df_procesado["SQL"].unique()[:20])
     st.write("DEBUG: Conteos en df_procesado['SQL'] ANTES de fillna y limpieza:", df_procesado["SQL"].value_counts(dropna=False).head(10))
-
 
     df_procesado["SQL"] = df_procesado["SQL"].fillna(default_values_fill["SQL"])
     df_procesado["SQL"] = df_procesado["SQL"].astype(str).str.strip().str.upper()
@@ -255,30 +253,24 @@ def load_sesiones_data():
     st.write("DEBUG: Valores ÚNICOS en df_procesado['SQL'] DESPUÉS de fillna, strip, upper:", df_procesado["SQL"].unique()[:20])
     st.write("DEBUG: Conteos en df_procesado['SQL'] DESPUÉS de fillna, strip, upper:", df_procesado["SQL"].value_counts(dropna=False).head(10))
 
-
     empty_patterns_for_sql = ["", "NAN", "NONE", "<NA>", "N/A", "ND", "N.D", "S/D", "S.D.", "TEMP_EMPTY_SQL", "NO ESPECIFICADO", "NO ASIGNADO SQL"]
     
-    df_procesado["SQL_Estandarizado"] = df_procesado["SQL"].copy() # Iniciar SQL_Estandarizado desde SQL limpio
+    df_procesado["SQL_Estandarizado"] = df_procesado["SQL"].copy()
 
-    # Iterar para reemplazar patrones vacíos. NO TOCAR 'NA' aquí.
     for pattern in empty_patterns_for_sql:
-        # Asegurarse que el pattern también esté en mayúsculas si la columna SQL ya lo está
         df_procesado.loc[df_procesado["SQL_Estandarizado"] == pattern.upper(), "SQL_Estandarizado"] = "PLACEHOLDER_FOR_SIN_CALIFICACION"
     
     st.write("DEBUG: Valores ÚNICOS en df_procesado['SQL_Estandarizado'] DESPUÉS de marcar placeholders:", df_procesado["SQL_Estandarizado"].unique()[:20])
     st.write("DEBUG: Conteos en df_procesado['SQL_Estandarizado'] DESPUÉS de marcar placeholders:", df_procesado["SQL_Estandarizado"].value_counts(dropna=False).head(10))
-
 
     df_procesado.loc[df_procesado["SQL_Estandarizado"] == "PLACEHOLDER_FOR_SIN_CALIFICACION", "SQL_Estandarizado"] = "SIN CALIFICACIÓN SQL"
 
     st.write("DEBUG: Valores ÚNICOS en df_procesado['SQL_Estandarizado'] DESPUÉS de asignar 'SIN CALIFICACIÓN SQL':", df_procesado["SQL_Estandarizado"].unique()[:20])
     st.write("DEBUG: Conteos en df_procesado['SQL_Estandarizado'] DESPUÉS de asignar 'SIN CALIFICACIÓN SQL':", df_procesado["SQL_Estandarizado"].value_counts(dropna=False).head(10))
 
-
     valid_explicit_sql_values = ['SQL1', 'SQL2', 'MQL', 'NA'] 
     st.write(f"DEBUG: valid_explicit_sql_values = {valid_explicit_sql_values}")
 
-    # Máscara para valores que NO son explícitos válidos Y TAMPOCO son "SIN CALIFICACIÓN SQL"
     mask_others_to_standardize = ~df_procesado["SQL_Estandarizado"].isin(valid_explicit_sql_values + ["SIN CALIFICACIÓN SQL"])
     
     st.write(f"DEBUG: Número de filas que cumplen 'mask_others_to_standardize': {mask_others_to_standardize.sum()}")
