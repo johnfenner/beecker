@@ -125,8 +125,8 @@ if df_kpis_semanales_raw.empty:
     st.error("El DataFrame de KPIs Semanales está vacío después de la carga. No se puede continuar.")
     st.stop()
 
-# --- Estado de Sesión para Filtros (Usa tus keys originales o renómbralas si es necesario) ---
-START_DATE_KEY = "kpis_page_fecha_inicio_v6" # O la key que tenías
+# --- Estado de Sesión para Filtros ---
+START_DATE_KEY = "kpis_page_fecha_inicio_v6"
 END_DATE_KEY = "kpis_page_fecha_fin_v6"
 ANALISTA_FILTER_KEY = "kpis_page_filtro_Analista_v6"
 REGION_FILTER_KEY = "kpis_page_filtro_Región_v6"
@@ -163,10 +163,9 @@ def sidebar_filters_kpis(df_options):
     st.sidebar.markdown("---")
     st.sidebar.subheader("📅 Por Año y Semana")
     
-    # --- INICIO DE CAMBIOS ---
     if "Año" in df_options.columns and not df_options["Año"].dropna().empty:
         unique_years_int = sorted(df_options["Año"].dropna().astype(int).unique(), reverse=True)
-        year_options = ["– Todos –"] + [str(year) for year in unique_years_int] # <--- CAMBIO: Convertir años a str
+        year_options = ["– Todos –"] + [str(year) for year in unique_years_int]
     else:
         year_options = ["– Todos –"]
 
@@ -175,21 +174,21 @@ def sidebar_filters_kpis(df_options):
     if not isinstance(current_year_selection, str):
         current_year_selection = str(current_year_selection)
 
-    if current_year_selection not in year_options: # <--- CAMBIO: Comprobación directa
+    if current_year_selection not in year_options:
         st.session_state[YEAR_FILTER_KEY] = "– Todos –"
         current_year_selection = "– Todos –"
     
-    selected_index = 0 # <--- ADICIÓN: Índice por defecto
+    selected_index = 0
     try:
-        selected_index = year_options.index(current_year_selection) # <--- CAMBIO: Búsqueda directa
+        selected_index = year_options.index(current_year_selection)
     except ValueError:
-        st.warning(f"'{current_year_selection}' no se encontró en las opciones de año. Usando la primera opción.")
-        if year_options: # Asegurarse de que la lista no esté vacía
+        st.sidebar.warning(f"'{current_year_selection}' no se encontró en las opciones de año. Usando la primera opción.") # <--- CAMBIO: st.sidebar.warning
+        if year_options:
             selected_index = 0
-            current_year_selection = year_options[selected_index] # Actualizar la selección al valor por defecto
-            st.session_state[YEAR_FILTER_KEY] = current_year_selection # Actualizar el estado de sesión también
-        else: # Caso extremo: no hay opciones de año
-            year_options = ["(No hay años)"] # Opción de relleno para evitar error en selectbox
+            current_year_selection = year_options[selected_index]
+            st.session_state[YEAR_FILTER_KEY] = current_year_selection
+        else:
+            year_options = ["(No hay años)"]
             current_year_selection = year_options[0]
             st.session_state[YEAR_FILTER_KEY] = current_year_selection
             selected_index = 0
@@ -197,20 +196,47 @@ def sidebar_filters_kpis(df_options):
     selected_year_str = st.sidebar.selectbox(
         "Año",
         year_options,
-        index=selected_index, # Usar el índice seguro
+        index=selected_index,
         key=YEAR_FILTER_KEY
     )
-    selected_year_int = int(selected_year_str) if selected_year_str != "– Todos –" and selected_year_str.isdigit() else None # <--- CAMBIO: Añadido .isdigit()
-    # --- FIN DE CAMBIOS ---
-        
+    selected_year_int = int(selected_year_str) if selected_year_str != "– Todos –" and selected_year_str.isdigit() else None
+    
+    # --- INICIO DE CAMBIOS CON DEBUG ---
+    st.sidebar.write(f"Año seleccionado (str): {selected_year_str}") # DEBUG
+    st.sidebar.write(f"Año seleccionado (int): {selected_year_int}") # DEBUG
+
     week_options = ["– Todas –"]
-    df_for_week = df_options[df_options["Año"] == selected_year_int] if selected_year_int is not None and "NumSemana" in df_options.columns and "Año" in df_options.columns else df_options
+    # Filtrar df_options por el año seleccionado para obtener las semanas correspondientes
+    if selected_year_int is not None:
+        df_for_week = df_options[df_options["Año"] == selected_year_int]
+    else: # Si el año es "– Todos –", usar todas las opciones
+        df_for_week = df_options
+    
+    st.sidebar.write(f"Filas en df_for_week (para semanas): {len(df_for_week)}") # DEBUG
+
     if "NumSemana" in df_for_week.columns and not df_for_week["NumSemana"].dropna().empty:
-        week_options.extend([str(w) for w in sorted(df_for_week["NumSemana"].dropna().astype(int).unique())])
+        unique_weeks_for_year = sorted(df_for_week["NumSemana"].dropna().astype(int).unique())
+        week_options.extend([str(w) for w in unique_weeks_for_year])
+        st.sidebar.write(f"Semanas únicas para el año '{selected_year_str}': {unique_weeks_for_year}") # DEBUG
+    
+    st.sidebar.write(f"Opciones finales de semana: {week_options}") # DEBUG
+    # --- FIN DE CAMBIOS CON DEBUG ---
     
     current_week_selection = st.session_state.get(WEEK_FILTER_KEY, ["– Todas –"])
-    valid_week_selection = [s for s in current_week_selection if s in week_options] or (["– Todas –"] if "– Todas –" in week_options else [])
-    if valid_week_selection != current_week_selection: st.session_state[WEEK_FILTER_KEY] = valid_week_selection
+    # Asegurar que la selección actual de semanas sea válida con las nuevas opciones de semana
+    valid_week_selection = [s for s in current_week_selection if s in week_options]
+    if not valid_week_selection: # Si ninguna de las selecciones anteriores es válida
+        if "– Todas –" in week_options:
+            valid_week_selection = ["– Todas –"]
+        elif week_options: # Si hay opciones pero ninguna es "– Todas –" y la selección previa no es válida
+             valid_week_selection = [] # Dejar vacío o seleccionar la primera opción disponible si se prefiere
+                                     # valid_week_selection = [week_options[0]] # (si week_options[0] no es '– Todas –')
+    
+    # Si la selección válida es diferente de lo que estaba en el estado de sesión, actualizar el estado.
+    # Esto es importante para resetear la selección de semanas si el año cambia y las semanas previas ya no aplican.
+    if set(valid_week_selection) != set(st.session_state.get(WEEK_FILTER_KEY, ["– Todas –"])):
+        st.session_state[WEEK_FILTER_KEY] = valid_week_selection
+    
     st.sidebar.multiselect("Semanas del Año", week_options, key=WEEK_FILTER_KEY, default=valid_week_selection)
     
     st.sidebar.markdown("---")
@@ -225,16 +251,25 @@ def sidebar_filters_kpis(df_options):
         
         current_selection_ms = st.session_state.get(key, ["– Todos –"])
         if not isinstance(current_selection_ms, list): current_selection_ms = ["– Todos –"]
-        valid_selection_ms = [s for s in current_selection_ms if s in options] or (["– Todos –"] if "– Todos –" in options else [])
-        if valid_selection_ms != current_selection_ms: st.session_state[key] = valid_selection_ms
+        
+        valid_selection_ms = [s for s in current_selection_ms if s in options]
+        if not valid_selection_ms:
+            if "– Todos –" in options:
+                valid_selection_ms = ["– Todos –"]
+            elif options: # Si hay opciones pero ninguna es "– Todos –"
+                valid_selection_ms = [] # O [options[0]] si se prefiere seleccionar la primera por defecto
+
+        if set(valid_selection_ms) != set(st.session_state.get(key, ["– Todos –"])):
+             st.session_state[key] = valid_selection_ms
+
         return st.sidebar.multiselect(label, options, key=key, default=valid_selection_ms)
 
-    analista_val_kpis = get_multiselect_val_kpis("Analista", "Analista", ANALISTA_FILTER_KEY, df_options) # <--- CAMBIO: Renombrada variable local
-    region_val_kpis = get_multiselect_val_kpis("Región", "Región", REGION_FILTER_KEY, df_options) # <--- CAMBIO: Renombrada variable local
+    analista_val_kpis = get_multiselect_val_kpis("Analista", "Analista", ANALISTA_FILTER_KEY, df_options)
+    region_val_kpis = get_multiselect_val_kpis("Región", "Región", REGION_FILTER_KEY, df_options)
     
     st.sidebar.markdown("---")
     st.sidebar.button("🧹 Limpiar Filtros de KPIs", on_click=clear_kpis_filters_callback, use_container_width=True, key="btn_clear_kpis_filters_v2")
-    return (st.session_state[START_DATE_KEY], st.session_state[END_DATE_KEY], selected_year_int, st.session_state[WEEK_FILTER_KEY], analista_val_kpis, region_val_kpis) # <--- CAMBIO: Usar variables renombradas
+    return (st.session_state[START_DATE_KEY], st.session_state[END_DATE_KEY], selected_year_int, st.session_state[WEEK_FILTER_KEY], analista_val_kpis, region_val_kpis)
 
 def apply_kpis_filters(df, start_dt, end_dt, year_val, week_list, analista_list, region_list):
     df_f = df.copy()
@@ -343,13 +378,13 @@ def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_ico
         for rate_col_key_disp in rate_col_names: summary_df_display[rate_col_names[rate_col_key_disp]] = summary_df_display[rate_col_names[rate_col_key_disp]].map('{:.1f}%'.format)
         
         st.markdown("##### Tabla Resumen (Absolutos y Tasas)")
-        st.dataframe(summary_df_display.set_index(group_by_col), use_container_width=True) # set_index para mejor visualización
+        st.dataframe(summary_df_display.set_index(group_by_col), use_container_width=True)
         st.markdown("---")
         
         if sesiones_col in summary_df.columns and summary_df[sesiones_col].sum() > 0:
             st.markdown("##### Gráfico: Sesiones Agendadas (Absoluto)")
             fig_abs = px.bar(summary_df.sort_values(by=sesiones_col, ascending=False), x=group_by_col, y=sesiones_col, title=f"Sesiones Agendadas por {group_by_col}", color=sesiones_col, text_auto=True, color_continuous_scale=px.colors.sequential.Teal)
-            fig_abs.update_traces(texttemplate='%{y:,}') # Usar %{y:,} para formato con comas
+            fig_abs.update_traces(texttemplate='%{y:,}')
             fig_abs.update_layout(title_x=0.5, xaxis_tickangle=-45, yaxis_title="Total Sesiones Agendadas", xaxis_title=group_by_col, margin=dict(b=150))
             st.plotly_chart(fig_abs, use_container_width=True)
             
@@ -358,7 +393,7 @@ def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_ico
             st.markdown(f"##### Gráfico: {rate_to_plot}")
             summary_df_sorted_rate = summary_df.sort_values(by=rate_to_plot, ascending=False)
             fig_rate = px.bar(summary_df_sorted_rate, x=group_by_col, y=rate_to_plot, title=f"{rate_to_plot} por {group_by_col}", color=rate_to_plot, text_auto=True, color_continuous_scale=px.colors.sequential.Mint)
-            fig_rate.update_traces(texttemplate='%{y:.1f}%') # Usar %{y:.1f}% para formato con un decimal y %
+            fig_rate.update_traces(texttemplate='%{y:.1f}%')
             fig_rate.update_layout(title_x=0.5, xaxis_tickangle=-45, yaxis_title=rate_to_plot, xaxis_title=group_by_col, margin=dict(b=150), yaxis_ticksuffix="%")
             st.plotly_chart(fig_rate, use_container_width=True)
 
@@ -367,7 +402,7 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
     st.caption(f"KPIs sumados por {x_axis_label.lower()} dentro del período filtrado.")
     required_cols_time = ['Fecha', time_col_agg]
     if 'NumSemana' in time_col_agg: required_cols_time.extend(['Año', 'NumSemana'])
-    if 'AñoMes' in time_col_agg: required_cols_time.extend(['Año', 'MesNum', 'AñoMes']) # MesNum para ordenar AñoMes
+    if 'AñoMes' in time_col_agg: required_cols_time.extend(['Año', 'MesNum', 'AñoMes'])
     
     cols_missing_time = [col for col in list(set(required_cols_time)) if col not in df_filtered.columns]
     fecha_col_time = df_filtered.get('Fecha', pd.Series(dtype='object'))
@@ -392,7 +427,7 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
         group_by_cols_time = ['Año', 'NumSemana']
         sort_by_cols_time = ['Año', 'NumSemana']
     elif time_col_agg == 'AñoMes' and 'Año' in df_filtered.columns and 'MesNum' in df_filtered.columns:
-        group_by_cols_time = ['Año', 'MesNum', 'AñoMes'] # Agrupar también por Año y MesNum para ordenar
+        group_by_cols_time = ['Año', 'MesNum', 'AñoMes']
         sort_by_cols_time = ['Año', 'MesNum']
         
     df_agg_time = df_filtered.groupby(group_by_cols_time, as_index=False)[kpi_cols_present_time].sum()
@@ -401,20 +436,15 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
         st.info(f"No hay datos agregados para mostrar la evolución por {x_axis_label.lower()}.")
         return
         
-    # Crear etiqueta para el eje X y ordenar
     if time_col_agg == 'NumSemana' and 'Año' in df_agg_time.columns and 'NumSemana' in df_agg_time.columns:
         df_agg_time = df_agg_time.sort_values(by=sort_by_cols_time)
         df_agg_time[time_col_label] = df_agg_time['Año'].astype(str) + '-S' + df_agg_time['NumSemana'].astype(str).str.zfill(2)
-    elif time_col_agg == 'AñoMes' and 'AñoMes' in df_agg_time.columns: # AñoMes ya es YYYY-MM
+    elif time_col_agg == 'AñoMes' and 'AñoMes' in df_agg_time.columns:
         df_agg_time = df_agg_time.sort_values(by=sort_by_cols_time)
-        # time_col_label ya es 'AñoMes', solo asegurar que se use para el eje x
-    
+
     if time_col_label not in df_agg_time.columns and (time_col_agg == 'NumSemana' or time_col_agg == 'AñoMes'):
-        # Si time_col_label no se creó (ej. porque time_col_agg no es NumSemana ni AñoMes, o faltan columnas Año/MesNum)
-        # usamos time_col_agg directamente, asumiendo que es una columna ordenable.
         if time_col_agg in df_agg_time.columns:
-            df_agg_time = df_agg_time.sort_values(by=time_col_agg) # Ordenar por la columna de agregación original
-            # No se crea una nueva columna time_col_label, se usará time_col_agg para el eje x.
+            df_agg_time = df_agg_time.sort_values(by=time_col_agg)
         else:
             st.error(f"La columna de agregación temporal '{time_col_agg}' no existe después de agrupar.")
             return
@@ -425,7 +455,7 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
     for kpi_col_time_disp in kpi_cols_present_time:
         df_display_time[kpi_col_time_disp] = df_display_time[kpi_col_time_disp].map('{:,}'.format)
     
-    st.dataframe(df_display_time.set_index(df_display_time_cols[0]), use_container_width=True) # Usar la columna de tiempo como índice
+    st.dataframe(df_display_time.set_index(df_display_time_cols[0]), use_container_width=True)
     
     sesiones_col_time = "Sesiones agendadas"
     x_axis_col_for_plot = time_col_label if time_col_label in df_agg_time.columns else time_col_agg
@@ -433,7 +463,7 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
     if sesiones_col_time in df_agg_time.columns and df_agg_time[sesiones_col_time].sum() > 0:
         fig_time = px.line(df_agg_time, x=x_axis_col_for_plot, y=sesiones_col_time, title=f"Evolución de Sesiones Agendadas por {x_axis_label}", labels={x_axis_col_for_plot: x_axis_label, sesiones_col_time: 'Total Sesiones'}, markers=True, text=sesiones_col_time)
         fig_time.update_traces(textposition='top center', texttemplate='%{text:,}')
-        fig_time.update_xaxes(type='category', tickangle=-45) # 'category' para asegurar que se muestren todas las etiquetas
+        fig_time.update_xaxes(type='category', tickangle=-45)
         fig_time.update_layout(title_x=0.5, margin=dict(b=120))
         st.plotly_chart(fig_time, use_container_width=True)
 
@@ -442,8 +472,9 @@ start_date_val_kpis, end_date_val_kpis, year_val_kpis, week_val_kpis, analista_v
 df_kpis_filtered_page = apply_kpis_filters(df_kpis_semanales_raw, start_date_val_kpis, end_date_val_kpis, year_val_kpis, week_val_kpis, analista_val_kpis, region_val_kpis)
 
 if "Analista" in df_kpis_filtered_page.columns and analista_val_kpis and "– Todos –" not in analista_val_kpis:
-    if "N/D" not in analista_val_kpis:
+    if "N/D" not in analista_val_kpis: # Solo filtrar 'N/D' si 'N/D' no fue explícitamente seleccionado
         df_kpis_filtered_page = df_kpis_filtered_page[~df_kpis_filtered_page["Analista"].isin(['N/D', ''])]
+
 
 # --- Presentación del Dashboard ---
 display_kpi_summary(df_kpis_filtered_page)
