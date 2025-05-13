@@ -400,7 +400,7 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
 
 # --- MODIFICADA FUNCIÓN PARA LA TABLA ESTILO HOJA DE CÁLCULO ---
 def display_detailed_weekly_analyst_view(df_filtered, semanas_seleccionadas_para_vista): # Nuevo parámetro
-    st.markdown("### 📋 Vista Detallada Semanal por Analista (Estilo Anterior)")
+    st.markdown("### 📋 Vista Detallada Semanal por Analista")
 
     if df_filtered.empty:
         st.info("No hay datos filtrados para mostrar esta vista detallada.")
