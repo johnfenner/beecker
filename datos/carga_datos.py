@@ -7,19 +7,20 @@ from utils.limpieza import calcular_dias_respuesta # Asegúrate que esta funció
 
 def cargar_y_limpiar_datos():
     try:
-        # Usar la sección [gcp_service_account] de tus secretos
+        # CORRECCIÓN: Usar la sección [gcp_service_account] de tus secretos
         creds_dict = st.secrets["gcp_service_account"]
         client = gspread.service_account_from_dict(creds_dict)
-    except KeyError:
-        st.error("Error de Configuración (Secrets): Falta la sección [gcp_service_account] o alguna de sus claves en los 'Secrets' de Streamlit.")
-        st.error("Asegúrate de haber configurado correctamente tus secretos en Streamlit Cloud con la sección [gcp_service_account] y todos sus campos (type, project_id, private_key, client_email, etc.).")
+    except KeyError: # Este error ocurrirá si [gcp_service_account] no está en tus secretos
+        st.error("Error de Configuración (Secrets): Falta la sección [gcp_service_account] o alguna de sus claves en los 'Secrets' de Streamlit (Carga Principal).")
+        st.error("Asegúrate de haber configurado correctamente tus secretos en Streamlit Cloud con la sección [gcp_service_account] y todos sus campos (type, project_id, private_key, client_email, etc.). Revisa tu archivo TOML de secretos.")
         st.stop()
     except Exception as e:
-        st.error(f"Error al cargar las credenciales de Google Sheets desde st.secrets: {e}")
+        st.error(f"Error al cargar las credenciales de Google Sheets desde st.secrets (Carga Principal): {e}")
         st.stop()
 
     try:
         # Usar la clave específica para la URL de esta hoja desde tus secretos
+        # Coincide con "main_prostraction_sheet_url" de tu secrets.toml
         sheet_url = st.secrets.get("main_prostraction_sheet_url", "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0")
         
         sheet = client.open_by_url(sheet_url).sheet1
@@ -82,7 +83,7 @@ def cargar_y_limpiar_datos():
         df_base["Avatar"] = df_base["Avatar"].replace({
             "Jonh Fenner": "John Bermúdez", "Jonh Bermúdez": "John Bermúdez",
             "Jonh": "John Bermúdez", "John Fenner": "John Bermúdez"
-        }) # La estandarización más completa se hace con utils.limpieza.estandarizar_avatar después
+        })
 
     columnas_texto_a_limpiar = [
         "¿Invite Aceptada?", "Sesion Agendada?", "Respuesta Primer Mensaje",
@@ -94,6 +95,7 @@ def cargar_y_limpiar_datos():
     for col in columnas_texto_a_limpiar:
         if col in df_base.columns:
             df_base[col] = df_base[col].fillna("").astype(str).str.strip()
+            # Reemplazar todos los vacíos comunes Y 'no' (minúscula) por "No" (Title Case)
             df_base.loc[df_base[col].isin(common_empty_strings) | (df_base[col].str.lower() == 'no'), col] = 'No'
 
     if "Fecha Sesion" in df_base.columns and not pd.api.types.is_datetime64_any_dtype(df_base["Fecha Sesion"]):
@@ -102,11 +104,12 @@ def cargar_y_limpiar_datos():
     return df_base
 
 
-def cargar_y_procesar_datos(df): # df es df_base
+def cargar_y_procesar_datos(df): 
     df_procesado = df.copy() 
     try:
         df_procesado = calcular_dias_respuesta(df_procesado)
     except Exception as e:
         st.warning(f"Error al ejecutar calcular_dias_respuesta: {e}")
     return df_procesado
+
 
