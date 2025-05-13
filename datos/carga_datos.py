@@ -2,30 +2,29 @@
 import pandas as pd
 import gspread
 import streamlit as st
-# from oauth2client.service_account import ServiceAccountCredentials # Ya no es necesario con st.secrets y gspread >= 5.0
 from collections import Counter
 from utils.limpieza import calcular_dias_respuesta
 
 def cargar_y_limpiar_datos():
     try:
-        # Usar st.secrets para las credenciales de Google Sheets
-        # gspread >= 5.0.0 usa service_account_from_dict
-        creds_dict = st.secrets["gcp_service_account"]
+        # Cambiado para que coincida con tu configuración de secretos online
+        creds_dict = st.secrets["google_sheets_credentials"]
         client = gspread.service_account_from_dict(creds_dict)
     except KeyError:
-        st.error("Error: No se encontró la configuración 'gcp_service_account' en los secretos de Streamlit.")
-        st.error("Asegúrate de haber configurado correctamente tus secretos en Streamlit Cloud con la sección [gcp_service_account] y todos sus campos.")
+        st.error("Error: No se encontró la configuración 'google_sheets_credentials' en los secretos de Streamlit.")
+        st.error("Asegúrate de haber configurado correctamente tus secretos en Streamlit Cloud con la sección [google_sheets_credentials] y todos sus campos.")
         st.stop()
     except Exception as e:
         st.error(f"Error al cargar las credenciales de Google Sheets desde st.secrets: {e}")
         st.stop()
 
-    # Abrir hoja. Puedes poner la URL en st.secrets también si lo deseas.
     try:
-        # Para usar una URL desde los secretos (recomendado para producción):
-        # sheet_url = st.secrets.get("google_sheets_url", "URL_POR_DEFECTO_SI_NO_LA_ENCUENTRA_EN_SECRETS")
-        # Si no está en secretos, usa la URL hardcodeada como fallback o principal:
-        sheet_url = st.secrets.get("google_sheets_url", "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0")
+        # Asegúrate que la clave para la URL en tus secretos coincida.
+        # Si usaste MAIN_PROSPECTION_SHEET_URL en tu TOML:
+        sheet_url = st.secrets.get("MAIN_PROSPECTION_SHEET_URL", "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0")
+        # Si usaste google_sheets_url en tu TOML para esta hoja específica:
+        # sheet_url = st.secrets.get("google_sheets_url", "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0")
+
 
         sheet = client.open_by_url(sheet_url).sheet1
         raw_data = sheet.get_all_values()
@@ -83,12 +82,10 @@ def cargar_y_limpiar_datos():
 
     if "Avatar" in df_base.columns:
         df_base["Avatar"] = df_base["Avatar"].astype(str).str.strip().str.title()
-        # La estandarización más detallada de Avatar se hará después con la función estandarizar_avatar
         df_base["Avatar"] = df_base["Avatar"].replace({
             "Jonh Fenner": "John Bermúdez", "Jonh Bermúdez": "John Bermúdez",
             "Jonh": "John Bermúdez", "John Fenner": "John Bermúdez"
         })
-
 
     columnas_texto_a_limpiar = [
         "¿Invite Aceptada?", "Sesion Agendada?", "Respuesta Primer Mensaje",
@@ -101,21 +98,7 @@ def cargar_y_limpiar_datos():
     for col in columnas_texto_a_limpiar:
         if col in df_base.columns:
             df_base[col] = df_base[col].fillna("").astype(str).str.strip()
-            # Reemplazar todos los vacíos comunes por "No" (Title Case)
             df_base.loc[df_base[col].isin(common_empty_strings) | (df_base[col].str.lower() == 'no'), col] = 'No'
-
-
-    # Limpieza final para asegurar que "No" sea consistente si algunos eran "no"
-    # for col in ["¿Invite Aceptada?", "Sesion Agendada?", "Respuesta Primer Mensaje"]:
-    #    if col in df_base.columns:
-    #        df_base.loc[df_base[col].str.lower() == 'no', col] = 'No'
-
-    # Aquí no forzamos 'category' o 'string[pyarrow]' para mantenerlo como lo tenías antes de las optimizaciones de velocidad.
-    # Si alguna conversión específica a 'category' funcionaba bien y la quieres, puedes añadirla aquí.
-    # Ejemplo:
-    # if "¿Invite Aceptada?" in df_base.columns:
-    #     df_base["¿Invite Aceptada?"] = df_base["¿Invite Aceptada?"].astype('category')
-
 
     if "Fecha Sesion" in df_base.columns and not pd.api.types.is_datetime64_any_dtype(df_base["Fecha Sesion"]):
         df_base["Fecha Sesion"] = pd.to_datetime(df_base["Fecha Sesion"], errors='coerce')
@@ -130,3 +113,4 @@ def cargar_y_procesar_datos(df): # df es df_base
     except Exception as e:
         st.warning(f"Error al ejecutar calcular_dias_respuesta: {e}")
     return df_procesado
+
