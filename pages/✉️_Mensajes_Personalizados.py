@@ -225,6 +225,63 @@ if st.session_state.mostrar_tabla_mensajes:
 
         st.markdown("### 📋 Prospectos Encontrados para Mensajes")
         st.write(f"Mostrando **{len(df_mensajes_final_display)}** prospectos.")
+
+        # --- 🔁 BLOQUE EXTRA DE PLANTILLA LIBRE Y MENSAJE BONITO ---
+        st.markdown("### ✏️ Selección Libre de Plantilla (sin categoría)")
+
+        plantillas_libres = {
+            "Plantilla John H2R": plantilla_john_h2r,
+            "Plantilla John P2P": plantilla_john_p2p,
+            "Plantilla John O2C": plantilla_john_o2c,
+            "Plantilla John General": plantilla_john_general
+        }
+
+        plantilla_sel_libre = st.selectbox(
+            "Selecciona una plantilla para aplicar a todos los prospectos filtrados:",
+            list(plantillas_libres.keys()),
+            key="plantilla_libre_selector"
+        )
+
+        mensaje_base_libre = plantillas_libres[plantilla_sel_libre]
+
+        if st.checkbox("✅ Aplicar esta plantilla directamente (sin usar categoría)", value=True):
+            df_vista_libre = df_mensajes_final_display.copy()
+
+            if df_vista_libre.empty:
+                st.info("No hay prospectos en los datos actuales.")
+            else:
+                def obtener_atencion_genero(avatar):
+                    avatar = str(avatar).lower()
+                    if any(nombre in avatar for nombre in ["john", "andrés", "carlos"]): return "atento"
+                    if any(nombre in avatar for nombre in ["maría", "laura", "ana"]): return "atenta"
+                    return "atento/a"
+
+                df_vista_libre["Mensaje_Personalizado"] = df_vista_libre.apply(
+                    lambda row: mensaje_base_libre
+                        .replace("{nombre}", str(row.get("Nombre", "")).split()[0] if pd.notna(row.get("Nombre")) else "[Nombre]")
+                        .replace("{avatar}", str(row.get("Avatar", "Tu Nombre")))
+                        .replace("[Nombre de la empresa]", str(row.get("Empresa", "[Nombre de la empresa]")))
+                        .replace("{atencion_genero}", obtener_atencion_genero(row.get("Avatar")))
+                        .replace(". ", ".\n\n")
+                        .replace(": ", ":\n"),
+                    axis=1
+                )
+
+                st.markdown("### 📄 Vista Previa de Mensajes Formateados")
+                columnas_msj = ["Nombre_Completo_Display", "Empresa", "Puesto", "Avatar", "LinkedIn", "Mensaje_Personalizado"]
+                columnas_msj_exist = [c for c in columnas_msj if c in df_vista_libre.columns]
+                st.dataframe(df_vista_libre[columnas_msj_exist], use_container_width=True, height=400)
+
+                csv_libre = convert_df_to_csv_final(df_vista_libre)
+                st.download_button(
+                    label="⬇️ Descargar CSV de Mensajes",
+                    data=csv_libre,
+                    file_name=f"mensajes_{plantilla_sel_libre.replace(' ', '_').lower()}.csv",
+                    mime='text/csv',
+                    key="btn_descarga_csv_libre"
+                )
+        # --- FIN BLOQUE EXTRA ---
+
         
         columnas_para_tabla_display = [
             "Nombre_Completo_Display", "Empresa", "Puesto", "Categoría", "Avatar",
@@ -434,3 +491,4 @@ if st.checkbox("✅ Aplicar esta plantilla directamente (sin usar categoría)", 
 
 
 st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")
+
