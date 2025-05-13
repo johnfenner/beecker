@@ -14,7 +14,7 @@ from collections import OrderedDict # Para eliminar duplicados manteniendo orden
 # --- Configuración Inicial del Proyecto y Título de la Página ---
 try:
     project_root = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), os.pardir))
+        os.path.join(os.path.dirme(__file__), os.pardir))
     if project_root not in sys.path:
         sys.path.insert(0, project_root)
 except NameError: # Esto ocurre si __file__ no está definido (ej. en un notebook interactivo)
@@ -209,73 +209,87 @@ def load_sesiones_data():
         st.error(f"Error creando columnas de tiempo: {e_time}")
         for col_t in ['Año', 'NumSemana', 'MesNombre', 'AñoMes']: df_procesado[col_t] = pd.NA
 
-    # --- INICIO DE CORRECCIÓN LÓGICA SQL ---
+  # --- INICIO DE CORRECCIÓN LÓGICA SQL (CON DEPURACIÓN) ---
     default_values_fill = {
         "AE": "No Asignado AE", "LG": "No Asignado LG", "Puesto": "No Especificado",
         "Empresa": "No Especificado", "País": "No Especificado", "Nombre": "No Especificado",
         "Apellido": "No Especificado", "Siguientes Pasos": "No Especificado",
         "Email": "No Especificado", "RPA": "No Aplicable", "LinkedIn": "No Especificado",
         "Fuente_Hoja": "Desconocida",
-        "SQL": "TEMP_EMPTY_SQL", # Marcador para SQL originalmente vacío/NaN
-        "SQL_Estandarizado": "TEMP_EMPTY_SQL" # Marcador inicial
+        "SQL": "TEMP_EMPTY_SQL", 
+        "SQL_Estandarizado": "TEMP_EMPTY_SQL"
     }
     generic_empty_na_values_general = ['', 'nan', 'none', 'NaN', 'None', '<NA>', '#N/A', 'N/A', 'na', 'nd', 'n/d', 's/d', 's.d.']
 
     for col_name in COLUMNAS_CENTRALES:
         if col_name in ['Fecha', 'Año', 'NumSemana', 'MesNombre', 'AñoMes']: continue
-
         default_val = default_values_fill.get(col_name, "No Especificado")
         if col_name not in df_procesado.columns:
-            df_procesado[col_name] = default_val # Crear columna con default si no existe
+            df_procesado[col_name] = default_val
         else:
-            # Para la columna SQL, el llenado de NaN se hace específicamente abajo. Para otras, aquí.
-            if col_name != "SQL":
+            if col_name != "SQL": # Manejo especial para SQL más abajo
                 df_procesado[col_name] = df_procesado[col_name].fillna(default_val)
-
-        df_procesado[col_name] = df_procesado[col_name].astype(str) # Convertir a string para limpieza
-        
-        # Limpieza general para la mayoría de las columnas
-        if col_name != "SQL": # La columna SQL tiene un manejo más específico
+        df_procesado[col_name] = df_procesado[col_name].astype(str)
+        if col_name != "SQL":
             current_col_lower = df_procesado[col_name].str.lower()
             for empty_pattern in generic_empty_na_values_general:
                 current_col_lower = current_col_lower.replace(empty_pattern, default_val.lower(), regex=False)
             df_procesado[col_name] = current_col_lower.str.strip()
             df_procesado.loc[df_procesado[col_name] == '', col_name] = default_val
-            # Capitalización selectiva
             if col_name not in ["SQL_Estandarizado", "Email", "LinkedIn", "RPA", "Fuente_Hoja"]:
                  df_procesado[col_name] = df_procesado[col_name].str.title()
-                 # Corregir capitalización de defaults si es necesario
                  df_procesado[col_name] = df_procesado[col_name].replace(default_val.title(), default_val, regex=False)
 
+    st.write("DEBUG: Inicio de Estandarización SQL")
 
-    # Estandarización específica y cuidadosa de SQL
-    if "SQL" not in df_procesado.columns: # Asegurar que la columna SQL exista
+    if "SQL" not in df_procesado.columns:
         df_procesado["SQL"] = default_values_fill["SQL"]
     
-    df_procesado["SQL"] = df_procesado["SQL"].fillna(default_values_fill["SQL"]) # Llenar NaNs con el marcador temporal
-    df_procesado["SQL"] = df_procesado["SQL"].astype(str).str.strip().str.upper() # Limpiar y a mayúsculas
+    st.write("DEBUG: Valores ÚNICOS en df_procesado['SQL'] ANTES de fillna y limpieza:", df_procesado["SQL"].unique()[:20]) # Muestra los primeros 20 únicos
+    st.write("DEBUG: Conteos en df_procesado['SQL'] ANTES de fillna y limpieza:", df_procesado["SQL"].value_counts(dropna=False).head(10))
 
-    # Identificar valores que representan "vacío" para SQL y marcarlos para "SIN CALIFICACIÓN SQL"
-    # "NA" NO está en esta lista porque es una calificación explícita.
+
+    df_procesado["SQL"] = df_procesado["SQL"].fillna(default_values_fill["SQL"])
+    df_procesado["SQL"] = df_procesado["SQL"].astype(str).str.strip().str.upper()
+
+    st.write("DEBUG: Valores ÚNICOS en df_procesado['SQL'] DESPUÉS de fillna, strip, upper:", df_procesado["SQL"].unique()[:20])
+    st.write("DEBUG: Conteos en df_procesado['SQL'] DESPUÉS de fillna, strip, upper:", df_procesado["SQL"].value_counts(dropna=False).head(10))
+
+
     empty_patterns_for_sql = ["", "NAN", "NONE", "<NA>", "N/A", "ND", "N.D", "S/D", "S.D.", "TEMP_EMPTY_SQL", "NO ESPECIFICADO", "NO ASIGNADO SQL"]
     
-    # Marcar los que son genuinamente vacíos o equivalentes a vacío
-    df_procesado["SQL_Estandarizado"] = df_procesado["SQL"] # Iniciar
-    for pattern in empty_patterns_for_sql:
-        df_procesado.loc[df_procesado["SQL_Estandarizado"] == pattern, "SQL_Estandarizado"] = "PLACEHOLDER_FOR_SIN_CALIFICACION"
+    df_procesado["SQL_Estandarizado"] = df_procesado["SQL"].copy() # Iniciar SQL_Estandarizado desde SQL limpio
 
-    # Convertir los placeholders a "SIN CALIFICACIÓN SQL"
+    # Iterar para reemplazar patrones vacíos. NO TOCAR 'NA' aquí.
+    for pattern in empty_patterns_for_sql:
+        # Asegurarse que el pattern también esté en mayúsculas si la columna SQL ya lo está
+        df_procesado.loc[df_procesado["SQL_Estandarizado"] == pattern.upper(), "SQL_Estandarizado"] = "PLACEHOLDER_FOR_SIN_CALIFICACION"
+    
+    st.write("DEBUG: Valores ÚNICOS en df_procesado['SQL_Estandarizado'] DESPUÉS de marcar placeholders:", df_procesado["SQL_Estandarizado"].unique()[:20])
+    st.write("DEBUG: Conteos en df_procesado['SQL_Estandarizado'] DESPUÉS de marcar placeholders:", df_procesado["SQL_Estandarizado"].value_counts(dropna=False).head(10))
+
+
     df_procesado.loc[df_procesado["SQL_Estandarizado"] == "PLACEHOLDER_FOR_SIN_CALIFICACION", "SQL_Estandarizado"] = "SIN CALIFICACIÓN SQL"
 
-    # Lista de calificaciones SQL explícitas válidas que queremos preservar
-    valid_explicit_sql_values = ['SQL1', 'SQL2', 'MQL', 'NA'] # "NA" es explícita y válida aquí
+    st.write("DEBUG: Valores ÚNICOS en df_procesado['SQL_Estandarizado'] DESPUÉS de asignar 'SIN CALIFICACIÓN SQL':", df_procesado["SQL_Estandarizado"].unique()[:20])
+    st.write("DEBUG: Conteos en df_procesado['SQL_Estandarizado'] DESPUÉS de asignar 'SIN CALIFICACIÓN SQL':", df_procesado["SQL_Estandarizado"].value_counts(dropna=False).head(10))
 
-    # Cualquier otra cosa que no sea una calificación explícita válida ni ya "SIN CALIFICACIÓN SQL"
-    # se convertirá a "SIN CALIFICACIÓN SQL".
-    # Esto incluye valores como "SQL3", "OTRO", "PENDIENTE", etc.
+
+    valid_explicit_sql_values = ['SQL1', 'SQL2', 'MQL', 'NA'] 
+    st.write(f"DEBUG: valid_explicit_sql_values = {valid_explicit_sql_values}")
+
+    # Máscara para valores que NO son explícitos válidos Y TAMPOCO son "SIN CALIFICACIÓN SQL"
     mask_others_to_standardize = ~df_procesado["SQL_Estandarizado"].isin(valid_explicit_sql_values + ["SIN CALIFICACIÓN SQL"])
+    
+    st.write(f"DEBUG: Número de filas que cumplen 'mask_others_to_standardize': {mask_others_to_standardize.sum()}")
+    st.write("DEBUG: Valores ÚNICOS en 'SQL_Estandarizado' que serán cambiados por 'mask_others_to_standardize':", df_procesado.loc[mask_others_to_standardize, "SQL_Estandarizado"].unique()[:20])
+
     df_procesado.loc[mask_others_to_standardize, "SQL_Estandarizado"] = "SIN CALIFICACIÓN SQL"
-    # --- FIN DE CORRECCIÓN LÓGICA SQL ---
+
+    st.write("DEBUG: Valores ÚNICOS FINALES en df_procesado['SQL_Estandarizado']:", df_procesado["SQL_Estandarizado"].unique()[:20])
+    st.write("DEBUG: Conteos FINALES en df_procesado['SQL_Estandarizado']:", df_procesado["SQL_Estandarizado"].value_counts(dropna=False).head(10))
+    st.write("--- FIN DEBUG SQL ---")
+    # --- FIN DE CORRECCIÓN LÓGICA SQL (CON DEPURACIÓN) ---
 
     df_final_structure = pd.DataFrame()
     for col in COLUMNAS_CENTRALES:
