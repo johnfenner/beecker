@@ -155,7 +155,8 @@ def mostrar_filtros_sidebar(df):
     
     # --- SECCIÓN MODIFICADA PARA USAR LA COLUMNA DE FECHA CORRECTA ---
     # Reemplaza "Fecha Primer Mensaje" con el nombre real de tu columna de primer mensaje
-    nombre_columna_para_rango_fechas = "Fecha Primer Mensaje" 
+    # Elegimos "Fecha Primer Mensaje" si existe, si no, usamos "Fecha de Invite"
+    nombre_columna_para_rango_fechas = "Fecha Primer Mensaje" if "Fecha Primer Mensaje" in df.columns else "Fecha de Invite" 
 
     if nombre_columna_para_rango_fechas in df.columns:
         # Asegurarse que la columna es de tipo datetime
@@ -221,3 +222,4 @@ def mostrar_filtros_sidebar(df):
             st.session_state.get("fecha_fin", None), 
             st.session_state.get("busqueda", "")
     )
+
