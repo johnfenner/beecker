@@ -11,18 +11,6 @@ import sys
 # --- Configuración Inicial del Proyecto y Título de la Página ---
 # La gestión de sys.path usualmente se hace en el script principal (🏠_Dashboard_Principal.py)
 # o es manejada por Streamlit en el entorno de la nube.
-# Si necesitas añadir la raíz del proyecto explícitamente aquí:
-# try:
-#     # Para ejecución local o cuando __file__ está definido
-#     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-#     if project_root not in sys.path:
-#         sys.path.insert(0, project_root)
-# except NameError:
-#     # Fallback si __file__ no está definido (ej. en algunos entornos interactivos)
-#     project_root = os.getcwd()
-#     if project_root not in sys.path:
-#         sys.path.insert(0, project_root)
-
 
 st.set_page_config(layout="wide", page_title="KPIs Semanales")
 
@@ -58,34 +46,32 @@ def parse_kpi_value(value_str, column_name=""):
 @st.cache_data(ttl=300)
 def load_weekly_kpis_data():
     try:
-        # Acceder directamente al diccionario de credenciales desde st.secrets
-        creds_from_secrets = st.secrets["google_sheets_credentials"]
+        # CORRECCIÓN: Usar la sección [gcp_service_account] de tus secretos
+        creds_from_secrets = st.secrets["gcp_service_account"] 
         client = gspread.service_account_from_dict(creds_from_secrets)
     except KeyError:
-        st.error("Error de Configuración (Secrets): Falta la clave 'google_sheets_credentials' en los 'Secrets' de Streamlit (KPIs Semanales).")
-        st.error("Asegúrate de haber configurado una sección [google_sheets_credentials] con todas las claves necesarias (type, project_id, private_key, client_email, etc.). Revisa tu archivo TOML de secretos en Streamlit Cloud.")
+        st.error("Error de Configuración (Secrets): Falta la sección [gcp_service_account] o alguna de sus claves en los 'Secrets' de Streamlit (KPIs Semanales).")
+        st.error("Asegúrate de haber configurado correctamente tus secretos en Streamlit Cloud.")
         st.stop()
     except Exception as e:
         st.error(f"Error al autenticar con Google Sheets para KPIs Semanales vía Secrets: {e}")
         st.stop()
 
-    # Leer URL de la hoja desde secrets, con un fallback a tu URL original
-    # Asegúrate que la clave "KPIS_SHEET_URL" exista en tus secretos si quieres usarla.
+    # Usar la clave específica para la URL de esta hoja desde tus secretos
     sheet_url_kpis = st.secrets.get(
-        "KPIS_SHEET_URL", 
+        "kpis_sheet_url", # Clave que definiste en tu secrets.toml
         "https://docs.google.com/spreadsheets/d/1vaJ2lPK7hbWsuikjmycPePKRrFXiOrlwXMXOdoXRY60/edit?gid=0#gid=0"
     )
     try:
         sheet = client.open_by_url(sheet_url_kpis).sheet1
         raw_data = sheet.get_all_values()
         if not raw_data or len(raw_data) <= 1:
-            st.error(f"No se pudieron obtener datos suficientes de Google Sheets para KPIs Semanales (URL: {sheet_url_kpis}). La hoja podría estar vacía o solo tener encabezados.")
+            st.error(f"No se pudieron obtener datos suficientes de Google Sheets para KPIs Semanales (URL: {sheet_url_kpis}).")
             return pd.DataFrame() 
         headers = raw_data[0]
         rows = raw_data[1:]
     except gspread.exceptions.SpreadsheetNotFound:
         st.error(f"Error: No se encontró la hoja de KPIs Semanales en la URL: {sheet_url_kpis}")
-        st.info("Verifica que la URL es correcta y que la cuenta de servicio tiene permisos para acceder a ella.")
         st.stop()
     except Exception as e:
         st.error(f"Error al leer la hoja de Google Sheets para KPIs Semanales (URL: {sheet_url_kpis}): {e}")
@@ -125,26 +111,27 @@ def load_weekly_kpis_data():
             df[col_str] = pd.Series(dtype='str')
         else:
             df[col_str] = df[col_str].astype(str).str.strip().fillna("N/D")
-
     return df
 
+# --- Función para calcular tasas de forma segura ---
 def calculate_rate(numerator, denominator, round_to=1):
-    if denominator == 0:
-        return 0.0
+    if denominator == 0: return 0.0
     return round((numerator / denominator) * 100, round_to)
 
+# --- Carga de Datos ---
 df_kpis_semanales_raw = load_weekly_kpis_data()
 
 if df_kpis_semanales_raw.empty:
     st.error("El DataFrame de KPIs Semanales está vacío después de la carga. No se puede continuar.")
     st.stop()
 
-START_DATE_KEY = "kpis_page_fecha_inicio_v7"
-END_DATE_KEY = "kpis_page_fecha_fin_v7"
-ANALISTA_FILTER_KEY = "kpis_page_filtro_Analista_v7"
-REGION_FILTER_KEY = "kpis_page_filtro_Región_v7"
-YEAR_FILTER_KEY = "kpis_page_filtro_Año_v7"
-WEEK_FILTER_KEY = "kpis_page_filtro_Semana_v7"
+# --- Estado de Sesión para Filtros (Usa tus keys originales o renómbralas si es necesario) ---
+START_DATE_KEY = "kpis_page_fecha_inicio_v6" # O la key que tenías
+END_DATE_KEY = "kpis_page_fecha_fin_v6"
+ANALISTA_FILTER_KEY = "kpis_page_filtro_Analista_v6"
+REGION_FILTER_KEY = "kpis_page_filtro_Región_v6"
+YEAR_FILTER_KEY = "kpis_page_filtro_Año_v6"
+WEEK_FILTER_KEY = "kpis_page_filtro_Semana_v6"
 
 default_filters_kpis = {
     START_DATE_KEY: None, END_DATE_KEY: None,
