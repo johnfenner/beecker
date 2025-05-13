@@ -1,9 +1,8 @@
-# componentes/tabla_prospectos.py
+# Prospe/componentes/tabla_prospectos.py
 import streamlit as st
-# Corregido: Eliminar ColumnsOptionsBuilder de la importación
-from st_aggrid import AgGrid, GridOptionsBuilder
+from st_aggrid import AgGrid, GridOptionsBuilder # ColumnsOptionsBuilder fue eliminado correctamente antes
 import io
-import pandas as pd # Asegurarse de importar pandas
+import pandas as pd
 
 def mostrar_tabla_filtrada(df_tabla):
     st.markdown("### 📄 Prospectos Filtrados")
@@ -12,76 +11,74 @@ def mostrar_tabla_filtrada(df_tabla):
         st.info("No hay prospectos para mostrar con los filtros actuales.")
         return
 
-    # --- Inicio: Selección de Columnas ---
     todas_columnas = df_tabla.columns.tolist()
 
-    # Usar session_state para guardar las columnas seleccionadas
-    if 'columnas_seleccionadas_tabla' not in st.session_state:
-        # Por defecto, seleccionar todas las columnas la primera vez
-        st.session_state['columnas_seleccionadas_tabla'] = todas_columnas
+    # Inicializar el estado de sesión para las columnas seleccionadas si no existe
+    if 'columnas_seleccionadas_tabla_principal' not in st.session_state:
+        st.session_state['columnas_seleccionadas_tabla_principal'] = todas_columnas
 
-    # Crear el multiselect, asegurando que los valores por defecto sean válidos
-    columnas_disponibles_actualmente = st.session_state['columnas_seleccionadas_tabla']
-    # Filtrar el default para que solo contenga columnas que realmente existen en el df actual
-    default_seleccionado_valido = [col for col in columnas_disponibles_actualmente if col in todas_columnas]
-    if not default_seleccionado_valido: # Si la selección guardada ya no es válida, volver a todas
-        default_seleccionado_valido = todas_columnas
-        st.session_state['columnas_seleccionadas_tabla'] = default_seleccionado_valido
+    # Validar que las columnas guardadas en session_state sigan existiendo en el df_tabla actual
+    columnas_guardadas_en_estado = st.session_state['columnas_seleccionadas_tabla_principal']
+    default_columnas_validas = [col for col in columnas_guardadas_en_estado if col in todas_columnas]
 
-    # Widget para seleccionar columnas
-    with st.expander("Seleccionar Columnas para Mostrar", expanded=False):
-      columnas_elegidas = st.multiselect(
-          "Elige las columnas que quieres ver en la tabla:",
+    if not default_columnas_validas and todas_columnas: # Si ninguna de las guardadas es válida, pero hay columnas
+        default_columnas_validas = todas_columnas
+        st.session_state['columnas_seleccionadas_tabla_principal'] = todas_columnas # Resetear el estado
+    elif not default_columnas_validas and not todas_columnas: # No hay columnas ni en estado ni en df
+         default_columnas_validas = []
+         st.session_state['columnas_seleccionadas_tabla_principal'] = []
+
+
+    with st.expander("Seleccionar Columnas para Mostrar en Tabla Principal", expanded=False):
+      columnas_elegidas_widget = st.multiselect(
+          "Elige las columnas:",
           options=todas_columnas,
-          default=default_seleccionado_valido, # Usar el default validado
-          key="multiselect_columnas_tabla" # Usar una key diferente para el widget
+          default=default_columnas_validas, # Usar las columnas validadas
+          key="multiselect_widget_tabla_principal" # Key única para el widget
       )
 
-    # Actualizar el session_state con la nueva selección
-    if columnas_elegidas != st.session_state['columnas_seleccionadas_tabla']:
-        st.session_state['columnas_seleccionadas_tabla'] = columnas_elegidas
-        # No es necesario st.rerun() aquí, Streamlit lo maneja
+    # Actualizar el estado de sesión con la nueva selección del widget
+    # Esto es crucial para que la selección persista y se use correctamente
+    if columnas_elegidas_widget != st.session_state['columnas_seleccionadas_tabla_principal']:
+        st.session_state['columnas_seleccionadas_tabla_principal'] = columnas_elegidas_widget
+        # st.rerun() # Podría ser necesario si la actualización no es inmediata en todos los casos, pero usualmente Streamlit lo maneja
 
-    # Usar las columnas seleccionadas del estado de sesión
-    columnas_para_mostrar = st.session_state['columnas_seleccionadas_tabla']
-
-    # Si no se elige ninguna columna, mostrar todas como fallback o un mensaje
-    if not columnas_para_mostrar:
-        st.warning("No has seleccionado ninguna columna para mostrar. Mostrando todas por defecto.")
-        columnas_para_mostrar = todas_columnas # Fallback a mostrar todas
-
-    # Filtrar el DataFrame original para la tabla AgGrid
-    tabla_filtrada_por_columnas = df_tabla[columnas_para_mostrar].copy()
-    # --- Fin: Selección de Columnas ---
+    # Usar siempre las columnas del estado de sesión para la lógica de la tabla
+    columnas_para_mostrar_en_tabla = st.session_state['columnas_seleccionadas_tabla_principal']
 
 
-    # --- Configuración de AgGrid (usando tabla_filtrada_por_columnas) ---
-    gb = GridOptionsBuilder.from_dataframe(tabla_filtrada_por_columnas)
+    if not columnas_para_mostrar_en_tabla and todas_columnas:
+        # st.warning("No has seleccionado ninguna columna. Mostrando todas por defecto.") # Opcional
+        columnas_para_mostrar_en_tabla = todas_columnas
+    elif not columnas_para_mostrar_en_tabla and not todas_columnas:
+        st.info("No hay columnas disponibles para mostrar.")
+        return
 
-    # Configuración por defecto (aplicada a las columnas que se mostrarán)
+
+    tabla_con_columnas_seleccionadas = df_tabla[columnas_para_mostrar_en_tabla].copy()
+    
+    gb = GridOptionsBuilder.from_dataframe(tabla_con_columnas_seleccionadas)
     gb.configure_default_column(resizable=True, sortable=True, filter='agTextColumnFilter', editable=False)
 
-    # Configuración específica de columnas (solo si existen en columnas_para_mostrar)
-    if "Fecha Primer Mensaje" in columnas_para_mostrar:
+    # Configuraciones específicas de columnas (solo si están seleccionadas para mostrarse)
+    if "Fecha Primer Mensaje" in columnas_para_mostrar_en_tabla:
         gb.configure_column("Fecha Primer Mensaje", cellRenderer=f"""
             function(params) {{
-                if (params.value == null || params.value == '' || String(params.value).toLowerCase() == 'no') {{
+                if (params.value == null || params.value == '' || String(params.value).toLowerCase() == 'no' || String(params.value).toLowerCase() == 'nat') {{
                     return '<span style="color: red;">Sin Respuesta Inicial</span>';
                 }} else {{
-                    // Intentar formatear si es fecha válida, sino mostrar como viene
-                    try {{
+                    try {{ /* Intento de formatear como fecha */
                        const date = new Date(params.value);
-                       // Verificar si es una fecha válida antes de formatear
-                       if (!isNaN(date.getTime())) {{
+                       if (!isNaN(date.getTime())) {{ /* Verificar si es fecha válida */
                            return date.toLocaleDateString('es-ES', {{ day: '2-digit', month: '2-digit', year: 'numeric' }});
                        }}
-                    }} catch (e) {{ /* Ignorar error de parseo */ }}
-                    return params.value; // Devolver valor original si no es fecha o hay error
+                    }} catch (e) {{ /* Ignorar error de parseo de fecha */ }}
+                    return params.value; /* Devolver valor original si no es fecha o hay error */
                 }}
             }}
         """)
 
-    if "Sesion Agendada?" in columnas_para_mostrar:
+    if "Sesion Agendada?" in columnas_para_mostrar_en_tabla:
         gb.configure_column("Sesion Agendada?", cellRenderer=f"""
             function(params) {{
                 if (params.value == null || String(params.value).toLowerCase() == 'no') {{
@@ -89,45 +86,36 @@ def mostrar_tabla_filtrada(df_tabla):
                 }} else if (String(params.value).toLowerCase() == 'si') {{
                      return '<span style="color: green; font-weight: bold;">Sí Agendada</span>';
                 }} else {{
-                    return params.value; // Mostrar otros valores como vienen
+                    return params.value; /* Mostrar otros valores como vienen */
                 }}
             }}
         """)
 
-    if "LinkedIn" in columnas_para_mostrar:
-         gb.configure_column("LinkedIn", cellRenderer="""function(params) { if(params.value){ return '<a href="' + params.value + '" target="_blank">'+ 'Ver Perfil' +'</a>'} else { return ''}}""")
-
-
-    # Puedes añadir más configuraciones específicas aquí si es necesario
-    # Ejemplo: Ocultar el índice
-    # gb.configure_grid_options(suppressRowTransform=True)
+    if "LinkedIn" in columnas_para_mostrar_en_tabla:
+         gb.configure_column("LinkedIn", cellRenderer="""function(params) { if(params.value && String(params.value).trim() !== '' && String(params.value).toLowerCase() !== 'no' && String(params.value).toLowerCase() !== 'na'){ return '<a href="' + params.value + '" target="_blank">'+ 'Ver Perfil' +'</a>'} else { return ''}}""")
 
     gridOptions = gb.build()
 
-    # --- Mostrar AgGrid ---
-    st.write(f"Mostrando {len(columnas_para_mostrar)} de {len(todas_columnas)} columnas seleccionadas.")
+    st.write(f"Mostrando {len(columnas_para_mostrar_en_tabla)} de {len(todas_columnas)} columnas seleccionadas.")
     AgGrid(
-        tabla_filtrada_por_columnas, # Usar el DataFrame con columnas seleccionadas
+        tabla_con_columnas_seleccionadas,
         gridOptions=gridOptions,
         height=400,
-        width='100%', # Asegurar que use el ancho completo
-        theme="alpine", # Puedes probar otros temas: "streamlit", "balham", "material"
+        width='100%',
+        theme="alpine", # O "streamlit", "balham", "material"
         enable_enterprise_modules=False,
-        # Permitir seleccionar texto en la tabla
         allow_unsafe_jscode=True, # Necesario para cellRenderer
-        # Actualizar automáticamente si los datos cambian (útil con filtros)
-        reload_data=True,
-        key='aggrid_tabla_principal' # Añadir una key única para la tabla
+        reload_data=True, # Importante para que AgGrid reaccione a cambios en el DataFrame
+        key='aggrid_tabla_prospectos_principal' # Key única
     )
 
-    # --- Descarga Excel (Descargará las columnas actualmente visibles en la tabla) ---
+    # Descarga Excel con las columnas actualmente visibles
     output = io.BytesIO()
-    # Usar tabla_filtrada_por_columnas para la descarga
-    tabla_filtrada_por_columnas.to_excel(output, index=False, engine='openpyxl')
+    tabla_con_columnas_seleccionadas.to_excel(output, index=False, engine='openpyxl')
     st.download_button(
         "⬇️ Descargar Vista Actual (Excel)",
         output.getvalue(),
         "prospectos_filtrados_vista_actual.xlsx",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        key="download_button_tabla_vista" # Key única para el botón de descarga
+        key="download_button_tabla_principal_vista" # Key única
     )
