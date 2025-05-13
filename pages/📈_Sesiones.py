@@ -33,7 +33,7 @@ SHEET_URL_SESIONES_PRINCIPAL_DEFAULT = "https://docs.google.com/spreadsheets/d/1
 SHEET_NAME_SESIONES_PRINCIPAL = "Sesiones 2024-2025"
 
 SHEET_URL_SESIONES_SURAMERICA_DEFAULT = "https://docs.google.com/spreadsheets/d/1MoTUg0sZ76168k4VNajzyrxAa5hUHdWNtGNu9t0Nqnc/edit?gid=278542854#gid=278542854"
-SHEET_NAME_SESIONES_SURAMERICA = "SesionesSA 2024-2025" # Asegúrate que este nombre sea EXACTO
+SHEET_NAME_SESIONES_SURAMERICA = "BD Sesiones 2024" # Asegúrate que este nombre sea EXACTO
 
 COLUMNAS_CENTRALES = [
     "Fecha", "Empresa", "País", "Nombre", "Apellido", "Puesto", "SQL", "SQL_Estandarizado",
@@ -44,7 +44,7 @@ SQL_ORDER_OF_IMPORTANCE = ['SQL1', 'SQL2', 'MQL', 'NA', 'SIN CALIFICACIÓN SQL']
 DF_FINAL_STRUCTURE_EMPTY = pd.DataFrame(columns=COLUMNAS_CENTRALES)
 
 # --- Gestión de Estado de Sesión para Filtros ---
-FILTER_KEYS_PREFIX = "sesiones_sql_lg_pais_page_v5_" # Incrementado v4 a v5 por debug
+FILTER_KEYS_PREFIX = "sesiones_sql_lg_pais_page_v5_" # Mantener v5 o incrementar si hay más cambios estructurales
 SES_START_DATE_KEY = f"{FILTER_KEYS_PREFIX}start_date"
 SES_END_DATE_KEY = f"{FILTER_KEYS_PREFIX}end_date"
 SES_AE_FILTER_KEY = f"{FILTER_KEYS_PREFIX}ae"
@@ -151,13 +151,14 @@ def load_sesiones_data():
             all_dataframes.append(df_proc_p)
         else: processing_warnings.append(f"Hoja Principal ('{SHEET_NAME_SESIONES_PRINCIPAL}') vacía o sin encabezados.")
     except Exception as e:
-        import traceback
-        detailed_error = traceback.format_exc()
-        processing_warnings.append(f"ADVERTENCIA al cargar Hoja Principal. Tipo: {type(e)}, Error: {e}, Traceback: {detailed_error}")
+        # import traceback # Quitar import si no se usa detailed_error
+        # detailed_error = traceback.format_exc() # Quitar si no se usa
+        processing_warnings.append(f"ADVERTENCIA al cargar Hoja Principal. Error: {e}")
+
 
     try: # Hoja Suramérica
         workbook_suramerica = client.open_by_url(SHEET_URL_SESIONES_SURAMERICA_DEFAULT)
-        sheet_suramerica = workbook_suramerica.worksheet(SHEET_NAME_SESIONES_SURAMERICA)
+        sheet_suramerica = workbook_suramerica.worksheet(SHEET_NAME_SESIONES_SURAMERICA) # Asegúrate que SHEET_NAME_SESIONES_SURAMERICA sea correcto
         raw_data_suramerica_list = sheet_suramerica.get_all_values()
         if raw_data_suramerica_list and len(raw_data_suramerica_list) > 1:
             headers_sa = make_unique_headers(raw_data_suramerica_list[0])
@@ -178,9 +179,10 @@ def load_sesiones_data():
                 all_dataframes.append(df_proc_sa)
         else: processing_warnings.append(f"Hoja Suramérica ('{SHEET_NAME_SESIONES_SURAMERICA}') vacía o sin encabezados.")
     except Exception as e:
-        import traceback
-        detailed_error = traceback.format_exc()
-        processing_warnings.append(f"ADVERTENCIA al cargar Hoja Suramérica. Tipo: {type(e)}, Error: {e}, Traceback: {detailed_error}")
+        # import traceback # Quitar import si no se usa detailed_error
+        # detailed_error = traceback.format_exc() # Quitar si no se usa
+        processing_warnings.append(f"ADVERTENCIA al cargar Hoja Suramérica. Error: {e}")
+
 
     if processing_warnings:
         for warning_msg in processing_warnings: st.warning(warning_msg)
@@ -207,6 +209,61 @@ def load_sesiones_data():
     except Exception as e_time:
         st.error(f"Error creando columnas de tiempo: {e_time}")
         for col_t in ['Año', 'NumSemana', 'MesNombre', 'AñoMes']: df_procesado[col_t] = pd.NA
+
+    default_values_fill = {
+        "AE": "No Asignado AE", "LG": "No Asignado LG", "Puesto": "No Especificado",
+        "Empresa": "No Especificado", "País": "No Especificado", "Nombre": "No Especificado",
+        "Apellido": "No Especificado", "Siguientes Pasos": "No Especificado",
+        "Email": "No Especificado", "RPA": "No Aplicable", "LinkedIn": "No Especificado",
+        "Fuente_Hoja": "Desconocida",
+        "SQL": "TEMP_EMPTY_SQL", 
+        "SQL_Estandarizado": "TEMP_EMPTY_SQL"
+    }
+    generic_empty_na_values_general = ['', 'nan', 'none', 'NaN', 'None', '<NA>', '#N/A', 'N/A', 'na', 'nd', 'n/d', 's/d', 's.d.']
+
+    for col_name in COLUMNAS_CENTRALES:
+        if col_name in ['Fecha', 'Año', 'NumSemana', 'MesNombre', 'AñoMes']: continue
+        default_val = default_values_fill.get(col_name, "No Especificado")
+        if col_name not in df_procesado.columns:
+            df_procesado[col_name] = default_val
+        else:
+            if col_name != "SQL":
+                df_procesado[col_name] = df_procesado[col_name].fillna(default_val)
+        df_procesado[col_name] = df_procesado[col_name].astype(str)
+        if col_name != "SQL":
+            current_col_lower = df_procesado[col_name].str.lower()
+            for empty_pattern in generic_empty_na_values_general:
+                current_col_lower = current_col_lower.replace(empty_pattern, default_val.lower(), regex=False)
+            df_procesado[col_name] = current_col_lower.str.strip()
+            df_procesado.loc[df_procesado[col_name] == '', col_name] = default_val
+            if col_name not in ["SQL_Estandarizado", "Email", "LinkedIn", "RPA", "Fuente_Hoja"]:
+                 df_procesado[col_name] = df_procesado[col_name].str.title()
+                 df_procesado[col_name] = df_procesado[col_name].replace(default_val.title(), default_val, regex=False) # Mantener default como está
+                 # Corregir específicamente para los valores que tienen mayúsculas y minúsculas
+                 df_procesado[col_name] = df_procesado[col_name].replace("No Asignado Ae", "No Asignado AE", regex=False)
+                 df_procesado[col_name] = df_procesado[col_name].replace("No Asignado Lg", "No Asignado LG", regex=False)
+
+
+    if "SQL" not in df_procesado.columns:
+        df_procesado["SQL"] = default_values_fill["SQL"]
+    
+    df_procesado["SQL"] = df_procesado["SQL"].fillna(default_values_fill["SQL"])
+    df_procesado["SQL"] = df_procesado["SQL"].astype(str).str.strip().str.upper()
+
+    empty_patterns_for_sql = ["", "NAN", "NONE", "<NA>", "N/A", "ND", "N.D", "S/D", "S.D.", "TEMP_EMPTY_SQL", "NO ESPECIFICADO", "NO ASIGNADO SQL"] # Ya están en mayúsculas por el .upper() anterior a la columna SQL
+    
+    df_procesado["SQL_Estandarizado"] = df_procesado["SQL"].copy()
+
+    for pattern in empty_patterns_for_sql:
+        # No es necesario .upper() en pattern si la columna SQL_Estandarizado ya está en mayúsculas
+        df_procesado.loc[df_procesado["SQL_Estandarizado"] == pattern, "SQL_Estandarizado"] = "PLACEHOLDER_FOR_SIN_CALIFICACION"
+    
+    df_procesado.loc[df_procesado["SQL_Estandarizado"] == "PLACEHOLDER_FOR_SIN_CALIFICACION", "SQL_Estandarizado"] = "SIN CALIFICACIÓN SQL"
+
+    valid_explicit_sql_values = ['SQL1', 'SQL2', 'MQL', 'NA'] # Ya están en mayúsculas
+
+    mask_others_to_standardize = ~df_procesado["SQL_Estandarizado"].isin(valid_explicit_sql_values + ["SIN CALIFICACIÓN SQL"])
+    df_procesado.loc[mask_others_to_standardize, "SQL_Estandarizado"] = "SIN CALIFICACIÓN SQL"
 
     df_final_structure = pd.DataFrame()
     for col in COLUMNAS_CENTRALES:
@@ -408,7 +465,7 @@ def display_analisis_por_dimension(df_filtered, dimension_col, dimension_label, 
         st.dataframe(pivot_table_dim.style.format(format_dict_dim), use_container_width=True)
     except Exception as e_pivot: st.warning(f"No se pudo generar la tabla pivot para {dimension_label}: {e_pivot}")
 
-def display_evolucion_sql(df_filtered, time_agg_col, display_label_col_name, chart_title, x_axis_label): # Renombrado display_label a display_label_col_name
+def display_evolucion_sql(df_filtered, time_agg_col, display_label_col_name, chart_title, x_axis_label):
     st.markdown(f"### 📈 {chart_title}")
     required_cols = ['SQL_Estandarizado', time_agg_col]
     if time_agg_col == 'NumSemana' and ('Año' not in df_filtered.columns or 'NumSemana' not in df_filtered.columns) :
@@ -417,19 +474,18 @@ def display_evolucion_sql(df_filtered, time_agg_col, display_label_col_name, cha
         st.info(f"Datos insuficientes. Columnas requeridas: {required_cols}"); return
 
     df_agg_evol = df_filtered.copy()
-    group_col_for_plot = time_agg_col # Por defecto, agrupar por la columna de tiempo original
+    group_col_for_plot = time_agg_col
 
     if time_agg_col == 'NumSemana':
         try:
             df_agg_evol.dropna(subset=['Año', 'NumSemana'], inplace=True)
             df_agg_evol['Año'] = df_agg_evol['Año'].astype(int)
             df_agg_evol['NumSemana'] = df_agg_evol['NumSemana'].astype(int)
-            # display_label_col_name es el nombre de la nueva columna, ej: 'Año-Semana'
             df_agg_evol[display_label_col_name] = df_agg_evol['Año'].astype(str) + '-S' + df_agg_evol['NumSemana'].astype(str).str.zfill(2)
-            group_col_for_plot = display_label_col_name # Usar la nueva columna para agrupar y para el eje X
+            group_col_for_plot = display_label_col_name
         except (ValueError, TypeError) as e: st.warning(f"Problema con 'Año'/'NumSemana': {e}"); return
     elif time_agg_col == 'AñoMes':
-        df_agg_evol[display_label_col_name] = df_agg_evol[time_agg_col] # Usar AñoMes como está
+        df_agg_evol[display_label_col_name] = df_agg_evol[time_agg_col]
         group_col_for_plot = display_label_col_name
 
     df_agg_evol.dropna(subset=[group_col_for_plot, 'SQL_Estandarizado'], inplace=True)
@@ -438,7 +494,6 @@ def display_evolucion_sql(df_filtered, time_agg_col, display_label_col_name, cha
     summary_time_sql_evol = df_agg_evol.groupby([group_col_for_plot, 'SQL_Estandarizado'], observed=False).size().reset_index(name='Número de Sesiones')
     if summary_time_sql_evol.empty: st.info(f"No hay datos agregados por {x_axis_label.lower()} y SQL."); return
     
-    # Ordenar por la columna de agrupación (que ahora es el display_label_col_name)
     summary_time_sql_evol = summary_time_sql_evol.sort_values(by=[group_col_for_plot])
     sql_category_order_evol = get_sql_category_order(summary_time_sql_evol['SQL_Estandarizado'])
     summary_time_sql_evol['SQL_Estandarizado'] = pd.Categorical(summary_time_sql_evol['SQL_Estandarizado'], categories=sql_category_order_evol, ordered=True)
@@ -466,10 +521,8 @@ def display_tabla_sesiones_detalle(df_filtered):
         output = io.BytesIO()
         try:
             df_excel = df_view_detalle_ses.copy()
-            if "Fecha" in df_excel.columns and df_excel["Fecha"].dtype == 'object': # Revertir a datetime para Excel
-                df_excel["Fecha_Original"] = pd.to_datetime(df_excel["Fecha"], format='%d/%m/%Y', errors='coerce') # Guardar como nueva columna para no perder la formateada
-                # Opcionalmente, reemplazar la columna 'Fecha' si se prefiere el tipo datetime en Excel
-                # df_excel["Fecha"] = pd.to_datetime(df_excel["Fecha"], format='%d/%m/%Y', errors='coerce')
+            if "Fecha" in df_excel.columns and df_excel["Fecha"].dtype == 'object':
+                df_excel["Fecha"] = pd.to_datetime(df_excel["Fecha"], format='%d/%m/%Y', errors='coerce')
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 df_excel.to_excel(writer, index=False, sheet_name='Detalle_Sesiones')
             st.download_button(label="⬇️ Descargar Detalle (Excel)", data=output.getvalue(), file_name="detalle_sesiones_sql.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key=f"{FILTER_KEYS_PREFIX}btn_download_detalle")
@@ -478,7 +531,7 @@ def display_tabla_sesiones_detalle(df_filtered):
 # --- Flujo Principal de la Página ---
 try:
     df_sesiones_base = load_sesiones_data()
-except Exception as e: # Captura más genérica si load_sesiones_data falla catastróficamente
+except Exception as e:
     st.error(f"Error crítico al cargar datos iniciales: {e}")
     st.stop()
 
@@ -498,9 +551,10 @@ display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="
 st.markdown("---")
 display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="País", dimension_label="País", top_n=10)
 st.markdown("---")
-# display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="Puesto", dimension_label="Cargo (Puesto)", top_n=10) # Comentado en tu original
+# Las siguientes dos líneas estaban comentadas en tu código original que me pasaste, las mantengo comentadas.
+# display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="Puesto", dimension_label="Cargo (Puesto)", top_n=10)
 # st.markdown("---")
-# display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="Empresa", dimension_label="Empresa", top_n=10) # Comentado en tu original
+# display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="Empresa", dimension_label="Empresa", top_n=10)
 # st.markdown("---")
 
 display_evolucion_sql(df_sesiones_filtered, 'NumSemana', 'Año-Semana', "Evolución Semanal por Calificación SQL", "Semana del Año")
