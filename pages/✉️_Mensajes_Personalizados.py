@@ -156,20 +156,16 @@ def get_base_data():
     if "Avatar" in df_base.columns:
         df_base["Avatar"] = df_base["Avatar"].apply(lambda x: estandarizar_avatar(x) if pd.notna(x) else x) # Aplica solo a valores no nulos
         # Reemplazar posibles NaT resultantes de coerce si no se pudieron parsear
-        if columna_fecha_primer_mensaje in df_base.columns:
-             df_base[columna_fecha_primer_mensaje] = df_base[columna_fecha_primer_mensaje].dt.date # Convertir a solo fecha si es datetime
+        # Esto parece incorrecto, debería ser para columnas de fecha, no Avatar. Removido.
+        # if columna_fecha_primer_mensaje in df_base.columns:
+        #      df_base[columna_fecha_primer_mensaje] = df_base[columna_fecha_primer_mensaje].dt.date # Convertir a solo fecha si es datetime
 
 
     # Agregar columnas esenciales si no existen para evitar errores de KeyError más adelante
-    columnas_esenciales = [
-        "Fuente de la Lista", "Proceso", "Pais", "Industria", "Avatar",
-        "¿Quién Prospecto?", "Sesion Agendada?", "¿Invite Aceptada?",
-        "Nombre", "Apellido", "Empresa", "Puesto", "LinkedIn",
-        columna_fecha_primer_mensaje
-        ]
-    for col in columnas_esenciales:
-        if col not in df_base.columns:
-            df_base[col] = pd.NA # O np.nan o "" dependiendo del tipo de dato esperado
+    # Es mejor verificar la existencia de columnas ANTES de usarlas, como se hace en aplicar_filtros_mensajes
+    # Añadir columnas aquí con pd.NA puede cambiar el dtype del DataFrame si ya tiene datos.
+    # Se confía en las verificaciones dentro de aplicar_filtros_mensajes y el código de display.
+    pass # No se añade automáticamente aquí para evitar problemas de dtype.
 
     return df_base
 
@@ -179,7 +175,7 @@ df = get_base_data()
 
 # Verificar si la carga de datos fue exitosa
 if df is None or df.empty:
-    st.warning("No se pudieron cargar datos o el DataFrame base está vacío. Por favor, verifica el archivo de datos.")
+    st.warning("No se pudieron cargar datos o el DataFrame base está vacío. Por favor, verifica el archivo de datos y la función `cargar_y_limpiar_datos`.")
     st.stop() # Detiene la ejecución si no hay datos
 
 # Inicializar el estado de sesión si es necesario
@@ -404,20 +400,32 @@ if st.session_state.mostrar_tabla_mensajes:
         columna_fecha_a_mostrar = "Fecha Primer Mensaje"
 
         # Asegurarse de que las columnas necesarias existan para evitar errores, añadiéndolas si falta alguna
-        columnas_esenciales_display = [
-            "Nombre", "Apellido", "Empresa", "Puesto", "Proceso", "Avatar",
-            columna_fecha_a_mostrar, "¿Quién Prospecto?", linkedin_col_nombre,
-            "Sesion Agendada?"
-            ]
-        for col in columnas_esenciales_display:
-            if col not in df_mensajes_final_display.columns:
-                df_mensajes_final_display[col] = pd.NA # O "" si prefieres string vacío
+        # Es mejor verificar al usar, no añadir por defecto aquí, ya que puede afectar dtypes.
+        # Se confía en las verificaciones dentro de aplicar_filtros_mensajes y el código de display/generación.
+        pass # No se añade automáticamente aquí.
 
         # Clasificar por proceso para la selección de plantilla
-        df_mensajes_final_display["Categoría"] = df_mensajes_final_display["Proceso"].apply(clasificar_por_proceso)
+        # Verificar que la columna 'Proceso' exista antes de usarla
+        if "Proceso" in df_mensajes_final_display.columns:
+             df_mensajes_final_display["Categoría"] = df_mensajes_final_display["Proceso"].apply(clasificar_por_proceso)
+        else:
+             df_mensajes_final_display["Categoría"] = "Sin Proceso" # Valor por defecto si falta la columna 'Proceso'
+             st.warning("La columna 'Proceso' no se encontró. Se asignará 'Sin Proceso' a la 'Categoría'.")
+
         # Crear nombre completo para display
-        df_mensajes_final_display["Nombre_Completo_Display"] = df_mensajes_final_display.apply(
-                lambda row: limpiar_nombre_completo(row.get("Nombre"), row.get("Apellido")), axis=1)
+        # Verificar que las columnas 'Nombre' y 'Apellido' existan
+        nombre_existe = "Nombre" in df_mensajes_final_display.columns
+        apellido_existe = "Apellido" in df_mensajes_final_display.columns
+
+        if nombre_existe or apellido_existe:
+            df_mensajes_final_display["Nombre_Completo_Display"] = df_mensajes_final_display.apply(
+                    lambda row: limpiar_nombre_completo(
+                        row.get("Nombre") if nombre_existe else None, # Pasa None si la columna no existe
+                        row.get("Apellido") if apellido_existe else None # Pasa None si la columna no existe
+                    ), axis=1)
+        else:
+             df_mensajes_final_display["Nombre_Completo_Display"] = "[Nombre Completo no disponible]"
+             st.warning("Las columnas 'Nombre' y 'Apellido' no se encontraron. No se pudo generar 'Nombre_Completo_Display'.")
 
 
         st.markdown("### 📋 Prospectos Encontrados para Mensajes")
@@ -430,20 +438,21 @@ if st.session_state.mostrar_tabla_mensajes:
             "Sesion Agendada?", linkedin_col_nombre
         ]
         # Filtrar solo las columnas que realmente existen en el DataFrame
-        cols_realmente_en_df_para_tabla = [
+        cols_reales_en_df_para_tabla = [
             col for col in columnas_para_tabla_display
             if col in df_mensajes_final_display.columns
         ]
 
-        df_tabla_a_mostrar = df_mensajes_final_display[cols_realmente_en_df_para_tabla].copy()
+        df_tabla_a_mostrar = df_mensajes_final_display[cols_reales_en_df_para_tabla].copy()
 
         # Formatear la columna de fecha para mostrar
         if columna_fecha_a_mostrar in df_tabla_a_mostrar.columns:
             # Asegurarse de que la columna es datetime antes de formatear
             if pd.api.types.is_datetime64_any_dtype(df_tabla_a_mostrar[columna_fecha_a_mostrar]):
-                 df_tabla_a_mostrar[columna_fecha_a_mostrar] = df_tabla_a_mostrar[columna_fecha_a_mostrar].dt.strftime('%d/%m/%Y')
+                 # Convertir a string formato DD/MM/YYYY, manejando NaT
+                 df_tabla_a_mostrar[columna_fecha_a_mostrar] = df_tabla_a_mostrar[columna_fecha_a_mostrar].dt.strftime('%d/%m/%Y').fillna("Fecha no válida")
             else:
-                 df_tabla_a_mostrar[columna_fecha_a_mostrar] = "Fecha Inválida/No DateType"
+                 df_tabla_a_mostrar[columna_fecha_a_mostrar] = "Formato Fecha Inválido"
 
         # Mostrar la tabla principal de resultados
         st.dataframe(df_tabla_a_mostrar, use_container_width=True)
@@ -479,7 +488,14 @@ if st.session_state.mostrar_tabla_mensajes:
 
         # Obtener las categorías presentes en los datos filtrados que tienen plantillas definidas
         categorias_con_plantillas_definidas = list(opciones_mensajes.keys())
-        categorias_validas_en_df = sorted(df_mensajes_final_display["Categoría"].drop_duplicates().dropna().tolist()) # Excluir NaN
+        # Asegurarse de que la columna 'Categoría' existe antes de usarla
+        if "Categoría" in df_mensajes_final_display.columns:
+             categorias_validas_en_df = sorted(df_mensajes_final_display["Categoría"].drop_duplicates().dropna().tolist()) # Excluir NaN
+        else:
+             categorias_validas_en_df = []
+             st.warning("La columna 'Categoría' no está disponible para seleccionar plantillas.")
+
+
         categorias_reales_con_plantillas_en_df = [
             cat for cat in categorias_validas_en_df
             if cat in categorias_con_plantillas_definidas
@@ -487,7 +503,12 @@ if st.session_state.mostrar_tabla_mensajes:
 
         # Opciones para el Selectbox de Categoría
         opcion_todas_las_categorias = "– Todas las Categorías –"
-        categorias_seleccionables_para_widget = [opcion_todas_las_categorias] + categorias_reales_con_plantillas_en_df
+        # Incluir "Todas" solo si la categoría "General" está definida en las plantillas
+        categorias_seleccionables_para_widget = []
+        if "General" in opciones_mensajes:
+             categorias_seleccionables_para_widget.append(opcion_todas_las_categorias)
+        categorias_seleccionables_para_widget.extend(categorias_reales_con_plantillas_en_df)
+
 
         # Manejar la selección de categoría
         default_categoria_index = 0
@@ -495,8 +516,10 @@ if st.session_state.mostrar_tabla_mensajes:
             default_categoria_index = categorias_seleccionables_para_widget.index(st.session_state.mensaje_categoria_sel_v3)
 
         # Mostrar selectbox de categoría solo si hay opciones válidas
-        if not categorias_reales_con_plantillas_en_df and "General" not in opciones_mensajes:
-             st.warning("No hay prospectos con categorías con plantillas definidas en los datos filtrados.")
+        if not categorias_seleccionables_para_widget:
+             st.warning("No hay categorías con plantillas disponibles en los datos filtrados.")
+             nombre_plantilla_sel = None # No hay plantillas para seleccionar
+             mensaje_final_seleccionado = "" # No hay plantilla seleccionada
         else:
             col_sel_cat, col_sel_plantilla = st.columns(2)
             with col_sel_cat:
@@ -510,15 +533,14 @@ if st.session_state.mostrar_tabla_mensajes:
             # Determinar qué plantillas mostrar según la categoría seleccionada
             plantillas_para_categoria_sel = {}
             nombres_plantillas_para_categoria_sel = []
-            categoria_usada_para_plantillas = ""
+            categoria_usada_para_plantillas = "" # Usado para el nombre del archivo de descarga
 
             if categoria_sel_widget == opcion_todas_las_categorias:
                 if "General" in opciones_mensajes:
                     plantillas_para_categoria_sel = opciones_mensajes["General"]
                     nombres_plantillas_para_categoria_sel = list(plantillas_para_categoria_sel.keys())
                     categoria_usada_para_plantillas = "General"
-                else:
-                    st.warning("La opción 'Todas las Categorías' requiere que exista una categoría 'General' con plantillas.")
+                # Ya mostramos un warning si General no existe antes de crear el selectbox
             elif categoria_sel_widget in opciones_mensajes:
                 plantillas_para_categoria_sel = opciones_mensajes.get(categoria_sel_widget, {})
                 nombres_plantillas_para_categoria_sel = list(plantillas_para_categoria_sel.keys())
@@ -545,7 +567,7 @@ if st.session_state.mostrar_tabla_mensajes:
 
 
             # --- Generación y Visualización de Mensajes ---
-            if mensaje_final_seleccionado:
+            if mensaje_final_seleccionado: # Procede solo si se seleccionó una plantilla
                 # Filtrar el DataFrame base para generar mensajes solo para la categoría seleccionada (o todas si aplica)
                 if categoria_sel_widget == opcion_todas_las_categorias:
                     # Si es "Todas", usar todos los prospectos que tengan una categoría con plantilla definida
@@ -561,40 +583,48 @@ if st.session_state.mostrar_tabla_mensajes:
                 # Si no hay prospectos en la categoría seleccionada después de los filtros...
                 if df_vista_previa_msg.empty:
                     st.info(
-                        f"No hay prospectos en la categoría '{categoria_sel_widget}' con los filtros actuales para generar mensajes."
+                        f"No se encontraron prospectos en la categoría '{categoria_sel_widget}' con los filtros actuales que puedan usar plantillas."
                     )
                 else:
                     # Función auxiliar para determinar el género del avatar para el saludo
-                    def obtener_atencion_genero(avatar_de_fila):
-                        avatar_estandarizado_lower = str(avatar_de_fila).lower().strip() if pd.notna(avatar_de_fila) else ""
-                        # Define palabras clave o nombres para determinar el género del avatar
-                        nombres_masculinos_clave = ["john", "juan", "carlos", "pedro"] # Ejemplos
-                        nombres_femeninos_clave = ["maría", "ana", "laura", "isabella", "maria"] # Ejemplos
+                    # Verificar que la columna 'Avatar' existe antes de usarla en la función
+                    if "Avatar" not in df_vista_previa_msg.columns:
+                        st.warning("La columna 'Avatar' no se encontró. La función 'obtener_atencion_genero' usará un valor por defecto.")
+                        # Define una función dummy o maneja el caso en la plantilla si falta la columna
+                        def obtener_atencion_genero(avatar_de_fila):
+                             return "atento/a" # Valor por defecto si falta la columna
 
-                        if any(keyword in avatar_estandarizado_lower for keyword in nombres_masculinos_clave):
-                            return "atento"
-                        if any(keyword in avatar_estandarizado_lower for keyword in nombres_femeninos_clave):
-                            return "atenta"
-                        return "atento/a" # Valor por defecto si no se puede determinar
+                    else: # Si la columna 'Avatar' existe, usar la función original
+                        def obtener_atencion_genero(avatar_de_fila):
+                            avatar_estandarizado_lower = str(avatar_de_fila).lower().strip() if pd.notna(avatar_de_fila) else ""
+                            nombres_masculinos_clave = ["john", "juan", "carlos", "pedro"] # Ejemplos
+                            nombres_femeninos_clave = ["maría", "ana", "laura", "isabella", "maria"] # Ejemplos
+
+                            if any(keyword in avatar_estandarizado_lower for keyword in nombres_masculinos_clave):
+                                return "atento"
+                            if any(keyword in avatar_estandarizado_lower for keyword in nombres_femeninos_clave):
+                                return "atenta"
+                            return "atento/a" # Valor por defecto si no se puede determinar
+
 
                     # Generar la columna de Mensaje Personalizado aplicando la plantilla
                     df_vista_previa_msg["Mensaje_Personalizado"] = df_vista_previa_msg.apply(
                             lambda row: mensaje_final_seleccionado.replace(
                                 "{nombre}",
-                                # Usa el primer nombre si existe, si no, usa un placeholder
-                                str(row.get("Nombre", "")).split()[0] if pd.notna(row.get("Nombre")) and str(row.get("Nombre")).strip() else "[Nombre]"
+                                # Usa el primer nombre si existe (columna 'Nombre'), si no, usa un placeholder
+                                str(row.get("Nombre", "")).split()[0] if "Nombre" in row and pd.notna(row.get("Nombre")) and str(row.get("Nombre")).strip() else "[Nombre]"
                             ).replace(
                                 "{avatar}",
-                                # Usa el Avatar si existe, si no, usa un placeholder
-                                str(row.get("Avatar", "Tu Nombre")).strip() if pd.notna(row.get("Avatar")) else "[Avatar]"
+                                # Usa el Avatar si existe (columna 'Avatar'), si no, usa un placeholder
+                                str(row.get("Avatar", "Tu Nombre")).strip() if "Avatar" in row and pd.notna(row.get("Avatar")) else "[Avatar]"
                             ).replace(
                                 "[Nombre de la empresa]",
-                                # Usa el nombre de la empresa si existe, si no, usa un placeholder
-                                str(row.get("Empresa", "[Nombre de la empresa]")).strip() if pd.notna(row.get("Empresa")) else "[Nombre de la empresa]"
+                                # Usa el nombre de la empresa si existe (columna 'Empresa'), si no, usa un placeholder
+                                str(row.get("Empresa", "[Nombre de la empresa]")).strip() if "Empresa" in row and pd.notna(row.get("Empresa")) else "[Nombre de la empresa]"
                             ).replace(
                                 "{atencion_genero}",
-                                # Determina el saludo basado en el Avatar
-                                obtener_atencion_genero(row.get("Avatar"))
+                                # Determina el saludo basado en el Avatar (columna 'Avatar')
+                                obtener_atencion_genero(row.get("Avatar") if "Avatar" in row else None) # Pasa None si la columna no existe
                             ),
                             axis=1
                         )
@@ -625,25 +655,43 @@ if st.session_state.mostrar_tabla_mensajes:
                         hide_index=True # Oculta el índice por defecto de pandas
                     )
 
-                    # --- Mostrar el Mensaje Completo en un Área de Texto al Seleccionar una Fila ---
-                    selected_indices = []
-                    # CORRECCIÓN MÁS ROBUSTA APLICADA AQUÍ: Verificación segura de la selección
-                    # Comprobamos si selected_rows_data es un diccionario y si tiene la estructura de selección esperada
-                    if isinstance(selected_rows_data, dict) and "selection" in selected_rows_data and "rows" in selected_rows_data["selection"]:
-                         selected_indices = selected_rows_data["selection"]["rows"] # Esto será una lista de índices (vacía o con 1 elemento)
+                    # --- DEBUGGING PRINT STATEMENTS ---
+                    # Estas líneas te mostrarán en la app qué valor tiene selected_rows_data y el resultado de la verificación
+                    st.write("--- Debug Info ---")
+                    st.write("selected_rows_data:", selected_rows_data)
 
+                    selected_indices = []
+                    selection_info = selected_rows_data.get("selection") if isinstance(selected_rows_data, dict) else None
+
+                    st.write("selection_info:", selection_info)
+
+                    if isinstance(selection_info, dict):
+                         rows_info = selection_info.get("rows")
+                         st.write("selection_info.get('rows'):", rows_info)
+                         if isinstance(rows_info, list):
+                             selected_indices = rows_info
+                             st.write("selected_indices (if list):", selected_indices)
+                         else:
+                              st.write("'rows' is not a list.")
+                    else:
+                         st.write("'selection_info' is not a dictionary.")
+
+
+                    # --- Mostrar el Mensaje Completo en un Área de Texto al Seleccionar una Fila ---
                     # Si la lista de índices seleccionados NO está vacía (es decir, se seleccionó una fila)
                     if selected_indices:
                         # Obtener el índice de la primera (y única, en modo single-row) fila seleccionada
                         selected_index = selected_indices[0]
                         # Recuperar los datos completos de esa fila del DataFrame original con los mensajes generados
+                        # Usamos iloc[selected_index] para obtener la fila por su posición basada en 0 en el DataFrame actual
                         selected_prospect = df_vista_previa_msg.iloc[selected_index]
+
 
                         st.markdown("---")
                         st.subheader(f"Mensaje completo para {selected_prospect.get('Nombre_Completo_Display', 'el prospecto seleccionado')}:")
                         st.info(f"**Categoría:** {selected_prospect.get('Categoría', 'N/A')} | **Plantilla:** {nombre_plantilla_sel}")
 
-                        # Mostrar el mensaje completo en un text_area para facilitar la copia
+                        # Asegurarse de que la clave sea única, por ejemplo, usando el índice del prospecto
                         st.text_area(
                             "Copiar mensaje (presiona Ctrl+A para seleccionar todo, luego Ctrl+C):",
                             selected_prospect.get('Mensaje_Personalizado', 'Mensaje no disponible.'),
