@@ -210,6 +210,14 @@ if st.session_state.mostrar_tabla_mensajes:
         df_mensajes_final_display["Nombre_Completo_Display"] = df_mensajes_final_display.apply(lambda row: limpiar_nombre_completo(row.get("Nombre"), row.get("Apellido")), axis=1)
 
         st.markdown("### 📋 Prospectos Encontrados para Mensajes")
+
+         # CONTEO:
+        num_prospectos_filtrados = len(df_mensajes_final_display)
+        if num_prospectos_filtrados == 1:
+            st.info(f"ℹ️ Se encontró **{num_prospectos_filtrados} prospecto** que cumple con los filtros aplicados.")
+        else:
+            st.info(f"ℹ️ Se encontraron **{num_prospectos_filtrados} prospectos** que cumplen con los filtros aplicados.")
+            
         columnas_para_tabla_display = ["Nombre_Completo_Display", "Empresa", "Puesto", "Categoría", "Avatar", columna_fecha_a_mostrar, "¿Quién Prospecto?", "Sesion Agendada?", linkedin_col_nombre]
         cols_realmente_en_df_para_tabla = [col for col in columnas_para_tabla_display if col in df_mensajes_final_display.columns]
         df_tabla_a_mostrar = df_mensajes_final_display[cols_realmente_en_df_para_tabla].copy()
