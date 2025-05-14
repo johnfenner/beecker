@@ -638,3 +638,4 @@ if 'df_vista_previa_msg' in locals() and not df_vista_previa_msg.empty:
         st.code(mensaje.replace("\n", "\n\n"), language="markdown")
 
 
+
