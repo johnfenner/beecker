@@ -149,7 +149,6 @@ with col_btn2:
 
 if st.session_state.mostrar_tabla_mensajes:
     st.markdown("---")
-    st.subheader("📬 Resultado de los Filtros y Generador de Mensajes")
     df_mensajes_filtrado_temp = df.copy()
     if "¿Invite Aceptada?" in df_mensajes_filtrado_temp.columns:
         df_mensajes_filtrado_temp = df_mensajes_filtrado_temp[df_mensajes_filtrado_temp["¿Invite Aceptada?"].apply(limpiar_valor_kpi).astype(str).str.lower() == str(st.session_state.mensaje_filtros["invite_aceptada"]).lower()]
