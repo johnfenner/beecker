@@ -464,8 +464,8 @@ if st.session_state.mostrar_tabla_mensajes:
                 nombres_plantillas_para_categoria_sel_ui = list(plantillas_para_categoria_sel_ui.keys())
                 categoria_usada_para_plantillas_ui = categoria_sel_widget
             
-            nombre_plantilla_sel = None # Nombre/Key de la plantilla seleccionada en la UI
-            plantilla_str_seleccionada_directa_ui = None # String de esa plantilla
+            nombre_plantilla_sel = None 
+            plantilla_str_seleccionada_directa_ui = None 
 
             with col_sel_plantilla:
                 default_plantilla_index = 0
@@ -486,10 +486,9 @@ if st.session_state.mostrar_tabla_mensajes:
                     elif categoria_sel_widget != opcion_todas_las_categorias :
                          st.warning(f"No hay plantillas definidas para la categoría '{categoria_sel_widget}'.")
             
-            if plantilla_str_seleccionada_directa_ui: # Si se pudo seleccionar una plantilla de la UI
-                df_vista_previa_msg = df_mensajes_final_display.copy() # Empezar con todos los prospectos filtrados por los filtros generales
+            if plantilla_str_seleccionada_directa_ui: 
+                df_vista_previa_msg = df_mensajes_final_display.copy() 
                 
-                # Si se seleccionó una categoría específica (NO "todas"), filtrar más el df_vista_previa_msg
                 if categoria_sel_widget != opcion_todas_las_categorias:
                     df_vista_previa_msg = df_vista_previa_msg[df_vista_previa_msg["Categoría"] == categoria_sel_widget].copy()
 
@@ -505,13 +504,12 @@ if st.session_state.mostrar_tabla_mensajes:
                         return "atento/a"
 
                     def generar_mensaje_para_fila(row, nombre_plantilla_key_seleccionada_ui, plantilla_str_directa_ui, categoria_widget_seleccionada_ui, opciones_mensajes_sistema, todas_categorias_opcion_str):
-                        plantilla_final_a_usar_str = plantilla_str_directa_ui # Por defecto, la seleccionada
+                        plantilla_final_a_usar_str = plantilla_str_directa_ui 
                         proceso_fila_actual = row.get("Categoría")
 
-                        # Lógica para dinamismo: si se eligió "Todas las Categorías" y una plantilla "General"
                         if categoria_widget_seleccionada_ui == todas_categorias_opcion_str and \
                            proceso_fila_actual and proceso_fila_actual != "General" and \
-                           " General" in nombre_plantilla_key_seleccionada_ui:
+                           nombre_plantilla_key_seleccionada_ui and " General" in nombre_plantilla_key_seleccionada_ui: # Asegurar que nombre_plantilla_key_seleccionada_ui no sea None
                             
                             nombre_base = nombre_plantilla_key_seleccionada_ui.replace(" General", "")
                             nombre_plantilla_especifica_key = f"{nombre_base} {proceso_fila_actual}"
@@ -520,7 +518,7 @@ if st.session_state.mostrar_tabla_mensajes:
                             if plantilla_especifica_candidata_str:
                                 plantilla_final_a_usar_str = plantilla_especifica_candidata_str
                         
-                        if plantilla_final_a_usar_str is None: # Fallback si algo salió mal
+                        if plantilla_final_a_usar_str is None: 
                             plantilla_final_a_usar_str = "Error: No se pudo determinar la plantilla para {nombre}."
 
                         nombre_prospecto = str(row.get("Nombre", "")).split()[0] if pd.notna(row.get("Nombre")) and str(row.get("Nombre")).strip() else "[Nombre]"
@@ -546,13 +544,12 @@ if st.session_state.mostrar_tabla_mensajes:
 
                     st.markdown("### 📟 Vista Previa y Descarga de Mensajes")
                     cols_generador_display = [
-                        "Nombre_Completo_Display", "Empresa", "Puesto", "Categoría", # <- Categoría añadida
+                        "Nombre_Completo_Display", "Empresa", "Puesto", "Categoría", 
                         "Avatar", "Sesion Agendada?", linkedin_col_nombre,
                         "Mensaje_Personalizado"
                     ]
                     cols_reales_generador = [col for col in cols_generador_display if col in df_vista_previa_msg.columns]
                     
-                    # Asegurar que la columna Categoría existe en df_vista_previa_msg por si acaso
                     if "Categoría" not in df_vista_previa_msg.columns and "Proceso" in df_vista_previa_msg.columns:
                          df_vista_previa_msg["Categoría"] = df_vista_previa_msg["Proceso"].apply(clasificar_por_proceso)
 
@@ -562,7 +559,7 @@ if st.session_state.mostrar_tabla_mensajes:
                     @st.cache_data
                     def convert_df_to_csv_final(df_to_convert_csv):
                         cols_descarga = [
-                            "Nombre_Completo_Display", "Empresa", "Puesto", "Categoría", # <- Categoría añadida
+                            "Nombre_Completo_Display", "Empresa", "Puesto", "Categoría", 
                             "Sesion Agendada?", linkedin_col_nombre, "Mensaje_Personalizado"
                         ]
                         cols_exist_descarga = [col for col in cols_descarga if col in df_to_convert_csv.columns]
@@ -576,7 +573,7 @@ if st.session_state.mostrar_tabla_mensajes:
                     if nombre_archivo_base_cat == opcion_todas_las_categorias: nombre_archivo_base_cat = "todas_categorias"
 
 
-                    if csv_data_final is not None:
+                    if csv_data_final is not None and nombre_plantilla_sel is not None: # Asegurar que nombre_plantilla_sel no sea None
                         st.download_button(
                             label="⬇️ Descargar Mensajes Generados (CSV)",
                             data=csv_data_final,
@@ -599,7 +596,7 @@ if 'df_vista_previa_msg' in locals() and not df_vista_previa_msg.empty and 'Mens
         nombre = str(row.get("Nombre_Completo_Display", "[Nombre]")).title()
         empresa = row.get("Empresa", "")
         puesto = row.get("Puesto", "")
-        categoria_row = row.get("Categoría", "")
+        categoria_row = row.get("Categoría", "") 
         mensaje = row.get("Mensaje_Personalizado", "")
 
         nombre_empresa = f"**{nombre} - {empresa}**" if empresa else f"**{nombre}**"
@@ -612,7 +609,7 @@ if 'df_vista_previa_msg' in locals() and not df_vista_previa_msg.empty and 'Mens
 {puesto_str}  
 {categoria_str}  
 📩 *Mensaje:* """, unsafe_allow_html=True)
-        # Renderizar el mensaje. Usar st.markdown si el mensaje tiene formato markdown, o st.text/st.code para texto plano.
-        # st.text_area("", value=mensaje, height=150, disabled=True, label_visibility="collapsed")
-        st.markdown(mensaje) # Si los mensajes tienen formato markdown como en la imagen.
+        
+        # Usar st.code para mostrar el mensaje con scroll y botón de copiar.
+        st.code(mensaje, language=None)
 
