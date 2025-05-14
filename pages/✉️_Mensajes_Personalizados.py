@@ -365,7 +365,7 @@ if st.session_state.mostrar_tabla_mensajes:
                 axis=1)
 
         st.markdown("### 📋 Prospectos Encontrados para Mensajes")
-        st.write(f"Mostrando **{len(df_mensajes_final_display)}** prospectos.")
+        
 
         columnas_para_tabla_display = [
             "Nombre_Completo_Display", "Empresa", "Puesto", "Categoría",
@@ -393,7 +393,7 @@ if st.session_state.mostrar_tabla_mensajes:
                         columna_fecha_a_mostrar].dt.strftime('%d/%m/%Y')
             else:
                 df_tabla_a_mostrar[columna_fecha_a_mostrar] = "Fecha Inválida"
-        st.dataframe(df_tabla_a_mostrar, use_container_width=True)
+        
 
         st.markdown("---")
         st.markdown("### 📬️ Generador de Mensajes")
@@ -636,4 +636,5 @@ if 'df_vista_previa_msg' in locals() and not df_vista_previa_msg.empty:
 """, unsafe_allow_html=True)
 
         st.code(mensaje.replace("\n", "\n\n"), language="markdown")
+
 
