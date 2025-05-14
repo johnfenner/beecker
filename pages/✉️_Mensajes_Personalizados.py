@@ -135,7 +135,7 @@ def reset_mensaje_filtros_state():
         del st.session_state['mensaje_categoria_sel_v3']
     if 'mensaje_plantilla_sel_v3' in st.session_state:
         del st.session_state['mensaje_plantilla_sel_v3']
-    # Limpiar el estado de selección del dataframe si existe
+    # Limpiar el estado de selección del dataframe si existe (usando la clave correcta)
     if 'mensajes_preview_df_selectable_v5' in st.session_state:
         del st.session_state['mensajes_preview_df_selectable_v5']
 
@@ -462,9 +462,8 @@ if st.session_state.mostrar_tabla_mensajes:
             if pd.api.types.is_datetime64_any_dtype(df_tabla_a_mostrar[columna_fecha_a_mostrar]):
                  # Convertir a string formato DD/MM/YYYY, manejando NaT
                  # Usamos dt.date para obtener solo la parte de la fecha antes de strftime si la columna tiene hora
-                 df_tabla_a_mostrar[columna_fecha_a_mostrar] = df_tabla_a_mostrar[columna_fecha_a_mostrar].dt.date.astype(str) # Convertir a string simple después de obtener la fecha
-                 # Reemplazar NaNs (o NaTs) que queden si hubo problemas de conversión
-                 df_tabla_a_mostrar[columna_fecha_a_mostrar] = df_tabla_a_mostrar[columna_fecha_a_mostrar].replace('NaT', 'Fecha no válida')
+                 # Es mejor usar dt.strftime('%d/%m/%Y').fillna(...) directamente
+                 df_tabla_a_mostrar[columna_fecha_a_mostrar] = df_tabla_a_mostrar[columna_fecha_a_mostrar].dt.strftime('%d/%m/%Y').fillna("Fecha no válida")
             else:
                  df_tabla_a_mostrar[columna_fecha_a_mostrar] = "Formato Fecha Inválido"
 
@@ -502,7 +501,7 @@ if st.session_state.mostrar_tabla_mensajes:
 
         # Obtener las categorías presentes en los datos filtrados que tienen plantillas definidas
         categorias_con_plantillas_definidas = list(opciones_mensajes.keys())
-        # Asegurarse de que la columna 'Categoría' existe antes de usarla
+        # Asegurarse de que la columna 'Categoría' exista antes de usarla
         if "Categoría" in df_mensajes_final_display.columns:
              # Obtener categorías únicas, excluir NaN y convertir a lista
              categorias_validas_en_df = sorted(df_mensajes_final_display["Categoría"].drop_duplicates().dropna().tolist())
@@ -658,11 +657,12 @@ if st.session_state.mostrar_tabla_mensajes:
                         if col in df_vista_previa_msg.columns
                     ]
 
-                    # --- Add a unique key to the dataframe ---
-                    DATAFRAME_KEY = "mensajes_preview_df_selectable_v5" # Define una clave única
+                    # --- Define la clave única para el dataframe seleccionable ---
+                    DATAFRAME_KEY = "mensajes_preview_df_selectable_v5"
 
                     # Mostrar la tabla de vista previa y permitir la selección de una fila
                     # El valor de retorno de st.dataframe con selection_mode es un DeltaGenerator, NO el diccionario de selección.
+                    # El estado de selección se almacena en st.session_state[DATAFRAME_KEY]
                     st.dataframe(
                         df_vista_previa_msg[cols_reales_generador], # Mostrar solo las columnas seleccionadas
                         use_container_width=True,
@@ -672,7 +672,7 @@ if st.session_state.mostrar_tabla_mensajes:
                         key=DATAFRAME_KEY # Asigna la clave única para acceder al estado de selección
                     )
 
-                    # --- DEBUGGING PRINT STATEMENTS (Mirando en st.session_state) ---
+                    # --- DEBUGGING PRINT STATEMENTS (Mirando en st.session_state JUSTO después de la tabla) ---
                     # Estas líneas te mostrarán en la app qué valor tiene el estado de selección
                     st.write("--- Debug Info (Session State) ---")
                     st.write(f"st.session_state tiene la clave '{DATAFRAME_KEY}':", DATAFRAME_KEY in st.session_state)
