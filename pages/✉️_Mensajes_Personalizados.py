@@ -621,7 +621,7 @@ if 'df_vista_previa_msg' in locals() and not df_vista_previa_msg.empty:
     st.markdown("### ✨ Vista Profesional de los Mensajes Personalizados")
 
     for i, row in df_vista_previa_msg.iterrows():
-        nombre = row.get("Nombre_Completo_Display", "[Nombre]")
+        nombre = str(row.get("Nombre_Completo_Display", "[Nombre]")).title()
         empresa = row.get("Empresa", "")
         puesto = row.get("Puesto", "")
         mensaje = row.get("Mensaje_Personalizado", "")
@@ -635,5 +635,5 @@ if 'df_vista_previa_msg' in locals() and not df_vista_previa_msg.empty:
 📩 *Mensaje:*  
 """, unsafe_allow_html=True)
 
-        st.code(mensaje, language="markdown")
+        st.code(mensaje.replace("\n", "\n\n"), language="markdown")
 
