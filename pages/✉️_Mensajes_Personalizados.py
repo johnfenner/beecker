@@ -614,24 +614,26 @@ st.info(
     "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊"
 )
 
-# Mostrar también los mensajes en formato visual limpio (versión profesional para LinkedIn)
-st.markdown("---")
-st.markdown("### ✨ Vista Profesional de los Mensajes Personalizados")
 
-for i, row in df_vista_previa_msg.iterrows():
-    nombre = row.get("Nombre_Completo_Display", "[Nombre]")
-    empresa = row.get("Empresa", "")
-    puesto = row.get("Puesto", "")
-    mensaje = row.get("Mensaje_Personalizado", "")
+# --- BLOQUE FINAL: Vista profesional de mensajes personalizada ---
+if 'df_vista_previa_msg' in locals() and not df_vista_previa_msg.empty:
+    st.markdown("---")
+    st.markdown("### ✨ Vista Profesional de los Mensajes Personalizados")
 
-    nombre_empresa = f"**{nombre} - {empresa}**" if empresa else f"**{nombre}**"
-    puesto_str = f"🧑‍💼 *Puesto:* {puesto}" if puesto else ""
+    for i, row in df_vista_previa_msg.iterrows():
+        nombre = row.get("Nombre_Completo_Display", "[Nombre]")
+        empresa = row.get("Empresa", "")
+        puesto = row.get("Puesto", "")
+        mensaje = row.get("Mensaje_Personalizado", "")
 
-    st.markdown(f"""---  
+        nombre_empresa = f"**{nombre} - {empresa}**" if empresa else f"**{nombre}**"
+        puesto_str = f"🧑‍💼 *Puesto:* {puesto}" if puesto else ""
+
+        st.markdown(f"""---  
 {nombre_empresa}  
 {puesto_str}  
 📩 *Mensaje:*  
 """, unsafe_allow_html=True)
 
-    st.code(mensaje, language="markdown")
+        st.code(mensaje, language="markdown")
 
