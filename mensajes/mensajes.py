@@ -1,11 +1,10 @@
-
-# --- Plantillas "John"  ---
-
+# --- Plantillas "John" ) ---
 plantilla_john_h2r = """Hola {nombre},
 
 Soy {avatar}, Digital Transformation Manager. Por mi experiencia acompañando a organizaciones como la tuya, sé que optimizar procesos complejos va más allá de la simple automatización; requiere herramientas con capacidad real de análisis y decisión. Precisamente en ese ámbito de Agentes Digitales con IA es donde desde Beecker (https://beecker.ai/agentic-ai/) aportamos nuestra especialización.
 
 Desde esta perspectiva, y entendiendo que la gestión del ciclo Hire-to-Retire (H2R) es crucial para {empresa}, nuestros agentes pueden aportar un valor significativo, por ejemplo:
+
 - Fer: Agente de publicación de vacantes
 - Lucas: Agente de captación de talento
 - Isa: Agente de onboarding y documentación del empleado
@@ -23,6 +22,7 @@ plantilla_john_p2p = """Hola {nombre},
 Soy {avatar}, Digital Transformation Manager. Por mi experiencia acompañando a organizaciones como la tuya, sé que optimizar procesos complejos va más allá de la simple automatización; requiere herramientas con capacidad real de análisis y decisión. Precisamente en ese ámbito de Agentes Digitales con IA es donde desde Beecker (https://beecker.ai/agentic-ai/) aportamos nuestra especialización.
 
 Desde esta perspectiva, y entendiendo que optimizar el ciclo Procure-to-Pay (P2P) es vital para la eficiencia de {empresa}, nuestros agentes digitales pueden transformar sus procesos de compra, por ejemplo:
+
 - Jessica: Agente de selección de proveedor
 - Elsa: Agente de alta de proveedores
 - Olivia: Agente de procesamiento de órdenes de compra
@@ -38,6 +38,7 @@ plantilla_john_o2c = """Hola {nombre},
 Soy {avatar}, Digital Transformation Manager. Por mi experiencia acompañando a organizaciones como la tuya, sé que optimizar procesos complejos va más allá de la simple automatización; requiere herramientas con capacidad real de análisis y decisión. Precisamente en ese ámbito de Agentes Digitales con IA es donde desde Beecker (https://beecker.ai/agentic-ai/) aportamos nuestra especialización.
 
 Desde esta perspectiva, y entendiendo la importancia de un ciclo Order-to-Cash (O2C) ágil y preciso para {empresa}, nuestros agentes digitales de IA están diseñados para optimizar cada etapa, por ejemplo:
+
 - Nico: Agente de procesamiento de pedidos
 - Diana: Agente de planificación de entregas
 - James: Agente de planificación del transporte
@@ -57,6 +58,7 @@ plantilla_john_general = """Hola {nombre},
 Soy {avatar}, Digital Transformation Manager. Por mi experiencia acompañando a organizaciones como la tuya, sé que optimizar procesos complejos va más allá de la simple automatización; requiere herramientas con capacidad real de análisis y decisión. Precisamente en ese ámbito de Agentes Digitales con IA es donde desde Beecker (https://beecker.ai/agentic-ai/) aportamos nuestra especialización, ayudando a mejorar la eficiencia en áreas como Hire to Retire (H2R), Order to Cash (O2C) y Procure-to-Pay (P2P).
 
 Entendemos que en {empresa} se busca constantemente mejorar la eficiencia. Para ilustrar, nuestras soluciones pueden impactar positivamente en:
+
 - Procurement y Compras: Validación automática de facturas con órdenes de compra, detección de discrepancias, análisis de rendimiento de proveedores, y optimización del ciclo Procure-to-Pay (P2P).
 - Finanzas y Contabilidad: Automatización de conciliaciones bancarias, procesamiento de facturas y seguimiento de pagos, todo respaldado por inteligencia artificial avanzada.
 - Recursos Humanos: Gestión automatizada de nóminas, selección de personal mediante IA y manejo eficiente de beneficios para empleados.
