@@ -1,5 +1,3 @@
-# Nombre del archivo: ✉️_Mensajes_Personalizados.py
-
 import streamlit as st
 import pandas as pd
 import sys
@@ -458,7 +456,6 @@ if st.session_state.mostrar_tabla_mensajes:
 
             plantillas_para_categoria_sel = {}
             nombres_plantillas_para_categoria_sel = []
-            categoria_usada_para_plantillas = ""  # Para el nombre del archivo
 
             if categoria_sel_widget == opcion_todas_las_categorias:
                 if "General" in opciones_mensajes:
@@ -635,7 +632,6 @@ if 'df_vista_previa_msg' in locals() and not df_vista_previa_msg.empty:
 📩 *Mensaje:*  
 """, unsafe_allow_html=True)
 
-        st.code(mensaje.replace("\n", "\n\n"), language="markdown")re del archivo: ✉️_Mensajes_Personalizados.py
 
 import streamlit as st
 import pandas as pd
@@ -1095,7 +1091,6 @@ if st.session_state.mostrar_tabla_mensajes:
 
             plantillas_para_categoria_sel = {}
             nombres_plantillas_para_categoria_sel = []
-            categoria_usada_para_plantillas = ""  # Para el nombre del archivo
 
             if categoria_sel_widget == opcion_todas_las_categorias:
                 if "General" in opciones_mensajes:
