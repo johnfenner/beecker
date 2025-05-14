@@ -1,4 +1,5 @@
-# --- Plantillas "John" ) ---
+# --- Plantillas "John"  ---
+
 plantilla_john_h2r = """Hola {nombre},
 
 Soy {avatar}, Digital Transformation Manager. Por mi experiencia acompañando a organizaciones como la tuya, sé que optimizar procesos complejos va más allá de la simple automatización; requiere herramientas con capacidad real de análisis y decisión. Precisamente en ese ámbito de Agentes Digitales con IA es donde desde Beecker (https://beecker.ai/agentic-ai/) aportamos nuestra especialización.
@@ -68,4 +69,3 @@ Entendemos que en {empresa} se busca constantemente mejorar la eficiencia. Para 
 Para explorar cómo esto podría aplicar específicamente a tus desafíos y oportunidades en estas y otras áreas, ¿contarías con un espacio de 20 a 30 minutos en los próximos días para una conversación enfocada? Si la idea te resulta interesante, encontrar un momento que se alinee con tu agenda es el siguiente paso. Indícame qué día y hora te vienen bien, y lo organizamos.
 
 Agradezco tu atención y espero podamos conversar pronto."""
-
