@@ -12,10 +12,10 @@ if project_root not in sys.path:
 
 from datos.carga_datos import cargar_y_limpiar_datos
 from filtros.aplicar_filtros import aplicar_filtros
-# AJUSTA ESTA LÍNEA SEGÚN EL NOMBRE Y UBICACIÓN DE TU ARCHIVO DE PLANTILLAS:
-from mensajes.mensajes_john_final import ( # Ejemplo: si tu archivo se llama mensajes_john_final.py
+from mensajes.mensajes import (
     plantilla_john_h2r, plantilla_john_p2p,
     plantilla_john_o2c, plantilla_john_general
+    # ...y cualquier otra plantilla que decidas mantener y usar de ese archivo
 )
 from mensajes.mensajes_streamlit import clasificar_por_proceso
 from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar, limpiar_nombre_completo
