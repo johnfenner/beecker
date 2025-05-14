@@ -558,6 +558,8 @@ if st.session_state.mostrar_tabla_mensajes:
                         if col in df_vista_previa_msg.columns
                     ]
 
+                   # ... (código anterior hasta la parte de mostrar la tabla seleccionable) ...
+
                     # Hacer el DataFrame seleccionable
                     selected_rows_data = st.dataframe(
                         df_vista_previa_msg[cols_reales_generador],
@@ -567,8 +569,11 @@ if st.session_state.mostrar_tabla_mensajes:
                         hide_index=True
                     )
 
-                    # Si se selecciona una fila, mostrar el mensaje completo en un text_area
-                    if selected_rows_data and selected_rows_data["selection"]["rows"]:
+                    # CORRECCIÓN DEL ERROR: Verificar si selected_rows_data NO es None y si hay filas seleccionadas.
+                    # La estructura de retorno de st.dataframe(selection_mode) es None si no hay interacción de selección,
+                    # o un diccionario como {'selection': {'rows': [...], 'columns': [...]}}.
+                    # Debemos asegurarnos de que la clave 'selection' y la clave 'rows' existan y que la lista 'rows' no esté vacía.
+                    if selected_rows_data and selected_rows_data.get("selection") and selected_rows_data["selection"].get("rows"):
                         selected_index = selected_rows_data["selection"]["rows"][0]
                         selected_prospect = df_vista_previa_msg.iloc[selected_index]
 
@@ -585,8 +590,9 @@ if st.session_state.mostrar_tabla_mensajes:
                     else:
                         st.info("Selecciona un prospecto en la tabla para ver su mensaje completo aquí.")
 
-                    st.markdown("---")
 
+                    st.markdown("---")
+# ... (resto del código para la descarga) ...
                     @st.cache_data
                     def convert_df_to_csv_final(
                             df_to_convert_csv):
