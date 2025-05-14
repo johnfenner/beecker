@@ -3,6 +3,7 @@ import pandas as pd
 import sys
 import os
 
+st.set_page_config(page_title="Mensajes Personalizados", layout="wide")
 # Añadir la raíz del proyecto al path
 project_root = os.path.abspath(
     os.path.join(os.path.dirname(__file__), os.pardir))
@@ -87,7 +88,7 @@ def reset_mensaje_filtros_state():
     st.toast("Filtros de mensajes reiniciados ✅")
 
 
-st.set_page_config(page_title="Mensajes Personalizados", layout="wide")
+
 st.title("💌 Generador de Mensajes Personalizados")
 st.markdown(
     "Filtra prospectos que aceptaron tu invitación y genera mensajes personalizados."
