@@ -12,15 +12,13 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from datos.carga_datos import cargar_y_limpiar_datos
-from filtros.aplicar_filtros import aplicar_filtros # ASEGÚRATE QUE ESTE ES EL ARCHIVO MODIFICADO
+from filtros.aplicar_filtros import aplicar_filtros
 from mensajes.mensajes import (
     mensaje_1_h2r, mensaje_2_h2r, mensaje_3_h2r, mensaje_1_p2p, mensaje_2_p2p,
     mensaje_1_o2c, mensaje_2_o2c, mensaje_1_general, mensaje_2_general,
     plantilla_john_h2r, plantilla_john_p2p, plantilla_john_o2c,
-    plantilla_john_general) # ASEGÚRATE QUE ESTAS PLANTILLAS EXISTEN
+    plantilla_john_general)
 from mensajes.mensajes_streamlit import clasificar_por_proceso
-
-# CORRECCIÓN: Error de sintaxis en el import - la coma estaba mal ubicada.
 from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar, limpiar_nombre_completo
 
 
@@ -82,9 +80,9 @@ def reset_mensaje_filtros_state():
         "busqueda": ""
     }
     st.session_state.mostrar_tabla_mensajes = False
-    if 'mensaje_categoria_sel_v3' in st.session_state: # Corregido el nombre de la clave de la sesión
+    if 'mensaje_categoria_sel_v3' in st.session_state:
         del st.session_state['mensaje_categoria_sel_v3']
-    if 'mensaje_plantilla_sel_v3' in st.session_state: # Corregido el nombre de la clave de la sesión
+    if 'mensaje_plantilla_sel_v3' in st.session_state:
         del st.session_state['mensaje_plantilla_sel_v3']
     st.toast("Filtros de mensajes reiniciados ✅")
 
@@ -100,7 +98,7 @@ st.markdown(
 def get_base_data():
     df_base = cargar_y_limpiar_datos()
 
-    columna_fecha_principal = "Fecha Primer Mensaje"  # USA TU NOMBRE DE COLUMNA EXACTO
+    columna_fecha_principal = "Fecha Primer Mensaje"
     if columna_fecha_principal in df_base.columns:
         if not pd.api.types.is_datetime64_any_dtype(
                 df_base[columna_fecha_principal]):
@@ -146,7 +144,7 @@ with st.expander("Ver/Ocultar Filtros Adicionales"):
             opciones_fuente,
             default=st.session_state.mensaje_filtros.get(
                 "fuente_lista", ["– Todos –"]),
-            key="ms_fuente_lista_msg_page_v3")  # Key actualizada
+            key="ms_fuente_lista_msg_page_v3")
 
         opciones_proceso = ["– Todos –"] + (
             sorted(df["Proceso"].dropna().astype(str).unique().tolist())
@@ -156,7 +154,7 @@ with st.expander("Ver/Ocultar Filtros Adicionales"):
             opciones_proceso,
             default=st.session_state.mensaje_filtros.get(
                 "proceso", ["– Todos –"]),
-            key="ms_proceso_msg_page_v3")  # Key actualizada
+            key="ms_proceso_msg_page_v3")
 
         avatares_unicos_filt = ["– Todos –"]
         if "Avatar" in df.columns and not df["Avatar"].empty:
@@ -167,7 +165,7 @@ with st.expander("Ver/Ocultar Filtros Adicionales"):
             avatares_unicos_filt,
             default=st.session_state.mensaje_filtros.get(
                 "avatar", ["– Todos –"]),
-            key="ms_avatar_msg_page_v3")  # Key actualizada
+            key="ms_avatar_msg_page_v3")
 
     with col2_filtros:
         opciones_pais = ["– Todos –"] + (
@@ -178,7 +176,7 @@ with st.expander("Ver/Ocultar Filtros Adicionales"):
             opciones_pais,
             default=st.session_state.mensaje_filtros.get(
                 "pais", ["– Todos –"]),
-            key="ms_pais_msg_page_v3")  # Key actualizada
+            key="ms_pais_msg_page_v3")
 
         opciones_industria = ["– Todos –"] + (
             sorted(df["Industria"].dropna().astype(str).unique().tolist())
@@ -188,7 +186,7 @@ with st.expander("Ver/Ocultar Filtros Adicionales"):
             opciones_industria,
             default=st.session_state.mensaje_filtros.get(
                 "industria", ["– Todos –"]),
-            key="ms_industria_msg_page_v3")  # Key actualizada
+            key="ms_industria_msg_page_v3")
 
         opciones_prospectador = ["– Todos –"] + (
             sorted(df["¿Quién Prospecto?"].dropna().astype(
@@ -199,12 +197,12 @@ with st.expander("Ver/Ocultar Filtros Adicionales"):
             opciones_prospectador,
             default=st.session_state.mensaje_filtros.get(
                 "prospectador", ["– Todos –"]),
-            key="ms_prospectador_msg_page_v3")  # Key actualizada
+            key="ms_prospectador_msg_page_v3")
 
     with st.container():
         st.markdown("---")
         fecha_min_data_val, fecha_max_data_val = None, None
-        columna_fecha_para_ui = "Fecha Primer Mensaje"  # USA TU NOMBRE DE COLUMNA EXACTO
+        columna_fecha_para_ui = "Fecha Primer Mensaje"
         if columna_fecha_para_ui in df.columns and pd.api.types.is_datetime64_any_dtype(
                 df[columna_fecha_para_ui]):
             valid_dates_filt = df[columna_fecha_para_ui].dropna()
@@ -228,7 +226,7 @@ with st.expander("Ver/Ocultar Filtros Adicionales"):
                 "¿Sesión Agendada?",
                 opciones_sesion_filt,
                 index=opciones_sesion_filt.index(current_sesion_val_filt),
-                key="sb_sesion_agendada_msg_page_v3")  # Key actualizada
+                key="sb_sesion_agendada_msg_page_v3")
 
         with col_f1_filt:
             st.session_state.mensaje_filtros["fecha_ini"] = st.date_input(
@@ -237,7 +235,7 @@ with st.expander("Ver/Ocultar Filtros Adicionales"):
                 format='DD/MM/YYYY',
                 key="di_fecha_ini_msg_page_v3",
                 min_value=fecha_min_data_val,
-                max_value=fecha_max_data_val)  # Key actualizada
+                max_value=fecha_max_data_val)
         with col_f2_filt:
             st.session_state.mensaje_filtros["fecha_fin"] = st.date_input(
                 "Hasta (Fecha Primer Mensaje)",
@@ -245,23 +243,23 @@ with st.expander("Ver/Ocultar Filtros Adicionales"):
                 format='DD/MM/YYYY',
                 key="di_fecha_fin_msg_page_v3",
                 min_value=fecha_min_data_val,
-                max_value=fecha_max_data_val)  # Key actualizada
+                max_value=fecha_max_data_val)
 
 st.session_state.mensaje_filtros["busqueda"] = st.text_input(
     "🔎 Buscar en Nombre, Apellido, Empresa, Puesto",
     value=st.session_state.mensaje_filtros.get("busqueda", ""),
     placeholder="Ingrese término y presione Enter",
-    key="ti_busqueda_msg_page_v3")  # Key actualizada
+    key="ti_busqueda_msg_page_v3")
 
 col_btn1, col_btn2 = st.columns(2)
 with col_btn1:
     if st.button("📬 Cargar y Filtrar Prospectos para Mensaje",
-                    key="btn_cargar_filtrar_msg_page_v3"):  # Key actualizada
+                    key="btn_cargar_filtrar_msg_page_v3"):
         st.session_state.mostrar_tabla_mensajes = True
 with col_btn2:
     st.button("🧹 Limpiar Filtros de Mensajes",
                 on_click=reset_mensaje_filtros_state,
-                key="btn_limpiar_filtros_msg_page_v3")  # Key actualizada
+                key="btn_limpiar_filtros_msg_page_v3")
 
 if st.session_state.mostrar_tabla_mensajes:
     st.markdown("---")
@@ -285,12 +283,9 @@ if st.session_state.mostrar_tabla_mensajes:
                 filtro_sesion_para_aplicar = "Si"
             elif filtro_sesion_para_aplicar.strip().lower() == "no":
                 filtro_sesion_para_aplicar = "No"
-            # Asegurarse de que se use el valor estandarizado en el filtro
             if filtro_sesion_para_aplicar not in ["Si", "No", "– Todos –"]:
                 filtro_sesion_para_aplicar = "– Todos –"
 
-
-        # CORRECCIÓN MAYOR: Los argumentos en la llamada a aplicar_filtros_mensajes estaban en el orden incorrecto
         df_mensajes_filtrado_temp = aplicar_filtros_mensajes(
             df_mensajes_filtrado_temp,
             st.session_state.mensaje_filtros.get("fuente_lista", ["– Todos –"]),
@@ -299,10 +294,10 @@ if st.session_state.mostrar_tabla_mensajes:
             st.session_state.mensaje_filtros.get("industria", ["– Todos –"]),
             st.session_state.mensaje_filtros.get("avatar", ["– Todos –"]),
             st.session_state.mensaje_filtros.get("prospectador", ["– Todos –"]),
-            filtro_sesion_para_aplicar,  # Este debe ser el argumento 'sesion_agendada'
+            filtro_sesion_para_aplicar,
             st.session_state.mensaje_filtros.get("fecha_ini", None),
             st.session_state.mensaje_filtros.get("fecha_fin", None),
-            "Fecha Primer Mensaje"  # Nombre de la columna para filtrar por fecha
+            "Fecha Primer Mensaje"
         )
 
         busqueda_term_final = st.session_state.mensaje_filtros.get(
@@ -345,7 +340,7 @@ if st.session_state.mostrar_tabla_mensajes:
             "No se encontraron prospectos que cumplan todos los criterios.")
     else:
         linkedin_col_nombre = "LinkedIn"
-        columna_fecha_a_mostrar = "Fecha Primer Mensaje"  # USA TU NOMBRE DE COLUMNA EXACTO
+        columna_fecha_a_mostrar = "Fecha Primer Mensaje"
 
         columnas_necesarias_para_display = [
             "Nombre", "Apellido", "Empresa", "Puesto", "Proceso", "Avatar",
@@ -430,13 +425,12 @@ if st.session_state.mostrar_tabla_mensajes:
             if cat in categorias_con_plantillas_definidas
         ]
 
-        # --- INICIO: LÓGICA PARA "TODAS LAS CATEGORÍAS" ---
         opcion_todas_las_categorias = "– Todas las Categorías –"
         categorias_seleccionables_para_widget = [
             opcion_todas_las_categorias
         ] + categorias_reales_con_plantillas_en_df
 
-        default_categoria_index = 0  # Por defecto "– Todas las Categorías –"
+        default_categoria_index = 0
         if 'mensaje_categoria_sel_v3' in st.session_state and st.session_state.mensaje_categoria_sel_v3 in categorias_seleccionables_para_widget:
             default_categoria_index = categorias_seleccionables_para_widget.index(
                 st.session_state.mensaje_categoria_sel_v3)
@@ -452,13 +446,13 @@ if st.session_state.mostrar_tabla_mensajes:
                     "1. Selecciona una Categoría de Proceso:",
                     categorias_seleccionables_para_widget,
                     index=
-                    default_categoria_index,  # Mantener selección previa si es válida
-                    key="mensaje_categoria_sel_v3"  # Key actualizada
+                    default_categoria_index,
+                    key="mensaje_categoria_sel_v3"
                 )
 
             plantillas_para_categoria_sel = {}
             nombres_plantillas_para_categoria_sel = []
-            categoria_usada_para_plantillas = ""  # Para el nombre del archivo
+            categoria_usada_para_plantillas = ""
 
             if categoria_sel_widget == opcion_todas_las_categorias:
                 if "General" in opciones_mensajes:
@@ -466,7 +460,7 @@ if st.session_state.mostrar_tabla_mensajes:
                         "General"]
                     nombres_plantillas_para_categoria_sel = list(
                         plantillas_para_categoria_sel.keys())
-                    categoria_usada_para_plantillas = "General"  # Usar 'General' para nombre de archivo
+                    categoria_usada_para_plantillas = "General"
                 else:
                     st.warning(
                         "No hay plantillas 'General' definidas para la opción 'Todas las Categorías'."
@@ -480,7 +474,6 @@ if st.session_state.mostrar_tabla_mensajes:
 
             with col_sel_plantilla:
                 default_plantilla_index = 0
-                # Intentar mantener la plantilla seleccionada si la categoría no cambió drásticamente
                 if 'mensaje_plantilla_sel_v3' in st.session_state and st.session_state.mensaje_plantilla_sel_v3 in nombres_plantillas_para_categoria_sel:
                     default_plantilla_index = nombres_plantillas_para_categoria_sel.index(
                         st.session_state.mensaje_plantilla_sel_v3)
@@ -490,7 +483,7 @@ if st.session_state.mostrar_tabla_mensajes:
                         "2. Escoge una Plantilla de Mensaje:",
                         nombres_plantillas_para_categoria_sel,
                         index=default_plantilla_index,
-                        key="mensaje_plantilla_sel_v3"  # Key actualizada
+                        key="mensaje_plantilla_sel_v3"
                     )
                     mensaje_final_seleccionado = plantillas_para_categoria_sel.get(
                         nombre_plantilla_sel, "")
@@ -501,7 +494,6 @@ if st.session_state.mostrar_tabla_mensajes:
                             f"No hay plantillas definidas para la categoría '{categoria_usada_para_plantillas if categoria_usada_para_plantillas else categoria_sel_widget}'."
                         )
                     mensaje_final_seleccionado = ""
-            # --- FIN: LÓGICA PARA "TODAS LAS CATEGORÍAS" ---
 
             if mensaje_final_seleccionado:
                 if categoria_sel_widget == opcion_todas_las_categorias:
@@ -518,11 +510,9 @@ if st.session_state.mostrar_tabla_mensajes:
                         f"No hay prospectos en '{categoria_sel_widget}' con los filtros actuales para generar mensajes."
                     )
                 else:
-                    # CORRECCIÓN/CLARIFICACIÓN: La función obtener_atencion_genero usa el 'Avatar' para determinar el género, no el nombre del prospecto.
                     def obtener_atencion_genero(avatar_de_fila):
                         avatar_estandarizado_lower = str(
                             avatar_de_fila).lower()
-                        # Estos son ejemplos, deberías ajustarlos a tus "Avatars" reales
                         nombres_masculinos_clave = [
                             "john bermúdez", "johnsito", "juan", "carlos"
                         ]
@@ -535,7 +525,7 @@ if st.session_state.mostrar_tabla_mensajes:
                         if any(nombre_fem in avatar_estandarizado_lower
                                for nombre_fem in nombres_femeninos_clave):
                             return "atenta"
-                        return "atento/a" # Valor por defecto si no se puede determinar
+                        return "atento/a"
 
                     df_vista_previa_msg[
                         "Mensaje_Personalizado"] = df_vista_previa_msg.apply(
@@ -556,23 +546,50 @@ if st.session_state.mostrar_tabla_mensajes:
                                                     row.get("Avatar"))),
                             axis=1)
 
-                    st.markdown("### 📟 Vista Previa y Descarga de Mensajes")
+                    st.markdown("### 📟 Vista Previa de Mensajes Generados")
+                    st.markdown("💡 **Haz click en una fila para ver el mensaje completo y copiarlo fácilmente.**")
+
                     cols_generador_display = [
                         "Nombre_Completo_Display", "Empresa", "Puesto",
-                        "Avatar", "Sesion Agendada?", linkedin_col_nombre,
-                        "Mensaje_Personalizado"
+                        "Avatar", "Sesion Agendada?", linkedin_col_nombre
                     ]
                     cols_reales_generador = [
                         col for col in cols_generador_display
                         if col in df_vista_previa_msg.columns
                     ]
-                    st.dataframe(df_vista_previa_msg[cols_reales_generador],
-                                    use_container_width=True,
-                                    height=300)
+
+                    # Hacer el DataFrame seleccionable
+                    selected_rows_data = st.dataframe(
+                        df_vista_previa_msg[cols_reales_generador],
+                        use_container_width=True,
+                        height=300,
+                        selection_mode="single-row",
+                        hide_index=True
+                    )
+
+                    # Si se selecciona una fila, mostrar el mensaje completo en un text_area
+                    if selected_rows_data and selected_rows_data["selection"]["rows"]:
+                        selected_index = selected_rows_data["selection"]["rows"][0]
+                        selected_prospect = df_vista_previa_msg.iloc[selected_index]
+
+                        st.markdown("---")
+                        st.subheader(f"Mensaje completo para {selected_prospect.get('Nombre_Completo_Display', 'prospecto')}:")
+                        st.info(f"**Categoría:** {selected_prospect.get('Categoría', 'N/A')} | **Plantilla:** {nombre_plantilla_sel}")
+
+                        st.text_area(
+                            "Copiar mensaje (presiona Ctrl+A para seleccionar todo, luego Ctrl+C):",
+                            selected_prospect.get('Mensaje_Personalizado', 'Mensaje no disponible.'),
+                            height=250,
+                            key=f"selected_message_copy_{selected_index}"
+                        )
+                    else:
+                        st.info("Selecciona un prospecto en la tabla para ver su mensaje completo aquí.")
+
+                    st.markdown("---")
 
                     @st.cache_data
                     def convert_df_to_csv_final(
-                            df_to_convert_csv):  # Nombre de variable diferente
+                            df_to_convert_csv):
                         cols_descarga = [
                             "Nombre_Completo_Display", "Empresa", "Puesto",
                             "Sesion Agendada?", linkedin_col_nombre,
@@ -591,10 +608,9 @@ if st.session_state.mostrar_tabla_mensajes:
                     csv_data_final = convert_df_to_csv_final(
                         df_vista_previa_msg)
 
-                    # Ajuste nombre archivo para "Todas las Categorías"
                     nombre_archivo_cat_final = categoria_usada_para_plantillas if categoria_sel_widget == opcion_todas_las_categorias and categoria_usada_para_plantillas else categoria_sel_widget
                     if nombre_archivo_cat_final == opcion_todas_las_categorias:
-                        nombre_archivo_cat_final = "todas_categorias"  # fallback si algo raro pasa
+                        nombre_archivo_cat_final = "todas_categorias"
 
                     if csv_data_final is not None:
                         st.download_button(
@@ -603,7 +619,7 @@ if st.session_state.mostrar_tabla_mensajes:
                             file_name=
                             f'mensajes_{nombre_archivo_cat_final.replace(" ", "_").lower()}_{nombre_plantilla_sel.replace(" ", "_").lower()}.csv',
                             mime='text/csv',
-                            key="btn_download_csv_msg_page_v3"  # Key actualizada
+                            key="btn_download_csv_msg_page_v3"
                         )
             elif nombres_plantillas_para_categoria_sel:
                 st.info(
@@ -613,4 +629,3 @@ st.markdown("---")
 st.info(
     "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊"
 )
-
