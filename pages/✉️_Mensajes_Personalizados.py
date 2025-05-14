@@ -566,27 +566,9 @@ if st.session_state.mostrar_tabla_mensajes:
                         col for col in cols_generador_display
                         if col in df_vista_previa_msg.columns
                     ]
-                    # Mostrar también los mensajes en formato visual limpio
-st.markdown("---")
-st.markdown("### ✨ Vista Profesional de los Mensajes Personalizados")
-
-for i, row in df_vista_previa_msg.iterrows():
-    nombre = row.get("Nombre_Completo_Display", "[Nombre]")
-    empresa = row.get("Empresa", "")
-    puesto = row.get("Puesto", "")
-    mensaje = row.get("Mensaje_Personalizado", "")
-
-    nombre_empresa = f"**{nombre} - {empresa}**" if empresa else f"**{nombre}**"
-    puesto_str = f"🧑‍💼 *Puesto:* {puesto}" if puesto else ""
-
-    st.markdown(f"""---  
-{nombre_empresa}  
-{puesto_str}  
-📩 *Mensaje:*  
-""", unsafe_allow_html=True)
-
-    st.code(mensaje, language="markdown")
-
+                    st.dataframe(df_vista_previa_msg[cols_reales_generador],
+                                    use_container_width=True,
+                                    height=300)
 
                     @st.cache_data
                     def convert_df_to_csv_final(
@@ -631,3 +613,25 @@ st.markdown("---")
 st.info(
     "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊"
 )
+
+# Mostrar también los mensajes en formato visual limpio (versión profesional para LinkedIn)
+st.markdown("---")
+st.markdown("### ✨ Vista Profesional de los Mensajes Personalizados")
+
+for i, row in df_vista_previa_msg.iterrows():
+    nombre = row.get("Nombre_Completo_Display", "[Nombre]")
+    empresa = row.get("Empresa", "")
+    puesto = row.get("Puesto", "")
+    mensaje = row.get("Mensaje_Personalizado", "")
+
+    nombre_empresa = f"**{nombre} - {empresa}**" if empresa else f"**{nombre}**"
+    puesto_str = f"🧑‍💼 *Puesto:* {puesto}" if puesto else ""
+
+    st.markdown(f"""---  
+{nombre_empresa}  
+{puesto_str}  
+📩 *Mensaje:*  
+""", unsafe_allow_html=True)
+
+    st.code(mensaje, language="markdown")
+
