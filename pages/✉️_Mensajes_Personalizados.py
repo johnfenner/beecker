@@ -135,9 +135,7 @@ def reset_mensaje_filtros_state():
         del st.session_state['mensaje_categoria_sel_v3']
     if 'mensaje_plantilla_sel_v3' in st.session_state:
         del st.session_state['mensaje_plantilla_sel_v3']
-    # Limpiar el estado de selección del dataframe si existe (usando la clave correcta)
-    if 'mensajes_preview_df_selectable_v5' in st.session_state:
-        del st.session_state['mensajes_preview_df_selectable_v5']
+    # No necesitamos limpiar el estado de selección del dataframe aquí porque ya no usaremos selection_mode
 
     st.toast("Filtros de mensajes reiniciados ✅")
 
@@ -461,13 +459,12 @@ if st.session_state.mostrar_tabla_mensajes:
             # Asegurarse de que la columna es datetime antes de formatear
             if pd.api.types.is_datetime64_any_dtype(df_tabla_a_mostrar[columna_fecha_a_mostrar]):
                  # Convertir a string formato DD/MM/YYYY, manejando NaT
-                 # Usamos dt.date para obtener solo la parte de la fecha antes de strftime si la columna tiene hora
-                 # Es mejor usar dt.strftime('%d/%m/%Y').fillna(...) directamente
+                 # Usamos dt.strftime('%d/%m/%Y').fillna(...) directamente
                  df_tabla_a_mostrar[columna_fecha_a_mostrar] = df_tabla_a_mostrar[columna_fecha_a_mostrar].dt.strftime('%d/%m/%Y').fillna("Fecha no válida")
             else:
                  df_tabla_a_mostrar[columna_fecha_a_mostrar] = "Formato Fecha Inválido"
 
-        # Mostrar la tabla principal de resultados
+        # Mostrar la tabla principal de resultados (YA NO ES SELECCIONABLE)
         st.dataframe(df_tabla_a_mostrar, use_container_width=True)
 
 
@@ -579,7 +576,7 @@ if st.session_state.mostrar_tabla_mensajes:
                     mensaje_final_seleccionado = "" # No hay plantilla seleccionada si no hay opciones
 
 
-            # --- Generación y Visualización de Mensajes ---
+            # --- Generación y Visualización de Mensajes (Nueva Sección) ---
             if mensaje_final_seleccionado: # Procede solo si se seleccionó una plantilla
                 # Filtrar el DataFrame base para generar mensajes solo para la categoría seleccionada (o todas si aplica)
                 if categoria_sel_widget == opcion_todas_las_categorias:
@@ -602,11 +599,10 @@ if st.session_state.mostrar_tabla_mensajes:
                     # Función auxiliar para determinar el género del avatar para el saludo
                     # Verificar que la columna 'Avatar' existe antes de usarla en la función
                     if "Avatar" not in df_vista_previa_msg.columns:
-                        # Define una función dummy o maneja el caso en la plantilla si falta la columna
                         def obtener_atencion_genero(avatar_de_fila):
                              return "atento/a" # Valor por defecto si falta la columna
                         st.warning("La columna 'Avatar' no se encontró. La función 'obtener_atencion_genero' usará un valor por defecto.")
-                    else: # Si la columna 'Avatar' existe, usar la función original
+                    else:
                         def obtener_atencion_genero(avatar_de_fila):
                             avatar_estandarizado_lower = str(avatar_de_fila).lower().strip() if pd.notna(avatar_de_fila) else ""
                             nombres_masculinos_clave = ["john", "juan", "carlos", "pedro"] # Ejemplos
@@ -641,83 +637,30 @@ if st.session_state.mostrar_tabla_mensajes:
                             axis=1
                         )
 
-                    # --- Visualización de la tabla de mensajes generados con selección ---
-                    st.markdown("### 📟 Vista Previa de Mensajes Generados")
-                    st.markdown("💡 **Haz click en una fila en la tabla siguiente para ver el mensaje completo y copiarlo fácilmente.**")
+                    # --- Nueva Sección: Listado de Mensajes para Copiar ---
+                    st.markdown("### 📄 Mensajes para Copiar Fácilmente")
+                    st.info("Copia cada mensaje del cuadro de texto correspondiente y pégalo donde necesites. Los saltos de línea se mantendrán.")
 
-                    # Columnas a mostrar en la tabla de vista previa (sin el mensaje completo)
-                    cols_generador_display = [
-                        "Nombre_Completo_Display", "Empresa", "Puesto",
-                        "Avatar", "Sesion Agendada?", linkedin_col_nombre
-                        # 'Mensaje_Personalizado' se quita de aquí para mostrarse en el text_area
-                    ]
-                    # Asegurarse de que las columnas existan antes de mostrarlas
-                    cols_reales_generador = [
-                        col for col in cols_generador_display
-                        if col in df_vista_previa_msg.columns
-                    ]
+                    # Iterar sobre cada prospecto en el DataFrame filtrado y mostrar su mensaje en un text_area
+                    if "Mensaje_Personalizado" in df_vista_previa_msg.columns:
+                        for index, row in df_vista_previa_msg.iterrows():
+                            nombre_display = row.get("Nombre_Completo_Display", "Prospecto")
+                            mensaje = row.get("Mensaje_Personalizado", "Mensaje no generado.")
 
-                    # --- Define la clave única para el dataframe seleccionable ---
-                    DATAFRAME_KEY = "mensajes_preview_df_selectable_v5"
-
-                    # Mostrar la tabla de vista previa y permitir la selección de una fila
-                    # El valor de retorno de st.dataframe con selection_mode es un DeltaGenerator, NO el diccionario de selección.
-                    # El estado de selección se almacena en st.session_state[DATAFRAME_KEY]
-                    st.dataframe(
-                        df_vista_previa_msg[cols_reales_generador], # Mostrar solo las columnas seleccionadas
-                        use_container_width=True,
-                        height=300,
-                        selection_mode="single-row", # Habilita la selección de una única fila
-                        hide_index=True, # Oculta el índice por defecto de pandas
-                        key=DATAFRAME_KEY # Asigna la clave única para acceder al estado de selección
-                    )
-
-                    # --- DEBUGGING PRINT STATEMENTS (Mirando en st.session_state JUSTO después de la tabla) ---
-                    # Estas líneas te mostrarán en la app qué valor tiene el estado de selección
-                    st.write("--- Debug Info (Session State) ---")
-                    st.write(f"st.session_state tiene la clave '{DATAFRAME_KEY}':", DATAFRAME_KEY in st.session_state)
-
-                    selection_state_from_session = st.session_state.get(DATAFRAME_KEY) # Obtiene el estado asociado a la clave
-                    st.write(f"st.session_state.get('{DATAFRAME_KEY}'):", selection_state_from_session)
-
-                    selected_indices = []
-                    # Acceder a la información de selección DENTRO del estado de sesión
-                    # Verificar de forma segura si existe la estructura esperada {'selection': {'rows': [...]}}
-                    if isinstance(selection_state_from_session, dict) and "selection" in selection_state_from_session and "rows" in selection_state_from_session["selection"]:
-                         selected_indices = selection_state_from_session["selection"]["rows"] # Esto debería ser la lista de índices seleccionados
-
-                    st.write("selected_indices (obtenidos de st.session_state):", selected_indices)
-                    st.write("--- Fin Debug Info ---")
+                            # Usar un expander para cada mensaje para no saturar la vista si hay muchos
+                            with st.expander(f"Mensaje para: {nombre_display}"):
+                                st.text_area(
+                                    f"Mensaje completo para {nombre_display}:",
+                                    mensaje,
+                                    height=150, # Altura ajustable del cuadro de texto
+                                    key=f"copy_message_{index}_{nombre_plantilla_sel}", # Clave única por mensaje y plantilla
+                                    help="Copia el texto de este cuadro de texto para pegar en LinkedIn u otro lugar."
+                                )
+                                # Opcional: añadir un botón de copiar si quieres (requiere JavaScript o librerías extra)
+                                # st.button("Copiar", key=f"btn_copy_{index}_{nombre_plantilla_sel}") # Esto es más complejo de implementar el copiar directamente
 
 
-                    # --- Mostrar el Mensaje Completo en un Área de Texto al Seleccionar una Fila ---
-                    # Si la lista de índices seleccionados NO está vacía (es decir, se seleccionó una fila)
-                    if selected_indices:
-                        # Obtener el índice de la primera (y única, en modo single-row) fila seleccionada
-                        selected_index = selected_indices[0]
-                        # Recuperar los datos completos de esa fila del DataFrame original con los mensajes generados
-                        # Usamos iloc[selected_index] para obtener la fila por su posición basada en 0 en el DataFrame actual
-                        # Es importante usar df_vista_previa_msg porque es el que contiene la columna 'Mensaje_Personalizado'
-                        selected_prospect = df_vista_previa_msg.iloc[selected_index]
-
-
-                        st.markdown("---")
-                        st.subheader(f"Mensaje completo para {selected_prospect.get('Nombre_Completo_Display', 'el prospecto seleccionado')}:")
-                        st.info(f"**Categoría:** {selected_prospect.get('Categoría', 'N/A')} | **Plantilla:** {nombre_plantilla_sel}")
-
-                        # Asegurarse de que la clave del text_area sea única para cada posible mensaje mostrado
-                        # Usamos el índice de la fila seleccionada como parte de la clave.
-                        st.text_area(
-                            "Copiar mensaje (presiona Ctrl+A para seleccionar todo, luego Ctrl+C):",
-                            selected_prospect.get('Mensaje_Personalizado', 'Mensaje no disponible.'),
-                            height=250, # Ajusta la altura según necesites
-                            key=f"selected_message_copy_{selected_index}_v5" # Clave única usando el índice de la fila y un identificador de versión
-                        )
-                    else:
-                        # Mostrar un mensaje si no hay fila seleccionada
-                        st.info("Selecciona un prospecto en la tabla de arriba para ver su mensaje completo aquí.")
-
-                    st.markdown("---") # Separador antes del botón de descarga
+                    st.markdown("---") # Separador
 
                     # --- Sección de Descarga ---
                     @st.cache_data
@@ -751,8 +694,8 @@ if st.session_state.mostrar_tabla_mensajes:
                     if nombre_archivo_cat_final == opcion_todas_las_categorias:
                         nombre_archivo_cat_final = "todas_categorias" # Nombre genérico si se seleccionó la opción "Todas"
 
-                    # Mostrar el botón de descarga si los datos CSV se generaron correctamente
-                    if csv_data_final is not None and nombre_plantilla_sel is not None: # Asegurarse de que se seleccionó una plantilla para el nombre del archivo
+                    # Mostrar el botón de descarga si los datos CSV se generaron correctamente y se seleccionó una plantilla
+                    if csv_data_final is not None and nombre_plantilla_sel is not None:
                         st.download_button(
                             label="⬇️ Descargar Mensajes Generados (CSV)",
                             data=csv_data_final,
@@ -769,7 +712,7 @@ if st.session_state.mostrar_tabla_mensajes:
             # Mensaje si no se seleccionó una plantilla
             elif nombres_plantillas_para_categoria_sel:
                 st.info(
-                    "Selecciona una plantilla de mensaje para generar la vista previa y la opción de descarga.")
+                    "Selecciona una plantilla de mensaje para generar los mensajes y la opción de descarga.")
             # Mensaje si no hay plantillas disponibles para la categoría
             # Esto ya se maneja dentro del bloque else del segundo selectbox, pero se deja por claridad
             # else:
