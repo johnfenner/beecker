@@ -375,9 +375,6 @@ if st.session_state.mostrar_tabla_mensajes:
             st.info("Selecciona una plantilla para generar la vista previa.")
 
 
-st.markdown("---")
-st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")
-
 if 'df_vista_previa_msg' in locals() and not df_vista_previa_msg.empty and 'Mensaje_Personalizado' in df_vista_previa_msg.columns:
     st.markdown("---")
     st.markdown("### ✨ Vista Profesional de los Mensajes Personalizados")
@@ -413,3 +410,6 @@ if 'df_vista_previa_msg' in locals() and not df_vista_previa_msg.empty and 'Mens
         st.markdown(info_header, unsafe_allow_html=True)
         st.markdown("📩 *Mensaje:*")
         st.code(mensaje_display, language=None) # Usar st.code para el botón de copiar y scroll
+
+st.markdown("---")
+st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")
