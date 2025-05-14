@@ -374,16 +374,46 @@ if st.session_state.mostrar_tabla_mensajes:
             st.info("Selecciona una plantilla para generar la vista previa.")
 
 
+# ... (linkedin_col_nombre debe estar definido antes de este bloque, usualmente al inicio de la sección "else" del if df_mensajes_final_display.empty)
+# Asumimos que linkedin_col_nombre = "LinkedIn"
+
 if 'df_vista_previa_msg' in locals() and not df_vista_previa_msg.empty and 'Mensaje_Personalizado' in df_vista_previa_msg.columns:
     st.markdown("---")
-    st.markdown("### ✨ Vista de los Mensajes Personalizados")
+    st.markdown("### ✨ Vista Profesional de los Mensajes Personalizados") # Cambié "Vista de los..." por "Vista Profesional de los..." para consistencia
     for i, row in df_vista_previa_msg.iterrows():
         nombre_display = str(row.get("Nombre_Completo_Display", "[Nombre]")).title()
         empresa_display = row.get("Empresa", "")
         puesto_display = row.get("Puesto", "")
         categoria_row_display = row.get("Categoría", "N/A")
-        linkedin_url_display = row.get(linkedin_col_nombre, "")
-        mensaje_display = row.get("Mensaje_Personalizado", "")
+        linkedin_url_display = row.get(linkedin_col_nombre, "") # Asegúrate que linkedin_col_nombre esté definido
+        mensaje_display_original = row.get("Mensaje_Personalizado", "")
+
+        # --- AJUSTE PARA EL SALTO DE LÍNEA ANTES DE LA LISTA ---
+        mensaje_display_ajustado = mensaje_display_original
+        
+        # Patrones comunes que preceden a tus listas. Ajusta estos si es necesario.
+        # Buscamos "palabra_clave_seguida_de_dos_puntos_y_un_salto_de_linea_y_luego_un_guion"
+        # y lo reemplazamos por "palabra_clave_seguida_de_dos_puntos_y_DOS_saltos_de_linea_y_luego_un_guion"
+        patrones_a_buscar = [
+            "por ejemplo:\n-", 
+            "en:\n-"
+            # Puedes añadir más patrones si tienes otras introducciones a listas
+        ]
+        
+        for patron in patrones_a_buscar:
+            if patron in mensaje_display_ajustado:
+                # Reemplazar el \n simple por \n\n en el patrón encontrado
+                # El patrón es "texto:\n-", queremos "texto:\n\n-"
+                # Entonces, reemplazamos ":\n-" por ":\n\n-"
+                parte_a_reemplazar = patron.replace("\n-", "", 1) # Queda "por ejemplo:" o "en:"
+                mensaje_display_ajustado = mensaje_display_ajustado.replace(
+                    parte_a_reemplazar + "\n-", 
+                    parte_a_reemplazar + "\n\n-", 
+                    1 # Solo la primera ocurrencia, asumiendo una lista principal
+                )
+                break # Salir del bucle una vez que se hace un ajuste
+
+        # --- FIN DEL AJUSTE ---
 
         linkedin_html_str = ""
         if linkedin_url_display and isinstance(linkedin_url_display, str) and linkedin_url_display.strip():
@@ -408,7 +438,7 @@ if 'df_vista_previa_msg' in locals() and not df_vista_previa_msg.empty and 'Mens
         st.markdown("---")
         st.markdown(info_header, unsafe_allow_html=True)
         st.markdown("📩 *Mensaje:*")
-        st.code(mensaje_display, language=None) # Usar st.code para el botón de copiar y scroll
+        st.code(mensaje_display_ajustado, language=None) # Usar la versión ajustada del mensaje
 
 st.markdown("---")
 st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")
