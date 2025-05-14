@@ -376,7 +376,7 @@ if st.session_state.mostrar_tabla_mensajes:
 
 if 'df_vista_previa_msg' in locals() and not df_vista_previa_msg.empty and 'Mensaje_Personalizado' in df_vista_previa_msg.columns:
     st.markdown("---")
-    st.markdown("### ✨ Vista Profesional de los Mensajes Personalizados")
+    st.markdown("### ✨ Vista de los Mensajes Personalizados")
     for i, row in df_vista_previa_msg.iterrows():
         nombre_display = str(row.get("Nombre_Completo_Display", "[Nombre]")).title()
         empresa_display = row.get("Empresa", "")
