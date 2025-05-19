@@ -304,6 +304,18 @@ def display_kpi_summary(df_filtered):
     col_metrics_rates[2].metric(f"{rate_icons[2]} Tasa Agend. (vs Resp.)", f"{tasa_agen_vs_resp_global:.1f}%")
     col_metrics_rates[3].metric(f"{rate_icons[3]} Tasa Agend. (vs Inv.)", f"{tasa_conversion_global_vs_invites:.1f}%") # Nueva métrica
 
+    st.markdown("---")
+    st.markdown("### Tasas de Conversión Explicadas")
+    st.markdown(
+        """
+        -   **Tasa de Respuesta Global:** Porcentaje de mensajes que reciben una respuesta del total de mensajes enviados.
+        -   **Tasa de Agendamiento (vs Envío):** Porcentaje de envíos que resultan en una sesión agendada.
+        -   **Tasa de Agendamiento (vs Respuesta):** Porcentaje de respuestas que terminan en una sesión agendada.
+        -    **Tasa de Agendamiento (vs Invites):** Porcentaje de invites que terminan en una sesión agendada.
+        """
+    )
+
+
 def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_icon="📊"):
     st.markdown(f"### {chart_icon} {title_prefix} - KPIs Absolutos y Tasas")
     if group_by_col not in df_filtered.columns:
