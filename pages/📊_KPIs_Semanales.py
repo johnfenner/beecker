@@ -623,5 +623,3 @@ st.markdown("---")
 st.info(
     "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊"
 )
-
-
