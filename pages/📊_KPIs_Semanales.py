@@ -292,32 +292,17 @@ def display_kpi_summary(df_filtered):
     total_respuestas = metrics.get("Respuestas", 0)
     total_sesiones = metrics.get("Sesiones agendadas", 0)
 
-    # Calcular tasas
-    tasa_conversion_global_vs_invites = calculate_rate(total_sesiones, total_invites)
     tasa_resp_global = calculate_rate(total_respuestas, total_mensajes)
+    tasa_conversion_global_vs_invites = calculate_rate(total_sesiones, total_invites) # Nueva tasa
     tasa_agen_vs_env_global = calculate_rate(total_sesiones, total_mensajes)
     tasa_agen_vs_resp_global = calculate_rate(total_sesiones, total_respuestas)
     
-    # Mostrar tasas en el orden del proceso
-    rate_icons = ["📊", "📈", "🎯", "✨"]
-    col_metrics_rates = st.columns(4)
-    col_metrics_rates[0].metric(f"{rate_icons[0]} Tasa Agend. (vs Inv.)", f"{tasa_conversion_global_vs_invites:.1f}%")
-    col_metrics_rates[1].metric(f"{rate_icons[1]} Tasa Respuesta Global", f"{tasa_resp_global:.1f}%")
-    col_metrics_rates[2].metric(f"{rate_icons[2]} Tasa Agend. (vs Env.)", f"{tasa_agen_vs_env_global:.1f}%")
-    col_metrics_rates[3].metric(f"{rate_icons[3]} Tasa Agend. (vs Resp.)", f"{tasa_agen_vs_resp_global:.1f}%")
-
-    st.markdown("---")
-    st.markdown("### Tasas de Conversión Explicadas")
-    st.markdown(
-        """
-        -   **Tasa de Agendamiento (vs Invites):** Porcentaje de invites que terminan en una sesión agendada.
-        -   **Tasa de Respuesta Global:** Porcentaje de mensajes que reciben una respuesta del total de mensajes enviados.
-        -   **Tasa de Agendamiento (vs Envío):** Porcentaje de envíos que resultan en una sesión agendada.
-        -   **Tasa de Agendamiento (vs Respuesta):** Porcentaje de respuestas que terminan en una sesión agendada.
-        """
-    )
-
-
+    rate_icons = ["📈", "🎯", "✨", "📊"] # Añadido un icono
+    col_metrics_rates = st.columns(4) # Modificado el número de columnas
+    col_metrics_rates[0].metric(f"{rate_icons[0]} Tasa Respuesta Global", f"{tasa_resp_global:.1f}%")
+    col_metrics_rates[1].metric(f"{rate_icons[1]} Tasa Agend. (vs Env.)", f"{tasa_agen_vs_env_global:.1f}%")
+    col_metrics_rates[2].metric(f"{rate_icons[2]} Tasa Agend. (vs Resp.)", f"{tasa_agen_vs_resp_global:.1f}%")
+    col_metrics_rates[3].metric(f"{rate_icons[3]} Tasa Agend. (vs Inv.)", f"{tasa_conversion_global_vs_invites:.1f}%") # Nueva métrica
 
 def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_icon="📊"):
     st.markdown(f"### {chart_icon} {title_prefix} - KPIs Absolutos y Tasas")
@@ -341,16 +326,16 @@ def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_ico
     summary_df = df_to_group.groupby(group_by_col, as_index=False)[actual_kpi_cols].sum()
     mensajes_col, respuestas_col, sesiones_col, invites_col = "Mensajes Enviados", "Respuestas", "Sesiones agendadas", "Invites enviadas" # Añadida invites_col
     
-    summary_df[rate_col_names['tasa_conversion_invites']] = summary_df.apply(lambda r: calculate_rate(r.get(sesiones_col, 0), r.get(invites_col, 0)), axis=1) if invites_col in summary_df and sesiones_col in summary_df else 0.0
     summary_df[rate_col_names['tasa_resp']] = summary_df.apply(lambda r: calculate_rate(r.get(respuestas_col, 0), r.get(mensajes_col, 0)), axis=1) if mensajes_col in summary_df and respuestas_col in summary_df else 0.0
     summary_df[rate_col_names['tasa_ag_env']] = summary_df.apply(lambda r: calculate_rate(r.get(sesiones_col, 0), r.get(mensajes_col, 0)), axis=1) if mensajes_col in summary_df and sesiones_col in summary_df else 0.0
     summary_df[rate_col_names['tasa_ag_resp']] = summary_df.apply(lambda r: calculate_rate(r.get(sesiones_col, 0), r.get(respuestas_col, 0)), axis=1) if respuestas_col in summary_df and sesiones_col in summary_df else 0.0
+    summary_df[rate_col_names['tasa_conversion_invites']] = summary_df.apply(lambda r: calculate_rate(r.get(sesiones_col, 0), r.get(invites_col, 0)), axis=1) if invites_col in summary_df and sesiones_col in summary_df else 0.0 # Nueva tasa
     
     if not summary_df.empty:
         cols_for_display_table = [group_by_col] + actual_kpi_cols + list(rate_col_names.values())
         summary_df_display = summary_df[cols_for_display_table].copy()
         for kpi_col_disp in actual_kpi_cols: summary_df_display[kpi_col_disp] = summary_df_display[kpi_col_disp].map('{:,}'.format)
-        for rate_col_key_disp in rate_col_names: summary_df_display[rate_col_key_disp] = summary_df_display[rate_col_key_disp]].map('{:.1f}%'.format)
+        for rate_col_key_disp in rate_col_names: summary_df_display[rate_col_names[rate_col_key_disp]] = summary_df_display[rate_col_names[rate_col_key_disp]].map('{:.1f}%'.format)
         
         st.markdown("##### Tabla Resumen (Absolutos y Tasas)")
         st.dataframe(summary_df_display.set_index(group_by_col), use_container_width=True) 
@@ -421,7 +406,7 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
         st.info(f"No hay datos agregados para mostrar la evolución por {x_axis_label.lower()}.")
         return
         
-    if time_col_agg == 'NumSemana'and 'Año' in df_agg_time.columns and 'NumSemana' in df_agg_time.columns:
+    if time_col_agg == 'NumSemana' and 'Año' in df_agg_time.columns and 'NumSemana' in df_agg_time.columns:
         df_agg_time = df_agg_time.sort_values(by=sort_by_cols_time)
         df_agg_time[time_col_label] = df_agg_time['Año'].astype(str) + '-S' + df_agg_time['NumSemana'].astype(str).str.zfill(2)
     elif time_col_agg == 'AñoMes' and 'AñoMes' in df_agg_time.columns: 
@@ -446,7 +431,7 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
     x_axis_col_for_plot = time_col_label if time_col_label in df_agg_time.columns else time_col_agg
 
     if sesiones_col_time in df_agg_time.columns and df_agg_time[sesiones_col_time].sum() > 0:
-        fig_time = px.line(df_agg_time, x=x_axis_col_for_plot, y=sesiones_col_time, title=f"Evolución de Sesiones Agendadas por {x_axis_col_for_plot}", labels={x_axis_col_for_plot: x_axis_label, sesiones_col_time: 'Total Sesiones'}, markers=True, text=sesiones_col_time)
+        fig_time = px.line(df_agg_time, x=x_axis_col_for_plot, y=sesiones_col_time, title=f"Evolución de Sesiones Agendadas por {x_axis_label}", labels={x_axis_col_for_plot: x_axis_label, sesiones_col_time: 'Total Sesiones'}, markers=True, text=sesiones_col_time)
         fig_time.update_traces(textposition='top center', texttemplate='%{text:,}')
         fig_time.update_xaxes(type='category', tickangle=-45) 
         fig_time.update_layout(title_x=0.5, margin=dict(b=120))
@@ -570,8 +555,8 @@ def display_detailed_weekly_analyst_view(df_filtered, semanas_seleccionadas_para
 if "kpis_page_filtro_Semana_v6" in st.session_state:
     del st.session_state["kpis_page_filtro_Semana_v6"]
 
-start_date_val_kpis, end_date_val_kpis, year_val_kpis_sidebar, week_val_kpis_sidebar, analista_val_kpis, region_val_kpis = sidebar_filters_kpis(df_kpis_semanales_raw) 
-df_kpis_filtered_page = apply_kpis_filters(df_kpis_semanales_raw, start_date_val_kpis, end_date_val_kpis, year_val_kpis_sidebar, week_val_kpis_sidebar, analista_val_kpis, region_val_kpis)
+start_date_val_kpis, end_date_val_kpis, year_val_kpis, week_val_kpis_sidebar, analista_val_kpis, region_val_kpis = sidebar_filters_kpis(df_kpis_semanales_raw) 
+df_kpis_filtered_page = apply_kpis_filters(df_kpis_semanales_raw, start_date_val_kpis, end_date_val_kpis, year_val_kpis, week_val_kpis_sidebar, analista_val_kpis, region_val_kpis)
 
 if "Analista" in df_kpis_filtered_page.columns and analista_val_kpis and "– Todos –" not in analista_val_kpis:
     if "N/D" not in analista_val_kpis:
@@ -623,5 +608,7 @@ st.markdown("---")
 st.info(
     "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊"
 )
+
+
 
 
