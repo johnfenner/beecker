@@ -4,9 +4,9 @@ import streamlit as st
 import pandas as pd
 import sys
 import os
-import shutil
+import shutil  # 👈 IMPORTANTE: esto es lo que te faltaba
 
-# Esto asegura que Streamlit pueda encontrar el secrets.toml en Render
+# Copiar secrets.toml en Render si es necesario
 if os.environ.get("RENDER") == "true":
     src = "/etc/secrets/secrets.toml"
     dst_dir = "/opt/render/project/src/.streamlit"
