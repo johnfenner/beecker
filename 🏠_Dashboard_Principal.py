@@ -4,6 +4,7 @@ import streamlit as st
 import pandas as pd
 import sys
 import os
+import shutil
 
 # Esto asegura que Streamlit pueda encontrar el secrets.toml en Render
 if os.environ.get("RENDER") == "true":
