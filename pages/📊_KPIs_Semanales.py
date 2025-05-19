@@ -2,7 +2,6 @@
 import streamlit as st
 import pandas as pd
 import gspread
-# from oauth2client.service_account import ServiceAccountCredentials # No se usa con gspread >= 5.0 y st.secrets
 import datetime
 import plotly.express as px
 import os
@@ -228,7 +227,6 @@ def sidebar_filters_kpis(df_options):
 
 
 def apply_kpis_filters(df, start_dt, end_dt, year_val, week_list, analista_list, region_list):
-    # ... (sin cambios en esta función)
     df_f = df.copy()
     if "Fecha" in df_f.columns and pd.api.types.is_datetime64_any_dtype(df_f["Fecha"]):
         start_dt_date = start_dt.date() if isinstance(start_dt, datetime.datetime) else start_dt
@@ -258,7 +256,6 @@ def apply_kpis_filters(df, start_dt, end_dt, year_val, week_list, analista_list,
     return df_f
 
 def display_filtered_kpis_table(df_filtered):
-    # ... (sin cambios en esta función)
     st.markdown("### 📝 Datos Detallados Filtrados (Vista General)")
     if df_filtered.empty:
         st.info("No se encontraron datos que cumplan los criterios de filtro.")
@@ -272,12 +269,10 @@ def display_filtered_kpis_table(df_filtered):
         df_display_table["Fecha"] = df_display_table["Fecha"].dt.strftime('%d/%m/%Y')
     st.dataframe(df_display_table, use_container_width=True, height=300)
 
-
 def display_kpi_summary(df_filtered):
-    # ... (sin cambios en esta función)
     st.markdown("### 🧮 Resumen de KPIs Totales y Tasas Globales (Periodo Filtrado)")
-    kpi_cols = ["Mensajes Enviados", "Respuestas", "Invites enviadas", "Sesiones agendadas"]
-    icons = ["📤", "💬", "📧", "🤝"]
+    kpi_cols = ["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"] # Orden corregido
+    icons = ["📧", "📤", "💬", "🤝"] # Orden corregido
     metrics = {}
     if df_filtered.empty:
         for col_name in kpi_cols: metrics[col_name] = 0
@@ -292,26 +287,30 @@ def display_kpi_summary(df_filtered):
         col_metrics_abs[i].metric(f"{icons[i]} Total {col_name.split(' ')[0]}", f"{metrics.get(col_name, 0):,}")
     
     st.markdown("---")
+    total_invites = metrics.get("Invites enviadas", 0)
     total_mensajes = metrics.get("Mensajes Enviados", 0)
     total_respuestas = metrics.get("Respuestas", 0)
     total_sesiones = metrics.get("Sesiones agendadas", 0)
+
     tasa_resp_global = calculate_rate(total_respuestas, total_mensajes)
+    tasa_conversion_global_vs_invites = calculate_rate(total_sesiones, total_invites) # Nueva tasa
     tasa_agen_vs_env_global = calculate_rate(total_sesiones, total_mensajes)
     tasa_agen_vs_resp_global = calculate_rate(total_sesiones, total_respuestas)
-    rate_icons = ["📈", "🎯", "✨"]
-    col_metrics_rates = st.columns(3)
+    
+    rate_icons = ["📈", "🎯", "✨", "📊"] # Añadido un icono
+    col_metrics_rates = st.columns(4) # Modificado el número de columnas
     col_metrics_rates[0].metric(f"{rate_icons[0]} Tasa Respuesta Global", f"{tasa_resp_global:.1f}%")
     col_metrics_rates[1].metric(f"{rate_icons[1]} Tasa Agend. (vs Env.)", f"{tasa_agen_vs_env_global:.1f}%")
     col_metrics_rates[2].metric(f"{rate_icons[2]} Tasa Agend. (vs Resp.)", f"{tasa_agen_vs_resp_global:.1f}%")
+    col_metrics_rates[3].metric(f"{rate_icons[3]} Tasa Agend. (vs Inv.)", f"{tasa_conversion_global_vs_invites:.1f}%") # Nueva métrica
 
 def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_icon="📊"):
-    # ... (sin cambios en esta función)
     st.markdown(f"### {chart_icon} {title_prefix} - KPIs Absolutos y Tasas")
     if group_by_col not in df_filtered.columns:
         st.warning(f"Columna '{group_by_col}' no encontrada para el desglose.")
         return
     kpi_cols = ["Mensajes Enviados", "Respuestas", "Invites enviadas", "Sesiones agendadas"]
-    rate_col_names = {'tasa_resp': 'Tasa Respuesta (%)', 'tasa_ag_env': 'Tasa Ag. (vs Env.) (%)', 'tasa_ag_resp': 'Tasa Ag. (vs Resp.) (%)'}
+    rate_col_names = {'tasa_resp': 'Tasa Respuesta (%)', 'tasa_ag_env': 'Tasa Ag. (vs Env.) (%)', 'tasa_ag_resp': 'Tasa Ag. (vs Resp.) (%)', 'tasa_conversion_invites': 'Tasa Agend. (vs Inv.) (%)'} # Añadida nueva tasa
     actual_kpi_cols = [col for col in kpi_cols if col in df_filtered.columns and pd.api.types.is_numeric_dtype(df_filtered[col])]
     if not actual_kpi_cols:
         st.warning(f"No hay columnas de KPI numéricas para desglose por {group_by_col}.")
@@ -325,11 +324,12 @@ def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_ico
         return
         
     summary_df = df_to_group.groupby(group_by_col, as_index=False)[actual_kpi_cols].sum()
-    mensajes_col, respuestas_col, sesiones_col = "Mensajes Enviados", "Respuestas", "Sesiones agendadas"
+    mensajes_col, respuestas_col, sesiones_col, invites_col = "Mensajes Enviados", "Respuestas", "Sesiones agendadas", "Invites enviadas" # Añadida invites_col
     
     summary_df[rate_col_names['tasa_resp']] = summary_df.apply(lambda r: calculate_rate(r.get(respuestas_col, 0), r.get(mensajes_col, 0)), axis=1) if mensajes_col in summary_df and respuestas_col in summary_df else 0.0
     summary_df[rate_col_names['tasa_ag_env']] = summary_df.apply(lambda r: calculate_rate(r.get(sesiones_col, 0), r.get(mensajes_col, 0)), axis=1) if mensajes_col in summary_df and sesiones_col in summary_df else 0.0
     summary_df[rate_col_names['tasa_ag_resp']] = summary_df.apply(lambda r: calculate_rate(r.get(sesiones_col, 0), r.get(respuestas_col, 0)), axis=1) if respuestas_col in summary_df and sesiones_col in summary_df else 0.0
+    summary_df[rate_col_names['tasa_conversion_invites']] = summary_df.apply(lambda r: calculate_rate(r.get(sesiones_col, 0), r.get(invites_col, 0)), axis=1) if invites_col in summary_df and sesiones_col in summary_df else 0.0 # Nueva tasa
     
     if not summary_df.empty:
         cols_for_display_table = [group_by_col] + actual_kpi_cols + list(rate_col_names.values())
@@ -348,6 +348,16 @@ def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_ico
             fig_abs.update_layout(title_x=0.5, xaxis_tickangle=-45, yaxis_title="Total Sesiones Agendadas", xaxis_title=group_by_col, margin=dict(b=150))
             st.plotly_chart(fig_abs, use_container_width=True)
             
+        # Mostrar la tasa de agendamiento vs invites si está disponible
+        rate_to_plot = rate_col_names.get('tasa_conversion_invites')
+        if rate_to_plot and rate_to_plot in summary_df.columns and summary_df[rate_to_plot].sum() > 0:
+            st.markdown(f"##### Gráfico: {rate_to_plot}")
+            summary_df_sorted_rate = summary_df.sort_values(by=rate_to_plot, ascending=False)
+            fig_rate = px.bar(summary_df_sorted_rate, x=group_by_col, y=rate_to_plot, title=f"{rate_to_plot} por {group_by_col}", color=rate_to_plot, text_auto=True, color_continuous_scale=px.colors.sequential.Mint)
+            fig_rate.update_traces(texttemplate='%{y:.1f}%')
+            fig_rate.update_layout(title_x=0.5, xaxis_tickangle=-45, yaxis_title=rate_to_plot, xaxis_title=group_by_col, margin=dict(b=150), yaxis_ticksuffix="%")
+            st.plotly_chart(fig_rate, use_container_width=True)
+        
         rate_to_plot = rate_col_names['tasa_ag_resp']
         if rate_to_plot in summary_df.columns and summary_df[rate_to_plot].sum() > 0:
             st.markdown(f"##### Gráfico: {rate_to_plot}")
@@ -358,7 +368,6 @@ def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_ico
             st.plotly_chart(fig_rate, use_container_width=True)
 
 def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_title, x_axis_label, chart_icon="📈"):
-    # ... (sin cambios en esta función)
     st.markdown(f"### {chart_icon} {chart_title}")
     st.caption(f"KPIs sumados por {x_axis_label.lower()} dentro del período filtrado.")
     required_cols_time = ['Fecha', time_col_agg]
@@ -469,6 +478,9 @@ def display_detailed_weekly_analyst_view(df_filtered, semanas_seleccionadas_para
     df_analyst_weekly['% de aceptación'] = df_analyst_weekly.apply(
         lambda x: calculate_rate(x['sesiones_totales'], x['respuestas_totales'], round_to=2), axis=1
     )
+    df_analyst_weekly['% Agend./Invite'] = df_analyst_weekly.apply( # Agregada la nueva tasa
+        lambda x: calculate_rate(x['sesiones_totales'], x['invites_totales'], round_to=2), axis=1
+    )
 
     df_analyst_weekly.rename(columns={
         'invites_totales': '1. Invites enviadas',
@@ -510,7 +522,7 @@ def display_detailed_weekly_analyst_view(df_filtered, semanas_seleccionadas_para
         df_display_analistas = df_vista_semana[[
             'Analista', 'Región', '1. Invites enviadas', '2. Mensajes Enviados',
             '% Mens/Invite', '3. Respuestas', '% Resp/Mensaje',
-            '4. Sesiones agendadas', '% de aceptación'
+            '4. Sesiones agendadas', '% de aceptación', '% Agend./Invite' # Agregada la nueva tasa a mostrar
         ]].copy()
 
         total_invites = df_display_analistas['1. Invites enviadas'].sum()
@@ -526,19 +538,23 @@ def display_detailed_weekly_analyst_view(df_filtered, semanas_seleccionadas_para
             '3. Respuestas': total_respuestas,
             '% Resp/Mensaje': calculate_rate(total_respuestas, total_mensajes, round_to=2),
             '4. Sesiones agendadas': total_sesiones,
-            '% de aceptación': calculate_rate(total_sesiones, total_respuestas, round_to=2) 
+            '% de aceptación': calculate_rate(total_sesiones, total_respuestas, round_to=2),
+            '% Agend./Invite': calculate_rate(total_sesiones, total_invites, round_to=2) # Agregada al DataFrame de totales
         }])
 
         df_final_semana = pd.concat([df_display_analistas, df_fila_total], ignore_index=True)
 
-        for col_porcentaje in ['% Mens/Invite', '% Resp/Mensaje', '% de aceptación']:
+        for col_porcentaje in ['% Mens/Invite', '% Resp/Mensaje', '% de aceptación', '% Agend./Invite']: # Añadida la nueva columna
             df_final_semana[col_porcentaje] = df_final_semana[col_porcentaje].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "0.00%")
         
         st.dataframe(df_final_semana.set_index('Analista'), use_container_width=True)
         st.markdown("---") 
 
-
 # --- Flujo Principal de la Página ---
+# Eliminar el mensaje de "The widget with key..."
+if "kpis_page_filtro_Semana_v6" in st.session_state:
+    del st.session_state["kpis_page_filtro_Semana_v6"]
+
 start_date_val_kpis, end_date_val_kpis, year_val_kpis, week_val_kpis_sidebar, analista_val_kpis, region_val_kpis = sidebar_filters_kpis(df_kpis_semanales_raw) 
 df_kpis_filtered_page = apply_kpis_filters(df_kpis_semanales_raw, start_date_val_kpis, end_date_val_kpis, year_val_kpis, week_val_kpis_sidebar, analista_val_kpis, region_val_kpis)
 
@@ -592,3 +608,4 @@ st.markdown("---")
 st.info(
     "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊"
 )
+
