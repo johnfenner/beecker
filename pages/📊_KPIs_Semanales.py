@@ -350,7 +350,7 @@ def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_ico
         cols_for_display_table = [group_by_col] + actual_kpi_cols + list(rate_col_names.values())
         summary_df_display = summary_df[cols_for_display_table].copy()
         for kpi_col_disp in actual_kpi_cols: summary_df_display[kpi_col_disp] = summary_df_display[kpi_col_disp].map('{:,}'.format)
-        for rate_col_key_disp in rate_col_names: summary_df_display[rate_col_key_disp]] = summary_df_display[rate_col_key_disp]].map('{:.1f}%'.format)
+        for rate_col_key_disp in rate_col_names: summary_df_display[rate_col_key_disp] = summary_df_display[rate_col_key_disp]].map('{:.1f}%'.format)
         
         st.markdown("##### Tabla Resumen (Absolutos y Tasas)")
         st.dataframe(summary_df_display.set_index(group_by_col), use_container_width=True) 
@@ -446,7 +446,7 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
     x_axis_col_for_plot = time_col_label if time_col_label in df_agg_time.columns else time_col_agg
 
     if sesiones_col_time in df_agg_time.columns and df_agg_time[sesiones_col_time].sum() > 0:
-        fig_time = px.line(df_agg_time, x=x_axis_col_for_plot, y=sesiones_col_time, title=f"Evolución de Sesiones Agendadas por {x_axis_label}", labels={x_axis_col_for_plot: x_axis_label, sesiones_col_time: 'Total Sesiones'}, markers=True, text=sesiones_col_time)
+        fig_time = px.line(df_agg_time, x=x_axis_col_for_plot, y=sesiones_col_time, title=f"Evolución de Sesiones Agendadas por {x_axis_col_for_plot}", labels={x_axis_col_for_plot: x_axis_label, sesiones_col_time: 'Total Sesiones'}, markers=True, text=sesiones_col_time)
         fig_time.update_traces(textposition='top center', texttemplate='%{text:,}')
         fig_time.update_xaxes(type='category', tickangle=-45) 
         fig_time.update_layout(title_x=0.5, margin=dict(b=120))
@@ -571,7 +571,7 @@ if "kpis_page_filtro_Semana_v6" in st.session_state:
     del st.session_state["kpis_page_filtro_Semana_v6"]
 
 start_date_val_kpis, end_date_val_kpis, year_val_kpis_sidebar, week_val_kpis_sidebar, analista_val_kpis, region_val_kpis = sidebar_filters_kpis(df_kpis_semanales_raw) 
-df_kpis_filtered_page = apply_kpis_filters(df_kpis_semanales_raw, start_date_val_kpis, end_date_val_kpis, year_val_kpis, week_val_kpis_sidebar, analista_val_kpis, region_val_kpis)
+df_kpis_filtered_page = apply_kpis_filters(df_kpis_semanales_raw, start_date_val_kpis, end_date_val_kpis, year_val_kpis_sidebar, week_val_kpis_sidebar, analista_val_kpis, region_val_kpis)
 
 if "Analista" in df_kpis_filtered_page.columns and analista_val_kpis and "– Todos –" not in analista_val_kpis:
     if "N/D" not in analista_val_kpis:
