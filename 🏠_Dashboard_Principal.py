@@ -5,6 +5,16 @@ import pandas as pd
 import sys
 import os
 
+# Esto asegura que Streamlit pueda encontrar el secrets.toml en Render
+if os.environ.get("RENDER") == "true":
+    src = "/etc/secrets/secrets.toml"
+    dst_dir = "/opt/render/project/src/.streamlit"
+    dst = os.path.join(dst_dir, "secrets.toml")
+
+    os.makedirs(dst_dir, exist_ok=True)
+    if not os.path.isfile(dst):
+        shutil.copy(src, dst)
+        
 # Añadir la raíz del proyecto al path para poder importar módulos
 project_root = os.path.abspath(os.path.dirname(__file__))
 if project_root not in sys.path:
