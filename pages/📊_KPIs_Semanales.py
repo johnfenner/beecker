@@ -421,7 +421,7 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
         st.info(f"No hay datos agregados para mostrar la evolución por {x_axis_label.lower()}.")
         return
         
-    if time_col_agg == 'NumSemana' and 'Año' in df_agg_time.columns and 'NumSemana' in df_agg_time.columns:
+    if time_col_agg == 'NumSemana'and 'Año' in df_agg_time.columns and 'NumSemana' in df_agg_time.columns:
         df_agg_time = df_agg_time.sort_values(by=sort_by_cols_time)
         df_agg_time[time_col_label] = df_agg_time['Año'].astype(str) + '-S' + df_agg_time['NumSemana'].astype(str).str.zfill(2)
     elif time_col_agg == 'AñoMes' and 'AñoMes' in df_agg_time.columns: 
@@ -623,3 +623,5 @@ st.markdown("---")
 st.info(
     "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊"
 )
+
+
