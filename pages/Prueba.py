@@ -10,7 +10,8 @@ from PyPDF2 import PdfReader
 
 # api\_key = "TU\_CLAVE\_AQUÍ"
 
-openai.api\_key = st.secrets["openai"]["api\_key"]
+openai.api_key = st.secrets["openai"]["api_key"]
+
 
 # Función para extraer texto de un PDF
 
