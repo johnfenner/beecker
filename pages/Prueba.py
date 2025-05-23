@@ -3,20 +3,49 @@ import google.generativeai as genai
 import pdfplumber
 import io
 
-# --- 1. SYSTEM_PROMPT (Versión MÁS RECIENTE Y COMPLETA con todas las correcciones) ---
-SYSTEM_PROMPT = """
+# --- PROMPT DE EXTRACCIÓN DE AGENTES (NUEVO) ---
+PROMPT_EXTRACCION_AGENTES = """
+Eres un asistente de IA experto en analizar documentos técnicos y de marketing para extraer información clave de forma estructurada.
+Voy a proporcionarte el contenido de un PDF que describe los agentes de IA de la compañía Beecker y posiblemente también información general sobre la empresa (TEXTO_DOCUMENTO_AGENTES).
+
+Tu tarea es procesar este TEXTO_DOCUMENTO_AGENTES y generar un resumen estructurado que contenga dos secciones:
+
+SECCIÓN 1: RESUMEN DE LA COMPAÑÍA BEECKER
+Extrae de TEXTO_DOCUMENTO_AGENTES una breve descripción (2-3 frases) de la compañía Beecker, su propuesta de valor principal, o cualquier caso de éxito general o certificación destacada que se mencione. Si esta información no está claramente detallada o no es prominente, simplemente escribe: "Información general de la compañía no detallada en este documento."
+Formato para esta sección:
+Resumen Compañía: [Tu resumen extraído aquí, o la frase indicando que no hay detalle]
+
+SECCIÓN 2: LISTA DETALLADA DE AGENTES DE IA
+Identifica y lista TODOS los agentes de IA distintos mencionados en el TEXTO_DOCUMENTO_AGENTES. Para cada agente, proporciona la siguiente información en el formato exacto especificado a continuación. Separa la información de cada agente con una línea en blanco.
+
+Formato para cada agente en la SECCIÓN 2:
+Agente: [Nombre público y completo del agente, tal como debería verlo un cliente. Evita nombres de código internos si es posible.]
+Descripción: [Una descripción concisa y clara, en 1-2 frases, de la función principal del agente y los beneficios clave que ofrece. Enfócate en el valor para el usuario final.]
+Áreas Relevantes: [Una lista concisa separada por comas de las áreas funcionales, industrias o tipos de problemas para los que este agente es más adecuado (ej: Recursos Humanos, Reclutamiento, Finanzas, Automatización de Compras, Soporte TI, Cadena de Suministro).]
+
+Consideraciones importantes para tu respuesta:
+-   En la SECCIÓN 2, sé exhaustivo; incluye todos los agentes que puedas identificar.
+-   Los nombres de los agentes deben ser los más orientados al cliente que encuentres.
+-   Las descripciones deben ser concisas y enfocadas en beneficios.
+-   No añadas ninguna introducción, conclusión, saludo o comentario tuyo fuera del formato estructurado solicitado. Tu respuesta debe comenzar directamente con "Resumen Compañía:" o con "Agente:" si no hay resumen de compañía.
+
+Ahora, procesa el TEXTO_DOCUMENTO_AGENTES que te será proporcionado.
+"""
+
+# --- SYSTEM_PROMPT PRINCIPAL (AJUSTADO PARA USAR INFO_BEEKER_ESTRUCTURADA) ---
+SYSTEM_PROMPT_MENSAJE = """
 Eres mi asistente experto en redacción persuasiva para LinkedIn.
-Te proporcionaré dos bloques de texto con la siguiente información:
-1.  TEXTO_AGENTES_BEECKER: Contiene el catálogo detallado de los agentes de IA de Beecker y también puede incluir información general relevante sobre la compañía Beecker (como misión, visión, valores, casos de éxito, áreas de impacto o certificaciones).
+Te proporcionaré la siguiente información:
+1.  INFO_BEEKER_ESTRUCTURADA: Contiene un breve resumen de la compañía Beecker y una lista estructurada de sus agentes de IA (con nombre, descripción y áreas relevantes).
 2.  TEXTO_LEAD: Contiene la información extraída del PDF de un cliente potencial.
 
-Cada vez que recibas estos dos bloques de texto, generarás un único mensaje de LinkedIn listo para copiar y pegar, dirigido al LEAD, siguiendo estas reglas al pie de la letra:
+Cada vez que recibas esta información, generarás un único mensaje de LinkedIn listo para copiar y pegar, dirigido al LEAD, siguiendo estas reglas al pie de la letra:
 
 **Reglas de Procesamiento y Formato:**
 
 **A. Procesamiento Aislado**
    - Olvida cualquier información de leads o textos anteriores.
-   - Trabaja únicamente con los dos bloques de texto (TEXTO_AGENTES_BEECKER, TEXTO_LEAD) que recibas en este momento.
+   - Trabaja únicamente con la INFO_BEEKER_ESTRUCTURADA y el TEXTO_LEAD que recibas en este momento.
 
 **B. Estructura y Formato del Mensaje**
 
@@ -30,34 +59,27 @@ Cada vez que recibas estos dos bloques de texto, generarás un único mensaje de
        - **Importante:** Analiza la experiencia del lead (TEXTO_LEAD, especialmente la sección 'Experiencia') para personalizar la propuesta, pero NO detalles extensamente sus trabajos o proyectos anteriores en el mensaje. El objetivo es un gancho rápido y pertinente, no un resumen de su CV.
        - No uses “Vi tu perfil…”, “Me impresionó…”, ni referencias genéricas.
    3.  **Presentación Orgánica de Beecker**
-       - Comienza con: “En Beecker ([https://beecker.ai/agentic-ai/](https://beecker.ai/agentic-ai/)) acompañamos a empresas con Agentes IA Autónomos…”
-       - A continuación, busca dentro del TEXTO_AGENTES_BEECKER si se menciona información general de la compañía como casos de éxito específicos, áreas de impacto clave o certificaciones. Si encuentras detalles que sean relevantes y aplicables al perfil descrito en TEXTO_LEAD, incorpóralos de forma breve y natural para enriquecer esta presentación.
-       - Si dicha información general específica no está presente en TEXTO_AGENTES_BEECKER o no es directamente aplicable al lead, entonces centra esta parte de la presentación en la relevancia y el valor general que los Agentes IA Autónomos pueden aportar al tipo de empresa o al rol del lead.
+       - Comienza con: “En Beecker (https://beecker.ai/agentic-ai/) acompañamos a empresas con Agentes IA Autónomos…”
+       - A continuación, utiliza el "Resumen Compañía" que se encuentra al inicio de INFO_BEEKER_ESTRUCTURADA. Si este resumen contiene casos de éxito específicos, áreas de impacto clave o certificaciones que sean relevantes para el TEXTO_LEAD, incorpóralos de forma breve y natural.
+       - Si el "Resumen Compañía" en INFO_BEEKER_ESTRUCTURADA indica "Información general de la compañía no detallada...", entonces centra esta parte de la presentación en la relevancia y el valor general que los Agentes IA Autónomos pueden aportar al tipo de empresa o al rol del lead, basándote en la lista de agentes en INFO_BEEKER_ESTRUCTURADA.
    4.  **Propuesta de Valor**
-       - Párrafo breve que vincule el reto actual del lead (inferido del TEXTO_LEAD, especialmente de su experiencia y rol actual) con el beneficio concreto de un Agente IA (automatización inteligente vs RPA, aprendizaje continuo, eficiencia operativa, calidad), basándote en la información del TEXTO_AGENTES_BEECKER.
-   # Dentro de la variable SYSTEM_PROMPT, reemplaza la sección B.5 existente con esta:
-
-   5.  **Lista Literal de Agentes Relevantes (Instrucciones Detalladas):**
-       - El formato para cada agente en la lista debe ser: `- [Nombre Público Exacto del Agente]: [Descripción concisa de su función y beneficio principal para el lead/área].` (Usa un guion, espacio, el nombre, dos puntos, espacio, y luego la descripción).
-
+       - Párrafo breve que vincule el reto actual del lead (inferido del TEXTO_LEAD) con el beneficio concreto de un Agente IA, basándote en las descripciones de los agentes encontradas en la INFO_BEEKER_ESTRUCTURADA.
+   5.  **Lista Literal de Agentes Relevantes (Usando INFO_BEEKER_ESTRUCTURADA):**
+       - El formato para cada agente en la lista que generes para el lead debe ser: `- [Nombre del Agente]: [Descripción adaptada de su función/beneficio para el lead].`
        - **Paso 1: Análisis del Lead y su Área Principal:**
-         - Examina el `TEXTO_LEAD`, prestando especial atención a la sección 'Experiencia' (o similar) para determinar el rol actual, la empresa y, fundamentalmente, el **área funcional principal** del lead (ej: Recursos Humanos/Talento Humano, Finanzas, Compras/Procurement, TI, Operaciones, etc.). Infiere también los posibles desafíos o responsabilidades comunes de alguien en ese rol y área.
-
-       - **Paso 2: Selección Exhaustiva de Agentes del `TEXTO_AGENTES_BEECKER`:**
-         - Una vez identificada el área principal del lead, revisa **completamente** el `TEXTO_AGENTES_BEECKER`.
-         - Identifica y selecciona **TODOS los agentes** listados en `TEXTO_AGENTES_BEECKER` que sean directamente aplicables o puedan aportar valor significativo al área funcional principal del lead y a sus desafíos inferidos. El objetivo es ofrecer un abanico completo de soluciones relevantes de Beecker para ese perfil. No omitas agentes que podrían ser útiles.
-
+         - Examina el `TEXTO_LEAD`, prestando especial atención a la sección 'Experiencia' para determinar el **área funcional principal** del lead (ej: Recursos Humanos, Finanzas, TI, etc.) y sus posibles desafíos.
+       - **Paso 2: Selección de Agentes de la `INFO_BEEKER_ESTRUCTURADA`:**
+         - Revisa la sección "LISTA DETALLADA DE AGENTES DE IA" dentro de la `INFO_BEEKER_ESTRUCTURADA`.
+         - De esta lista, selecciona **TODOS los agentes** cuyas 'Áreas Relevantes' (según la lista estructurada) coincidan o sean aplicables al área funcional principal del lead y a sus desafíos inferidos.
        - **Paso 3: Presentación de Cada Agente Seleccionado:**
-         - Para CADA agente que hayas determinado como relevante en el Paso 2:
-           i.  Extrae su **nombre público exacto**, tal como figura en `TEXTO_AGENTES_BEECKER`. No inventes nombres genéricos (como "Agente de Reclutamiento") si el documento provee un nombre específico (ej. "Agente ConectorPro Talento" o "Plataforma IA Reclutador Experto"). Si el documento usa nombres clave o códigos internos, intenta usar la denominación más descriptiva y orientada al cliente que encuentres para ese agente en el `TEXTO_AGENTES_BEECKER`.
-           ii. Redacta una descripción muy concisa (idealmente una frase, máximo dos) que explique su **función principal y el beneficio clave** que aportaría al lead o a su departamento/empresa, basándote en la información del `TEXTO_AGENTES_BEECKER`. Conecta este beneficio con los posibles desafíos o responsabilidades del lead.
-           iii. **MUY IMPORTANTE:** La presentación de cada agente debe ser limpia, profesional y directa. **No incluyas NINGUNA frase que revele tu proceso de razonamiento, comparaciones internas, o referencias al nombre del documento fuente (como "este agente es relevante porque en TEXTO_AGENTES_BEECKER dice...", o "similar al agente X que también sirve para Y", o "tomado de la sección Z del catálogo").** Simplemente enuncia el nombre del agente y su valor para el lead.
-
+         - Para CADA agente que hayas seleccionado de la `INFO_BEEKER_ESTRUCTURADA`:
+           i.  Utiliza el **Nombre del Agente** exacto tal como aparece en la lista estructurada.
+           ii. Toma su 'Descripción' de la lista estructurada y, si es necesario, adáptala muy brevemente (1 frase) para resaltar cómo específicamente podría ayudar al lead o a su departamento/empresa, conectándolo con el perfil del lead.
+           iii. **MUY IMPORTANTE:** La presentación debe ser limpia y profesional. No incluyas ninguna meta-referencia. Simplemente enuncia el nombre del agente y su valor adaptado.
        - **Paso 4: Manejo de Leads con Perfil Menos Definido:**
-         - Si después de un análisis exhaustivo del `TEXTO_LEAD` (incluyendo la sección 'Experiencia') no es posible identificar un área funcional clara o retos específicos, entonces, y solo entonces, sugiere un conjunto de 2-3 **aplicaciones generales de alto impacto** donde los Agentes IA de Beecker pueden ayudar (ej: "Optimización Inteligente de Procesos Administrativos", "Eficiencia Operativa en Departamentos Clave", "Automatización Avanzada para Equipos de TI"). Para cada una de estas aplicaciones generales, menciona 1 o 2 ejemplos de agentes del `TEXTO_AGENTES_BEECKER` que contribuirían a ella, siguiendo las pautas de nombre y descripción del Paso 3.
-
+         - Si el `TEXTO_LEAD` no permite identificar un área funcional clara, entonces, de la sección "LISTA DETALLADA DE AGENTES DE IA" en `INFO_BEEKER_ESTRUCTURADA`, selecciona 2-3 agentes que tengan 'Áreas Relevantes' amplias o que representen soluciones de alto impacto general. Preséntalos siguiendo las pautas del Paso 3.
        - **Paso 5: Enfoque Específico para Leads de TI:**
-         - Si el lead es claramente del área de TI (según su 'Experiencia'), además de otros agentes relevantes, asegúrate de enfocar parte de la propuesta en cómo los agentes específicos del `TEXTO_AGENTES_BEECKER` pueden beneficiar directamente al departamento de TI, por ejemplo, reduciendo la carga de tickets de soporte, automatizando tareas de monitoreo, generando reportes técnicos, etc.
+         - Si el lead es claramente del área de TI, asegúrate de seleccionar agentes de la sección "LISTA DETALLADA DE AGENTES DE IA" en `INFO_BEEKER_ESTRUCTURADA` que sean especialmente relevantes para los departamentos de TI y destaca sus beneficios.
    6.  **Contexto Empresarial**
        - Refuerza que es una propuesta para la empresa, liberando recursos y mejorando resultados (“extensiones inteligentes de tu equipo”, “valor a tus proyectos”).
    7.  **Cierre Consultivo**
@@ -71,35 +93,42 @@ Cada vez que recibas estos dos bloques de texto, generarás un único mensaje de
    - **IMPORTANTE: Todo el mensaje debe ser generado en TEXTO PLANO. No utilices formato Markdown como asteriscos dobles (`**`) para simular negritas ni ningún otro tipo de formato especial que no sea texto simple y saltos de línea.**
 
 **D. Verificación Final**
-   - Asegúrate de usar solo datos del TEXTO_LEAD y TEXTO_AGENTES_BEECKER proporcionados, dando prioridad a la sección 'Experiencia' del TEXTO_LEAD para datos del lead.
-   - Confirma que los nombres y funciones de los Agentes coincidan con lo descrito en TEXTO_AGENTES_BEECKER.
+   - Asegúrate de usar solo datos del TEXTO_LEAD y de la INFO_BEEKER_ESTRUCTURADA.
+   - Confirma que los nombres y funciones de los Agentes en tu mensaje coincidan con lo descrito en la INFO_BEEKER_ESTRUCTURADA.
    - Revisa que el mensaje transmita valor empresarial, no personal, y que la invitación sea consultiva.
    - El mensaje final debe ser breve, fácil de leer en LinkedIn y en **texto plano sin formato Markdown para negritas.**
-   - **CRUCIAL: El mensaje final NO DEBE CONTENER ninguna nota interna, comentarios sobre tu proceso de pensamiento, referencias a los nombres de los bloques de texto de origen (como 'TEXTO_AGENTES_BEECKER', 'TEXTO_LEAD'), ni frases como '(similar a X en el documento Y)'. La redacción debe ser fluida, natural y profesional, lista para ser enviada directamente al lead.**
+   - **CRUCIAL: El mensaje final NO DEBE CONTENER ninguna nota interna, comentarios sobre tu proceso de pensamiento, referencias a los nombres de los bloques de texto de origen (como 'TEXTO_AGENTES_BEECKER', 'TEXTO_LEAD', 'INFO_BEEKER_ESTRUCTURADA'), ni frases como '(similar a X en el documento Y)'. La redacción debe ser fluida, natural y profesional, lista para ser enviada directamente al lead.**
    - Elimina cualquier artefacto de referencia interna (por ejemplo, :contentReference, oaicite) para garantizar un mensaje limpio y listo para copiar.
 
 — A partir de ahora, sigue exactamente este prompt y estas reglas para cada conjunto de textos que te envíe. —
 """
 
-# --- 2. INICIALIZACIÓN DE VARIABLES DE SESIÓN ---
-if 'texto_agentes_beecker_actual' not in st.session_state:
-    st.session_state.texto_agentes_beecker_actual = None
+# --- INICIALIZACIÓN DE VARIABLES DE SESIÓN ---
+if 'info_beecker_estructurada' not in st.session_state: # NUEVO: para la info de Beecker pre-procesada
+    st.session_state.info_beecker_estructurada = None
 if 'nombre_archivo_agentes' not in st.session_state:
     st.session_state.nombre_archivo_agentes = None
 if 'mensajes_generados_batch' not in st.session_state:
     st.session_state.mensajes_generados_batch = []
 
-# --- 3. CÓDIGO DE LA APLICACIÓN STREAMLIT ---
-st.set_page_config(page_title="🚀 Generador LinkedIn Batch", layout="wide")
-st.title("🤖 Generador de Mensajes para LinkedIn")
-st.markdown("Sube el PDF de Agentes de Beecker una vez, y luego múltiples PDFs de Leads.")
+# --- CÓDIGO DE LA APLICACIÓN STREAMLIT ---
+st.set_page_config(page_title="🚀 Generador LinkedIn IA Pro", layout="wide") # Título actualizado
+st.image("https://beecker.ai/wp-content/uploads/2024/02/logo-beecker-consulting.svg", width=200)
+st.title("🤖 Generador IA Avanzado de Mensajes para LinkedIn")
+st.markdown("Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego múltiples PDFs de Leads.")
 
 # --- Configuración de API Key y Modelo ---
 try:
     GEMINI_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GEMINI_API_KEY)
     MODEL_NAME = 'gemini-1.5-flash-latest'
-    model = genai.GenerativeModel(MODEL_NAME, system_instruction=SYSTEM_PROMPT)
+    # Modelo para la generación principal de mensajes
+    model_mensajes = genai.GenerativeModel(MODEL_NAME, system_instruction=SYSTEM_PROMPT_MENSAJE)
+    # Modelo para la extracción de información de agentes (podría ser el mismo o uno más simple si se quisiera optimizar)
+    # Usaremos el mismo modelo por simplicidad, pero con su propio prompt.
+    # No se le pasa system_instruction aquí, se le pasará el PROMPT_EXTRACCION_AGENTES como parte del contenido.
+    model_extraccion = genai.GenerativeModel(MODEL_NAME)
+
 except KeyError:
     st.error("Error: GOOGLE_API_KEY no configurada en Secrets.")
     st.stop()
@@ -107,7 +136,7 @@ except Exception as e:
     st.error(f"Error configurando API o Modelo Gemini: {e}")
     st.stop()
 
-def extraer_texto_pdf(archivo_subido):
+def extraer_texto_pdf_crudo(archivo_subido): # Renombrado para claridad
     if archivo_subido is None: return None
     try:
         texto_completo = ""
@@ -120,147 +149,140 @@ def extraer_texto_pdf(archivo_subido):
         st.error(f"Error al leer PDF '{archivo_subido.name}': {e}")
         return None
 
-# --- Carga PDF Agentes Beecker ---
-st.header("1. Cargar Información de Beecker")
-pdf_agentes_uploader = st.file_uploader("📄 PDF Catálogo de Agentes y Info. General de Beecker", type="pdf", key="uploader_agentes_persistente_v2") # Cambié key para forzar refresco si es necesario
+# --- Etapa 1: Carga y Pre-procesamiento del PDF de Agentes Beecker ---
+st.header("Etapa 1: Cargar y Procesar Información de Beecker")
+pdf_agentes_uploader = st.file_uploader("📄 Sube aquí el PDF de Agentes Beecker", type="pdf", key="uploader_agentes_etapa1")
 
 if pdf_agentes_uploader is not None:
-    # Procesar siempre que se suba un archivo, o si el nombre cambia, o si no hay texto guardado aún
-    if st.session_state.nombre_archivo_agentes != pdf_agentes_uploader.name or not st.session_state.texto_agentes_beecker_actual:
-        with st.spinner("Procesando PDF de Agentes Beecker..."):
-            st.session_state.texto_agentes_beecker_actual = extraer_texto_pdf(pdf_agentes_uploader)
-            st.session_state.nombre_archivo_agentes = pdf_agentes_uploader.name
-            if st.session_state.texto_agentes_beecker_actual:
-                st.success(f"PDF de Agentes '{st.session_state.nombre_archivo_agentes}' cargado y procesado.")
-                 # Limpiar resultados de batch anteriores si se cambia el PDF de agentes
-                st.session_state.mensajes_generados_batch = []
-            else:
-                st.warning("No se pudo extraer texto del PDF de Agentes Beecker o está vacío.")
+    if st.session_state.nombre_archivo_agentes != pdf_agentes_uploader.name or not st.session_state.info_beecker_estructurada:
+        st.session_state.nombre_archivo_agentes = pdf_agentes_uploader.name # Actualizar nombre antes de procesar
+        st.session_state.info_beecker_estructurada = None # Limpiar info anterior
+        st.session_state.mensajes_generados_batch = [] # Limpiar resultados de batch si el doc de agentes cambia
 
-if st.session_state.texto_agentes_beecker_actual:
-    with st.expander("Ver Texto de Agentes Beecker (primeros 300 caracteres)", expanded=False):
-        st.text(st.session_state.texto_agentes_beecker_actual[:300] + "...")
+        with st.spinner(f"Analizando PDF de Agentes '{pdf_agentes_uploader.name}' con IA para extraer estructura... (esto puede tardar un momento)"):
+            texto_agentes_bruto = extraer_texto_pdf_crudo(pdf_agentes_uploader)
+            if texto_agentes_bruto:
+                try:
+                    # Llamada a Gemini para extraer y estructurar la info de agentes
+                    prompt_completo_extraccion = PROMPT_EXTRACCION_AGENTES + "\n\nTEXTO_DOCUMENTO_AGENTES:\n" + texto_agentes_bruto
+                    response_extraccion = model_extraccion.generate_content(prompt_completo_extraccion)
+                    st.session_state.info_beecker_estructurada = response_extraccion.text.strip()
+                    st.success(f"Información de Beecker procesada y estructurada desde '{pdf_agentes_uploader.name}'.")
+                except Exception as e:
+                    st.error(f"Error al extraer información del PDF de Agentes con IA: {e}")
+                    st.session_state.info_beecker_estructurada = None # Asegurar que esté Nulo si falla
+            else:
+                st.warning("No se pudo extraer texto del PDF de Agentes para el pre-procesamiento.")
+                st.session_state.info_beecker_estructurada = None
+
+if st.session_state.info_beecker_estructurada:
+    with st.expander("Ver Información Estructurada de Beecker (Resultado del Pre-procesamiento)", expanded=False):
+        st.text_area("Info Estructurada:", st.session_state.info_beecker_estructurada, height=300)
+else:
+    st.info("Esperando el PDF de Agentes Beecker para el pre-procesamiento inicial con IA.")
 
 st.markdown("---")
 
-# --- Carga Múltiple PDFs Leads ---
-st.header("2. Cargar PDFs de Leads")
-lista_pdfs_leads_uploader = st.file_uploader("👤 Sube uno o varios PDFs de Leads", type="pdf", accept_multiple_files=True, key="uploader_leads_multiples_v2") # Cambié key
+# --- Etapa 2: Carga Múltiple PDFs Leads y Generación de Mensajes ---
+st.header("Etapa 2: Cargar PDFs de Leads y Generar Mensajes")
+lista_pdfs_leads_uploader = st.file_uploader("👤 Sube uno o varios PDFs de Leads", type="pdf", accept_multiple_files=True, key="uploader_leads_etapa2", disabled=not st.session_state.info_beecker_estructurada)
 
 # --- Botón de Limpiar ---
-if st.button("🧹 Limpiar Mensajes Generados)", use_container_width=True):
-    keys_to_reset = [
-        'texto_agentes_beecker_actual', 'nombre_archivo_agentes',
-        'mensajes_generados_batch'
-    ]
-    for key_to_reset in keys_to_reset: # Renombré la variable del bucle para evitar confusión
+if st.button("🧹 Limpiar Todo (PDFs y Resultados)", use_container_width=True):
+    keys_to_reset = ['info_beecker_estructurada', 'nombre_archivo_agentes', 'mensajes_generados_batch']
+    for key_to_reset in keys_to_reset:
         if key_to_reset in st.session_state:
-            # Asignar None o lista vacía según corresponda
-            if key_to_reset == 'mensajes_generados_batch':
-                st.session_state[key_to_reset] = []
-            else:
-                st.session_state[key_to_reset] = None
-    
-    # Para "limpiar" los file_uploaders visualmente, cambiar su key en cada ejecución o usar st.empty() y reemplazarlos
-    # es una opción, pero st.rerun() es la forma más simple de refrescar el estado general.
-    # El usuario tendrá que volver a subir los archivos si quiere procesar de nuevo.
+            st.session_state[key_to_reset] = [] if key_to_reset == 'mensajes_generados_batch' else None
     st.success("Se han limpiado los datos. Puedes subir nuevos archivos.")
     st.rerun()
 
 # --- Procesamiento Batch y Generación ---
-if st.session_state.texto_agentes_beecker_actual and lista_pdfs_leads_uploader:
+if st.session_state.info_beecker_estructurada and lista_pdfs_leads_uploader:
     if st.button(f"✨ Generar Mensajes para los {len(lista_pdfs_leads_uploader)} Leads Cargados", type="primary", use_container_width=True):
         st.session_state.mensajes_generados_batch = [] # Limpiar resultados anteriores de batch
-
         progress_bar = st.progress(0, text="Iniciando proceso batch...")
         total_leads = len(lista_pdfs_leads_uploader)
-        resultados_actuales = [] # Lista temporal para este batch
+        resultados_actuales_batch = []
 
         for i, pdf_lead_file in enumerate(lista_pdfs_leads_uploader):
             lead_filename = pdf_lead_file.name
             progress_text = f"Procesando Lead {i+1}/{total_leads}: {lead_filename}"
-            progress_bar.progress(float(i) / total_leads, text=progress_text) # Empezar progreso desde 0
+            progress_bar.progress(float(i) / total_leads, text=progress_text)
             
-            # Usar un placeholder para el resultado de este lead mientras se procesa
             resultado_placeholder = st.empty()
             spinner_message = resultado_placeholder.info(f"🔄 Procesando: {lead_filename}...")
 
-            texto_lead_actual = extraer_texto_pdf(pdf_lead_file)
+            texto_lead_actual = extraer_texto_pdf_crudo(pdf_lead_file)
 
             if texto_lead_actual:
                 contenido_para_gemini = f"""
-                --- INICIO TEXTO_AGENTES_BEECKER ---
-                {st.session_state.texto_agentes_beecker_actual}
-                --- FIN TEXTO_AGENTES_BEECKER ---
+                --- INICIO INFO_BEEKER_ESTRUCTURADA ---
+                {st.session_state.info_beecker_estructurada}
+                --- FIN INFO_BEEKER_ESTRUCTURADA ---
 
                 --- INICIO TEXTO_LEAD ---
                 {texto_lead_actual}
                 --- FIN TEXTO_LEAD ---
                 """
                 try:
-                    response = model.generate_content(contenido_para_gemini)
-                    respuesta_bruta = response.text
+                    # Usamos model_mensajes que tiene el SYSTEM_PROMPT_MENSAJE
+                    response_mensaje = model_mensajes.generate_content(contenido_para_gemini)
+                    respuesta_bruta = response_mensaje.text
                     respuesta_limpia = respuesta_bruta.replace('**', '')
-                    resultados_actuales.append({
+                    resultados_actuales_batch.append({
                         'lead_filename': lead_filename,
                         'mensaje': respuesta_limpia,
                         'error': None
                     })
-                    spinner_message.success(f"✅ Completado: {lead_filename}")
+                    spinner_message.success(f"✅ Mensaje generado para: {lead_filename}")
                 except Exception as e:
                     error_msg = f"Error con Gemini para '{lead_filename}': {e}"
-                    st.error(error_msg) # Mostrar error inmediatamente
-                    resultados_actuales.append({
-                        'lead_filename': lead_filename,
-                        'mensaje': None,
-                        'error': str(e)
-                    })
-                    spinner_message.error(f"❌ Error: {lead_filename}")
+                    st.error(error_msg)
+                    resultados_actuales_batch.append({'lead_filename': lead_filename, 'mensaje': None, 'error': str(e)})
+                    spinner_message.error(f"❌ Error al generar para: {lead_filename}")
             else:
                 warning_msg = f"No se pudo extraer texto de '{lead_filename}'. Se omitirá."
-                st.warning(warning_msg) # Mostrar warning inmediatamente
-                resultados_actuales.append({
-                    'lead_filename': lead_filename,
-                    'mensaje': None,
-                    'error': 'No se pudo extraer texto del PDF.'
-                })
+                st.warning(warning_msg)
+                resultados_actuales_batch.append({'lead_filename': lead_filename, 'mensaje': None, 'error': 'No se pudo extraer texto del PDF.'})
                 spinner_message.warning(f"⚠️ Omitido (sin texto): {lead_filename}")
             
             progress_bar.progress(float(i+1) / total_leads, text=progress_text if i+1 < total_leads else "Finalizando...")
 
-        st.session_state.mensajes_generados_batch = resultados_actuales # Asignar todos los resultados al final
+        st.session_state.mensajes_generados_batch = resultados_actuales_batch
         progress_bar.progress(1.0, text="¡Proceso batch completado!")
         st.success(f"Procesamiento batch finalizado.")
-        st.info("Los resultados se muestran a continuación. Si la lista es larga, desplázate hacia abajo.")
         st.balloons()
-
 
 # --- Mostrar Resultados del Batch ---
 if st.session_state.mensajes_generados_batch:
     st.markdown("---")
     st.header("📬 Mensajes de LinkedIn Generados (Batch)")
     for resultado in st.session_state.mensajes_generados_batch:
-        st.subheader(f"Lead: {resultado['lead_filename']}") # Subheader en lugar de expander
+        st.subheader(f"Lead: {resultado['lead_filename']}")
         if resultado['mensaje']:
-            st.code(resultado['mensaje'], language=None) # Solo st.code para visualización y copia
+            st.code(resultado['mensaje'], language=None)
         elif resultado['error']:
             st.error(f"No se pudo generar mensaje: {resultado['error']}")
-        st.markdown("---") # Separador entre mensajes
+        st.markdown("---")
 
-elif not lista_pdfs_leads_uploader and st.session_state.texto_agentes_beecker_actual:
+elif not lista_pdfs_leads_uploader and st.session_state.info_beecker_estructurada:
     st.info("ℹ️ Sube uno o varios archivos PDF de Leads para generar mensajes.")
-elif not st.session_state.texto_agentes_beecker_actual:
-    st.info("ℹ️ Por favor, carga primero el PDF de Agentes Beecker.")
+elif not st.session_state.info_beecker_estructurada:
+    st.info("ℹ️ Por favor, carga y procesa primero el PDF de Agentes Beecker en la Etapa 1.")
 
 # --- Sidebar ---
 with st.sidebar:
     st.header("Instrucciones")
     st.markdown("""
-    1.  Carga el **PDF de Agentes Beecker**.
-    2.  Sube **uno o varios PDFs de Leads**.
-    3.  Haz clic en **"Generar Mensajes..."**.
-    4.  Los mensajes aparecerán en la página principal.
-    5.  Usa **"Limpiar Todo..."** para reiniciar.
+    **Etapa 1:**
+    1. Carga el **PDF de Agentes Beecker**. La IA lo analizará para extraer una lista estructurada de agentes y un resumen de la compañía. Esto puede tomar un momento.
+    
+    **Etapa 2:**
+    2. Una vez procesada la información de Beecker, sube **uno o varios PDFs de Leads**.
+    3. Haz clic en **"Generar Mensajes..."**.
+    4. Los mensajes aparecerán en la página principal.
+    
+    Usa **"Limpiar Todo..."** para reiniciar el proceso completo (se borrará la información de Beecker procesada y los resultados).
     """)
     st.markdown("---")
-    st.markdown(f"Modelo en uso: `{MODEL_NAME}`")
+    st.markdown(f"Modelo IA en uso: `{MODEL_NAME}`")
