@@ -113,11 +113,7 @@ if 'mensajes_generados_batch' not in st.session_state:
 
 # --- CÓDIGO DE LA APLICACIÓN STREAMLIT (Sección de Título Modificada) ---
 st.set_page_config(page_title="🕵️ Agente P - Asistente Msj LinkedIn", layout="wide")
-
-st.image("ornitorrinco.png", width=200) # Tu logo de Beecker
-
 st.title("🕵️ Agente P: Tu Asistente IA para Mensajes de LinkedIn")
-
 st.markdown("Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego generas múltiples PDFs de Leads.").
 
 # --- Configuración de API Key y Modelo ---
