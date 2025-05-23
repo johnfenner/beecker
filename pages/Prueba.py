@@ -167,11 +167,10 @@ else:
 with st.sidebar:
     st.header("Instrucciones de Uso")
     st.markdown("""
-    1.  **Asegúrate** de que tu `GOOGLE_API_KEY` esté configurada en los Secrets de Streamlit Cloud.
-    2.  **Sube un archivo PDF** que contenga la información del lead.
-    3.  La IA usará el **prompt de sistema predefinido** (que incluye tu catálogo de agentes Beecker) para analizar el PDF.
-    4.  Haz clic en **"Generar Mensaje de LinkedIn"**.
-    5.  Copia el mensaje generado.
+    1.  **Sube un archivo PDF** que contenga la información del lead.
+    2.  La IA usará el **prompt de sistema predefinido** (que incluye tu catálogo de agentes Beecker) para analizar el PDF.
+    3.  Haz clic en **"Generar Mensaje de LinkedIn"**.
+    4.  Copia el mensaje generado.
     """)
     st.markdown("---")
     st.markdown(
