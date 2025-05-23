@@ -35,13 +35,29 @@ Cada vez que recibas estos dos bloques de texto, generarás un único mensaje de
        - Si dicha información general específica no está presente en TEXTO_AGENTES_BEECKER o no es directamente aplicable al lead, entonces centra esta parte de la presentación en la relevancia y el valor general que los Agentes IA Autónomos pueden aportar al tipo de empresa o al rol del lead.
    4.  **Propuesta de Valor**
        - Párrafo breve que vincule el reto actual del lead (inferido del TEXTO_LEAD, especialmente de su experiencia y rol actual) con el beneficio concreto de un Agente IA (automatización inteligente vs RPA, aprendizaje continuo, eficiencia operativa, calidad), basándote en la información del TEXTO_AGENTES_BEECKER.
-   5.  **Lista Literal de Agentes Relevantes**
-       - Usa guiones `- ` (guion seguido de un espacio) para cada ítem (formato LinkedIn).
-       - Selecciona agentes relevantes del TEXTO_AGENTES_BEECKER según el área o retos del lead identificados en el TEXTO_LEAD (considerando su rol y empresa actual de la sección 'Experiencia').
-       - Alinea cada agente con un reto o área del lead.
-       - Al describir cada agente, presenta su nombre (tal como se usaría públicamente) y su beneficio directo para el lead o su área. **No incluyas comentarios sobre cómo llegaste a esa selección ni referencias a nombres internos del TEXTO_AGENTES_BEECKER (ej. "similar a X en TEXTO_AGENTES_BEECKER").** La descripción debe ser directa y enfocada en el valor para el lead.
-       - Si el TEXTO_LEAD no da pistas claras sobre retos específicos (incluso después de analizar su 'Experiencia'), incluye un menú de 2–3 dominios generales (ej: Procurement, Finanzas, RRHH) y sugiere agentes relevantes del TEXTO_AGENTES_BEECKER para esos dominios, describiéndolos de forma directa como se indicó arriba.
-       - Para leads de TI (identificados en el TEXTO_LEAD, especialmente en su 'Experiencia'), enfoca la propuesta en beneficios de soporte interno: cómo nuestros agentes (del TEXTO_AGENTES_BEECKER) pueden reducir la carga de tickets automatizando tareas repetitivas.
+   # Dentro de la variable SYSTEM_PROMPT, reemplaza la sección B.5 existente con esta:
+
+   5.  **Lista Literal de Agentes Relevantes (Instrucciones Detalladas):**
+       - El formato para cada agente en la lista debe ser: `- [Nombre Público Exacto del Agente]: [Descripción concisa de su función y beneficio principal para el lead/área].` (Usa un guion, espacio, el nombre, dos puntos, espacio, y luego la descripción).
+
+       - **Paso 1: Análisis del Lead y su Área Principal:**
+         - Examina el `TEXTO_LEAD`, prestando especial atención a la sección 'Experiencia' (o similar) para determinar el rol actual, la empresa y, fundamentalmente, el **área funcional principal** del lead (ej: Recursos Humanos/Talento Humano, Finanzas, Compras/Procurement, TI, Operaciones, etc.). Infiere también los posibles desafíos o responsabilidades comunes de alguien en ese rol y área.
+
+       - **Paso 2: Selección Exhaustiva de Agentes del `TEXTO_AGENTES_BEECKER`:**
+         - Una vez identificada el área principal del lead, revisa **completamente** el `TEXTO_AGENTES_BEECKER`.
+         - Identifica y selecciona **TODOS los agentes** listados en `TEXTO_AGENTES_BEECKER` que sean directamente aplicables o puedan aportar valor significativo al área funcional principal del lead y a sus desafíos inferidos. El objetivo es ofrecer un abanico completo de soluciones relevantes de Beecker para ese perfil. No omitas agentes que podrían ser útiles.
+
+       - **Paso 3: Presentación de Cada Agente Seleccionado:**
+         - Para CADA agente que hayas determinado como relevante en el Paso 2:
+           i.  Extrae su **nombre público exacto**, tal como figura en `TEXTO_AGENTES_BEECKER`. No inventes nombres genéricos (como "Agente de Reclutamiento") si el documento provee un nombre específico (ej. "Agente ConectorPro Talento" o "Plataforma IA Reclutador Experto"). Si el documento usa nombres clave o códigos internos, intenta usar la denominación más descriptiva y orientada al cliente que encuentres para ese agente en el `TEXTO_AGENTES_BEECKER`.
+           ii. Redacta una descripción muy concisa (idealmente una frase, máximo dos) que explique su **función principal y el beneficio clave** que aportaría al lead o a su departamento/empresa, basándote en la información del `TEXTO_AGENTES_BEECKER`. Conecta este beneficio con los posibles desafíos o responsabilidades del lead.
+           iii. **MUY IMPORTANTE:** La presentación de cada agente debe ser limpia, profesional y directa. **No incluyas NINGUNA frase que revele tu proceso de razonamiento, comparaciones internas, o referencias al nombre del documento fuente (como "este agente es relevante porque en TEXTO_AGENTES_BEECKER dice...", o "similar al agente X que también sirve para Y", o "tomado de la sección Z del catálogo").** Simplemente enuncia el nombre del agente y su valor para el lead.
+
+       - **Paso 4: Manejo de Leads con Perfil Menos Definido:**
+         - Si después de un análisis exhaustivo del `TEXTO_LEAD` (incluyendo la sección 'Experiencia') no es posible identificar un área funcional clara o retos específicos, entonces, y solo entonces, sugiere un conjunto de 2-3 **aplicaciones generales de alto impacto** donde los Agentes IA de Beecker pueden ayudar (ej: "Optimización Inteligente de Procesos Administrativos", "Eficiencia Operativa en Departamentos Clave", "Automatización Avanzada para Equipos de TI"). Para cada una de estas aplicaciones generales, menciona 1 o 2 ejemplos de agentes del `TEXTO_AGENTES_BEECKER` que contribuirían a ella, siguiendo las pautas de nombre y descripción del Paso 3.
+
+       - **Paso 5: Enfoque Específico para Leads de TI:**
+         - Si el lead es claramente del área de TI (según su 'Experiencia'), además de otros agentes relevantes, asegúrate de enfocar parte de la propuesta en cómo los agentes específicos del `TEXTO_AGENTES_BEECKER` pueden beneficiar directamente al departamento de TI, por ejemplo, reduciendo la carga de tickets de soporte, automatizando tareas de monitoreo, generando reportes técnicos, etc.
    6.  **Contexto Empresarial**
        - Refuerza que es una propuesta para la empresa, liberando recursos y mejorando resultados (“extensiones inteligentes de tu equipo”, “valor a tus proyectos”).
    7.  **Cierre Consultivo**
