@@ -1,10 +1,8 @@
-openai==0.27.8      
-PyPDF2==3.0.1       
 altair==5.5.0
 attrs==25.3.0
 blinker==1.9.0
 cachetools==5.5.2
-certifi==2025.1.31
+certifi==2025.1.31 # Aunque las fechas futuras son inusuales, mantengo tu formato
 charset-normalizer==3.4.1
 click==8.1.8
 colorama==0.4.6
@@ -16,6 +14,7 @@ gitdb==4.0.12
 GitPython==3.1.44
 google-auth==2.40.0
 google-auth-oauthlib==1.2.2
+google-generativeai # <--- AÑADIDO para Gemini
 gspread==6.2.0
 httplib2==0.22.0
 idna==3.10
@@ -29,15 +28,18 @@ narwhals==1.36.0
 numpy==2.2.5
 oauth2client==4.1.3
 oauthlib==3.2.2
+openai==0.27.8
 openpyxl==3.1.5
 packaging==24.2
 pandas==2.2.3
-pillow==11.2.1
+pdfplumber # <--- AÑADIDO para leer PDFs (usado en el último código)
+Pillow==11.2.1 # Corregido de 'pillow' a 'Pillow' que es el nombre canónico en PyPI, aunque pip suele manejarlo.
 plotly==6.0.1
 protobuf==5.29.4
 pyarrow==19.0.1
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
+PyPDF2==3.0.1 # Lo mantengo ya que estaba, pero el código usa pdfplumber
 pydeck==0.9.1
 pyparsing==3.2.3
 python-dateutil==2.9.0.post0
