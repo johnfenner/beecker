@@ -196,7 +196,7 @@ st.session_state.campana_seleccion_principal = st.multiselect(
 st.markdown("---")
 st.subheader("2. Filtros Adicionales")
 
-if st.button("Limpiar Filtros)", on_click=resetear_filtros_campana_callback, key="btn_reset_campana_filtros_total"):
+if st.button("Limpiar Filtros", on_click=resetear_filtros_campana_callback, key="btn_reset_campana_filtros_total"):
     st.rerun() # Forzar rerun para que los widgets se actualicen
 
 # Solo mostrar el expander y los filtros si hay una campaña seleccionada
