@@ -53,7 +53,7 @@ def obtener_datos_base_campanas():
 def inicializar_estado_filtros_campana():
     default_filters = {
         "campana_seleccion_principal": [],
-        "campana_filtro_prospectador": "– Todos –",
+        "campana_filtro_prospectador": ["– Todos –"], # CAMBIO: Ahora es una lista
         "campana_filtro_pais": ["– Todos –"],
         "campana_filtro_fecha_ini": None,
         "campana_filtro_fecha_fin": None,
@@ -66,7 +66,7 @@ def resetear_filtros_campana_callback():
     keys_to_reset = [k for k in st.session_state.keys() if k.startswith("campana_filtro_") or k == "campana_seleccion_principal"]
     for key in keys_to_reset:
         if key == "campana_seleccion_principal": st.session_state[key] = []
-        elif key == "campana_filtro_prospectador": st.session_state[key] = "– Todos –"
+        elif key == "campana_filtro_prospectador": st.session_state[key] = ["– Todos –"] # CAMBIO: Reset a lista
         elif key == "campana_filtro_pais": st.session_state[key] = ["– Todos –"]
         elif key in ["campana_filtro_fecha_ini", "campana_filtro_fecha_fin"]: st.session_state[key] = None
     st.toast("Filtros de campaña reiniciados.", icon="🧹")
@@ -188,22 +188,40 @@ st.subheader("2. Filtros Adicionales")
 with st.expander("Aplicar filtros detallados a la(s) campaña(s) seleccionada(s)", expanded=True):
     col_f1, col_f2 = st.columns(2)
     with col_f1:
+        # CAMBIO: Filtro ¿Quién Prospectó? ahora es multiselect
         opciones_prospectador_camp = ["– Todos –"] + sorted(
             df_campanas_filtradas_por_seleccion["¿Quién Prospecto?"].dropna().astype(str).unique()
         )
-        st.session_state.campana_filtro_prospectador = st.selectbox(
-            "¿Quién Prospectó?", options=opciones_prospectador_camp,
-            index=opciones_prospectador_camp.index(st.session_state.campana_filtro_prospectador)
-                  if st.session_state.campana_filtro_prospectador in opciones_prospectador_camp else 0,
-            key="sb_campana_prospectador"
+        # Asegurar que el default en session_state es una lista y sus valores son válidos
+        current_prospectador_selection = st.session_state.campana_filtro_prospectador
+        if not isinstance(current_prospectador_selection, list):
+            current_prospectador_selection = ["– Todos –"]
+        
+        valid_prospectador_default = [p for p in current_prospectador_selection if p in opciones_prospectador_camp]
+        if not valid_prospectador_default: # Si la selección guardada no es válida o está vacía
+            valid_prospectador_default = ["– Todos –"] if "– Todos –" in opciones_prospectador_camp else []
+
+
+        st.session_state.campana_filtro_prospectador = st.multiselect(
+            "¿Quién Prospectó?",
+            options=opciones_prospectador_camp,
+            default=valid_prospectador_default,
+            key="ms_campana_prospectador" # Nueva key para multiselect
         )
+
         opciones_pais_camp = ["– Todos –"] + sorted(
             df_campanas_filtradas_por_seleccion["Pais"].dropna().astype(str).unique()
         )
+        current_pais_selection = st.session_state.campana_filtro_pais
+        if not isinstance(current_pais_selection, list):
+            current_pais_selection = ["– Todos –"]
+        valid_pais_default = [p for p in current_pais_selection if p in opciones_pais_camp]
+        if not valid_pais_default:
+            valid_pais_default = ["– Todos –"] if "– Todos –" in opciones_pais_camp else []
+
         st.session_state.campana_filtro_pais = st.multiselect(
             "País del Prospecto", options=opciones_pais_camp,
-            default=[p for p in st.session_state.campana_filtro_pais if p in opciones_pais_camp]
-                   or (["– Todos –"] if "– Todos –" in opciones_pais_camp else []),
+            default=valid_pais_default,
             key="ms_campana_pais"
         )
     with col_f2:
@@ -223,14 +241,20 @@ with st.expander("Aplicar filtros detallados a la(s) campaña(s) seleccionada(s)
             min_value=min_fecha_invite_camp, max_value=max_fecha_invite_camp, format="DD/MM/YYYY", key="di_campana_fecha_fin"
         )
     if st.button("Limpiar Filtros de Campaña", on_click=resetear_filtros_campana_callback, key="btn_reset_campana_filtros"):
-        pass
+        # El callback se encarga del reseteo y Streamlit re-ejecuta.
+        # Forzar un rerun aquí para asegurar que los widgets se actualicen con los valores reseteados de session_state.
+        st.rerun()
+
 
 # Aplicar filtros
 df_aplicar_filtros = df_campanas_filtradas_por_seleccion.copy()
-if st.session_state.campana_filtro_prospectador != "– Todos –":
+
+# CAMBIO: Aplicar filtro ¿Quién Prospectó? (multiselect)
+if st.session_state.campana_filtro_prospectador and "– Todos –" not in st.session_state.campana_filtro_prospectador:
     df_aplicar_filtros = df_aplicar_filtros[
-        df_aplicar_filtros["¿Quién Prospecto?"] == st.session_state.campana_filtro_prospectador
+        df_aplicar_filtros["¿Quién Prospecto?"].isin(st.session_state.campana_filtro_prospectador)
     ]
+
 if st.session_state.campana_filtro_pais and "– Todos –" not in st.session_state.campana_filtro_pais:
     df_aplicar_filtros = df_aplicar_filtros[
         df_aplicar_filtros["Pais"].isin(st.session_state.campana_filtro_pais)
@@ -324,9 +348,16 @@ else:
     # --- Análisis por Prospectador (Dentro de la selección de campañas y filtros de página) ---
     st.markdown("### Rendimiento por Prospectador (para la selección actual)")
     if "¿Quién Prospecto?" in df_final_analisis_campana.columns:
+        # Si se seleccionaron prospectadores específicos en el filtro multiselect,
+        # df_final_analisis_campana ya solo contiene esos.
+        # Si "– Todos –" está en la selección del filtro, o si el filtro está vacío (asumiendo que default es todos),
+        # entonces agruparemos por todos los prospectadores presentes en df_final_analisis_campana.
+        
+        # La agrupación se hace sobre los datos ya filtrados por los multiselect de Prospectador.
         df_prospectador_camp = df_final_analisis_campana.groupby("¿Quién Prospecto?").apply(
             lambda x: pd.Series(calcular_kpis_df_campana(x))
         ).reset_index()
+        
         df_prospectador_camp_display = df_prospectador_camp[
             (df_prospectador_camp['total_prospectos'] > 0)
         ][[
@@ -344,9 +375,24 @@ else:
             if col_int_prosp in df_prospectador_camp_display.columns:
                 df_prospectador_camp_display[col_int_prosp] = pd.to_numeric(df_prospectador_camp_display[col_int_prosp], errors='coerce').fillna(0).astype(int)
                 format_dict_prosp[col_int_prosp] = "{:,}"
+        
         if not df_prospectador_camp_display.empty:
             st.dataframe(df_prospectador_camp_display.style.format(format_dict_prosp), use_container_width=True, hide_index=True)
-            if len(df_prospectador_camp_display['¿Quién Prospecto?'].unique()) > 1 and st.session_state.campana_filtro_prospectador == "– Todos –":
+            
+            # Mostrar gráfico si hay más de un prospectador en la tabla resultante Y
+            # si la intención no era filtrar por UN solo prospectador específico.
+            # Si st.session_state.campana_filtro_prospectador contiene "– Todos –" O tiene más de un nombre,
+            # Y la tabla resultante df_prospectador_camp_display tiene más de una fila, entonces mostrar gráfico.
+            mostrar_grafico_prospectador = False
+            if "– Todos –" in st.session_state.campana_filtro_prospectador:
+                if len(df_prospectador_camp_display['¿Quién Prospecto?'].unique()) > 1:
+                    mostrar_grafico_prospectador = True
+            elif len(st.session_state.campana_filtro_prospectador) > 1: # Si se seleccionaron múltiples explícitamente
+                 if len(df_prospectador_camp_display['¿Quién Prospecto?'].unique()) > 1:
+                    mostrar_grafico_prospectador = True
+            # No mostrar gráfico si se filtró explícitamente por UN solo prospectador (len de la selección es 1 y no es "– Todos –")
+
+            if mostrar_grafico_prospectador:
                 fig_prosp_camp_bar = px.bar(
                     df_prospectador_camp_display.sort_values(by="Tasa Sesión Global (%)", ascending=False),
                     x="¿Quién Prospecto?", y="Tasa Sesión Global (%)", title="Tasa de Sesión Global por Prospectador (Selección Actual)",
@@ -355,8 +401,10 @@ else:
                 fig_prosp_camp_bar.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
                 fig_prosp_camp_bar.update_layout(xaxis_tickangle=-45)
                 st.plotly_chart(fig_prosp_camp_bar, use_container_width=True)
-        else: st.caption("No hay datos de rendimiento por prospectador para la selección actual.")
-    else: st.caption("La columna '¿Quién Prospecto?' no está disponible.")
+        else: 
+            st.caption("No hay datos de rendimiento por prospectador para la selección actual.")
+    else: 
+        st.caption("La columna '¿Quién Prospecto?' no está disponible.")
 
     # --- Tabla Detallada de Prospectos ---
     st.markdown("### Detalle de Prospectos (para la selección actual)")
@@ -364,25 +412,21 @@ else:
     df_detalle_original_filtrado = df_original_completo.loc[indices_filtrados].copy()
 
     if not df_detalle_original_filtrado.empty:
-        # Convertir todas las columnas a string para evitar problemas de formato, excepto fechas que formatearemos.
-        # df_display_tabla_campana_detalle = df_detalle_original_filtrado.astype(str) # Se hará en el bucle
         df_display_tabla_campana_detalle = pd.DataFrame()
         for col_orig in df_detalle_original_filtrado.columns:
             if pd.api.types.is_datetime64_any_dtype(df_detalle_original_filtrado[col_orig]):
                  df_display_tabla_campana_detalle[col_orig] = pd.to_datetime(df_detalle_original_filtrado[col_orig], errors='coerce').dt.strftime('%d/%m/%Y').fillna("N/A")
-            elif pd.api.types.is_numeric_dtype(df_detalle_original_filtrado[col_orig]) and (df_detalle_original_filtrado[col_orig].apply(lambda x: isinstance(x, float) and x.is_integer()).all()):
-                 df_display_tabla_campana_detalle[col_orig] = df_detalle_original_filtrado[col_orig].fillna(0).astype(int).astype(str) # Convertir enteros a str
+            elif pd.api.types.is_numeric_dtype(df_detalle_original_filtrado[col_orig]) and \
+                 (df_detalle_original_filtrado[col_orig].dropna().apply(lambda x: isinstance(x, float) and x.is_integer()).all() or \
+                  pd.api.types.is_integer_dtype(df_detalle_original_filtrado[col_orig].dropna())):
+                 df_display_tabla_campana_detalle[col_orig] = df_detalle_original_filtrado[col_orig].fillna(0).astype(int).astype(str).replace('0', "N/A") # O mantén el 0 si prefieres
             else:
                  df_display_tabla_campana_detalle[col_orig] = df_detalle_original_filtrado[col_orig].astype(str).fillna("N/A")
-
-
         st.dataframe(df_display_tabla_campana_detalle, height=400, use_container_width=True)
 
         @st.cache_data
         def convertir_df_a_excel_campana_detalle(df_conv):
             output = io.BytesIO()
-            # Usar df_conv directamente, que es df_detalle_original_filtrado
-            # que tiene los tipos de datos más originales (especialmente fechas como datetime)
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 df_conv.to_excel(writer, index=False, sheet_name='Prospectos_Campaña_Detalle')
             return output.getvalue()
@@ -400,4 +444,6 @@ else:
         st.caption("No hay prospectos detallados para mostrar con los filtros actuales.")
 
 st.markdown("---")
-st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")
+st.info(
+    "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊"
+)
