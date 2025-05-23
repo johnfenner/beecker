@@ -183,9 +183,20 @@ else:
 st.markdown("---")
 
 # --- Etapa 2: Carga Múltiple PDFs Leads y Generación de Mensajes ---
-st.header("Etapa 2: Cargar PDFs de Leads y Generar Mensajes")
-lista_pdfs_leads_uploader = st.file_uploader("👤 Sube uno o varios PDFs de Leads", type="pdf", accept_multiple_files=True, key="uploader_leads_etapa2", disabled=not st.session_state.info_beecker_estructurada)
 
+st.set_page_config(
+    page_title="🕵️ Agente P - Asistente Msj LinkedIn",
+    layout="wide"
+)
+
+st.image("ornitorrinco.png", width=200)  # Tu logo de Beecker
+
+st.title("🕵️ Agente P: Tu Asistente IA para Mensajes de LinkedIn")
+
+st.markdown(
+    "Sube el PDF de Agentes Beecker (se pre-procesará con IA) "
+    "y luego generas múltiples PDFs de Leads."
+)
 # --- Botón de Limpiar ---
 if st.button("🧹 Limpiar Todo (PDFs y Resultados)", use_container_width=True):
     keys_to_reset = ['info_beecker_estructurada', 'nombre_archivo_agentes', 'mensajes_generados_batch']
