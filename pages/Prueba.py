@@ -1,27 +1,19 @@
 import streamlit as st
 import openai
+import time
 from PyPDF2 import PdfReader
 
-# Configuración de la clave de OpenAI mediante Streamlit Secrets
-
-# Crea un archivo .streamlit/secrets.toml con:
-
-# [openai]
-
-# api\_key = "TU\_CLAVE\_AQUÍ"
-
-openai.api\_key = st.secrets["openai"]["api\_key"]
+# Carga la API Key de OpenAI de tu secrets.toml
+openai.api_key = st.secrets["openai"]["api_key"]
 
 # Función para extraer texto de un PDF
-
-def extract\_text\_from\_pdf(pdf\_file):
-reader = PdfReader(pdf\_file)
-return "\n".join(page.extract\_text() or "" for page in reader.pages)
+def extract_text_from_pdf(pdf_file):
+    reader = PdfReader(pdf_file)
+    return "\n".join(page.extract_text() or "" for page in reader.pages)
 
 # Prompt maestro refinado
-
-def build\_system\_prompt():
-return """
+def build_system_prompt():
+    return """
 Eres mi asistente experto en redacción persuasiva para LinkedIn. Cada vez que te envíe el PDF de un lead, generarás un único mensaje listo para copiar y pegar, siguiendo estas reglas al pie de la letra:
 
 1. **Procesamiento Aislado**
@@ -37,7 +29,7 @@ Eres mi asistente experto en redacción persuasiva para LinkedIn. Cada vez que t
      - Conecta con 1–2 datos concretos del PDF (rol actual, proyecto o logro).
      - No uses “Vi tu perfil…”, “Me impresionó…”, ni referencias genéricas.
    - **Presentación Orgánica de Beecker**
-     - “En Beecker ([https://beecker.ai/agentic-ai/](https://beecker.ai/agentic-ai/)) acompañamos a empresas con Agentes IA Autónomos…”
+     - “En Beecker (https://beecker.ai/agentic-ai/) acompañamos a empresas con Agentes IA Autónomos…”
      - Destaca un aspecto relevante según el lead (casos de éxito, áreas de impacto o certificaciones).
    - **Propuesta de Valor**
      - Párrafo breve que vincule el reto actual del lead con el beneficio concreto de un Agente IA (automatización inteligente vs RPA, aprendizaje continuo, eficiencia operativa, calidad).
@@ -68,64 +60,47 @@ Eres mi asistente experto en redacción persuasiva para LinkedIn. Cada vez que t
 """
 
 # Configuración de la página
-
-st.set\_page\_config(page\_title="Generador de Mensajes LinkedIn", layout="centered")
+st.set_page_config(page_title="Generador de Mensajes LinkedIn", layout="centered")
 st.title("📝 Generador de Mensajes LinkedIn con IA")
 
-# Carga de PDF y generación de mensaje
-
-uploaded\_file = st.file\_uploader("Carga el PDF del lead:", type=["pdf"])
-if uploaded\_file:
-with st.spinner("Extrayendo texto del PDF..."):
-lead\_text = extract\_text\_from\_pdf(uploaded\_file)
-
-```
-st.subheader("Texto extraído del lead:")
-st.text_area("", lead_text, height=200)
-
-if st.button("Generar mensaje LinkedIn"):
-    with st.spinner("Generando mensaje con IA..."):
-        # Manejo de Rate Limit con reintentos
-```
-
-max\_retries = 3
-for attempt in range(max\_retries):
-try:
-response = openai.ChatCompletion.create(
-model="gpt-4o-mini",
-messages=[
-{"role": "system", "content": build\_system\_prompt()},
-{"role": "user", "content": lead\_text}
-],
-temperature=0.7,
-max\_tokens=500
-)
-break  # Éxito, salimos del bucle
-except openai.error.RateLimitError:
-if attempt < max\_retries - 1:
-time.sleep(2 \*\* attempt)  # backoff exponencial
-continue
+# Carga de PDF
+uploaded_file = st.file_uploader("Carga el PDF del lead:", type=["pdf"])
+if not uploaded_file:
+    st.info("Sube un PDF para comenzar.")
 else:
-st.error("La tasa de solicitudes a la API ha sido excedida. Por favor, inténtalo nuevamente más tarde.")
-response = None
-break
+    with st.spinner("Extrayendo texto del PDF..."):
+        lead_text = extract_text_from_pdf(uploaded_file)
 
-if response:
-message = response.choices[0].message.content
-model="gpt-4o-mini",
-messages=[
-{"role": "system", "content": build\_system\_prompt()},
-{"role": "user", "content": lead\_text}
-],
-temperature=0.7,
-max\_tokens=500
-)
-message = response.choices[0].message.content
+    st.subheader("Texto extraído del lead:")
+    st.text_area("", lead_text, height=200)
 
-```
-    st.subheader("Mensaje generado:")
-    st.text_area("", message, height=300)
-    st.success("¡Mensaje generado con éxito!")
-```
+    if st.button("Generar mensaje LinkedIn"):
+        with st.spinner("Generando mensaje con IA..."):
+            # Manejo de Rate Limit con reintentos
+            max_retries = 3
+            response = None
+            for attempt in range(max_retries):
+                try:
+                    response = openai.ChatCompletion.create(
+                        model="gpt-4o-mini",
+                        messages=[
+                            {"role": "system", "content": build_system_prompt()},
+                            {"role": "user", "content": lead_text}
+                        ],
+                        temperature=0.7,
+                        max_tokens=500
+                    )
+                    break
+                except openai.error.RateLimitError:
+                    if attempt < max_retries - 1:
+                        time.sleep(2 ** attempt)  # backoff exponencial
+                    else:
+                        st.error("La tasa de solicitudes a la API ha sido excedida. Por favor, inténtalo más tarde.")
+                        break
 
+        if response:
+            message = response.choices[0].message.content
+            st.subheader("Mensaje generado:")
+            st.text_area("", message, height=300)
+            st.success("¡Mensaje generado con éxito!")
 
