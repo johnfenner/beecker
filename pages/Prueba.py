@@ -80,7 +80,6 @@ A partir de ahora, sigue **exactamente** este prompt para cada nuevo lead (conte
 
 # --- Configuración de la Página de Streamlit ---
 st.set_page_config(page_title="🚀 Generador de Mensajes LinkedIn", layout="wide")
-st.image("https://beecker.ai/wp-content/uploads/2024/02/logo-beecker-consulting.svg", width=200) # Opcional: logo
 st.title("🤖 Generador de Mensajes para LinkedIn")
 st.markdown("Sube el PDF de un lead y la IA generará un mensaje personalizado basado en tus instrucciones.")
 
