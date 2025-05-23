@@ -4,7 +4,6 @@ import pdfplumber # Para leer PDFs
 import io # Para manejar el stream de bytes del archivo subido
 
 # --- TU PROMPT DETALLADO COMO SYSTEM_PROMPT ---
-# !! IMPORTANTE: Añade aquí tu catálogo de agentes Beecker y otra info necesaria !!
 SYSTEM_PROMPT = """
 Eres mi asistente experto en redacción persuasiva para LinkedIn. Cada vez que te envíe el CONTENIDO EXTRAÍDO DE UN PDF de un lead, generarás un único mensaje listo para copiar y pegar, siguiendo estas reglas al pie de la letra:
 
