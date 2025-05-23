@@ -112,37 +112,13 @@ if 'mensajes_generados_batch' not in st.session_state:
     st.session_state.mensajes_generados_batch = []
 
 # --- CÓDIGO DE LA APLICACIÓN STREAMLIT (Sección de Título Modificada) ---
+st.set_page_config(page_title="🕵️ Agente P - Asistente Msj LinkedIn", layout="wide")
 
-# Configuración de la página (esto está bien como lo tienes, o puedes usar el emoji del ornitorrinco si prefieres)
-st.set_page_config(page_title="🦫 Agente P - Asistente Msj LinkedIn", layout="wide")
+st.image("ornitorrinco.png", width=200) # Tu logo de Beecker
 
-# --- Título Principal con Icono de Ornitorrinco y Logo de Beecker ---
-# Creamos columnas para organizar los elementos en la misma línea horizontal
-col_logo_beecker, col_icono_agente_p, col_titulo_texto = st.columns([2, 1, 6]) # Ajusta los números para cambiar el ancho relativo
+st.title("🕵️ Agente P: Tu Asistente IA para Mensajes de LinkedIn")
 
-with col_logo_beecker:
-    # Mostramos el logo de Beecker primero, desde su URL web
-    st.image("https://beecker.ai/wp-content/uploads/2024/02/logo-beecker-consulting.svg", width=150)
-
-with col_icono_agente_p:
-    # CONSTRUYE TU URL RAW AQUÍ:
-    # Ejemplo: URL_ORNITORRINCO_GITHUB = "https://raw.githubusercontent.com/johnfenner/mi_app_agente_p/main/pages/ornitorrinco.png"
-    # ¡ASEGÚRATE DE USAR TU PROPIA URL RAW!
-    URL_ORNITORRINCO_GITHUB = "https://github.com/johnfenner/beecker/edit/main/pages/ornitorrinco.png"
-    try:
-        st.image(URL_ORNITORRINCO_GITHUB, width=70) # Ancho más pequeño para un icono junto al título
-    except Exception as e:
-        st.error(f"Error al cargar ornitorrinco.png desde GitHub: {e}. Usando 🦫.")
-        st.markdown("<h1 style='text-align: left; font-size: 40px;'>🦫</h1>", unsafe_allow_html=True) # Fallback emoji
-
-with col_titulo_texto:
-    st.title("Agente P") # Título de texto
-    st.markdown("#### Tu Asistente IA para Mensajes de LinkedIn")
-
-# Descripción debajo del título
-st.markdown("Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego generas múltiples PDFs de Leads.")
-
-# ... (El resto de tu código continúa aquí: Configuración de API Key, Modelo, funciones, etc.) ...
+st.markdown("Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego generas múltiples PDFs de Leads.").
 
 # --- Configuración de API Key y Modelo ---
 try:
