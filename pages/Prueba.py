@@ -1,9 +1,9 @@
 import streamlit as st
 import google.generativeai as genai
-import pdfplumber # Para leer PDFs
-import io # Para manejar el stream de bytes del archivo subido
+import pdfplumber
+import io
 
-# --- 1. SYSTEM_PROMPT (VERSIÓN MÁS RECIENTE Y COMPLETA) ---
+# --- 1. SYSTEM_PROMPT (El mismo que ya funcionaba bien) ---
 SYSTEM_PROMPT = """
 Eres mi asistente experto en redacción persuasiva para LinkedIn.
 Te proporcionaré dos bloques de texto con la siguiente información:
@@ -64,178 +64,169 @@ Cada vez que recibas estos dos bloques de texto, generarás un único mensaje de
 """
 
 # --- 2. INICIALIZACIÓN DE VARIABLES DE SESIÓN ---
-if 'generated_message' not in st.session_state:
-    st.session_state.generated_message = None
 if 'texto_agentes_beecker_actual' not in st.session_state:
     st.session_state.texto_agentes_beecker_actual = None
-if 'texto_lead_actual_procesado' not in st.session_state:
-    st.session_state.texto_lead_actual_procesado = None
 if 'nombre_archivo_agentes' not in st.session_state:
     st.session_state.nombre_archivo_agentes = None
-if 'nombre_archivo_lead' not in st.session_state:
-    st.session_state.nombre_archivo_lead = None
+if 'mensajes_generados_batch' not in st.session_state: # Para guardar los resultados del batch
+    st.session_state.mensajes_generados_batch = []
+if 'archivos_leads_procesados_nombres' not in st.session_state: # Para evitar reprocesar mismos archivos en un batch
+    st.session_state.archivos_leads_procesados_nombres = []
+
 
 # --- 3. CÓDIGO DE LA APLICACIÓN STREAMLIT ---
-
-# --- Configuración de la Página ---
-st.set_page_config(page_title="🚀 Generador LinkedIn Pro", layout="wide")
+st.set_page_config(page_title="🚀 Generador LinkedIn Batch", layout="wide")
 st.title("🤖 Generador de Mensajes para LinkedIn")
-st.markdown("Sube el PDF de Agentes de Beecker y el PDF del Lead para generar un mensaje.")
+st.markdown("Sube el PDF de Agentes de Beecker una vez, y luego múltiples PDFs de Leads.")
 
-# --- Configuración de la API Key ---
+# --- Configuración de API Key y Modelo (igual que antes) ---
 try:
     GEMINI_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GEMINI_API_KEY)
+    MODEL_NAME = 'gemini-1.5-flash-latest'
+    model = genai.GenerativeModel(MODEL_NAME, system_instruction=SYSTEM_PROMPT)
 except KeyError:
     st.error("Error: GOOGLE_API_KEY no configurada en Secrets.")
     st.stop()
 except Exception as e:
-    st.error(f"Error configurando API Gemini: {e}")
+    st.error(f"Error configurando API o Modelo Gemini: {e}")
     st.stop()
 
-# --- Inicialización del Modelo ---
-MODEL_NAME = 'gemini-1.5-flash-latest'
-try:
-    model = genai.GenerativeModel(MODEL_NAME, system_instruction=SYSTEM_PROMPT)
-except Exception as e:
-    st.error(f"Error cargando modelo Gemini ('{MODEL_NAME}'): {e}")
-    st.stop()
-
-# --- Función para extraer texto ---
 def extraer_texto_pdf(archivo_subido):
     if archivo_subido is None: return None
     try:
         texto_completo = ""
-        # .getvalue() es necesario para que pdfplumber pueda leer el BytesIO de Streamlit
         with pdfplumber.open(io.BytesIO(archivo_subido.getvalue())) as pdf:
             for page in pdf.pages:
                 page_text = page.extract_text()
                 if page_text: texto_completo += page_text + "\n"
         return texto_completo.strip() if texto_completo else None
     except Exception as e:
-        st.error(f"Error al leer el PDF '{archivo_subido.name}': {e}")
+        st.error(f"Error al leer PDF '{archivo_subido.name}': {e}")
         return None
 
-# --- Columnas para carga de PDFs ---
-st.header("Carga de Documentos Requeridos")
-col1, col2 = st.columns(2)
+# --- Carga PDF Agentes Beecker ---
+st.header("1. Cargar Información de Beecker")
+pdf_agentes_uploader = st.file_uploader("📄 PDF Catálogo de Agentes y Info. General de Beecker", type="pdf", key="uploader_agentes_persistente")
 
-with col1:
-    st.markdown("#### 1. PDF Agentes Beecker")
-    pdf_agentes_uploader = st.file_uploader("📄 Catálogo de Agentes y Info. General de Beecker", type="pdf", key="uploader_agentes", help="Sube el PDF con el catálogo de agentes y la información general relevante de Beecker.")
-
-with col2:
-    st.markdown("#### 2. PDF del Lead")
-    pdf_lead_uploader = st.file_uploader("👤 Perfil del Lead", type="pdf", key="uploader_lead", help="Sube el PDF del perfil del lead a contactar.")
-
-st.markdown("---")
-
-# --- Botón de Limpiar ---
-# Colocado antes de la lógica de procesamiento para que esté siempre visible si hay algo que limpiar
-if st.button("🧹 Limpiar Entradas y Resultados Anteriores", use_container_width=True):
-    # Reiniciar las variables de sesión relevantes
-    keys_to_reset = [
-        'generated_message', 
-        'texto_agentes_beecker_actual', 
-        'texto_lead_actual_procesado',
-        'nombre_archivo_agentes',
-        'nombre_archivo_lead'
-    ]
-    for key in keys_to_reset:
-        if key in st.session_state:
-            st.session_state[key] = None
-    
-    # Es importante usar st.rerun() para que la interfaz se refresque correctamente
-    # y los file_uploaders también se comporten como si estuvieran "más limpios"
-    # (aunque el navegador pueda recordar el último archivo, nuestra lógica lo ignorará hasta nueva carga)
-    st.rerun()
-
-
-# --- Lógica de Procesamiento de Archivos ---
-# Se ejecuta si se sube un nuevo archivo de agentes
 if pdf_agentes_uploader is not None:
-    if st.session_state.nombre_archivo_agentes != pdf_agentes_uploader.name: # Solo procesa si es un archivo nuevo
+    if st.session_state.nombre_archivo_agentes != pdf_agentes_uploader.name or not st.session_state.texto_agentes_beecker_actual:
         with st.spinner("Procesando PDF de Agentes Beecker..."):
             st.session_state.texto_agentes_beecker_actual = extraer_texto_pdf(pdf_agentes_uploader)
             st.session_state.nombre_archivo_agentes = pdf_agentes_uploader.name
-            st.session_state.generated_message = None # Limpiar mensaje anterior si se cambia este PDF
-            if not st.session_state.texto_agentes_beecker_actual:
+            if st.session_state.texto_agentes_beecker_actual:
+                st.success(f"PDF de Agentes '{st.session_state.nombre_archivo_agentes}' cargado y procesado.")
+            else:
                 st.warning("No se pudo extraer texto del PDF de Agentes Beecker o está vacío.")
-            # st.rerun() # Considerar un rerun aquí si queremos que la UI se actualice inmediatamente después de procesar este archivo
 
-# Se ejecuta si se sube un nuevo archivo de lead
-if pdf_lead_uploader is not None:
-    if st.session_state.nombre_archivo_lead != pdf_lead_uploader.name: # Solo procesa si es un archivo nuevo
-        with st.spinner("Procesando PDF del Lead..."):
-            st.session_state.texto_lead_actual_procesado = extraer_texto_pdf(pdf_lead_uploader)
-            st.session_state.nombre_archivo_lead = pdf_lead_uploader.name
-            st.session_state.generated_message = None # Limpiar mensaje anterior si se cambia este PDF
-            if not st.session_state.texto_lead_actual_procesado:
-                st.warning("No se pudo extraer texto del PDF del Lead o está vacío.")
-            # st.rerun() # Considerar un rerun aquí también
+if st.session_state.texto_agentes_beecker_actual:
+    with st.expander("Ver Texto de Agentes Beecker (extracto)"):
+        st.text(st.session_state.texto_agentes_beecker_actual[:300] + "...")
 
-# --- Previsualización y Botón de Generar Mensaje ---
-if st.session_state.texto_agentes_beecker_actual and st.session_state.texto_lead_actual_procesado:
-    if not st.session_state.generated_message: # Mostrar previsualizaciones solo si no hay mensaje generado
-        st.info("📝 Previsualización de textos extraídos (primeros 300 caracteres):")
-        with st.expander("Ver Texto Agentes Beecker (extracto)"):
-            st.text(st.session_state.texto_agentes_beecker_actual[:300] + "...")
-        with st.expander("Ver Texto Lead (extracto)"):
-            st.text(st.session_state.texto_lead_actual_procesado[:300] + "...")
-        st.markdown("---")
+st.markdown("---")
 
-    if st.button("✨ Generar Mensaje de LinkedIn", type="primary", use_container_width=True):
-        with st.spinner("🤖 Gemini está analizando los PDFs y redactando el mensaje..."):
-            contenido_para_gemini = f"""
-            --- INICIO TEXTO_AGENTES_BEECKER ---
-            {st.session_state.texto_agentes_beecker_actual}
-            --- FIN TEXTO_AGENTES_BEECKER ---
+# --- Carga Múltiple PDFs Leads ---
+st.header("2. Cargar PDFs de Leads")
+lista_pdfs_leads_uploader = st.file_uploader("👤 Sube uno o varios PDFs de Leads", type="pdf", accept_multiple_files=True, key="uploader_leads_multiples")
 
-            --- INICIO TEXTO_LEAD ---
-            {st.session_state.texto_lead_actual_procesado}
-            --- FIN TEXTO_LEAD ---
-            """
-            try:
-                response = model.generate_content(contenido_para_gemini)
-                respuesta_gemini_bruta = response.text
-                # Limpieza de asteriscos para negritas
-                st.session_state.generated_message = respuesta_gemini_bruta.replace('**', '')
-                st.rerun() # Rerun para mostrar el mensaje generado y limpiar previsualizaciones
+# --- Botón de Limpiar ---
+if st.button("🧹 Limpiar Todo (PDFs de Beecker, Leads y Resultados)", use_container_width=True):
+    keys_to_reset = [
+        'texto_agentes_beecker_actual', 'nombre_archivo_agentes',
+        'mensajes_generados_batch', 'archivos_leads_procesados_nombres'
+    ]
+    for key in keys_to_reset:
+        if key in st.session_state:
+            st.session_state[key] = None if key.startswith('texto_') else [] if key.endswith('_batch') or key.endswith('_nombres') else None
+    # Para "limpiar" los file_uploaders visualmente, cambiar su key y rerutear es una opción,
+    # o simplemente confiar en que el usuario subirá nuevos archivos.
+    # Por ahora, limpiamos el estado y reruteamos.
+    st.success("Se han limpiado los datos. Puedes subir nuevos archivos.")
+    st.rerun()
 
-            except Exception as e:
-                st.error(f"Ocurrió un error al generar el mensaje con Gemini: {e}")
-                st.session_state.generated_message = None
-                try:
-                    if hasattr(response, 'candidates') and response.candidates:
-                         st.warning(f"Información del Prompt Feedback (si existe): {response.prompt_feedback}")
-                         for candidate_idx, candidate in enumerate(response.candidates):
-                             st.caption(f"Candidato {candidate_idx+1} - Razón de finalización: {candidate.finish_reason}")
-                             if candidate.finish_message:
-                                 st.caption(f"Candidato {candidate_idx+1} - Mensaje de finalización: {candidate.finish_message}")
-                    elif hasattr(e, 'response') and hasattr(e.response, 'prompt_feedback'):
-                         st.warning(f"Información del Prompt Feedback del error: {e.response.prompt_feedback}")
-                except Exception:
-                    pass
+# --- Procesamiento Batch y Generación ---
+if st.session_state.texto_agentes_beecker_actual and lista_pdfs_leads_uploader:
+    if st.button(f"✨ Generar Mensajes para los {len(lista_pdfs_leads_uploader)} Leads Cargados", type="primary", use_container_width=True):
+        st.session_state.mensajes_generados_batch = [] # Limpiar resultados anteriores de batch
+        st.session_state.archivos_leads_procesados_nombres = [] # Limpiar nombres de archivos procesados
 
-# --- Mostrar Mensaje Generado ---
-if st.session_state.generated_message:
-    st.subheader("📬 Mensaje de LinkedIn Generado:")
-    st.markdown(st.session_state.generated_message) # Muestra el mensaje con formato (saltos de línea)
-    st.code(st.session_state.generated_message, language=None) # Muestra el mensaje para copiar fácil con botón
-    st.success("¡Mensaje generado con éxito! Puedes copiarlo del bloque de arriba.")
+        progress_bar = st.progress(0, text="Iniciando proceso batch...")
+        total_leads = len(lista_pdfs_leads_uploader)
 
-# Mensaje inicial si no se ha cargado nada aún y no hay mensaje previo
-elif not st.session_state.texto_agentes_beecker_actual and not st.session_state.texto_lead_actual_procesado and not st.session_state.generated_message:
-    st.info("ℹ️ Por favor, sube los dos archivos PDF requeridos para generar el mensaje.")
+        for i, pdf_lead_file in enumerate(lista_pdfs_leads_uploader):
+            lead_filename = pdf_lead_file.name
+            progress_text = f"Procesando Lead {i+1}/{total_leads}: {lead_filename}"
+            progress_bar.progress((i+1)/total_leads, text=progress_text)
+            
+            with st.spinner(progress_text):
+                texto_lead_actual = extraer_texto_pdf(pdf_lead_file)
+                st.session_state.archivos_leads_procesados_nombres.append(lead_filename)
+
+                if texto_lead_actual:
+                    contenido_para_gemini = f"""
+                    --- INICIO TEXTO_AGENTES_BEECKER ---
+                    {st.session_state.texto_agentes_beecker_actual}
+                    --- FIN TEXTO_AGENTES_BEECKER ---
+
+                    --- INICIO TEXTO_LEAD ---
+                    {texto_lead_actual}
+                    --- FIN TEXTO_LEAD ---
+                    """
+                    try:
+                        response = model.generate_content(contenido_para_gemini)
+                        respuesta_bruta = response.text
+                        respuesta_limpia = respuesta_bruta.replace('**', '')
+                        st.session_state.mensajes_generados_batch.append({
+                            'lead_filename': lead_filename,
+                            'mensaje': respuesta_limpia,
+                            'error': None
+                        })
+                    except Exception as e:
+                        st.error(f"Error con Gemini para '{lead_filename}': {e}")
+                        st.session_state.mensajes_generados_batch.append({
+                            'lead_filename': lead_filename,
+                            'mensaje': None,
+                            'error': str(e)
+                        })
+                else:
+                    st.warning(f"No se pudo extraer texto de '{lead_filename}'. Se omitirá.")
+                    st.session_state.mensajes_generados_batch.append({
+                        'lead_filename': lead_filename,
+                        'mensaje': None,
+                        'error': 'No se pudo extraer texto del PDF.'
+                    })
+        progress_bar.progress(1.0, text="¡Proceso batch completado!")
+        st.success(f"Procesamiento batch finalizado para {total_leads} leads.")
+
+# --- Mostrar Resultados del Batch ---
+if st.session_state.mensajes_generados_batch:
+    st.markdown("---")
+    st.header("📬 Mensajes de LinkedIn Generados (Batch)")
+    for resultado in st.session_state.mensajes_generados_batch:
+        with st.expander(f"Lead: {resultado['lead_filename']}"):
+            if resultado['mensaje']:
+                st.markdown(resultado['mensaje'])
+                st.code(resultado['mensaje'], language=None)
+            elif resultado['error']:
+                st.error(f"No se pudo generar mensaje: {resultado['error']}")
+            else: # Caso improbable
+                st.info("No hay mensaje ni error registrado para este lead.")
+
+elif not lista_pdfs_leads_uploader and st.session_state.texto_agentes_beecker_actual:
+    st.info("ℹ️ Sube uno o varios archivos PDF de Leads para generar mensajes.")
+elif not st.session_state.texto_agentes_beecker_actual:
+    st.info("ℹ️ Por favor, carga primero el PDF de Agentes Beecker.")
+
 
 # --- Sidebar ---
 with st.sidebar:
     st.header("Instrucciones")
     st.markdown("""
-    1.  Sube el PDF con la información de **Agentes de Beecker**.
-    2.  Sube el PDF del **Lead**.
-    3.  Haz clic en **"Generar Mensaje"**.
-    4.  Para empezar de nuevo, usa el botón **"Limpiar Entradas y Resultados Anteriores"**.
+    1.  Carga el **PDF de Agentes Beecker** (se recordará mientras no lo limpies).
+    2.  Sube **uno o varios PDFs de Leads**.
+    3.  Haz clic en **"Generar Mensajes para los X Leads Cargados"**.
+    4.  Los resultados aparecerán abajo.
+    5.  Usa **"Limpiar Todo"** para reiniciar (esto borrará el PDF de Agentes cargado y los resultados).
     """)
     st.markdown("---")
     st.markdown(f"Modelo en uso: `{MODEL_NAME}`")
