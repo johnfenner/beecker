@@ -10,10 +10,7 @@ from PyPDF2 import PdfReader
 
 # api\_key = "TU\_CLAVE\_AQUÍ"
 
-# CORRECTO
-openai.api_key = st.secrets["openai"]["api_key"]
-
-
+openai.api\_key = st.secrets["openai"]["api\_key"]
 
 # Función para extraer texto de un PDF
 
@@ -103,4 +100,21 @@ if st.button("Generar mensaje LinkedIn"):
     st.text_area("", message, height=300)
     st.success("¡Mensaje generado con éxito!")
 ```
+
+# Instrucciones adicionales
+
+## st.markdown("""
+
+**Instrucciones de uso:**
+
+1. Crea un archivo `.streamlit/secrets.toml` con:
+   ```toml
+   [openai]
+   api_key = "TU_CLAVE_AQUÍ"
+   ```
+2. Ejecuta este script con `streamlit run app.py`.
+3. Carga el PDF del lead y presiona 'Generar mensaje LinkedIn'.
+
+Este método es adecuado para despliegue en Streamlit Cloud porque mantiene tu API key segura.
+"""
 
