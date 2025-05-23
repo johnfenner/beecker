@@ -111,10 +111,11 @@ if 'nombre_archivo_agentes' not in st.session_state:
 if 'mensajes_generados_batch' not in st.session_state:
     st.session_state.mensajes_generados_batch = []
 
-# --- CÓDIGO DE LA APLICACIÓN STREAMLIT (Sección de Título Modificada) ---
-st.set_page_config(page_title="🕵️ Agente P - Asistente Msj LinkedIn", layout="wide")
-st.title("🕵️ Agente P: Tu Asistente IA para Mensajes de LinkedIn")
-st.markdown("Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego generas múltiples PDFs de Leads.").
+# --- CÓDIGO DE LA APLICACIÓN STREAMLIT ---
+st.set_page_config(page_title="🚀 Generador LinkedIn IA Pro", layout="wide") # Título actualizado
+st.image("https://beecker.ai/wp-content/uploads/2024/02/logo-beecker-consulting.svg", width=200)
+st.title("🤖 Generador IA Avanzado de Mensajes para LinkedIn")
+st.markdown("Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego múltiples PDFs de Leads.")
 
 # --- Configuración de API Key y Modelo ---
 try:
@@ -183,50 +184,9 @@ else:
 st.markdown("---")
 
 # --- Etapa 2: Carga Múltiple PDFs Leads y Generación de Mensajes ---
-import streamlit as st
+st.header("Etapa 2: Cargar PDFs de Leads y Generar Mensajes")
+lista_pdfs_leads_uploader = st.file_uploader("👤 Sube uno o varios PDFs de Leads", type="pdf", accept_multiple_files=True, key="uploader_leads_etapa2", disabled=not st.session_state.info_beecker_estructurada)
 
-# ... (el resto de tus importaciones y la variable SYSTEM_PROMPT se mantienen igual) ...
-
-# --- Configuración de la Página ---
-# page_title puede ser texto o un emoji simple si lo deseas para la pestaña del navegador
-st.set_page_config(page_title="Agente P | Asistente LinkedIn", layout="wide")
-
-# --- Título Principal con Imagen de Ornitorrinco y Logo de Beecker ---
-col_logo_beecker, col_img_agente_p, col_titulo_agente_p = st.columns([2, 1, 6]) # Ajusta los ratios según necesites
-
-with col_logo_beecker:
-    st.image("https://beecker.ai/wp-content/uploads/2024/02/logo-beecker-consulting.svg", width=150) # Logo Beecker
-
-with col_img_agente_p:
-    try:
-        # Asegúrate de que 'ornitorrinco.png' esté en la misma carpeta que app.py
-        # o usa la ruta correcta, ej: "assets/ornitorrinco.png"
-        st.image("ornitorrinco.png", width=70) # Ajusta el ancho según el tamaño de tu icono
-    except Exception as e:
-        st.error(f"No se pudo cargar 'ornitorrinco.png'. Verifique la ruta. Usando 🦫 como fallback.")
-        st.markdown("<h1 style='text-align: center; font-size: 50px;'>🦫</h1>", unsafe_allow_html=True)
-
-
-with col_titulo_agente_p:
-    st.title("Agente P") # Título más corto al lado del icono
-    st.markdown("#### Tu Asistente IA para Mensajes de LinkedIn")
-
-
-st.markdown("Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego múltiples PDFs de Leads.")
-
-# ... (el resto de tu código app.py: API Key, Modelo, funciones, uploaders, etc., se mantiene igual) ...
-
-
-# --- Sidebar para atribución (MUY IMPORTANTE) ---
-with st.sidebar:
-    # ... (tus otras instrucciones en el sidebar) ...
-    st.markdown("---")
-    st.markdown(
-        """
-        Icono de ornitorrinco por [Freepik](https://www.freepik.com) desde [Flaticon](https://www.flaticon.es/iconos-gratis/ornitorrinco).
-        """
-    )
-    st.markdown(f"Modelo IA en uso: `{MODEL_NAME}`")
 # --- Botón de Limpiar ---
 if st.button("🧹 Limpiar Todo (PDFs y Resultados)", use_container_width=True):
     keys_to_reset = ['info_beecker_estructurada', 'nombre_archivo_agentes', 'mensajes_generados_batch']
