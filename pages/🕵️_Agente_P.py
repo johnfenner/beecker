@@ -112,10 +112,10 @@ if 'mensajes_generados_batch' not in st.session_state:
     st.session_state.mensajes_generados_batch = []
 
 # --- CÓDIGO DE LA APLICACIÓN STREAMLIT ---
-st.set_page_config(page_title="🚀 Generador LinkedIn IA Pro", layout="wide") # Título actualizado
-st.image("https://beecker.ai/wp-content/uploads/2024/02/logo-beecker-consulting.svg", width=200)
-st.title("🤖 Generador IA Avanzado de Mensajes para LinkedIn")
-st.markdown("Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego múltiples PDFs de Leads.")
+st.set_page_config(page_title="🕵️ Agente P - Asistente Msj LinkedIn", layout="wide")
+st.image("ornitorrinco.png", width=200) # Tu logo de Beecker
+st.title("🕵️ Agente P: Tu Asistente IA para Mensajes de LinkedIn")
+st.markdown("Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego generas múltiples PDFs de Leads.")
 
 # --- Configuración de API Key y Modelo ---
 try:
