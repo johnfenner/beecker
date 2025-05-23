@@ -51,38 +51,41 @@ def obtener_datos_base_campanas():
     return df_base_campanas, df_completo
 
 def inicializar_estado_filtros_campana():
-    """Inicializa o resetea el estado de los filtros para la página de campañas."""
-    # Valores por defecto para todos los filtros de esta página
     default_filters = {
-        "campana_seleccion_principal": [], # Ahora se resetea a lista vacía
+        "campana_seleccion_principal": [],
         "campana_filtro_prospectador": ["– Todos –"],
         "campana_filtro_pais": ["– Todos –"],
-        "campana_filtro_fecha_ini": None,
-        "campana_filtro_fecha_fin": None,
+        "campana_filtro_fecha_ini": None, # Clave para fecha inicio
+        "campana_filtro_fecha_fin": None,  # Clave para fecha fin
     }
     for key, value in default_filters.items():
         if key not in st.session_state:
             st.session_state[key] = value
-        # Si la clave ya existe pero queremos asegurar que los filtros multiselect sean listas
         elif key in ["campana_seleccion_principal", "campana_filtro_prospectador", "campana_filtro_pais"] and not isinstance(st.session_state[key], list):
              st.session_state[key] = default_filters[key]
 
 
 def resetear_filtros_campana_callback():
-    """Callback para el botón de resetear filtros. Resetea TODOS los filtros de la página."""
-    # CORRECCIÓN: Asegurar que todas las claves de session_state de esta página se resetean a sus valores iniciales definidos.
-    st.session_state.campana_seleccion_principal = [] # Limpia la selección de campañas principal
+    # Define los valores por defecto explícitamente para cada filtro de la página
+    st.session_state.campana_seleccion_principal = []
     st.session_state.campana_filtro_prospectador = ["– Todos –"]
     st.session_state.campana_filtro_pais = ["– Todos –"]
+    
+    # --- CORRECCIÓN PARA LAS FECHAS ---
+    # Asignar None directamente a las claves de los date_input en session_state
+    # Estas son las claves que usan los widgets st.date_input
+    st.session_state.di_campana_fecha_ini = None # Resetea el valor del widget directamente
+    st.session_state.di_campana_fecha_fin = None  # Resetea el valor del widget directamente
+    
+    # También resetea las claves que usas para leer los valores (por consistencia)
     st.session_state.campana_filtro_fecha_ini = None
     st.session_state.campana_filtro_fecha_fin = None
-    # Añade aquí cualquier otra clave de filtro de esta página que necesite reseteo
+
     st.toast("Todos los filtros de la página de campañas han sido reiniciados.", icon="🧹")
-    # No es estrictamente necesario st.rerun() aquí porque el cambio en session_state
-    # y el hecho de que el botón es un widget ya deberían causar un rerun.
-    # Pero si notas que los widgets no se actualizan visualmente, puedes añadirlo.
+    # El st.rerun() se llamará después del botón en el flujo principal.
 
-
+# ... (resto de las funciones de ayuda: calcular_kpis_df_campana, mostrar_embudo_para_campana, generar_tabla_comparativa_campanas_filtrada) ...
+# (SIN CAMBIOS EN ESAS FUNCIONES)
 def calcular_kpis_df_campana(df_filtrado_campana):
     if df_filtrado_campana.empty:
         return {
@@ -166,12 +169,12 @@ def generar_tabla_comparativa_campanas_filtrada(df_filtrado_con_filtros_pagina, 
         })
     return pd.DataFrame(datos_comparativa)
 
+
 # --- Carga de Datos Base ---
 df_base_campanas_global, df_original_completo = obtener_datos_base_campanas()
-inicializar_estado_filtros_campana() # Llamar una vez para asegurar que el estado existe
+inicializar_estado_filtros_campana()
 
 if df_base_campanas_global.empty:
-    # Mensaje de error ya se maneja en obtener_datos_base_campanas
     st.stop()
 
 # --- Sección de Selección de Campaña Principal ---
@@ -182,36 +185,28 @@ if not lista_campanas_disponibles_global:
     st.warning("No se encontraron nombres de campañas en los datos cargados.")
     st.stop()
 
-# Usar el valor de session_state para default, que se resetea a [] con el botón
 st.session_state.campana_seleccion_principal = st.multiselect(
     "Elige la(s) campaña(s) a analizar:",
     options=lista_campanas_disponibles_global,
-    default=st.session_state.campana_seleccion_principal, # Usa el valor actual en session_state
-    key="ms_campana_seleccion_principal" # Añadir una key explícita
+    default=st.session_state.campana_seleccion_principal,
+    key="ms_campana_seleccion_principal"
 )
-
-if not st.session_state.campana_seleccion_principal:
-    st.info("Por favor, selecciona al menos una campaña para visualizar los datos.")
-    # Detener la ejecución si no hay campañas seleccionadas para evitar errores más adelante
-    # y para que el usuario vea que necesita seleccionar algo después de un reseteo.
-    st.stop()
-
-
-df_campanas_filtradas_por_seleccion = df_base_campanas_global[
-    df_base_campanas_global['Campaña'].isin(st.session_state.campana_seleccion_principal)
-].copy()
 
 # --- Sección de Filtros Adicionales ---
 st.markdown("---")
 st.subheader("2. Filtros Adicionales")
 
-# Botón para resetear filtros ANTES de que se rendericen los widgets de filtro
-# para que usen los valores reseteados de session_state.
 if st.button("Limpiar TODOS los Filtros de Campaña (Incluyendo Selección Principal)", on_click=resetear_filtros_campana_callback, key="btn_reset_campana_filtros_total"):
-    # El callback se encarga del reseteo.
-    # Forzar un rerun para que la página se redibuje con los filtros vacíos.
-    st.rerun()
+    st.rerun() # Forzar rerun para que los widgets se actualicen
 
+# Solo mostrar el expander y los filtros si hay una campaña seleccionada
+if not st.session_state.campana_seleccion_principal:
+    st.info("Por favor, selecciona al menos una campaña para visualizar los datos y aplicar filtros.")
+    st.stop()
+
+df_campanas_filtradas_por_seleccion = df_base_campanas_global[
+    df_base_campanas_global['Campaña'].isin(st.session_state.campana_seleccion_principal)
+].copy()
 
 with st.expander("Aplicar filtros detallados a la(s) campaña(s) seleccionada(s)", expanded=True):
     col_f1, col_f2 = st.columns(2)
@@ -219,12 +214,9 @@ with st.expander("Aplicar filtros detallados a la(s) campaña(s) seleccionada(s)
         opciones_prospectador_camp = ["– Todos –"] + sorted(
             df_campanas_filtradas_por_seleccion["¿Quién Prospecto?"].dropna().astype(str).unique()
         )
-        # Validar default para el multiselect de prospectador
         default_prospectador = st.session_state.campana_filtro_prospectador
-        if not all(p in opciones_prospectador_camp for p in default_prospectador):
+        if not all(p in opciones_prospectador_camp for p in default_prospectador): # Verifica que cada elemento del default esté en las opciones
             default_prospectador = ["– Todos –"] if "– Todos –" in opciones_prospectador_camp else []
-            if not default_prospectador and opciones_prospectador_camp: # Si "– Todos –" no es opción, y hay opciones
-                 pass # Podríamos seleccionar la primera opción, o dejarlo vacío si el usuario lo prefiere
         st.session_state.campana_filtro_prospectador = st.multiselect(
             "¿Quién Prospectó?", options=opciones_prospectador_camp,
             default=default_prospectador, key="ms_campana_prospectador"
@@ -235,7 +227,7 @@ with st.expander("Aplicar filtros detallados a la(s) campaña(s) seleccionada(s)
         )
         default_pais = st.session_state.campana_filtro_pais
         if not all(p in opciones_pais_camp for p in default_pais):
-            default_pais = ["– Todos –"] if "– Todos –" in opciones_pais_camp else []
+             default_pais = ["– Todos –"] if "– Todos –" in opciones_pais_camp else []
         st.session_state.campana_filtro_pais = st.multiselect(
             "País del Prospecto", options=opciones_pais_camp,
             default=default_pais, key="ms_campana_pais"
@@ -248,14 +240,25 @@ with st.expander("Aplicar filtros detallados a la(s) campaña(s) seleccionada(s)
             if not valid_dates.empty:
                 min_fecha_invite_camp = valid_dates.min().date()
                 max_fecha_invite_camp = valid_dates.max().date()
-        st.session_state.campana_filtro_fecha_ini = st.date_input(
-            "Fecha de Invite Desde:", value=st.session_state.campana_filtro_fecha_ini,
-            min_value=min_fecha_invite_camp, max_value=max_fecha_invite_camp, format="DD/MM/YYYY", key="di_campana_fecha_ini"
+        
+        # Leer el valor del date_input directamente, que usa su propia key interna o la que le asignemos.
+        # Usamos las claves de session_state campana_filtro_fecha_ini/fin para *leer* el valor después.
+        val_fecha_ini = st.date_input(
+            "Fecha de Invite Desde:", 
+            value=st.session_state.campana_filtro_fecha_ini, # El callback resetea esto a None
+            min_value=min_fecha_invite_camp, max_value=max_fecha_invite_camp, 
+            format="DD/MM/YYYY", key="di_campana_fecha_ini" # Key explícita para el widget
         )
-        st.session_state.campana_filtro_fecha_fin = st.date_input(
-            "Fecha de Invite Hasta:", value=st.session_state.campana_filtro_fecha_fin,
-            min_value=min_fecha_invite_camp, max_value=max_fecha_invite_camp, format="DD/MM/YYYY", key="di_campana_fecha_fin"
+        val_fecha_fin = st.date_input(
+            "Fecha de Invite Hasta:", 
+            value=st.session_state.campana_filtro_fecha_fin, # El callback resetea esto a None
+            min_value=min_fecha_invite_camp, max_value=max_fecha_invite_camp, 
+            format="DD/MM/YYYY", key="di_campana_fecha_fin" # Key explícita para el widget
         )
+        # Actualizar las claves de session_state que usamos para aplicar los filtros
+        st.session_state.campana_filtro_fecha_ini = val_fecha_ini
+        st.session_state.campana_filtro_fecha_fin = val_fecha_fin
+
 
 # Aplicar filtros
 df_aplicar_filtros = df_campanas_filtradas_por_seleccion.copy()
@@ -267,24 +270,33 @@ if st.session_state.campana_filtro_pais and "– Todos –" not in st.session_st
     df_aplicar_filtros = df_aplicar_filtros[
         df_aplicar_filtros["Pais"].isin(st.session_state.campana_filtro_pais)
     ]
-if st.session_state.campana_filtro_fecha_ini and st.session_state.campana_filtro_fecha_fin and \
+
+# Usar los valores actualizados de session_state para las fechas
+fecha_ini_aplicar = st.session_state.campana_filtro_fecha_ini
+fecha_fin_aplicar = st.session_state.campana_filtro_fecha_fin
+
+if fecha_ini_aplicar and fecha_fin_aplicar and \
    "Fecha de Invite" in df_aplicar_filtros.columns and \
    pd.api.types.is_datetime64_any_dtype(df_aplicar_filtros["Fecha de Invite"]):
-    fecha_ini_dt = datetime.datetime.combine(st.session_state.campana_filtro_fecha_ini, datetime.time.min)
-    fecha_fin_dt = datetime.datetime.combine(st.session_state.campana_filtro_fecha_fin, datetime.time.max)
+    fecha_ini_dt = datetime.datetime.combine(fecha_ini_aplicar, datetime.time.min)
+    fecha_fin_dt = datetime.datetime.combine(fecha_fin_aplicar, datetime.time.max)
     df_aplicar_filtros = df_aplicar_filtros[
         (df_aplicar_filtros["Fecha de Invite"] >= fecha_ini_dt) &
         (df_aplicar_filtros["Fecha de Invite"] <= fecha_fin_dt)
     ]
-elif st.session_state.campana_filtro_fecha_ini and "Fecha de Invite" in df_aplicar_filtros.columns and pd.api.types.is_datetime64_any_dtype(df_aplicar_filtros["Fecha de Invite"]):
-    fecha_ini_dt = datetime.datetime.combine(st.session_state.campana_filtro_fecha_ini, datetime.time.min)
+elif fecha_ini_aplicar and "Fecha de Invite" in df_aplicar_filtros.columns and pd.api.types.is_datetime64_any_dtype(df_aplicar_filtros["Fecha de Invite"]):
+    fecha_ini_dt = datetime.datetime.combine(fecha_ini_aplicar, datetime.time.min)
     df_aplicar_filtros = df_aplicar_filtros[df_aplicar_filtros["Fecha de Invite"] >= fecha_ini_dt]
-elif st.session_state.campana_filtro_fecha_fin and "Fecha de Invite" in df_aplicar_filtros.columns and pd.api.types.is_datetime64_any_dtype(df_aplicar_filtros["Fecha de Invite"]):
-    fecha_fin_dt = datetime.datetime.combine(st.session_state.campana_filtro_fecha_fin, datetime.time.max)
+elif fecha_fin_aplicar and "Fecha de Invite" in df_aplicar_filtros.columns and pd.api.types.is_datetime64_any_dtype(df_aplicar_filtros["Fecha de Invite"]):
+    fecha_fin_dt = datetime.datetime.combine(fecha_fin_aplicar, datetime.time.max)
     df_aplicar_filtros = df_aplicar_filtros[df_aplicar_filtros["Fecha de Invite"] <= fecha_fin_dt]
 
 df_final_analisis_campana = df_aplicar_filtros.copy()
 
+# --- Sección de Resultados y Visualizaciones ---
+# (El resto del código para mostrar KPIs, embudo, comparativas, rendimiento por prospectador y tabla de detalle
+# permanece igual que en la versión anterior, ya que opera sobre df_final_analisis_campana)
+# ... (COPIAR Y PEGAR EL RESTO DEL CÓDIGO DESDE LA VERSIÓN ANTERIOR AQUÍ) ...
 # --- Sección de Resultados y Visualizaciones ---
 st.markdown("---")
 st.header(f"📊 Resultados para: {', '.join(st.session_state.campana_seleccion_principal)}")
@@ -355,7 +367,7 @@ else:
             mostrar_grafico_prospectador = False
             if "– Todos –" in st.session_state.campana_filtro_prospectador and len(df_prospectador_camp_display['¿Quién Prospecto?'].unique()) > 1:
                 mostrar_grafico_prospectador = True
-            elif len(st.session_state.campana_filtro_prospectador) > 1 and len(df_prospectador_camp_display['¿Quién Prospecto?'].unique()) > 1:
+            elif len(st.session_state.campana_filtro_prospectador) > 1 and len(df_prospectador_camp_display['¿Quién Prospecto?'].unique()) > 1: # Si se seleccionaron múltiples explícitamente y hay más de uno en los datos resultantes
                 mostrar_grafico_prospectador = True
             if mostrar_grafico_prospectador:
                 fig_prosp_camp_bar = px.bar(df_prospectador_camp_display.sort_values(by="Tasa Sesión Global (%)", ascending=False), x="¿Quién Prospecto?", y="Tasa Sesión Global (%)", title="Tasa de Sesión Global por Prospectador (Selección Actual)", text="Tasa Sesión Global (%)", color="Tasa Sesión Global (%)")
@@ -388,7 +400,6 @@ else:
         nombre_archivo_excel_detalle = f"detalle_campañas_{'_'.join(st.session_state.campana_seleccion_principal)}.xlsx"
         st.download_button(label="⬇️ Descargar Detalle Completo de Campaña (Excel)", data=excel_data_campana_detalle, file_name=nombre_archivo_excel_detalle, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="download_excel_campana_detalle")
     else: st.caption("No hay prospectos detallados para mostrar con los filtros actuales.")
-
 
 st.markdown("---")
 st.info(
