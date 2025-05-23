@@ -278,6 +278,7 @@ with st.sidebar:
     1. Carga el **PDF de Agentes Beecker**. La IA lo analizará para extraer una lista estructurada de agentes y un resumen de la compañía. Esto puede tomar un momento.
     
     **Etapa 2:**
+
     2. Una vez procesada la información de Beecker, sube **uno o varios PDFs de Leads**.
     3. Haz clic en **"Generar Mensajes..."**.
     4. Los mensajes aparecerán en la página principal.
