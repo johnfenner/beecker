@@ -266,11 +266,8 @@ else:
     mostrar_embudo_para_campana(kpis_calculados_campana)
 
     # --- Análisis por Prospectador ---
-    # Esta sección ahora se mostrará siempre, pero su contenido dependerá de si se ha filtrado por un prospectador o no.
     st.markdown("### Rendimiento por Prospectador en la(s) Campaña(s)")
     if "¿Quién Prospecto?" in df_final_analisis_campana.columns:
-        # Si se seleccionó un prospectador específico, el df_final_analisis_campana ya está filtrado.
-        # Si se seleccionó "– Todos –", se agrupará por todos los prospectadores presentes.
         df_prospectador_camp = df_final_analisis_campana.groupby("¿Quién Prospecto?").apply(
             lambda x: pd.Series(calcular_kpis_df_campana(x))
         ).reset_index()
@@ -286,20 +283,25 @@ else:
             "tasa_sesion_global": "Tasa Sesión Global (%)"
         }).sort_values(by="Sesiones", ascending=False)
 
-        # CORRECCIÓN FORMATO: Aplicar formato de entero a las columnas de conteo
         cols_enteros = ["Prospectos", "Aceptadas", "Respuestas", "Sesiones"]
         format_dict = {"Tasa Sesión Global (%)": "{:.1f}%"}
-        for col in cols_enteros:
-            if col in df_prospectador_camp_display.columns:
-                # df_prospectador_camp_display[col] = df_prospectador_camp_display[col].astype(int) # No es necesario si ya son int de calcular_kpis
-                format_dict[col] = "{:,}" # Formato con separador de miles, sin decimales
+
+        # --- INICIO DE LA CORRECCIÓN ---
+        for col_int in cols_enteros:
+            if col_int in df_prospectador_camp_display.columns:
+                # Forzar la columna a tipo numérico (por si acaso hay strings) y luego a entero
+                df_prospectador_camp_display[col_int] = pd.to_numeric(df_prospectador_camp_display[col_int], errors='coerce').fillna(0).astype(int)
+                format_dict[col_int] = "{:,}"
+        # --- FIN DE LA CORRECCIÓN ---
 
         if not df_prospectador_camp_display.empty:
             st.dataframe(
                 df_prospectador_camp_display.style.format(format_dict),
-                use_container_width=True
+                use_container_width=True,
+                # CORRECCIÓN ADICIONAL: Ocultar el índice del DataFrame si se desea
+                hide_index=True
             )
-            if len(df_prospectador_camp_display['¿Quién Prospecto?'].unique()) > 1: # Mostrar gráfico solo si hay más de un prospectador
+            if len(df_prospectador_camp_display['¿Quién Prospecto?'].unique()) > 1:
                 fig_prosp_camp = px.bar(
                     df_prospectador_camp_display.sort_values(by="Tasa Sesión Global (%)", ascending=False),
                     x="¿Quién Prospecto?", y="Tasa Sesión Global (%)",
