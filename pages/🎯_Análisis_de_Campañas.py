@@ -10,13 +10,13 @@ import io
 import sys
 import os
 
-# (Ajusta esta ruta si es necesario, dependiendo de dónde ejecutes Streamlit o si tu estructura es diferente)
+# (Ajusta esta ruta si es necesario)
 # project_root_campanas = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 # if project_root_campanas not in sys.path:
 #     sys.path.insert(0, project_root_campanas)
 
-from datos.carga_datos import cargar_y_limpiar_datos
-from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar
+from datos.carga_datos import cargar_y_limpiar_datos #
+from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar #
 
 # --- Configuración de la Página ---
 st.set_page_config(layout="wide", page_title="Análisis de Campañas")
@@ -27,35 +27,28 @@ st.markdown("Selecciona una o varias campañas y aplica filtros para analizar su
 
 @st.cache_data
 def obtener_datos_base_campanas():
-    """
-    Carga los datos completos y los filtra para obtener solo aquellos con información de campaña.
-    También devuelve el DataFrame original completo para la tabla de detalle.
-    """
-    df_completo = cargar_y_limpiar_datos() # Esta es la función que ya existe y carga todo el sheet
+    df_completo = cargar_y_limpiar_datos() #
     if df_completo is None or df_completo.empty:
-        return pd.DataFrame(), pd.DataFrame() # Devuelve dos DFs vacíos
+        return pd.DataFrame(), pd.DataFrame()
 
     if 'Campaña' not in df_completo.columns:
         st.error("La columna 'Campaña' no se encontró en los datos. Por favor, verifica la hoja de Google Sheets.")
-        return pd.DataFrame(), df_completo # Devuelve DF de campaña vacío, pero el completo por si acaso
+        return pd.DataFrame(), df_completo
 
     df_base_campanas = df_completo[df_completo['Campaña'].notna() & (df_completo['Campaña'] != '')].copy()
 
-    # Asegurar que las columnas de fecha necesarias están en formato datetime
     date_cols_to_check = ["Fecha de Invite", "Fecha Primer Mensaje", "Fecha Sesion"]
     for col in date_cols_to_check:
         if col in df_base_campanas.columns and not pd.api.types.is_datetime64_any_dtype(df_base_campanas[col]):
             df_base_campanas[col] = pd.to_datetime(df_base_campanas[col], errors='coerce')
-        if col in df_completo.columns and not pd.api.types.is_datetime64_any_dtype(df_completo[col]): # También en el completo
-            df_completo[col] = pd.to_datetime(df_completo[col], errors='coerce')
+        if col in df_completo.columns and not pd.api.types.is_datetime64_any_dtype(df_completo[col]):
+             df_completo[col] = pd.to_datetime(df_completo[col], errors='coerce')
 
-    if "Avatar" in df_base_campanas.columns:
-        df_base_campanas["Avatar"] = df_base_campanas["Avatar"].apply(estandarizar_avatar)
-    if "Avatar" in df_completo.columns: # También en el completo
-        df_completo["Avatar"] = df_completo["Avatar"].apply(estandarizar_avatar)
+    for df_proc in [df_base_campanas, df_completo]:
+        if "Avatar" in df_proc.columns:
+            df_proc["Avatar"] = df_proc["Avatar"].apply(estandarizar_avatar) #
 
-
-    return df_base_campanas, df_completo # Devolvemos ambos
+    return df_base_campanas, df_completo
 
 def inicializar_estado_filtros_campana():
     default_filters = {
@@ -78,7 +71,6 @@ def resetear_filtros_campana_callback():
         elif key in ["campana_filtro_fecha_ini", "campana_filtro_fecha_fin"]: st.session_state[key] = None
     st.toast("Filtros de campaña reiniciados.", icon="🧹")
 
-
 def calcular_kpis_df_campana(df_filtrado_campana):
     if df_filtrado_campana.empty:
         return {
@@ -89,16 +81,16 @@ def calcular_kpis_df_campana(df_filtrado_campana):
             "tasa_sesion_global": 0
         }
     total_prospectos = len(df_filtrado_campana)
-    invites_aceptadas = sum(limpiar_valor_kpi(x) == "si" for x in df_filtrado_campana.get("¿Invite Aceptada?", pd.Series(dtype=str)))
+    invites_aceptadas = sum(limpiar_valor_kpi(x) == "si" for x in df_filtrado_campana.get("¿Invite Aceptada?", pd.Series(dtype=str))) #
     primeros_mensajes_enviados = sum(
         pd.notna(x) and str(x).strip().lower() not in ["no", "", "nan"]
         for x in df_filtrado_campana.get("Fecha Primer Mensaje", pd.Series(dtype=str))
     )
     respuestas_primer_mensaje = sum(
-        limpiar_valor_kpi(x) not in ["no", "", "nan"]
+        limpiar_valor_kpi(x) not in ["no", "", "nan"] #
         for x in df_filtrado_campana.get("Respuesta Primer Mensaje", pd.Series(dtype=str))
     )
-    sesiones_agendadas = sum(limpiar_valor_kpi(x) == "si" for x in df_filtrado_campana.get("Sesion Agendada?", pd.Series(dtype=str)))
+    sesiones_agendadas = sum(limpiar_valor_kpi(x) == "si" for x in df_filtrado_campana.get("Sesion Agendada?", pd.Series(dtype=str))) #
 
     tasa_aceptacion = (invites_aceptadas / total_prospectos * 100) if total_prospectos > 0 else 0
     tasa_respuesta_vs_aceptadas = (respuestas_primer_mensaje / invites_aceptadas * 100) if invites_aceptadas > 0 else 0
@@ -141,9 +133,28 @@ def mostrar_embudo_para_campana(kpis_campana, titulo_embudo="Embudo de Conversi�
     st.plotly_chart(fig_embudo, use_container_width=True)
     st.caption(f"Embudo basado en {kpis_campana['total_prospectos']:,} prospectos iniciales para la selección actual.")
 
+def generar_tabla_comparativa_campanas_filtrada(df_filtrado_con_filtros_pagina, lista_nombres_campanas_seleccionadas):
+    datos_comparativa = []
+    if df_filtrado_con_filtros_pagina.empty or not lista_nombres_campanas_seleccionadas:
+        return pd.DataFrame(datos_comparativa)
+
+    for nombre_campana in lista_nombres_campanas_seleccionadas:
+        df_campana_individual_filtrada = df_filtrado_con_filtros_pagina[
+            df_filtrado_con_filtros_pagina['Campaña'] == nombre_campana
+        ]
+        kpis = calcular_kpis_df_campana(df_campana_individual_filtrada)
+        datos_comparativa.append({
+            "Campaña": nombre_campana,
+            "Prospectos": kpis["total_prospectos"], "Aceptadas": kpis["invites_aceptadas"],
+            "Respuestas": kpis["respuestas_primer_mensaje"], "Sesiones": kpis["sesiones_agendadas"],
+            "Tasa Aceptación (%)": kpis["tasa_aceptacion"],
+            "Tasa Respuesta (vs Acept.) (%)": kpis["tasa_respuesta_vs_aceptadas"],
+            "Tasa Sesiones (vs Resp.) (%)": kpis["tasa_sesion_vs_respuesta"],
+            "Tasa Sesión Global (%)": kpis["tasa_sesion_global"]
+        })
+    return pd.DataFrame(datos_comparativa)
+
 # --- Carga de Datos Base ---
-# df_base_campanas_global es el DataFrame filtrado solo por campañas no vacías.
-# df_original_completo es el DataFrame cargado SIN el filtro de campaña, para la tabla de detalle.
 df_base_campanas_global, df_original_completo = obtener_datos_base_campanas()
 inicializar_estado_filtros_campana()
 
@@ -232,7 +243,7 @@ if st.session_state.campana_filtro_fecha_ini and st.session_state.campana_filtro
     df_aplicar_filtros = df_aplicar_filtros[
         (df_aplicar_filtros["Fecha de Invite"] >= fecha_ini_dt) &
         (df_aplicar_filtros["Fecha de Invite"] <= fecha_fin_dt)
-    ] # yapf: disable
+    ]
 elif st.session_state.campana_filtro_fecha_ini and "Fecha de Invite" in df_aplicar_filtros.columns and pd.api.types.is_datetime64_any_dtype(df_aplicar_filtros["Fecha de Invite"]):
     fecha_ini_dt = datetime.datetime.combine(st.session_state.campana_filtro_fecha_ini, datetime.time.min)
     df_aplicar_filtros = df_aplicar_filtros[df_aplicar_filtros["Fecha de Invite"] >= fecha_ini_dt]
@@ -249,29 +260,73 @@ st.header(f"📊 Resultados para: {', '.join(st.session_state.campana_seleccion_
 if df_final_analisis_campana.empty:
     st.warning("No se encontraron prospectos que cumplan con todos los criterios de filtro para la(s) campaña(s) seleccionada(s).")
 else:
-    st.markdown("### Indicadores Clave (KPIs)")
-    kpis_calculados_campana = calcular_kpis_df_campana(df_final_analisis_campana)
-    kpi_cols = st.columns(4)
-    kpi_cols[0].metric("Total Prospectos", f"{kpis_calculados_campana['total_prospectos']:,}")
-    kpi_cols[1].metric("Invites Aceptadas", f"{kpis_calculados_campana['invites_aceptadas']:,}",
-                       f"{kpis_calculados_campana['tasa_aceptacion']:.1f}% de Prospectos")
-    kpi_cols[2].metric("Respuestas 1er Msj", f"{kpis_calculados_campana['respuestas_primer_mensaje']:,}",
-                       f"{kpis_calculados_campana['tasa_respuesta_vs_aceptadas']:.1f}% de Aceptadas")
-    kpi_cols[3].metric("Sesiones Agendadas", f"{kpis_calculados_campana['sesiones_agendadas']:,}",
-                       f"{kpis_calculados_campana['tasa_sesion_global']:.1f}% de Prospectos")
-    if kpis_calculados_campana['sesiones_agendadas'] > 0 and kpis_calculados_campana['respuestas_primer_mensaje'] > 0 :
-         st.caption(f"Tasa de Sesiones vs Respuestas: {kpis_calculados_campana['tasa_sesion_vs_respuesta']:.1f}%")
+    st.markdown("### Indicadores Clave (KPIs) - Agregado de Selección")
+    kpis_calculados_campana_agregado = calcular_kpis_df_campana(df_final_analisis_campana)
+    kpi_cols_agg = st.columns(4)
+    kpi_cols_agg[0].metric("Total Prospectos", f"{kpis_calculados_campana_agregado['total_prospectos']:,}")
+    kpi_cols_agg[1].metric("Invites Aceptadas", f"{kpis_calculados_campana_agregado['invites_aceptadas']:,}",
+                           f"{kpis_calculados_campana_agregado['tasa_aceptacion']:.1f}% de Prospectos")
+    kpi_cols_agg[2].metric("Respuestas 1er Msj", f"{kpis_calculados_campana_agregado['respuestas_primer_mensaje']:,}",
+                           f"{kpis_calculados_campana_agregado['tasa_respuesta_vs_aceptadas']:.1f}% de Aceptadas")
+    kpi_cols_agg[3].metric("Sesiones Agendadas", f"{kpis_calculados_campana_agregado['sesiones_agendadas']:,}",
+                           f"{kpis_calculados_campana_agregado['tasa_sesion_global']:.1f}% de Prospectos")
+    if kpis_calculados_campana_agregado['sesiones_agendadas'] > 0 and kpis_calculados_campana_agregado['respuestas_primer_mensaje'] > 0 :
+         st.caption(f"Tasa de Sesiones vs Respuestas (Agregado): {kpis_calculados_campana_agregado['tasa_sesion_vs_respuesta']:.1f}%")
 
-    st.markdown("### Embudo de Conversión")
-    mostrar_embudo_para_campana(kpis_calculados_campana)
+    st.markdown("### Embudo de Conversión - Agregado de Selección")
+    mostrar_embudo_para_campana(kpis_calculados_campana_agregado, "Embudo de Conversión (Agregado de Selección y Filtros)")
 
-    # --- Análisis por Prospectador ---
-    st.markdown("### Rendimiento por Prospectador en la(s) Campaña(s)")
+    # --- Sección de Comparativa de Campañas ---
+    if len(st.session_state.campana_seleccion_principal) > 1:
+        st.markdown("---")
+        st.header(f"🔄 Comparativa Detallada entre Campañas (afectada por filtros de página)")
+        st.caption("La siguiente tabla y gráficos comparan las campañas seleccionadas, considerando los filtros de '¿Quién Prospectó?', 'País' y 'Fechas' aplicados arriba.")
+
+        df_tabla_comp = generar_tabla_comparativa_campanas_filtrada(
+            df_final_analisis_campana,
+            st.session_state.campana_seleccion_principal
+        )
+        if not df_tabla_comp.empty:
+            st.subheader("Tabla Comparativa de KPIs (con filtros aplicados)")
+            cols_enteros_comp = ["Prospectos", "Aceptadas", "Respuestas", "Sesiones"]
+            format_dict_comp = {
+                "Tasa Aceptación (%)": "{:.1f}%", "Tasa Respuesta (vs Acept.) (%)": "{:.1f}%",
+                "Tasa Sesiones (vs Resp.) (%)": "{:.1f}%", "Tasa Sesión Global (%)": "{:.1f}%"
+            }
+            for col_int_comp in cols_enteros_comp:
+                if col_int_comp in df_tabla_comp.columns:
+                    df_tabla_comp[col_int_comp] = pd.to_numeric(df_tabla_comp[col_int_comp], errors='coerce').fillna(0).astype(int)
+                    format_dict_comp[col_int_comp] = "{:,}"
+            st.dataframe(
+                df_tabla_comp.sort_values(by="Tasa Sesión Global (%)", ascending=False).style.format(format_dict_comp),
+                use_container_width=True, hide_index=True
+            )
+
+            st.subheader("Gráfico: Tasa de Sesión Global por Campaña (con filtros aplicados)")
+            df_graf_comp_tasa_global = df_tabla_comp[df_tabla_comp["Prospectos"] > 0].sort_values(by="Tasa Sesión Global (%)", ascending=False)
+            if not df_graf_comp_tasa_global.empty:
+                fig_comp_tsg = px.bar(df_graf_comp_tasa_global, x="Campaña", y="Tasa Sesión Global (%)", title="Comparativa: Tasa de Sesión Global", text="Tasa Sesión Global (%)", color="Campaña")
+                fig_comp_tsg.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+                fig_comp_tsg.update_layout(xaxis_tickangle=-45)
+                st.plotly_chart(fig_comp_tsg, use_container_width=True)
+            else: st.caption("No hay datos suficientes para el gráfico de tasa de sesión global comparativa con los filtros actuales.")
+
+            st.subheader("Gráfico: Volumen de Sesiones Agendadas por Campaña (con filtros aplicados)")
+            df_graf_comp_vol_sesiones = df_tabla_comp[df_tabla_comp["Sesiones"] > 0].sort_values(by="Sesiones", ascending=False)
+            if not df_graf_comp_vol_sesiones.empty:
+                fig_comp_vol = px.bar(df_graf_comp_vol_sesiones, x="Campaña", y="Sesiones", title="Comparativa: Volumen de Sesiones Agendadas", text="Sesiones", color="Campaña")
+                fig_comp_vol.update_traces(texttemplate='%{text:,}', textposition='outside')
+                fig_comp_vol.update_layout(xaxis_tickangle=-45)
+                st.plotly_chart(fig_comp_vol, use_container_width=True)
+            else: st.caption("No hay campañas con sesiones agendadas para el gráfico de volumen comparativo con los filtros actuales.")
+        else: st.info("No hay datos suficientes para generar la comparativa entre las campañas seleccionadas con los filtros aplicados.")
+
+    # --- Análisis por Prospectador (Dentro de la selección de campañas y filtros de página) ---
+    st.markdown("### Rendimiento por Prospectador (para la selección actual)")
     if "¿Quién Prospecto?" in df_final_analisis_campana.columns:
         df_prospectador_camp = df_final_analisis_campana.groupby("¿Quién Prospecto?").apply(
             lambda x: pd.Series(calcular_kpis_df_campana(x))
         ).reset_index()
-
         df_prospectador_camp_display = df_prospectador_camp[
             (df_prospectador_camp['total_prospectos'] > 0)
         ][[
@@ -283,75 +338,56 @@ else:
             "tasa_sesion_global": "Tasa Sesión Global (%)"
         }).sort_values(by="Sesiones", ascending=False)
 
-        cols_enteros = ["Prospectos", "Aceptadas", "Respuestas", "Sesiones"]
-        format_dict = {"Tasa Sesión Global (%)": "{:.1f}%"}
-
-        # --- INICIO DE LA CORRECCIÓN ---
-        for col_int in cols_enteros:
-            if col_int in df_prospectador_camp_display.columns:
-                # Forzar la columna a tipo numérico (por si acaso hay strings) y luego a entero
-                df_prospectador_camp_display[col_int] = pd.to_numeric(df_prospectador_camp_display[col_int], errors='coerce').fillna(0).astype(int)
-                format_dict[col_int] = "{:,}"
-        # --- FIN DE LA CORRECCIÓN ---
-
+        cols_enteros_prosp = ["Prospectos", "Aceptadas", "Respuestas", "Sesiones"]
+        format_dict_prosp = {"Tasa Sesión Global (%)": "{:.1f}%"}
+        for col_int_prosp in cols_enteros_prosp:
+            if col_int_prosp in df_prospectador_camp_display.columns:
+                df_prospectador_camp_display[col_int_prosp] = pd.to_numeric(df_prospectador_camp_display[col_int_prosp], errors='coerce').fillna(0).astype(int)
+                format_dict_prosp[col_int_prosp] = "{:,}"
         if not df_prospectador_camp_display.empty:
-            st.dataframe(
-                df_prospectador_camp_display.style.format(format_dict),
-                use_container_width=True,
-                # CORRECCIÓN ADICIONAL: Ocultar el índice del DataFrame si se desea
-                hide_index=True
-            )
-            if len(df_prospectador_camp_display['¿Quién Prospecto?'].unique()) > 1:
-                fig_prosp_camp = px.bar(
+            st.dataframe(df_prospectador_camp_display.style.format(format_dict_prosp), use_container_width=True, hide_index=True)
+            if len(df_prospectador_camp_display['¿Quién Prospecto?'].unique()) > 1 and st.session_state.campana_filtro_prospectador == "– Todos –":
+                fig_prosp_camp_bar = px.bar(
                     df_prospectador_camp_display.sort_values(by="Tasa Sesión Global (%)", ascending=False),
-                    x="¿Quién Prospecto?", y="Tasa Sesión Global (%)",
-                    title="Tasa de Sesión Global por Prospectador", text="Tasa Sesión Global (%)",
-                    color="Tasa Sesión Global (%)"
+                    x="¿Quién Prospecto?", y="Tasa Sesión Global (%)", title="Tasa de Sesión Global por Prospectador (Selección Actual)",
+                    text="Tasa Sesión Global (%)", color="Tasa Sesión Global (%)"
                 )
-                fig_prosp_camp.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
-                fig_prosp_camp.update_layout(xaxis_tickangle=-45)
-                st.plotly_chart(fig_prosp_camp, use_container_width=True)
-        else:
-            st.caption("No hay suficientes datos para mostrar el rendimiento por prospectador para la selección actual.")
-    else:
-        st.caption("La columna '¿Quién Prospecto?' no está disponible en los datos filtrados.")
-
+                fig_prosp_camp_bar.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+                fig_prosp_camp_bar.update_layout(xaxis_tickangle=-45)
+                st.plotly_chart(fig_prosp_camp_bar, use_container_width=True)
+        else: st.caption("No hay datos de rendimiento por prospectador para la selección actual.")
+    else: st.caption("La columna '¿Quién Prospecto?' no está disponible.")
 
     # --- Tabla Detallada de Prospectos ---
-    st.markdown("### Detalle de Prospectos en Campaña(s) Seleccionada(s)")
-    # Para mostrar todas las columnas originales del df_original_completo, pero filtrado.
-    # Primero, obtenemos los índices de las filas que cumplen con la selección de campaña y los filtros de página.
-    # Estos índices se obtienen de df_final_analisis_campana.
+    st.markdown("### Detalle de Prospectos (para la selección actual)")
     indices_filtrados = df_final_analisis_campana.index
-
-    # Usamos estos índices para seleccionar las filas correspondientes del DataFrame original completo.
     df_detalle_original_filtrado = df_original_completo.loc[indices_filtrados].copy()
 
     if not df_detalle_original_filtrado.empty:
-        # No preseleccionar columnas, mostrar todas las del df_original_completo para estas filas.
-        # Convertir todas las columnas a string para evitar problemas de formato mixto en st.dataframe,
-        # excepto las de fecha que queramos formatear explícitamente.
-        df_display_tabla_campana_detalle = df_detalle_original_filtrado.astype(str)
+        # Convertir todas las columnas a string para evitar problemas de formato, excepto fechas que formatearemos.
+        # df_display_tabla_campana_detalle = df_detalle_original_filtrado.astype(str) # Se hará en el bucle
+        df_display_tabla_campana_detalle = pd.DataFrame()
+        for col_orig in df_detalle_original_filtrado.columns:
+            if pd.api.types.is_datetime64_any_dtype(df_detalle_original_filtrado[col_orig]):
+                 df_display_tabla_campana_detalle[col_orig] = pd.to_datetime(df_detalle_original_filtrado[col_orig], errors='coerce').dt.strftime('%d/%m/%Y').fillna("N/A")
+            elif pd.api.types.is_numeric_dtype(df_detalle_original_filtrado[col_orig]) and (df_detalle_original_filtrado[col_orig].apply(lambda x: isinstance(x, float) and x.is_integer()).all()):
+                 df_display_tabla_campana_detalle[col_orig] = df_detalle_original_filtrado[col_orig].fillna(0).astype(int).astype(str) # Convertir enteros a str
+            else:
+                 df_display_tabla_campana_detalle[col_orig] = df_detalle_original_filtrado[col_orig].astype(str).fillna("N/A")
 
-        # Formatear fechas si existen (opcional, ya que ahora se muestran como string)
-        for col_fecha_tabla in ["Fecha de Invite", "Fecha Primer Mensaje", "Fecha Sesion"]:
-            if col_fecha_tabla in df_detalle_original_filtrado.columns: # Chequear en el original
-                # Convertir a datetime primero para asegurar el formato correcto
-                df_display_tabla_campana_detalle[col_fecha_tabla] = pd.to_datetime(df_detalle_original_filtrado[col_fecha_tabla], errors='coerce').dt.strftime('%d/%m/%Y').fillna("N/A")
 
         st.dataframe(df_display_tabla_campana_detalle, height=400, use_container_width=True)
 
         @st.cache_data
         def convertir_df_a_excel_campana_detalle(df_conv):
             output = io.BytesIO()
+            # Usar df_conv directamente, que es df_detalle_original_filtrado
+            # que tiene los tipos de datos más originales (especialmente fechas como datetime)
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                # Aquí, df_conv ya no tiene las columnas de fecha formateadas como texto,
-                # sino que las toma del df_detalle_original_filtrado antes de la conversión a str.
-                # Esto es mejor para Excel si se quieren fechas reales.
                 df_conv.to_excel(writer, index=False, sheet_name='Prospectos_Campaña_Detalle')
             return output.getvalue()
 
-        excel_data_campana_detalle = convertir_df_a_excel_campana_detalle(df_detalle_original_filtrado) # Usar el DF antes de convertir todo a str
+        excel_data_campana_detalle = convertir_df_a_excel_campana_detalle(df_detalle_original_filtrado)
         nombre_archivo_excel_detalle = f"detalle_campañas_{'_'.join(st.session_state.campana_seleccion_principal)}.xlsx"
         st.download_button(
             label="⬇️ Descargar Detalle Completo de Campaña (Excel)",
@@ -363,8 +399,5 @@ else:
     else:
         st.caption("No hay prospectos detallados para mostrar con los filtros actuales.")
 
-
 st.markdown("---")
-st.info(
-    "Esta página de análisis de campañas ha sido desarrollada para ofrecer una vista dedicada y optimizada. ✨"
-)
+st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")
