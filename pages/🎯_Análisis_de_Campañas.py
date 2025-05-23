@@ -5,16 +5,8 @@ import pandas as pd
 import plotly.express as px
 import datetime
 import io
-
-# Asegúrate de que la ruta al proyecto raíz sea correcta para importar módulos
 import sys
 import os
-
-# (Ajusta esta ruta si es necesario)
-# project_root_campanas = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-# if project_root_campanas not in sys.path:
-#     sys.path.insert(0, project_root_campanas)
-
 from datos.carga_datos import cargar_y_limpiar_datos #
 from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar #
 
