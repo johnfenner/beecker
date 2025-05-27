@@ -327,8 +327,10 @@ if st.session_state.info_beecker_estructurada and lista_pdfs_leads_uploader:
         st.success(f"Procesamiento batch finalizado.")
         st.balloons()
 
-# --- Mostrar Resultados del Batch ---
+# --- CÓDIGO DE LA APLICACIÓN STREAMLIT ---
+# ... (todo tu código anterior permanece igual hasta la sección de mostrar resultados) ...
 
+# --- Mostrar Resultados del Batch ---
 if st.session_state.mensajes_generados_batch:
     st.markdown("---")
     st.header("📬 Mensajes de LinkedIn Generados (Batch)")
@@ -428,10 +430,7 @@ elif not lista_pdfs_leads_uploader and st.session_state.info_beecker_estructurad
 elif not st.session_state.info_beecker_estructurada:
     st.info("ℹ️ Por favor, carga y procesa primero el PDF de Agentes Beecker en la Etapa 1.")
 
-st.markdown("---")
-st.info(
-    "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊"
-)
+# ... (el resto de tu código, como el pie de página y el sidebar, permanece igual)
 # --- Sidebar ---
 with st.sidebar:
     st.header("Instrucciones")
