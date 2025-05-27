@@ -122,10 +122,10 @@ if 'mensajes_generados_batch' not in st.session_state:
 # --- CÓDIGO DE LA APLICACIÓN STREAMLIT ---
 
 # Ruta de la imagen (asegúrate de que project_root esté definido)
-FOTO_ORNITORRINCO_PATH = os.path.join(project_root, "ornitorrinco.png")
+FOTO_ORNITORRINCO_PATH = os.path.join(project_root, "ornitorrinco.png") # Recuerda que habíamos dicho que el nombre real era 'logo.jpeg'
 
 # ─────────────────────────────────────────────
-#  O P C I Ó N   A :  imagen + título en línea
+#  O P C I Ó N    A :  imagen + título en línea
 # ─────────────────────────────────────────────
 # Tres columnas para equilibrar: pequeña – contenido – pequeña
 col_left, col_mid, col_right = st.columns([1, 6, 1])
@@ -155,29 +155,27 @@ with col_mid:
         )
 
 # ─────────────────────────────────────────────
-#  O P C I Ó N   B :  imagen centrada + títulos
+#  O P C I Ó N    B :  imagen centrada + títulos
 # ─────────────────────────────────────────────
 # Descomenta este bloque si prefieres la imagen centrada
-"""
-col_left, col_center, col_right = st.columns([1, 3, 1])
+# col_left, col_center, col_right = st.columns([1, 3, 1])
 
-with col_center:
-    try:
-        st.image(FOTO_ORNITORRINCO_PATH, width=150)
-    except FileNotFoundError:
-        st.warning("⚠️ Foto del ornitorrinco no encontrada. Verifica la ruta.")
-    except Exception as e:
-        st.error(f"Error al cargar la foto: {e}")
+# with col_center:
+#     try:
+#         st.image(FOTO_ORNITORRINCO_PATH, width=150)
+#     except FileNotFoundError:
+#         st.warning("⚠️ Foto del ornitorrinco no encontrada. Verifica la ruta.")
+#     except Exception as e:
+#         st.error(f"Error al cargar la foto: {e}")
 
-    st.markdown(
-        "<h2 style='text-align:center;font-weight:bold;'>🤖 Generador IA Avanzado de Mensajes para LinkedIn</h2>",
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        "<h4 style='text-align:center;color:#A9A9A9;'>Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego múltiples PDFs de Leads.</h4>",
-        unsafe_allow_html=True,
-    )
-"""
+#     st.markdown(
+#         "<h2 style='text-align:center;font-weight:bold;'>🤖 Generador IA Avanzado de Mensajes para LinkedIn</h2>",
+#         unsafe_allow_html=True,
+#     )
+#     st.markdown(
+#         "<h4 style='text-align:center;color:#A9A9A9;'>Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego múltiples PDFs de Leads.</h4>",
+#         unsafe_allow_html=True,
+#     )
 
 # Separador
 st.markdown("---")
