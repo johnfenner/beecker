@@ -251,7 +251,7 @@ else:
     st.caption("Columna 'Proceso' no encontrada para análisis de procesos.")
 
 # 7. ANÁLISIS DE RENDIMIENTO POR AVATAR (Enfoque Agendamiento)
-# mostrar_analisis_por_avatar(df_kpis)
+mostrar_analisis_por_avatar(df_kpis)
 
 # 8. RESUMEN EJECUTIVO
 mostrar_resumen_ejecutivo(df_kpis, limpiar_valor_kpi, base_kpis_counts,
