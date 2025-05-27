@@ -2,7 +2,15 @@ import streamlit as st
 import google.generativeai as genai
 import pdfplumber
 import io
+import sys
+import os
 
+# Añadir la raíz del proyecto al path
+project_root = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.pardir))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+       
 # --- PROMPT DE EXTRACCIÓN DE AGENTES (NUEVO) ---
 PROMPT_EXTRACCION_AGENTES = """
 Eres un asistente de IA experto en analizar documentos técnicos y de marketing para extraer información clave de forma estructurada.
