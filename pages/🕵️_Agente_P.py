@@ -270,6 +270,10 @@ elif not lista_pdfs_leads_uploader and st.session_state.info_beecker_estructurad
 elif not st.session_state.info_beecker_estructurada:
     st.info("ℹ️ Por favor, carga y procesa primero el PDF de Agentes Beecker en la Etapa 1.")
 
+st.markdown("---")
+st.info(
+    "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊"
+)
 # --- Sidebar ---
 with st.sidebar:
     st.header("Instrucciones")
