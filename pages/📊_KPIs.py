@@ -10,9 +10,9 @@ import sys
 # --- Configuración Inicial del Proyecto y Título de la Página ---
 st.set_page_config(layout="wide", page_title="KPIs Semanales")
 
-st.title("📊 Dashboard de KPIs y Tasas de Conversión del Funnel") # Título ligeramente ajustado
+st.title("📊 Dashboard de KPIs") 
 st.markdown(
-    "Análisis de métricas absolutas y tasas de conversión siguiendo el proceso de generación de leads." # Subtítulo ajustado
+    "Análisis de métricas absolutas y tasas de conversión siguiendo el proceso de generación de leads." 
 )
 
 # --- Funciones de Procesamiento de Datos ---
@@ -265,7 +265,7 @@ def display_filtered_kpis_table(df_filtered):
     st.dataframe(df_display_table, use_container_width=True, height=300)
 
 def display_kpi_summary(df_filtered):
-    st.markdown("### 🧮 Resumen de KPIs Totales y Tasas del Funnel (Periodo Filtrado)")
+    st.markdown("### 🧮 Resumen de KPIs Totales  (Periodo Filtrado)")
     
     # Orden de KPIs según el funnel de generación de leads
     kpi_cols_funnel_order = ["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]
@@ -298,7 +298,7 @@ def display_kpi_summary(df_filtered):
         col_metrics_abs[i].metric(f"{icons_funnel_order[i]} Total {display_name}", f"{metrics.get(col_name, 0):,}")
     
     st.markdown("---")
-    st.markdown("#### Tasas de Conversión del Funnel")
+    st.markdown("#### Tasas de Conversión")
 
     total_invites = metrics.get("Invites enviadas", 0)
     total_mensajes = metrics.get("Mensajes Enviados", 0)
