@@ -138,7 +138,11 @@ with col_mid:
     with col_img:
         try:
             st.image(FOTO_ORNITORRINCO_PATH, width=120)
-            st.caption("Agente P") # <--- AÑADIDO AQUÍ
+            # Modificación para el texto "Agente P"
+            st.markdown(
+                "<p style='text-align: center; font-weight: bold;'>Agente P</p>",
+                unsafe_allow_html=True
+            )
         except FileNotFoundError:
             st.warning("⚠️ Foto del ornitorrinco no encontrada. Verifica la ruta.")
         except Exception as e:
