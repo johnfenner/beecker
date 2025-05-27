@@ -121,10 +121,6 @@ if 'mensajes_generados_batch' not in st.session_state:
 
 # --- CÓDIGO DE LA APLICACIÓN STREAMLIT ---
 
-import os
-import streamlit as st
-
-# Configuración de la página
 st.set_page_config(page_title="🚀 Generador LinkedIn IA Pro", layout="wide")
 
 # Ruta de la imagen (asegúrate de que project_root esté definido)
