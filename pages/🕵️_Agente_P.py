@@ -328,16 +328,100 @@ if st.session_state.info_beecker_estructurada and lista_pdfs_leads_uploader:
         st.balloons()
 
 # --- Mostrar Resultados del Batch ---
+
 if st.session_state.mensajes_generados_batch:
     st.markdown("---")
     st.header("📬 Mensajes de LinkedIn Generados (Batch)")
-    for resultado in st.session_state.mensajes_generados_batch:
+
+    # Iteramos con enumerate para poder acceder y modificar el diccionario del resultado por índice
+    for i, resultado in enumerate(st.session_state.mensajes_generados_batch):
         st.subheader(f"Lead: {resultado['lead_filename']}")
         if resultado['mensaje']:
+            st.markdown("**Mensaje Original Generado:**")
             st.code(resultado['mensaje'], language=None)
+
+            # --- Funcionalidad de Replantear Mensaje ---
+            st.markdown("---") # Separador visual
+
+            # Claves únicas para los widgets de este item del bucle
+            # Usamos el nombre del archivo y el índice para asegurar unicidad
+            input_instruccion_key = f"input_instruccion_{resultado['lead_filename']}_{i}"
+            boton_replantear_key = f"boton_replantear_{resultado['lead_filename']}_{i}"
+            
+            # Guardamos la instrucción del usuario en el session_state para que no se borre
+            # si el usuario interactúa con otros elementos que causan un rerun.
+            if input_instruccion_key not in st.session_state:
+                st.session_state[input_instruccion_key] = ""
+
+            instruccion_usuario = st.text_input(
+                "Si quieres, describe aquí cómo refinar el mensaje de arriba:",
+                value=st.session_state[input_instruccion_key], # Usar valor de session_state
+                key=input_instruccion_key, # Clave única para el widget
+                placeholder="Ej: Hazlo más corto y directo, enfatiza mi experiencia en IA."
+            )
+            # Actualizamos el valor en session_state conforme el usuario escribe
+            st.session_state[input_instruccion_key] = instruccion_usuario
+
+            if st.button("🔄 Replantear este Mensaje con IA", key=boton_replantear_key, use_container_width=True):
+                if instruccion_usuario: # Si el usuario escribió algo
+                    mensaje_original_para_replantear = resultado['mensaje']
+                    
+                    # Prompt específico para la tarea de refinamiento
+                    prompt_refinamiento = f"""Eres un asistente de IA experto en redacción persuasiva para LinkedIn.
+Aquí tienes un mensaje que necesita ser ajustado:
+--- MENSAJE ORIGINAL ---
+{mensaje_original_para_replantear}
+--- FIN MENSAJE ORIGINAL ---
+
+Por favor, modifica este MENSAJE ORIGINAL basándote en la siguiente instrucción del usuario:
+--- INSTRUCCIÓN DEL USUARIO ---
+{instruccion_usuario}
+--- FIN INSTRUCCIÓN DEL USUARIO ---
+
+Asegúrate de que el mensaje resultante siga siendo apropiado para LinkedIn, profesional, en texto plano y sin artefactos de Markdown para negritas.
+Mantén el tuteo (tratar de "tú") y el tono general humano, orgánico, profesional y cercano que se te solicitó originalmente, a menos que la instrucción del usuario pida explícitamente un cambio de tono.
+El mensaje debe ser conciso y directo, con párrafos de 2-3 líneas máximo si es posible.
+No añadas introducciones o conclusiones tuyas como "Aquí está el mensaje modificado:", "Claro, aquí tienes el ajuste:", etc. Simplemente proporciona el mensaje replanteado y listo para copiar y pegar.
+"""
+                    with st.spinner(f"Replanteando mensaje para '{resultado['lead_filename']}'..."):
+                        try:
+                            # Usamos el mismo model_mensajes, ya que su system_instruction original
+                            # establece un buen contexto general, y el prompt_refinamiento es específico.
+                            response_refinamiento = model_mensajes.generate_content(prompt_refinamiento)
+                            mensaje_refinado_bruto = response_refinamiento.text
+                            mensaje_refinado_limpio = mensaje_refinado_bruto.replace('**', '').strip()
+
+                            # Guardamos el mensaje refinado y la instrucción usada en el diccionario del resultado
+                            # Esto permite que se muestre incluso después de interacciones que recarguen la app.
+                            st.session_state.mensajes_generados_batch[i]['mensaje_refinado'] = mensaje_refinado_limpio
+                            st.session_state.mensajes_generados_batch[i]['instruccion_refinamiento_usada'] = instruccion_usuario
+                            
+                            # Limpiamos la instrucción del input después de usarla para este refinamiento específico
+                            # st.session_state[input_instruccion_key] = "" # Opcional: decidir si limpiar o mantener
+
+                            st.rerun() # Forzamos un rerun para que la interfaz se actualice y muestre el mensaje.
+
+                        except Exception as e:
+                            st.error(f"Error al refinar el mensaje con IA para '{resultado['lead_filename']}': {e}")
+                else:
+                    st.warning("Por favor, escribe una instrucción para poder replantear el mensaje.")
+                    # Si no hay instrucción, y había un mensaje refinado previo, lo eliminamos
+                    # para evitar confusiones.
+                    if 'mensaje_refinado' in st.session_state.mensajes_generados_batch[i]:
+                        del st.session_state.mensajes_generados_batch[i]['mensaje_refinado']
+                    if 'instruccion_refinamiento_usada' in st.session_state.mensajes_generados_batch[i]:
+                        del st.session_state.mensajes_generados_batch[i]['instruccion_refinamiento_usada']
+                    st.rerun()
+
+            # Mostrar el mensaje refinado si existe en el estado para este resultado
+            if 'mensaje_refinado' in resultado and resultado.get('instruccion_refinamiento_usada'):
+                st.markdown("**Mensaje Replanteado:**")
+                st.caption(f"Basado en tu instrucción: \"{resultado['instruccion_refinamiento_usada']}\"")
+                st.code(resultado['mensaje_refinado'], language=None)
+
         elif resultado['error']:
             st.error(f"No se pudo generar mensaje: {resultado['error']}")
-        st.markdown("---")
+        st.markdown("---") # Separador entre leads
 
 elif not lista_pdfs_leads_uploader and st.session_state.info_beecker_estructurada:
     st.info("ℹ️ Sube uno o varios archivos PDF de Leads para generar mensajes.")
