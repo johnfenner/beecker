@@ -37,9 +37,9 @@ from componentes.oportunidades_calientes import mostrar_oportunidades_calientes
 from utils.limpieza import limpiar_valor_kpi
 
 # --- CONFIGURACIÓN GENERAL ---
-st.set_page_config(page_title="Dashboard Prospección Lead Generation",
+st.set_page_config(page_title="Dashboard", 
                    layout="wide")
-st.title("📈 Dashboard — Lead Generation")  # Texto original del título
+st.title("📈 Dashboard — Master DataBase")  # Texto original del título
 
 # --- INYECTAR CSS PARA AJUSTAR ANCHO DEL SIDEBAR ---
 st.markdown(
@@ -188,7 +188,7 @@ if busqueda_texto:
 # --- ORDEN DE LOS COMPONENTES EN EL DASHBOARD ---
 
 # 1. OPORTUNIDADES CLAVE PARA AGENDAR
-mostrar_oportunidades_calientes(df_kpis)
+# mostrar_oportunidades_calientes(df_kpis)
 
 st.header("🔍 Detalle y Rendimiento General")  # Título de sección enfocado
 # 2. TABLA DE PROSPECTOS (Resultado de filtros sidebar + búsqueda de texto)
