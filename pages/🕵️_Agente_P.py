@@ -119,38 +119,46 @@ if 'nombre_archivo_agentes' not in st.session_state:
 if 'mensajes_generados_batch' not in st.session_state:
     st.session_state.mensajes_generados_batch = []
 
-# --- CÓDIGO DE LA APLICACIÓN STREAMLIT ---
-st.set_page_config(page_title="🚀 Generador LinkedIn IA Pro", layout="wide") # Título actualizado
+# --- CÓDIGO DE LA APLICACIÓN ---
+st.set_page_config(page_title="🚀 Generador LinkedIn IA Pro", layout="wide")
 
-# Aseguramos que project_root esté disponible. Esto ya debería estar al inicio del archivo.
-# Si no lo está, asegúrate de que la siguiente sección de código se añada al principio del archivo:
-# import os
-# import sys
-# try:
-#     current_script_dir = os.path.dirname(__file__)
-#     project_root = os.path.abspath(os.path.join(current_script_dir, os.pardir))
-#     if project_root not in sys.path:
-#         sys.path.insert(0, project_root)
-# except NameError:
-#     project_root = os.getcwd()
-#     if project_root not in sys.path:
-#         sys.path.insert(0, project_root)
-
-# Definimos la ruta a la foto del ornitorrinco (que es 'logo.jpeg' en la raíz del proyecto)
-FOTO_ORNITORRINCO_PATH = os.path.join(project_root, "ornitorrinco.png") #
+# La ruta a la foto del ornitorrinco (que es 'logo.jpeg' en la raíz del proyecto)
+# 'project_root' ya se define al inicio del archivo, asegurando la ruta correcta.
+FOTO_ORNITORRINCO_PATH = os.path.join(project_root, "logo.jpeg")
 
 try:
-    st.image(FOTO_ORNITORRINCO_PATH, width=200) #
+    st.image(FOTO_ORNITORRINCO_PATH, width=200)
 except FileNotFoundError:
-    st.warning(
-        "⚠️ La foto del ornitorrinco no fue encontrada. "
-        f"Verifica que el archivo '{os.path.basename(FOTO_ORNITORRINCO_PATH)}' esté en la raíz del proyecto, o revisa la ruta: {FOTO_ORNITORRINCO_PATH}."
-    )
+    st.warning("⚠️ Foto del ornitorrinco no encontrada. Verifica el archivo y su ubicación.")
 except Exception as e:
-    st.error(f"Error al cargar la foto del ornitorrinco: {e}")
+    st.error(f"Error al cargar la foto: {e}")
 
-st.title("🤖 Generador IA Avanzado de Mensajes para LinkedIn")
-st.markdown("Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego múltiples PDFs de Leads.")
+# Títulos ajustados para mejor visibilidad y armonía
+st.markdown(
+    """
+    <style>
+    .title-text {
+        font-size: 2.5em; /* Título principal */
+        font-weight: bold;
+        color: #FFFFFF; /* Blanco para contraste en fondo oscuro */
+        text-align: center;
+        margin-bottom: 0.5em;
+    }
+    .subtitle-text {
+        font-size: 1.2em; /* Subtítulo */
+        color: #A9A9A9; /* Gris suave */
+        text-align: center;
+        margin-top: -0.5em; /* Acercar al título principal */
+        margin-bottom: 2em;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Aplicar los estilos a los títulos
+st.markdown('<p class="title-text">🤖 Generador IA Avanzado de Mensajes para LinkedIn</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle-text">Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego múltiples PDFs de Leads.</p>', unsafe_allow_html=True)
 
 # --- Configuración de API Key y Modelo ---
 try:
