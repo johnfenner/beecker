@@ -121,7 +121,34 @@ if 'mensajes_generados_batch' not in st.session_state:
 
 # --- CÓDIGO DE LA APLICACIÓN STREAMLIT ---
 st.set_page_config(page_title="🚀 Generador LinkedIn IA Pro", layout="wide") # Título actualizado
-st.image("https://beecker.ai/wp-content/uploads/2024/02/logo-beecker-consulting.svg", width=200)
+
+# Aseguramos que project_root esté disponible. Esto ya debería estar al inicio del archivo.
+# Si no lo está, asegúrate de que la siguiente sección de código se añada al principio del archivo:
+# import os
+# import sys
+# try:
+#     current_script_dir = os.path.dirname(__file__)
+#     project_root = os.path.abspath(os.path.join(current_script_dir, os.pardir))
+#     if project_root not in sys.path:
+#         sys.path.insert(0, project_root)
+# except NameError:
+#     project_root = os.getcwd()
+#     if project_root not in sys.path:
+#         sys.path.insert(0, project_root)
+
+# Definimos la ruta a la foto del ornitorrinco (que es 'logo.jpeg' en la raíz del proyecto)
+FOTO_ORNITORRINCO_PATH = os.path.join(project_root, "ornitorrinco.png") #
+
+try:
+    st.image(FOTO_ORNITORRINCO_PATH, width=200) #
+except FileNotFoundError:
+    st.warning(
+        "⚠️ La foto del ornitorrinco no fue encontrada. "
+        f"Verifica que el archivo '{os.path.basename(FOTO_ORNITORRINCO_PATH)}' esté en la raíz del proyecto, o revisa la ruta: {FOTO_ORNITORRINCO_PATH}."
+    )
+except Exception as e:
+    st.error(f"Error al cargar la foto del ornitorrinco: {e}")
+
 st.title("🤖 Generador IA Avanzado de Mensajes para LinkedIn")
 st.markdown("Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego múltiples PDFs de Leads.")
 
