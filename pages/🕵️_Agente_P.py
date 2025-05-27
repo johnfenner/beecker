@@ -121,8 +121,6 @@ if 'mensajes_generados_batch' not in st.session_state:
 
 # --- CÓDIGO DE LA APLICACIÓN STREAMLIT ---
 
-st.set_page_config(page_title="🚀 Generador LinkedIn IA Pro", layout="wide")
-
 # Ruta de la imagen (asegúrate de que project_root esté definido)
 FOTO_ORNITORRINCO_PATH = os.path.join(project_root, "ornitorrinco.png")
 
