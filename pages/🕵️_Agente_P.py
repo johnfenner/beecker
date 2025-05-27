@@ -71,23 +71,44 @@ Cada vez que recibas esta información, generarás un único mensaje de LinkedIn
        - A continuación, utiliza el "Resumen Compañía" que se encuentra al inicio de INFO_BEEKER_ESTRUCTURADA. Si este resumen contiene casos de éxito específicos, áreas de impacto clave o certificaciones que sean relevantes para el TEXTO_LEAD, incorpóralos de forma breve y natural.
        - Si el "Resumen Compañía" en INFO_BEEKER_ESTRUCTURADA indica "Información general de la compañía no detallada...", entonces centra esta parte de la presentación en la relevancia y el valor general que los Agentes IA Autónomos pueden aportar al tipo de empresa o al rol del lead, basándote en la lista de agentes en INFO_BEEKER_ESTRUCTURADA.
    4.  **Propuesta de Valor**
-       - Párrafo breve que vincule el reto actual del lead (inferido del TEXTO_LEAD) con el beneficio concreto de un Agente IA, basándote en las descripciones de los agentes encontradas en la INFO_BEEKER_ESTRUCTURADA.
-   5.  **Lista Literal de Agentes Relevantes (Usando INFO_BEEKER_ESTRUCTURADA):**
-       - El formato para cada agente en la lista que generes para el lead debe ser: `- [Nombre del Agente]: [Descripción adaptada de su función/beneficio para el lead].`
-       - **Paso 1: Análisis del Lead y su Área Principal:**
-         - Examina el `TEXTO_LEAD`, prestando especial atención a la sección 'Experiencia' para determinar el **área funcional principal** del lead (ej: Recursos Humanos, Finanzas, TI, etc.) y sus posibles desafíos.
-       - **Paso 2: Selección de Agentes de la `INFO_BEEKER_ESTRUCTURADA`:**
-         - Revisa la sección "LISTA DETALLADA DE AGENTES DE IA" dentro de la `INFO_BEEKER_ESTRUCTURADA`.
-         - De esta lista, selecciona **TODOS los agentes** cuyas 'Áreas Relevantes' (según la lista estructurada) coincidan o sean aplicables al área funcional principal del lead y a sus desafíos inferidos.
-       - **Paso 3: Presentación de Cada Agente Seleccionado:**
-         - Para CADA agente que hayas seleccionado de la `INFO_BEEKER_ESTRUCTURADA`:
+       - Párrafo breve que vincule el reto actual del lead (inferido del TEXTO_LEAD) con el beneficio concreto de un Agente IA o la aproximación general de Beecker con IA, basándote en la INFO_BEEKER_ESTRUCTURADA y el perfil del lead.
+
+   5.  **Propuesta de Agentes IA Relevantes (Adaptada al Perfil del Lead):**
+       - El objetivo es presentar una selección concisa y altamente relevante de cómo los Agentes IA de Beecker pueden ayudar, en lugar de una lista exhaustiva.
+
+       - **Paso 1: Análisis Detallado del Lead y su Contexto:**
+         - Examina el `TEXTO_LEAD`, prestando especial atención a la sección 'Experiencia' (y también al 'Extracto' o 'About') para determinar:
+           a. El **área funcional principal** del lead (ej: Recursos Humanos, Finanzas, Compras, TI, Operaciones, Desarrollo de Negocio, Transformación Digital, etc.).
+           b. Sus **responsabilidades clave, logros y posibles desafíos** o áreas de enfoque (ej: optimización de procesos, reducción de costos, transformación digital, gestión de equipos, implementación de tecnología).
+           c. La **industria o tipo de empresa**, si es discernible.
+
+       - **Paso 2: Estrategia de Presentación de Soluciones IA según el Perfil:**
+
+         - **CASO A: Lead con Área Funcional Específica (ej: HR, Finanzas, Compras Directas, Ventas específicas, Cadena de Suministro detallada):**
+           i.  Revisa la "LISTA DETALLADA DE AGENTES DE IA" en `INFO_BEEKER_ESTRUCTURADA`.
+           ii. Selecciona **un máximo de 2-3 de los agentes MÁS RELEVANTES** cuyas 'Áreas Relevantes' coincidan directamente con el área funcional principal del lead.
+           iii. Prioriza agentes que aborden los desafíos o responsabilidades inferidos del `TEXTO_LEAD`.
+           iv. Para cada agente seleccionado, usa el formato: `- [Nombre del Agente]: [Descripción adaptada de su función/beneficio para el lead, enfocada en cómo resuelve un problema o aporta valor a SU área específica].`
+
+         - **CASO B: Lead con Perfil Amplio, Técnico, de Consultoría o Estratégico (ej: IT, Transformación Digital, Innovación, Project Manager en tecnología, Consultor, Business Development enfocado en tecnología):**
+           i.  En lugar de listar múltiples agentes individuales, enfócate en presentar cómo la **aproximación general de Beecker con Agentes IA** puede abordar los desafíos típicos de estos roles.
+           ii. Menciona **1 o 2 ejemplos de *tipos* de soluciones o *capacidades clave* de los Agentes IA de Beecker** que resuenen con sus responsabilidades (ej: "automatización inteligente de flujos de trabajo complejos en TI", "optimización de la gestión de datos para la toma de decisiones estratégicas", "desarrollo ágil de herramientas IA para la eficiencia operativa", "integración de IA para potenciar la estrategia de desarrollo de negocio").
+           iii. **Opcionalmente, y solo si hay 1 (máximo 2) agente insignia que sea EXCEPCIONALMENTE relevante y de amplio impacto para este tipo de perfil técnico/estratégico**, puedes mencionarlo brevemente: `- [Agente Insignia]: [Beneficio clave para un rol técnico/estratégico].` La preferencia es describir capacidades o enfoques generales.
+           iv. La redacción aquí debe ser más sobre el "cómo Beecker ayuda a perfiles como el tuyo a..." en lugar de una lista de productos. Evita abrumar con una larga lista de agentes. El mensaje debe sonar técnico y estratégico, no como un catálogo.
+
+         - **CASO C: Lead con Perfil Muy General o Poco Detallado (donde el área funcional o los desafíos no son claros tras el análisis):**
+           i.  Selecciona **1-2 agentes de la `INFO_BEEKER_ESTRUCTURADA` que tengan 'Áreas Relevantes' amplias** o que representen soluciones de alto impacto general y fácil comprensión (ej: un agente de automatización de tareas comunes o uno de análisis de datos general).
+           ii. Presenta estos agentes con el formato: `- [Nombre del Agente]: [Descripción concisa de su beneficio general].`
+
+       - **Paso 3: Adaptación de la Descripción del Agente (cuando se mencionan agentes por nombre):**
+         - Para CADA agente que menciones por nombre (principalmente en CASO A y C, y opcionalmente en B):
            i.  Utiliza el **Nombre del Agente** exacto tal como aparece en la lista estructurada.
-           ii. Toma su 'Descripción' de la lista estructurada y, si es necesario, adáptala muy brevemente (1 frase) para resaltar cómo específicamente podría ayudar al lead o a su departamento/empresa, conectándolo con el perfil del lead.
+           ii. Toma su 'Descripción' de la lista estructurada y adáptala muy brevemente (1 frase) para resaltar cómo específicamente podría ayudar al lead o a su departamento/empresa, conectándolo con el perfil del lead.
            iii. **MUY IMPORTANTE:** La presentación debe ser limpia y profesional. No incluyas ninguna meta-referencia. Simplemente enuncia el nombre del agente y su valor adaptado.
-       - **Paso 4: Manejo de Leads con Perfil Menos Definido:**
-         - Si el `TEXTO_LEAD` no permite identificar un área funcional clara, entonces, de la sección "LISTA DETALLADA DE AGENTES DE IA" en `INFO_BEEKER_ESTRUCTURADA`, selecciona 2-3 agentes que tengan 'Áreas Relevantes' amplias o que representen soluciones de alto impacto general. Preséntalos siguiendo las pautas del Paso 3.
-       - **Paso 5: Enfoque Específico para Leads de TI:**
-         - Si el lead es claramente del área de TI, asegúrate de seleccionar agentes de la sección "LISTA DETALLADA DE AGENTES DE IA" en `INFO_BEEKER_ESTRUCTURADA` que sean especialmente relevantes para los departamentos de TI y destaca sus beneficios.
+
+       - **Consideración General para Todos los Casos:**
+         - El objetivo no es vender cada agente, sino demostrar entendimiento del rol del lead y cómo Beecker puede aportar valor estratégico. La selección debe ser cualitativa y concisa.
+
    6.  **Contexto Empresarial**
        - Refuerza que es una propuesta para la empresa, liberando recursos y mejorando resultados (“extensiones inteligentes de tu equipo”, “valor a tus proyectos”).
    7.  **Cierre Consultivo**
