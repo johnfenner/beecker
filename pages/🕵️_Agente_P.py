@@ -124,7 +124,7 @@ st.set_page_config(page_title="🚀 Generador LinkedIn IA Pro", layout="wide")
 
 # La ruta a la foto del ornitorrinco (que es 'logo.jpeg' en la raíz del proyecto)
 # 'project_root' ya se define al inicio del archivo, asegurando la ruta correcta.
-FOTO_ORNITORRINCO_PATH = os.path.join(project_root, "logo.jpeg")
+FOTO_ORNITORRINCO_PATH = os.path.join(project_root, "ornitorrinco.png")
 
 try:
     st.image(FOTO_ORNITORRINCO_PATH, width=200)
