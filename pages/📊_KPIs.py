@@ -482,7 +482,7 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
 
 
 def display_detailed_weekly_analyst_view(df_filtered, semanas_seleccionadas_para_vista):
-    st.markdown("### 📋 Vista Detallada Semanal por Analista (Funnel)") # Título ajustado
+    st.markdown("### 📋 Vista Detallada Semanal por Analista") # Título ajustado
 
     if df_filtered.empty:
         st.info("No hay datos filtrados generales para mostrar esta vista detallada.")
