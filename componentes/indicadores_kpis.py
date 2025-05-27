@@ -5,7 +5,7 @@ from utils.limpieza import limpiar_valor_kpi
 
 def mostrar_kpis(df_kpis, base_kpis_counts, limpiar_valor_kpi):
     st.markdown("---")
-    st.markdown("## 📊 Indicadores Clave de Rendimiento (KPIs)")
+    st.markdown("## 📊 Indicadores Clave de Rendimiento en base a la Master DataBase")
 
     total_filtered = len(df_kpis)
     base_total = base_kpis_counts["total_base"]
