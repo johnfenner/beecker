@@ -151,7 +151,7 @@ with col_mid:
     # Títulos (columna derecha)
     with col_txt:
         st.markdown(
-            "## 🤖 Generador IA de Mensajes para prospectos en LinkedIn 🤖",
+            "## Generador IA de Mensajes para prospectos en LinkedIn 🤖",
             unsafe_allow_html=False,
         )
         st.markdown(
