@@ -119,59 +119,75 @@ if 'nombre_archivo_agentes' not in st.session_state:
 if 'mensajes_generados_batch' not in st.session_state:
     st.session_state.mensajes_generados_batch = []
 
+# --- CÓDIGO DE LA APLICACIÓN STREAMLIT ---
 
+import os
+import streamlit as st
 
-# --- CÓDIGO DE LA APLICACIÓN ---
-
+# Configuración de la página
 st.set_page_config(page_title="🚀 Generador LinkedIn IA Pro", layout="wide")
 
-
-
-# Definimos la ruta a la foto del ornitorrinco 
-
+# Ruta de la imagen (asegúrate de que project_root esté definido)
 FOTO_ORNITORRINCO_PATH = os.path.join(project_root, "ornitorrinco.png")
 
+# ─────────────────────────────────────────────
+#  O P C I Ó N   A :  imagen + título en línea
+# ─────────────────────────────────────────────
+# Tres columnas para equilibrar: pequeña – contenido – pequeña
+col_left, col_mid, col_right = st.columns([1, 6, 1])
 
+with col_mid:
+    # Dentro del centro creamos dos columnas: imagen | títulos
+    col_img, col_txt = st.columns([1, 4])
 
-# Usamos columnas para centrar la imagen y el texto de manera más controlada.
+    # Imagen (columna izquierda)
+    with col_img:
+        try:
+            st.image(FOTO_ORNITORRINCO_PATH, width=120)
+        except FileNotFoundError:
+            st.warning("⚠️ Foto del ornitorrinco no encontrada. Verifica la ruta.")
+        except Exception as e:
+            st.error(f"Error al cargar la foto: {e}")
 
-# Ajusta la relación de 1, 3, 1 si quieres más o menos espacio a los lados.
+    # Títulos (columna derecha)
+    with col_txt:
+        st.markdown(
+            "## 🤖 Generador IA Avanzado de Mensajes para LinkedIn",
+            unsafe_allow_html=False,
+        )
+        st.markdown(
+            "#### Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego múltiples PDFs de Leads.",
+            unsafe_allow_html=False,
+        )
 
+# ─────────────────────────────────────────────
+#  O P C I Ó N   B :  imagen centrada + títulos
+# ─────────────────────────────────────────────
+# Descomenta este bloque si prefieres la imagen centrada
+"""
 col_left, col_center, col_right = st.columns([1, 3, 1])
 
-
-
 with col_center:
+    try:
+        st.image(FOTO_ORNITORRINCO_PATH, width=150)
+    except FileNotFoundError:
+        st.warning("⚠️ Foto del ornitorrinco no encontrada. Verifica la ruta.")
+    except Exception as e:
+        st.error(f"Error al cargar la foto: {e}")
 
-    try:
+    st.markdown(
+        "<h2 style='text-align:center;font-weight:bold;'>🤖 Generador IA Avanzado de Mensajes para LinkedIn</h2>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        "<h4 style='text-align:center;color:#A9A9A9;'>Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego múltiples PDFs de Leads.</h4>",
+        unsafe_allow_html=True,
+    )
+"""
 
-        # Ajustamos el ancho de la imagen para que sea más pequeño y deje espacio
-
-        st.image(FOTO_ORNITORRINCO_PATH, width=150) # Reducimos el ancho aquí
-
-    except FileNotFoundError:
-
-        st.warning("⚠️ Foto del ornitorrinco no encontrada. Verifica el archivo y su ubicación.")
-
-    except Exception as e:
-
-        st.error(f"Error al cargar la foto: {e}")
-
-
-
-    # Usamos st.markdown con HTML para el texto, pero con tamaños controlados por h2 y h4
-
-    # Esto da más consistencia con los tamaños de Streamlit
-
-    st.markdown("<h2 style='text-align: center; color: white; font-weight: bold;'>🤖 Generador IA Avanzado de Mensajes para LinkedIn</h2>", unsafe_allow_html=True)
-
-    st.markdown("<h4 style='text-align: center; color: #A9A9A9;'>Sube el PDF de Agentes Beecker (se pre-procesará con IA) y luego múltiples PDFs de Leads.</h4>", unsafe_allow_html=True)
-
-
-
-# Un pequeño separador visual para el resto del contenido
-
+# Separador
 st.markdown("---")
+
 
 # --- Configuración de API Key y Modelo ---
 try:
