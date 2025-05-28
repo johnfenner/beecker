@@ -9,7 +9,6 @@ import sys
 import os
 from datos.carga_datos import cargar_y_limpiar_datos #
 from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar #
-import streamlit.components.v1 as components
 
 # --- Configuración de la Página ---
 st.set_page_config(layout="wide", page_title="Análisis de Campañas")
