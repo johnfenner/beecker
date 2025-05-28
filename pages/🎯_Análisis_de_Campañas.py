@@ -39,7 +39,7 @@ if 'silvestre_surprise' not in st.session_state:
       """
       <div style="text-align:center; margin-bottom: 1rem;">
         <video autoplay loop muted playsinline width="80%">
-          <source src="videos/silvestre_fun.mp4" type="video/mp4">
+          <source src="https://www.youtube.com/watch?v=6ypuplcLZpc" type="video/mp4">
           Tu navegador no soporta el elemento <code>video</code>.
         </video>
       </div>
