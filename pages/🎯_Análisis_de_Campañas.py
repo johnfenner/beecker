@@ -9,47 +9,35 @@ import sys
 import os
 from datos.carga_datos import cargar_y_limpiar_datos #
 from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar #
+from PIL import Image
 
 # --- Configuración de la Página ---
 st.set_page_config(layout="wide", page_title="Análisis de Campañas")
 st.title("🎯 Análisis de Rendimiento de Campañas")
 st.markdown("Selecciona una o varias campañas y aplica filtros para analizar su rendimiento detallado.")
 
-# ——— Estado inicial ———
+# Estado inicial
 if 'first_run' not in st.session_state:
     st.session_state.first_run = True
     st.session_state.msg_count = 0
 
-# Lista de sorpresas: imágenes + textos
-sorpresas = [
-    {"img": "images/sorpresa1.png", "txt": "🤩 ¡Sorpresa #1: Silvestre en modo fiestero! 🤩"},
-    {"img": "images/sorpresa2.png", "txt": "🎉 ¡Sorpresa #2: Bailecito vallenato! 🎉"},
-    {"img": "images/sorpresa3.png", "txt": "🎈 ¡Sorpresa #3: Mensaje secreto del ingeniero que se va para el valle! 🎈"},
-    # …añade más si quieres
-]
+# Ruta dinámica a la imagen teaser
+# Ajusta "images" si tu carpeta está en otro nivel
+image_path = os.path.join(os.getcwd(), "images", "silvestre_teaser.jpg")
 
-# ——— Teaser inicial que bloquea TODO ———
+# Teaser inicial
 if st.session_state.first_run:
-    # Pantalla completa teaser
-    st.image("images/silvestre_teaser.jpg", use_column_width=True)
-    st.markdown("### 🎉 ¡Bien chevere! Prepárate para las sorpresas de Silvestre Dangond 🎉")
-    if st.button("¡Dame la primera sorpresa!"):
-        st.session_state.msg_count = 1
-        st.session_state.first_run = False
-        st.experimental_rerun()
-    # Detenemos aquí para no renderizar la app hasta que hagan click
+    if not os.path.exists(image_path):
+        st.error(f"No se encontró la imagen teaser en:\n**{image_path}**")
+    else:
+        teaser = Image.open(image_path)
+        st.image(teaser, use_container_width=True)
+        st.markdown("### 🎉 ¡Bien chevere! Prepárate para las sorpresas de Silvestre Dangond 🎉")
+        if st.button("¡Dame la primera sorpresa!"):
+            st.session_state.msg_count = 1
+            st.session_state.first_run = False
+            st.experimental_rerun()
     st.stop()
-
-# ——— Si ya pasamos el teaser, mostramos la primera (o la siguiente) sorpresa ———
-idx = (st.session_state.msg_count - 1) % len(sorpresas)
-s = sorpresas[idx]
-st.image(s["img"], use_column_width=True)
-st.markdown(f"## {s['txt']}")
-
-# Botón para nuevas sorpresas
-if st.button("¡Otra sorpresa!"):
-    st.session_state.msg_count += 1
-    st.experimental_rerun()
 
 # --- Funciones de Ayuda Específicas para esta Página ---
 
