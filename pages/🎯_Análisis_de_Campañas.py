@@ -16,21 +16,29 @@ st.set_page_config(layout="wide", page_title="Análisis de Campañas")
 st.title("🎯 Análisis de Rendimiento de Campañas")
 st.markdown("Selecciona una o varias campañas y aplica filtros para analizar su rendimiento detallado.")
 
+# ————————————————
+# Define tu raíz de proyecto si aún no lo has hecho:
+project_root = os.getcwd()  # o la ruta absoluta que uses
+# ————————————————
+
+# Usa tu variable tal como la tenías:
+FOTO_ORNITORRINCO_PATH = os.path.join(project_root, "ornitorrinco.png")
+# Si en verdad el nombre es logo.jpeg, cámbialo:
+# FOTO_ORNITORRINCO_PATH = os.path.join(project_root, "logo.jpeg")
+
+st.set_page_config(page_title="🎉 Show Silvestre 🎉", layout="wide")
+
 # Estado inicial
 if 'first_run' not in st.session_state:
     st.session_state.first_run = True
     st.session_state.msg_count = 0
 
-# Ruta dinámica a la imagen teaser
-# Ajusta "images" si tu carpeta está en otro nivel
-image_path = os.path.join(os.getcwd(), "images", "silvestre_teaser.jpg")
-
 # Teaser inicial
 if st.session_state.first_run:
-    if not os.path.exists(image_path):
-        st.error(f"No se encontró la imagen teaser en:\n**{image_path}**")
+    if not os.path.exists(FOTO_ORNITORRINCO_PATH):
+        st.error(f"No se encontró la imagen teaser en:\n**{FOTO_ORNITORRINCO_PATH}**")
     else:
-        teaser = Image.open(image_path)
+        teaser = Image.open(FOTO_ORNITORRINCO_PATH)
         st.image(teaser, use_container_width=True)
         st.markdown("### 🎉 ¡Bien chevere! Prepárate para las sorpresas de Silvestre Dangond 🎉")
         if st.button("¡Dame la primera sorpresa!"):
