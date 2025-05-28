@@ -9,87 +9,46 @@ import sys
 import os
 from datos.carga_datos import cargar_y_limpiar_datos #
 from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar #
+from streamlit.components.v1 import html
 
 # --- Configuración de la Página ---
 st.set_page_config(layout="wide", page_title="Análisis de Campañas")
 st.title("🎯 Análisis de Rendimiento de Campañas")
 st.markdown("Selecciona una o varias campañas y aplica filtros para analizar su rendimiento detallado.")
 
-# --- INICIO: POP-UP GRACIOSO DE SILVESTRE DANGOND (Opción st.modal) ---
 
-# Inicializa la variable de estado de sesión si no existe
-if 'silvestre_popup_shown' not in st.session_state:
-    st.session_state.silvestre_popup_shown = False
 
-# Muestra el modal solo si aún no se ha mostrado en esta sesión
-if not st.session_state.silvestre_popup_shown:
-    # --- ¡PERSONALIZA AQUÍ! ---
-    # Reemplaza esta URL con un video corto y divertido de Silvestre.
-    SILVESTRE_VIDEO_URL = "https://www.youtube.com/watch?v=exampleURL" # ¡CAMBIA ESTA URL POR UNA REAL DE YOUTUBE!
-    # --- FIN DE LA PERSONALIZACIÓN ---
+# ————————————————
+# 1) Animación al cargar la página
+# ————————————————
+if 'silvestre_surprise' not in st.session_state:
+    st.session_state['silvestre_surprise'] = True
 
-    try:
-        with st.modal("🎉 ¡LLEGÓ EL INGENIERO AL VALLE! 🎉", key="modal_silvestre_principal"):
-            st.markdown("<h2 style='text-align: center; color: #FF6600;'>¡Valledupar, agárrate que llegó el sabor!</h2>", unsafe_allow_html=True)
-            st.markdown(f"""
-            <p style='text-align: center; font-size: 1.1em;'>
-                Directo desde el aeropuerto Alfonso López Pumarejo... ✈️<br>
-                <strong>¡Ahora sí que se atengan, porque el Ingeniero viene con el análisis más bacano y el flow de Silvestre!</strong> 🪗🎶
-            </p>
-            """, unsafe_allow_html=True)
+    # a) Popup JavaScript
+    html("""
+    <script>
+      window.onload = function() {
+        alert("🎉 Ahora sí que se atengan porque el ingeniero se va para el valle 🎉");
+      };
+    </script>
+    """, height=0)
 
-            if SILVESTRE_VIDEO_URL != "https://www.youtube.com/watch?v=exampleURL":
-                st.video(SILVESTRE_VIDEO_URL)
-                st.caption("Dale play al sentimiento... ¡y luego a los datos!")
-            else:
-                st.warning("🔴 ¡Atención Ingeniero! Necesitas cambiar la `SILVESTRE_VIDEO_URL` en el código por un video real de Silvestre para `st.modal`. 🔴")
+    # b) Video embebido con autoplay (muteado para evitar policy de navegadores)
+    #    Si lo tienes en tu carpeta 'videos/silvestre_fun.mp4', pon la ruta correcta.
+    st.markdown(
+      """
+      <div style="text-align:center; margin-bottom: 1rem;">
+        <video autoplay loop muted playsinline width="80%">
+          <source src="videos/silvestre_fun.mp4" type="video/mp4">
+          Tu navegador no soporta el elemento <code>video</code>.
+        </video>
+      </div>
+      """,
+      unsafe_allow_html=True
+    )
 
-            st.markdown("---")
-            st.markdown("<p style='text-align: center;'><i>Presiona para desatar el poder del análisis (y del vallenato).</i> 😎</p>", unsafe_allow_html=True)
-
-            col_btn_modal_izq, col_btn_modal_centro, col_btn_modal_der = st.columns([1,2,1])
-            with col_btn_modal_centro:
-                if st.button("🪗 ¡ENTENDIDO! A ANALIZAR COMO ES 🪗", use_container_width=True, type="primary", key="btn_cerrar_modal_silvestre"):
-                    st.session_state.silvestre_popup_shown = True
-                    st.rerun()
-        
-        # Si el modal se muestra y el código llega aquí (porque no hubo error en st.modal), 
-        # y el botón aún no se ha presionado, detenemos para que el resto no se ejecute.
-        if not st.session_state.silvestre_popup_shown:
-            st.stop()
-
-    except AttributeError:
-        # --- INICIO: ALTERNATIVA BÁSICA (SI st.modal FALLA POR ALGUNA RAZÓN INESPERADA) ---
-        st.warning("⚠️ `st.modal` no está disponible. Mostrando alternativa básica. Considera revisar el entorno o la versión de Streamlit si esperabas el modal.", icon="🛠️")
-        
-        if not st.session_state.get('silvestre_alternative_shown', False): # Usamos un flag diferente para la alternativa
-            st.balloons()
-            st.markdown("<h2 style='text-align: center; color: #FF6600;'>🎉 ¡LLEGÓ EL INGENIERO AL VALLE! (Alternativa) 🎉</h2>", unsafe_allow_html=True)
-            st.markdown(f"""
-            <p style='text-align: center; font-size: 1.1em;'>
-                Directo desde el aeropuerto Alfonso López Pumarejo... ✈️<br>
-                <strong>¡Ahora sí que se atengan, porque el Ingeniero viene con el análisis más bacano y el flow de Silvestre!</strong> 🪗🎶
-            </p>
-            """, unsafe_allow_html=True)
-
-            if SILVESTRE_VIDEO_URL != "https://www.youtube.com/watch?v=exampleURL":
-                st.video(SILVESTRE_VIDEO_URL)
-                st.caption("Dale play al sentimiento... ¡y luego a los datos! (Alternativa)")
-            else:
-                st.warning("🔴 ¡Atención Ingeniero! Necesitas cambiar la `SILVESTRE_VIDEO_URL` para la alternativa. 🔴")
-            
-            st.markdown("---")
-            if st.button("🪗 ¡LISTO! A ANALIZAR (Alternativa) 🪗", type="primary", key="btn_cerrar_alternativa_silvestre"):
-                st.session_state.silvestre_popup_shown = True # Marcamos el flag principal para que ninguno de los dos se muestre de nuevo
-                st.session_state.silvestre_alternative_shown = True # Marcamos que la alternativa ya se mostró
-                st.rerun()
-            
-            # Detener la ejecución para que solo se vea el mensaje de bienvenida alternativo
-            st.stop()
-        # --- FIN: ALTERNATIVA BÁSICA ---
-
-# --- FIN: POP-UP GRACIOSO DE SILVESTRE DANGOND ---
-
+    # c) Globos de celebración (opcional)
+    st.balloons()
 # --- Funciones de Ayuda Específicas para esta Página ---
 
 @st.cache_data
