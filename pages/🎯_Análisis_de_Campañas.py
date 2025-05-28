@@ -17,63 +17,30 @@ st.title("🎯 Análisis de Rendimiento de Campañas")
 st.markdown("Selecciona una o varias campañas y aplica filtros para analizar su rendimiento detallado.")
 
 
-# Solo al cargarse por primera vez en esta sesión:
 if 'show_silvestre' not in st.session_state:
     st.session_state['show_silvestre'] = True
 
-    html(
-        """
-        <style>
-          /* Overlay a pantalla completa */
-          #silvestre-overlay {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.85);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-          }
-          #silvestre-overlay h1 {
-            color: #FFD700;
-            font-size: 4rem;
-            text-shadow: 0 0 20px #000;
-            margin-bottom: 1rem;
-            animation: pulse 1s ease-in-out infinite;
-          }
-          @keyframes pulse {
-            0%,100% { transform: scale(1); }
-            50%    { transform: scale(1.1); }
-          }
-          #silvestre-overlay video {
-            max-width: 90%;
-            max-height: 60%;
-            border: 6px solid #FFD700;
-            border-radius: 12px;
-            box-shadow: 0 0 30px #FFD700;
-          }
-        </style>
+    overlay_html = """
+    <style>
+      /* estilos del overlay... */
+    </style>
+    <div id="silvestre-overlay">
+      <h1>🎉 ¡Ahora sí que se atengan porque el ingeniero se va para el valle! 🎉</h1>
+      <video autoplay loop muted playsinline>
+        <source src="https://www.youtube.com/watch?v=6ypuplcLZpc" type="video/mp4">
+        Tu navegador no soporta video.
+      </video>
+    </div>
+    <script>
+      setTimeout(() => {
+        document.getElementById("silvestre-overlay").style.display = "none";
+      }, 8000);
+    </script>
+    """
 
-        <div id="silvestre-overlay">
-          <h1>🎉 ¡Ahora sí que se atengan porque el ingeniero se va para el valle! 🎉</h1>
-          <video autoplay loop muted playsinline>
-            <source src="https://www.youtube.com/watch?v=6ypuplcLZpc" type="video/mp4">
-            Tu navegador no soporta video.
-          </video>
-        </div>
+    # aquí llamamos correctamente:
+    components.html(overlay_html, height=800)
 
-        <script>
-          // Oculta el overlay después de 8 segundos
-          setTimeout(() => {
-            document.getElementById("silvestre-overlay").style.display = "none";
-          }, 8000);
-        </script>
-        """,
-        height=0,
-        unsafe_allow_html=True
-    )
 # --- Funciones de Ayuda Específicas para esta Página ---
 
 @st.cache_data
