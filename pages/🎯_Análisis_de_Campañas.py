@@ -15,6 +15,69 @@ st.set_page_config(layout="wide", page_title="Análisis de Campañas")
 st.title("🎯 Análisis de Rendimiento de Campañas")
 st.markdown("Selecciona una o varias campañas y aplica filtros para analizar su rendimiento detallado.")
 
+## --- INICIO: CÓDIGO PARA EL POP-UP GRACIOSO DE SILVESTRE ---
+# Inicializar el estado de sesión para controlar la visibilidad del pop-up
+if 'silvestre_popup_shown' not in st.session_state:
+    st.session_state.silvestre_popup_shown = False
+
+# Colocar un botón para activar el pop-up
+if st.button("¡Ahora sí que se atengan, el Ingeniero llegó al Valle! 🎶"):
+    st.session_state.silvestre_popup_shown = True
+
+# Contenido del pop-up que solo se muestra si el botón ha sido presionado
+if st.session_state.silvestre_popup_shown:
+    # Usamos un contenedor para poder "vaciarlo" si queremos que el pop-up desaparezca después
+    silvestre_placeholder = st.empty()
+    with silvestre_placeholder.container():
+        st.markdown(
+            """
+            <style>
+            @keyframes fadeInScale {
+                0% { opacity: 0; transform: scale(0.5); }
+                100% { opacity: 1; transform: scale(1); }
+            }
+            .silvestre-popup {
+                background-color: #FFD700; /* Color oro */
+                border: 5px solid #8B0000; /* Color rojo oscuro */
+                border-radius: 15px;
+                padding: 20px;
+                margin-top: 20px;
+                text-align: center;
+                box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
+                animation: fadeInScale 0.8s ease-out;
+            }
+            .silvestre-text {
+                font-size: 2.5em;
+                font-weight: bold;
+                color: #8B0000;
+                margin-bottom: 15px;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            }
+            .silvestre-video {
+                border-radius: 10px;
+                overflow: hidden;
+                margin-bottom: 15px;
+            }
+            </style>
+            <div class="silvestre-popup">
+                <p class="silvestre-text">¡Ajá! ¡El Ingeniero llega al Valle! 🌴</p>
+            </div>
+            """, unsafe_allow_html=True
+        )
+        # Aquí puedes poner tu video de YouTube de Silvestre Dangond.
+        # Busca un video corto, gracioso y relevante, por ejemplo, un fragmento de una canción nueva
+        # o alguna de sus frases famosas.
+        st.video("https://www.youtube.com/watch?v=Fqj8WjK0y4Q") # ¡Reemplaza con tu video de Silvestre!
+        st.caption("¡Prepárense para la gozadera! 😉")
+
+        # Botón para cerrar el pop-up (opcional, si quieres que desaparezca)
+        if st.button("¡Ya entendí, Maestro! 🤣"):
+            st.session_state.silvestre_popup_shown = False
+            st.experimental_rerun() # Recarga para ocultar el pop-up
+
+    st.markdown("---") # Un separador después del pop-up
+## --- FIN: CÓDIGO PARA EL POP-UP GRACIOSO DE SILVESTRE ---
+
 # --- Funciones de Ayuda Específicas para esta Página ---
 
 @st.cache_data
