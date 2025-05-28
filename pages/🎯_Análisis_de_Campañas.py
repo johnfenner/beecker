@@ -15,68 +15,63 @@ st.set_page_config(layout="wide", page_title="Análisis de Campañas")
 st.title("🎯 Análisis de Rendimiento de Campañas")
 st.markdown("Selecciona una o varias campañas y aplica filtros para analizar su rendimiento detallado.")
 
-## --- INICIO: CÓDIGO PARA EL POP-UP GRACIOSO DE SILVESTRE ---
-# Inicializar el estado de sesión para controlar la visibilidad del pop-up
+# --- INICIO: POP-UP GRACIOSO DE SILVESTRE DANGOND ---
+# Inicializa la variable de estado de sesión si no existe
 if 'silvestre_popup_shown' not in st.session_state:
     st.session_state.silvestre_popup_shown = False
 
-# Colocar un botón para activar el pop-up
-if st.button("¡Ahora sí que se atengan, el Ingeniero llegó al Valle! 🎶"):
-    st.session_state.silvestre_popup_shown = True
+# Muestra el modal solo si aún no se ha mostrado en esta sesión
+if not st.session_state.silvestre_popup_shown:
+    # --- ¡PERSONALIZA AQUÍ! ---
+    # Opción 1: Video de YouTube
+    # Reemplaza esta URL con un video corto y divertido de Silvestre.
+    # Ejemplo: un clip de su nuevo álbum o un momento gracioso.
+    SILVESTRE_VIDEO_URL = "https://www.youtube.com/watch?v=exampleURL" # ¡CAMBIA ESTA URL!
 
-# Contenido del pop-up que solo se muestra si el botón ha sido presionado
-if st.session_state.silvestre_popup_shown:
-    # Usamos un contenedor para poder "vaciarlo" si queremos que el pop-up desaparezca después
-    silvestre_placeholder = st.empty()
-    with silvestre_placeholder.container():
-        st.markdown(
-            """
-            <style>
-            @keyframes fadeInScale {
-                0% { opacity: 0; transform: scale(0.5); }
-                100% { opacity: 1; transform: scale(1); }
-            }
-            .silvestre-popup {
-                background-color: #FFD700; /* Color oro */
-                border: 5px solid #8B0000; /* Color rojo oscuro */
-                border-radius: 15px;
-                padding: 20px;
-                margin-top: 20px;
-                text-align: center;
-                box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
-                animation: fadeInScale 0.8s ease-out;
-            }
-            .silvestre-text {
-                font-size: 2.5em;
-                font-weight: bold;
-                color: #8B0000;
-                margin-bottom: 15px;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-            }
-            .silvestre-video {
-                border-radius: 10px;
-                overflow: hidden;
-                margin-bottom: 15px;
-            }
-            </style>
-            <div class="silvestre-popup">
-                <p class="silvestre-text">¡Ajá! ¡El Ingeniero llega al Valle! 🌴</p>
-            </div>
-            """, unsafe_allow_html=True
-        )
-        # Aquí puedes poner tu video de YouTube de Silvestre Dangond.
-        # Busca un video corto, gracioso y relevante, por ejemplo, un fragmento de una canción nueva
-        # o alguna de sus frases famosas.
-        st.video("https://www.youtube.com/watch?v=Fqj8WjK0y4Q") # ¡Reemplaza con tu video de Silvestre!
-        st.caption("¡Prepárense para la gozadera! 😉")
+    # Opción 2: GIF Animado (si prefieres un GIF)
+    # SILVESTRE_GIF_URL = "URL_DE_TU_GIF_DE_SILVESTRE.gif" # ¡CAMBIA ESTA URL si usas GIF!
+    # --- FIN DE LA PERSONALIZACIÓN ---
 
-        # Botón para cerrar el pop-up (opcional, si quieres que desaparezca)
-        if st.button("¡Ya entendí, Maestro! 🤣"):
-            st.session_state.silvestre_popup_shown = False
-            st.experimental_rerun() # Recarga para ocultar el pop-up
+    with st.modal("🎉 ¡LLEGÓ EL INGENIERO AL VALLE! 🎉", key="modal_silvestre"):
+        st.markdown("<h2 style='text-align: center; color: #FF6600;'>¡Valledupar, agárrate que llegó el sabor!</h2>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <p style='text-align: center; font-size: 1.1em;'>
+            Directo desde el aeropuerto Alfonso López Pumarejo... ✈️<br>
+            <strong>¡Ahora sí que se atengan, porque el Ingeniero viene con el análisis más bacano y el flow de Silvestre!</strong> 🪗🎶
+        </p>
+        """, unsafe_allow_html=True)
 
-    st.markdown("---") # Un separador después del pop-up
-## --- FIN: CÓDIGO PARA EL POP-UP GRACIOSO DE SILVESTRE ---
+        # Descomenta la opción que prefieras (Video o GIF)
+        # --- Opción 1: Video ---
+        if SILVESTRE_VIDEO_URL != "https://www.youtube.com/watch?v=exampleURL": # Verifica que no sea la URL de ejemplo
+            st.video(SILVESTRE_VIDEO_URL)
+            st.caption("Dale play al sentimiento... ¡y luego a los datos!")
+        else:
+            st.warning("🔴 ¡Atención Ingeniero! Necesitas cambiar la `SILVESTRE_VIDEO_URL` en el código por un video real de Silvestre. 🔴")
+
+        # --- Opción 2: GIF ---
+        # if 'SILVESTRE_GIF_URL' in locals() and SILVESTRE_GIF_URL != "URL_DE_TU_GIF_DE_SILVESTRE.gif":
+        #     st.image(SILVESTRE_GIF_URL, caption="¡Uepajé! Así se analizan las campañas.")
+        # else:
+        #     st.warning("🔴 ¡Atención Ingeniero! Si quieres un GIF, define `SILVESTRE_GIF_URL` con una URL válida. 🔴")
+
+        st.markdown("---")
+        st.markdown("<p style='text-align: center;'><i>Presiona para desatar el poder del análisis (y del vallenato).</i> 😎</p>", unsafe_allow_html=True)
+
+        # Botón para cerrar el modal y continuar a la aplicación
+        col_btn_modal_izq, col_btn_modal_centro, col_btn_modal_der = st.columns([1,2,1])
+        with col_btn_modal_centro:
+            if st.button("🪗 ¡ENTENDIDO! A ANALIZAR COMO ES 🪗", use_container_width=True, type="primary"):
+                st.session_state.silvestre_popup_shown = True # Marcar como mostrado
+                st.rerun() # Volver a ejecutar el script para que el modal no aparezca y se cargue la app
+
+    # Importante: Si el modal está activo (porque es la primera carga),
+    # detenemos la ejecución del resto de la página hasta que se cierre el modal.
+    # El st.rerun() dentro del botón del modal se encargará de recargar la página
+    # ya sin el modal.
+    if not st.session_state.silvestre_popup_shown:
+        st.stop()
+# --- FIN: POP-UP GRACIOSO DE SILVESTRE DANGOND ---
 
 # --- Funciones de Ayuda Específicas para esta Página ---
 
