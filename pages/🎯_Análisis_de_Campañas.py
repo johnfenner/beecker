@@ -1,5 +1,3 @@
-# pages/🎯_Análisis_de_Campañas.py
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -7,33 +5,23 @@ import datetime
 import io
 import sys
 import os
-from datos.carga_datos import cargar_y_limpiar_datos #
-from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar #
+from datos.carga_datos import cargar_y_limpiar_datos
+from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar
 from PIL import Image
 
-# --- Configuración de la Página ---
+# --- Configuración de la Página (única llamada) ---
 st.set_page_config(layout="wide", page_title="Análisis de Campañas")
-st.title("🎯 Análisis de Rendimiento de Campañas")
-st.markdown("Selecciona una o varias campañas y aplica filtros para analizar su rendimiento detallado.")
 
-# ————————————————
-# Define tu raíz de proyecto si aún no lo has hecho:
-project_root = os.getcwd()  # o la ruta absoluta que uses
-# ————————————————
-
-# Usa tu variable tal como la tenías:
+# ————————— Teaser Silvestre Dangond —————————
+project_root = os.getcwd()
 FOTO_ORNITORRINCO_PATH = os.path.join(project_root, "ornitorrinco.png")
-# Si en verdad el nombre es logo.jpeg, cámbialo:
-# FOTO_ORNITORRINCO_PATH = os.path.join(project_root, "logo.jpeg")
 
-st.set_page_config(page_title="🎉 Show Silvestre 🎉", layout="wide")
-
-# Estado inicial
+# Inicializamos estado para el teaser
 if 'first_run' not in st.session_state:
     st.session_state.first_run = True
     st.session_state.msg_count = 0
 
-# Teaser inicial
+# Si es la primera vez, mostramos el teaser y detenemos el resto
 if st.session_state.first_run:
     if not os.path.exists(FOTO_ORNITORRINCO_PATH):
         st.error(f"No se encontró la imagen teaser en:\n**{FOTO_ORNITORRINCO_PATH}**")
@@ -46,6 +34,15 @@ if st.session_state.first_run:
             st.session_state.first_run = False
             st.experimental_rerun()
     st.stop()
+# ——————————————————————————————————————————————
+
+# --- (Aquí comienza tu código original intacto) ---
+st.title("🎯 Análisis de Rendimiento de Campañas")
+st.markdown("Selecciona una o varias campañas y aplica filtros para analizar su rendimiento detallado.")
+
+# --- Funciones de Ayuda Específicas para esta Página ---
+# (el resto de tu lógica de cargar datos, limpiar, graficar, etc.)
+
 
 # --- Funciones de Ayuda Específicas para esta Página ---
 
