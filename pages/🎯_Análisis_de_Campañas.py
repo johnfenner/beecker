@@ -8,41 +8,107 @@ import os
 from datos.carga_datos import cargar_y_limpiar_datos
 from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar
 from PIL import Image
+import streamlit.components.v1 as components
+import base64
+import uuid
 
-# --- Configuración de la Página (única llamada) ---
+# --- 1) Configuración de página (única llamada) ---
 st.set_page_config(layout="wide", page_title="Análisis de Campañas")
 
-# ————————— Teaser Silvestre Dangond —————————
-project_root = os.getcwd()
-FOTO_ORNITORRINCO_PATH = os.path.join(project_root, "ornitorrinco.png")
+# --- 2) Función de Overlay Flotante ---
+def show_overlay(img_path: str, mensaje: str):
+    """Inyecta un div fijo sobre toda la app con la imagen y mensaje."""
+    # Carga y codifica la imagen en base64
+    with open(img_path, "rb") as f:
+        b64 = base64.b64encode(f.read()).decode()
+    # Genera un ID único para cada overlay
+    div_id = f"overlay_{uuid.uuid4().hex}"
+    html_code = f"""
+    <style>
+      #{div_id} {{
+        position: fixed; top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.85);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+      }}
+      #{div_id} img {{
+        max-width: 80vw;
+        max-height: 60vh;
+        border: 6px solid #FFD700;
+        border-radius: 12px;
+        box-shadow: 0 0 30px #FFD700;
+      }}
+      #{div_id} h1 {{
+        color: #FFD700;
+        font-size: 3rem;
+        text-align: center;
+        margin: 1rem 0;
+        text-shadow: 0 0 20px #000;
+      }}
+      #{div_id} button {{
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        background: #FFD700;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        box-shadow: 0 0 10px #000;
+      }}
+    </style>
 
-# Inicializamos estado para el teaser
-if 'first_run' not in st.session_state:
-    st.session_state.first_run = True
+    <div id="{div_id}">
+      <img src="data:image/png;base64,{b64}" />
+      <h1>{mensaje}</h1>
+      <button onclick="document.getElementById('{div_id}').style.display='none'">
+        Cerrar
+      </button>
+    </div>
+    """
+    # height pequeño porque el overlay es fixed-position
+    components.html(html_code, height=1)
+
+# --- 3) Definiciones de rutas y mensajes ---
+project_root = os.getcwd()
+# Reemplaza 'ornitorrinco.png' por el nombre real de tu teaser (logo.jpeg, etc.)
+TEASER_IMG = os.path.join(project_root, "ornitorrinco.png")
+
+# Lista de sorpresas posteriores
+sorpresas = [
+    {
+      "img": os.path.join(project_root, "images", "sorpresa1.png"),
+      "txt": "🤩 ¡Sorpresa #1: Silvestre en modo fiestero! 🤩"
+    },
+    {
+      "img": os.path.join(project_root, "images", "sorpresa2.png"),
+      "txt": "🎉 ¡Sorpresa #2: Bailecito vallenato! 🎉"
+    },
+    {
+      "img": os.path.join(project_root, "images", "sorpresa3.png"),
+      "txt": "🎈 ¡Sorpresa #3: El ingeniero se va para el valle! 🎈"
+    },
+    # Agrega más dicts si quieres
+]
+
+# --- 4) Estado de sesión para controlar si ya mostramos el teaser y cuántas sorpresas ---
+if 'overlay_shown' not in st.session_state:
+    st.session_state.overlay_shown = False
+if 'msg_count' not in st.session_state:
     st.session_state.msg_count = 0
 
-# Si es la primera vez, mostramos el teaser y detenemos el resto
-if st.session_state.first_run:
-    if not os.path.exists(FOTO_ORNITORRINCO_PATH):
-        st.error(f"No se encontró la imagen teaser en:\n**{FOTO_ORNITORRINCO_PATH}**")
+# --- 5) Overlay inicial que aparece al abrir la página ---
+if not st.session_state.overlay_shown:
+    if not os.path.exists(TEASER_IMG):
+        st.error(f"No se encontró la imagen teaser en:\n**{TEASER_IMG}**")
     else:
-        teaser = Image.open(FOTO_ORNITORRINCO_PATH)
-        st.image(teaser, use_container_width=True)
-        st.markdown("### 🎉 ¡Bien chevere! Prepárate para las sorpresas de Silvestre Dangond 🎉")
-        if st.button("¡Dame la primera sorpresa!"):
-            st.session_state.msg_count = 1
-            st.session_state.first_run = False
-            st.rerun()
-    st.stop()
-# ——————————————————————————————————————————————
-
-# --- (Aquí comienza tu código original intacto) ---
-st.title("🎯 Análisis de Rendimiento de Campañas")
-st.markdown("Selecciona una o varias campañas y aplica filtros para analizar su rendimiento detallado.")
-
-# --- Funciones de Ayuda Específicas para esta Página ---
-# (el resto de tu lógica de cargar datos, limpiar, graficar, etc.)
-
+        show_overlay(
+            TEASER_IMG,
+            "🎉 ¡Ahora sí que se atengan porque el ingeniero se va para el valle! 🎉"
+        )
+    st.session_state.overlay_shown = True
 
 # --- Funciones de Ayuda Específicas para esta Página ---
 
