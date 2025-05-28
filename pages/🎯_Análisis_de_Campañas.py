@@ -32,7 +32,7 @@ if st.session_state.first_run:
         if st.button("¡Dame la primera sorpresa!"):
             st.session_state.msg_count = 1
             st.session_state.first_run = False
-            st.experimental_rerun()
+            st.rerun()
     st.stop()
 # ——————————————————————————————————————————————
 
