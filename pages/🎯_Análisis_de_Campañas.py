@@ -15,7 +15,8 @@ st.set_page_config(layout="wide", page_title="Análisis de Campañas")
 st.title("🎯 Análisis de Rendimiento de Campañas")
 st.markdown("Selecciona una o varias campañas y aplica filtros para analizar su rendimiento detallado.")
 
-# --- INICIO: POP-UP GRACIOSO DE SILVESTRE DANGOND ---
+# --- INICIO: POP-UP GRACIOSO DE SILVESTRE DANGOND (Opción st.modal) ---
+
 # Inicializa la variable de estado de sesión si no existe
 if 'silvestre_popup_shown' not in st.session_state:
     st.session_state.silvestre_popup_shown = False
@@ -23,54 +24,70 @@ if 'silvestre_popup_shown' not in st.session_state:
 # Muestra el modal solo si aún no se ha mostrado en esta sesión
 if not st.session_state.silvestre_popup_shown:
     # --- ¡PERSONALIZA AQUÍ! ---
-    # Opción 1: Video de YouTube
     # Reemplaza esta URL con un video corto y divertido de Silvestre.
-    # Ejemplo: un clip de su nuevo álbum o un momento gracioso.
-    SILVESTRE_VIDEO_URL = "https://www.youtube.com/watch?v=exampleURL" # ¡CAMBIA ESTA URL!
-
-    # Opción 2: GIF Animado (si prefieres un GIF)
-    # SILVESTRE_GIF_URL = "URL_DE_TU_GIF_DE_SILVESTRE.gif" # ¡CAMBIA ESTA URL si usas GIF!
+    SILVESTRE_VIDEO_URL = "https://www.youtube.com/watch?v=exampleURL" # ¡CAMBIA ESTA URL POR UNA REAL DE YOUTUBE!
     # --- FIN DE LA PERSONALIZACIÓN ---
 
-    with st.modal("🎉 ¡LLEGÓ EL INGENIERO AL VALLE! 🎉", key="modal_silvestre"):
-        st.markdown("<h2 style='text-align: center; color: #FF6600;'>¡Valledupar, agárrate que llegó el sabor!</h2>", unsafe_allow_html=True)
-        st.markdown(f"""
-        <p style='text-align: center; font-size: 1.1em;'>
-            Directo desde el aeropuerto Alfonso López Pumarejo... ✈️<br>
-            <strong>¡Ahora sí que se atengan, porque el Ingeniero viene con el análisis más bacano y el flow de Silvestre!</strong> 🪗🎶
-        </p>
-        """, unsafe_allow_html=True)
+    try:
+        with st.modal("🎉 ¡LLEGÓ EL INGENIERO AL VALLE! 🎉", key="modal_silvestre_principal"):
+            st.markdown("<h2 style='text-align: center; color: #FF6600;'>¡Valledupar, agárrate que llegó el sabor!</h2>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <p style='text-align: center; font-size: 1.1em;'>
+                Directo desde el aeropuerto Alfonso López Pumarejo... ✈️<br>
+                <strong>¡Ahora sí que se atengan, porque el Ingeniero viene con el análisis más bacano y el flow de Silvestre!</strong> 🪗🎶
+            </p>
+            """, unsafe_allow_html=True)
 
-        # Descomenta la opción que prefieras (Video o GIF)
-        # --- Opción 1: Video ---
-        if SILVESTRE_VIDEO_URL != "https://www.youtube.com/watch?v=exampleURL": # Verifica que no sea la URL de ejemplo
-            st.video(SILVESTRE_VIDEO_URL)
-            st.caption("Dale play al sentimiento... ¡y luego a los datos!")
-        else:
-            st.warning("🔴 ¡Atención Ingeniero! Necesitas cambiar la `SILVESTRE_VIDEO_URL` en el código por un video real de Silvestre. 🔴")
+            if SILVESTRE_VIDEO_URL != "https://www.youtube.com/watch?v=exampleURL":
+                st.video(SILVESTRE_VIDEO_URL)
+                st.caption("Dale play al sentimiento... ¡y luego a los datos!")
+            else:
+                st.warning("🔴 ¡Atención Ingeniero! Necesitas cambiar la `SILVESTRE_VIDEO_URL` en el código por un video real de Silvestre para `st.modal`. 🔴")
 
-        # --- Opción 2: GIF ---
-        # if 'SILVESTRE_GIF_URL' in locals() and SILVESTRE_GIF_URL != "URL_DE_TU_GIF_DE_SILVESTRE.gif":
-        #     st.image(SILVESTRE_GIF_URL, caption="¡Uepajé! Así se analizan las campañas.")
-        # else:
-        #     st.warning("🔴 ¡Atención Ingeniero! Si quieres un GIF, define `SILVESTRE_GIF_URL` con una URL válida. 🔴")
+            st.markdown("---")
+            st.markdown("<p style='text-align: center;'><i>Presiona para desatar el poder del análisis (y del vallenato).</i> 😎</p>", unsafe_allow_html=True)
 
-        st.markdown("---")
-        st.markdown("<p style='text-align: center;'><i>Presiona para desatar el poder del análisis (y del vallenato).</i> 😎</p>", unsafe_allow_html=True)
+            col_btn_modal_izq, col_btn_modal_centro, col_btn_modal_der = st.columns([1,2,1])
+            with col_btn_modal_centro:
+                if st.button("🪗 ¡ENTENDIDO! A ANALIZAR COMO ES 🪗", use_container_width=True, type="primary", key="btn_cerrar_modal_silvestre"):
+                    st.session_state.silvestre_popup_shown = True
+                    st.rerun()
+        
+        # Si el modal se muestra y el código llega aquí (porque no hubo error en st.modal), 
+        # y el botón aún no se ha presionado, detenemos para que el resto no se ejecute.
+        if not st.session_state.silvestre_popup_shown:
+            st.stop()
 
-        # Botón para cerrar el modal y continuar a la aplicación
-        col_btn_modal_izq, col_btn_modal_centro, col_btn_modal_der = st.columns([1,2,1])
-        with col_btn_modal_centro:
-            if st.button("🪗 ¡ENTENDIDO! A ANALIZAR COMO ES 🪗", use_container_width=True, type="primary"):
-                st.session_state.silvestre_popup_shown = True # Marcar como mostrado
-                st.rerun() # Volver a ejecutar el script para que el modal no aparezca y se cargue la app
+    except AttributeError:
+        # --- INICIO: ALTERNATIVA BÁSICA (SI st.modal FALLA POR ALGUNA RAZÓN INESPERADA) ---
+        st.warning("⚠️ `st.modal` no está disponible. Mostrando alternativa básica. Considera revisar el entorno o la versión de Streamlit si esperabas el modal.", icon="🛠️")
+        
+        if not st.session_state.get('silvestre_alternative_shown', False): # Usamos un flag diferente para la alternativa
+            st.balloons()
+            st.markdown("<h2 style='text-align: center; color: #FF6600;'>🎉 ¡LLEGÓ EL INGENIERO AL VALLE! (Alternativa) 🎉</h2>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <p style='text-align: center; font-size: 1.1em;'>
+                Directo desde el aeropuerto Alfonso López Pumarejo... ✈️<br>
+                <strong>¡Ahora sí que se atengan, porque el Ingeniero viene con el análisis más bacano y el flow de Silvestre!</strong> 🪗🎶
+            </p>
+            """, unsafe_allow_html=True)
 
-    # Importante: Si el modal está activo (porque es la primera carga),
-    # detenemos la ejecución del resto de la página hasta que se cierre el modal.
-    # El st.rerun() dentro del botón del modal se encargará de recargar la página
-    # ya sin el modal.
-    if not st.session_state.silvestre_popup_shown:
-        st.stop()
+            if SILVESTRE_VIDEO_URL != "https://www.youtube.com/watch?v=exampleURL":
+                st.video(SILVESTRE_VIDEO_URL)
+                st.caption("Dale play al sentimiento... ¡y luego a los datos! (Alternativa)")
+            else:
+                st.warning("🔴 ¡Atención Ingeniero! Necesitas cambiar la `SILVESTRE_VIDEO_URL` para la alternativa. 🔴")
+            
+            st.markdown("---")
+            if st.button("🪗 ¡LISTO! A ANALIZAR (Alternativa) 🪗", type="primary", key="btn_cerrar_alternativa_silvestre"):
+                st.session_state.silvestre_popup_shown = True # Marcamos el flag principal para que ninguno de los dos se muestre de nuevo
+                st.session_state.silvestre_alternative_shown = True # Marcamos que la alternativa ya se mostró
+                st.rerun()
+            
+            # Detener la ejecución para que solo se vea el mensaje de bienvenida alternativo
+            st.stop()
+        # --- FIN: ALTERNATIVA BÁSICA ---
+
 # --- FIN: POP-UP GRACIOSO DE SILVESTRE DANGOND ---
 
 # --- Funciones de Ayuda Específicas para esta Página ---
