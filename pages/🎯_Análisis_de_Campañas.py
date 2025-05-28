@@ -16,30 +16,55 @@ st.set_page_config(layout="wide", page_title="Análisis de Campañas")
 st.title("🎯 Análisis de Rendimiento de Campañas")
 st.markdown("Selecciona una o varias campañas y aplica filtros para analizar su rendimiento detallado.")
 
+# --- Estado para controlar primera carga y conteo de sorpresas ---
+if 'first_run' not in st.session_state:
+    st.session_state.first_run = True
+if 'msg_count' not in st.session_state:
+    st.session_state.msg_count = 0
 
-if 'show_silvestre' not in st.session_state:
-    st.session_state['show_silvestre'] = True
+# --- Lista de sorpresas: imágenes y textos ---
+sorpresas = [
+    {
+      "img": "images/sorpresa1.png",
+      "txt": "🤩 ¡Sorpresa #1: Silvestre en modo fiestero! 🤩"
+    },
+    {
+      "img": "images/sorpresa2.png",
+      "txt": "🎉 ¡Sorpresa #2: Bailecito vallenato! 🎉"
+    },
+    {
+      "img": "images/sorpresa3.png",
+      "txt": "🎈 ¡Sorpresa #3: Mensaje secreto del ingeniero que se va para el valle! 🎈"
+    },
+    # añade más dicts si quieres
+]
 
-    overlay_html = """
-    <style>
-      /* estilos del overlay... */
-    </style>
-    <div id="silvestre-overlay">
-      <h1>🎉 ¡Ahora sí que se atengan porque el ingeniero se va para el valle! 🎉</h1>
-      <video autoplay loop muted playsinline>
-        <source src="https://www.youtube.com/watch?v=6ypuplcLZpc" type="video/mp4">
-        Tu navegador no soporta video.
-      </video>
-    </div>
-    <script>
-      setTimeout(() => {
-        document.getElementById("silvestre-overlay").style.display = "none";
-      }, 8000);
-    </script>
-    """
+# --- 1) Modal inicial que abre automáticamente ---
+if st.session_state.first_run:
+    with st.modal("¡Bienvenido al Show Silvestre Dangond!", key="modal_init"):
+        st.image("images/silvestre_teaser.jpg", use_column_width=True)
+        st.markdown("### 🎉 ¡Bien chevere! Esta bienvenida automática rompe esquemas. 🎉")
+        if st.button("¡Dame la primera sorpresa!", key="btn_init"):
+            st.session_state.msg_count += 1
+            st.session_state.first_run = False
+            # recarga para que el modal desaparezca y se active el conteo
+            st.experimental_rerun()
 
-    # aquí llamamos correctamente:
-    components.html(overlay_html, height=800)
+# --- 2) Botón principal para nuevas sorpresas ---
+st.title("🕵️ Agente P: Tu Asistente IA para Mensajes de LinkedIn")
+st.markdown("Aquí tu app… y abajo la puerta a más sorpresas con Silvestre")
+
+if not st.session_state.first_run:
+    if st.button("¡Otra sorpresa!", key="btn_next"):
+        st.session_state.msg_count += 1
+
+# --- 3) Si hay sorpresas pendientes, lanza el modal correspondiente ---
+if st.session_state.msg_count > 0:
+    idx = (st.session_state.msg_count - 1) % len(sorpresas)
+    s = sorpresas[idx]
+    with st.modal(f"Sorpresa #{st.session_state.msg_count}", key=f"modal_{idx}"):
+        st.image(s["img"], use_column_width=True)
+        st.markdown(f"## {s['txt']}")
 
 # --- Funciones de Ayuda Específicas para esta Página ---
 
