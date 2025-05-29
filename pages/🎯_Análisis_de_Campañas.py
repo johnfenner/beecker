@@ -336,7 +336,9 @@ def display_manual_prospecting_analysis(df_filtered_campaigns):
     st.markdown("---")
 
 
-# --- NUEVA SECCIÓN: Desglose General de Prospección Manual ---
+# Debes reemplazar la función display_global_manual_prospecting_deep_dive
+# en tu archivo pages/📢_Campañas.py con esta versión completa.
+
 def display_global_manual_prospecting_deep_dive(df_filtered_selection):
     st.header("Desglose General de Prospección Manual en Campañas Seleccionadas")
     st.caption("Este análisis se basa en la selección actual de campañas y filtros de la barra lateral.")
@@ -359,14 +361,12 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
     total_respuestas_1er_msj = df_contactos_iniciados[df_contactos_iniciados[COL_RESPUESTA_1ER_MSJ] == "si"].shape[0]
     total_sesiones_agendadas = df_contactos_iniciados[df_contactos_iniciados[COL_SESION_AGENDADA_MANUAL] == "si"].shape[0]
 
-    # Tasa de Inicio General (Contactos Iniciados / Prospectos Asignados en la selección)
-    # Necesitamos el total de asignados en la selección original (df_filtered_selection)
     total_asignados_seleccion = len(df_filtered_selection)
     tasa_inicio_general = (total_contactos_iniciados / total_asignados_seleccion * 100) if total_asignados_seleccion > 0 else 0
     
     tasa_aceptacion_general = (total_invites_aceptadas / total_contactos_iniciados * 100) if total_contactos_iniciados > 0 else 0
-    tasa_respuesta_general = (total_respuestas_1er_msj / total_invites_aceptadas * 100) if total_invites_aceptadas > 0 else 0
-    tasa_sesion_vs_resp_general = (total_sesiones_agendadas / total_respuestas_1er_msj * 100) if total_respuestas_1er_msj > 0 else 0
+    # tasa_respuesta_general = (total_respuestas_1er_msj / total_invites_aceptadas * 100) if total_invites_aceptadas > 0 else 0 # Comentado para evitar confusión si no se usa directamente en métricas
+    # tasa_sesion_vs_resp_general = (total_sesiones_agendadas / total_respuestas_1er_msj * 100) if total_respuestas_1er_msj > 0 else 0 # Comentado
     tasa_sesion_global_general = (total_sesiones_agendadas / total_contactos_iniciados * 100) if total_contactos_iniciados > 0 else 0
 
     m_col1, m_col2, m_col3 = st.columns(3)
@@ -375,37 +375,31 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
     m_col3.metric("Total Sesiones Agendadas", f"{total_sesiones_agendadas:,} ({tasa_sesion_global_general:.1f}%)")
     st.caption(f"Tasa Inicio Prospección General (sobre {total_asignados_seleccion:,} asignados): {tasa_inicio_general:.1f}%")
 
-
     # --- 2. Desglose por Prospectador (`¿Quién Prospecto?`) ---
     st.markdown("---")
     st.markdown("#### Desglose por Prospectador (sobre Contactos Manuales Iniciados)")
     
-    # Agrupar sobre df_contactos_iniciados para el embudo por prospectador
-    # Y sobre df_filtered_selection para los asignados por prospectador
     asignados_por_prospectador = df_filtered_selection.groupby(COL_QUIEN_PROSPECTO, as_index=False).size().rename(columns={'size': 'Total Asignados'})
-    
-    # Filtrar 'N/D_Interno' antes de mostrar
     asignados_por_prospectador = asignados_por_prospectador[asignados_por_prospectador[COL_QUIEN_PROSPECTO] != "N/D_Interno"]
 
-
     if not df_contactos_iniciados.empty:
+        # CORRECCIÓN: Usar una columna existente (ej. COL_FECHA_INVITE) para el 'count'
         desglose_prospectador = df_contactos_iniciados.groupby(COL_QUIEN_PROSPECTO, as_index=False).agg(
-            Contactos_Manuales_Iniciados=('Contacto_ID_Placeholder', 'count'), # Usar una columna dummy para contar filas
+            Contactos_Manuales_Iniciados=(COL_FECHA_INVITE, 'count'), 
             Invites_Aceptadas=(COL_INVITE_ACEPTADA, lambda x: (x == "si").sum()),
             Respuestas_1er_Msj=(COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum()),
             Sesiones_Agendadas=(COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
-        ).rename(columns={'Contacto_ID_Placeholder': 'Contactos Manuales Iniciados'}) # Corregir nombre si es necesario
+        ).rename(columns={'Contactos_Manuales_Iniciados': 'Contactos Manuales Iniciados'}) # Renombrar después si es necesario
 
         desglose_prospectador = desglose_prospectador[desglose_prospectador[COL_QUIEN_PROSPECTO] != "N/D_Interno"]
-
-        # Unir con asignados
         desglose_prospectador_final = pd.merge(asignados_por_prospectador, desglose_prospectador, on=COL_QUIEN_PROSPECTO, how='left').fillna(0)
         
-        # Recalcular Contactos_Manuales_Iniciados si no hubo merge (todos los asignados tienen 0 contactos)
-        if 'Contactos Manuales Iniciados' not in desglose_prospectador_final.columns and 'Contactos_Manuales_Iniciados' in desglose_prospectador.columns: # Error de nombre
-             desglose_prospectador_final = pd.merge(asignados_por_prospectador, desglose_prospectador.rename(columns={'Contactos_Manuales_Iniciados':'Contactos Manuales Iniciados'}), on=COL_QUIEN_PROSPECTO, how='left').fillna(0)
-        elif 'Contactos Manuales Iniciados' not in desglose_prospectador_final.columns: # Si sigue sin existir
-            desglose_prospectador_final['Contactos Manuales Iniciados'] = 0
+        # Asegurar que las columnas de conteo existan y sean numéricas después del merge
+        cols_to_ensure_numeric = ['Contactos Manuales Iniciados', 'Invites_Aceptadas', 'Respuestas_1er_Msj', 'Sesiones_Agendadas', 'Total Asignados']
+        for col in cols_to_ensure_numeric:
+            if col not in desglose_prospectador_final.columns:
+                desglose_prospectador_final[col] = 0
+            desglose_prospectador_final[col] = pd.to_numeric(desglose_prospectador_final[col], errors='coerce').fillna(0).astype(int)
 
 
         desglose_prospectador_final['Tasa Inicio (%)'] = ((desglose_prospectador_final['Contactos Manuales Iniciados'] / desglose_prospectador_final['Total Asignados']) * 100).fillna(0).round(1)
@@ -415,11 +409,9 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
         desglose_prospectador_final['Tasa Sesión vs Resp. (%)'] = ((desglose_prospectador_final['Sesiones_Agendadas'] / desglose_prospectador_final['Respuestas_1er_Msj']) * 100).fillna(0).round(1)
         desglose_prospectador_final['Tasa Sesión Global (%)'] = ((desglose_prospectador_final['Sesiones_Agendadas'] / base_embudo_prosp) * 100).fillna(0).round(1)
 
-        # Limpiar tasas NaN/inf de nuevo
         rate_cols_prosp = ['Tasa Inicio (%)', 'Tasa Aceptación (%)', 'Tasa Respuesta (%)', 'Tasa Sesión vs Resp. (%)', 'Tasa Sesión Global (%)']
         for r_col in rate_cols_prosp:
             desglose_prospectador_final[r_col] = desglose_prospectador_final[r_col].apply(lambda x: 0 if pd.isna(x) or x == float('inf') or x == float('-inf') else x)
-
 
         st.dataframe(desglose_prospectador_final.style.format(
             {'Total Asignados': "{:,}", 'Contactos Manuales Iniciados': "{:,}", 'Invites_Aceptadas': "{:,}", 'Respuestas_1er_Msj': "{:,}", 'Sesiones_Agendadas': "{:,}",
@@ -435,8 +427,9 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
                     title='Contactos Manuales Iniciados por Prospectador', text_auto=True)
                 st.plotly_chart(fig_contactos_prosp, use_container_width=True)
         with p_chart2:
-            if not desglose_prospectador_final[desglose_prospectador_final['Contactos Manuales Iniciados']>0].empty:
-                fig_sesion_prosp = px.bar(desglose_prospectador_final[desglose_prospectador_final['Contactos Manuales Iniciados']>0].sort_values(by='Tasa Sesión Global (%)', ascending=False),
+            df_for_chart_p2 = desglose_prospectador_final[desglose_prospectador_final['Contactos Manuales Iniciados']>0].copy()
+            if not df_for_chart_p2.empty:
+                fig_sesion_prosp = px.bar(df_for_chart_p2.sort_values(by='Tasa Sesión Global (%)', ascending=False),
                     x=COL_QUIEN_PROSPECTO, y='Tasa Sesión Global (%)', color=COL_QUIEN_PROSPECTO,
                     title='Tasa Sesión Global por Prospectador', text='Tasa Sesión Global (%)')
                 fig_sesion_prosp.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
@@ -449,12 +442,13 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
     st.markdown("---")
     st.markdown("#### Desglose por Avatar (sobre Contactos Manuales Iniciados)")
     if not df_contactos_iniciados.empty and COL_AVATAR in df_contactos_iniciados.columns:
+        # CORRECCIÓN: Usar una columna existente (ej. COL_FECHA_INVITE) para el 'count'
         desglose_avatar = df_contactos_iniciados.groupby(COL_AVATAR, as_index=False).agg(
-            Contactos_Manuales_Iniciados_Avatar=('Contacto_ID_Placeholder_Avatar', 'count'), # Dummy for count
+            Contactos_Manuales_Iniciados=(COL_FECHA_INVITE, 'count'),
             Invites_Aceptadas=(COL_INVITE_ACEPTADA, lambda x: (x == "si").sum()),
             Respuestas_1er_Msj=(COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum()),
             Sesiones_Agendadas=(COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
-        ).rename(columns={'Contacto_ID_Placeholder_Avatar': 'Contactos Manuales Iniciados'})
+        ) # No es necesario renombrar 'Contactos_Manuales_Iniciados' aquí si se nombra bien en agg
 
         desglose_avatar = desglose_avatar[desglose_avatar[COL_AVATAR] != "N/D_Interno"]
         
@@ -480,8 +474,9 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
                     title='Contactos Manuales Iniciados por Avatar', text_auto=True)
                 st.plotly_chart(fig_contactos_avatar, use_container_width=True)
         with a_chart2:
-             if not desglose_avatar[desglose_avatar['Contactos Manuales Iniciados']>0].empty:
-                fig_sesion_avatar = px.bar(desglose_avatar[desglose_avatar['Contactos Manuales Iniciados']>0].sort_values(by='Tasa Sesión Global (%)', ascending=False),
+            df_for_chart_a2 = desglose_avatar[desglose_avatar['Contactos Manuales Iniciados']>0].copy()
+            if not df_for_chart_a2.empty:
+                fig_sesion_avatar = px.bar(df_for_chart_a2.sort_values(by='Tasa Sesión Global (%)', ascending=False),
                     x=COL_AVATAR, y='Tasa Sesión Global (%)', color=COL_AVATAR,
                     title='Tasa Sesión Global por Avatar', text='Tasa Sesión Global (%)')
                 fig_sesion_avatar.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
@@ -494,22 +489,20 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
     st.markdown("---")
     st.markdown("#### Desglose por Campaña (sobre Contactos Manuales Iniciados)")
     
-    # Verificar si hay múltiples campañas en la selección actual de df_contactos_iniciados
-    # o si la selección original de campañas en la sidebar era "Todas" o más de una.
     campaign_filter_active = st.session_state.get(SES_CAMPAIGN_FILTER_KEY, ["– Todas –"])
     show_campaign_breakdown = False
-    if "– Todas –" in campaign_filter_active and df_contactos_iniciados[COL_CAMPAIGN].nunique() > 1:
+    if ("– Todas –" in campaign_filter_active and df_contactos_iniciados[COL_CAMPAIGN].nunique() > 1) or \
+       (len(campaign_filter_active) > 1 and "– Todas –" not in campaign_filter_active):
         show_campaign_breakdown = True
-    elif len(campaign_filter_active) > 1 and "– Todas –" not in campaign_filter_active:
-         show_campaign_breakdown = True
 
     if not df_contactos_iniciados.empty and COL_CAMPAIGN in df_contactos_iniciados.columns and show_campaign_breakdown:
+        # CORRECCIÓN: Usar una columna existente (ej. COL_FECHA_INVITE) para el 'count'
         desglose_campana = df_contactos_iniciados.groupby(COL_CAMPAIGN, as_index=False).agg(
-            Contactos_Manuales_Iniciados_Camp=('Contacto_ID_Placeholder_Camp', 'count'), # Dummy for count
+            Contactos_Manuales_Iniciados=(COL_FECHA_INVITE, 'count'),
             Invites_Aceptadas=(COL_INVITE_ACEPTADA, lambda x: (x == "si").sum()),
             Respuestas_1er_Msj=(COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum()),
             Sesiones_Agendadas=(COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
-        ).rename(columns={'Contacto_ID_Placeholder_Camp': 'Contactos Manuales Iniciados'})
+        )
         
         base_embudo_camp = desglose_campana['Contactos Manuales Iniciados']
         desglose_campana['Tasa Aceptación (%)'] = ((desglose_campana['Invites_Aceptadas'] / base_embudo_camp) * 100).fillna(0).round(1)
@@ -533,8 +526,9 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
                     title='Contactos Manuales Iniciados por Campaña', text_auto=True)
                 st.plotly_chart(fig_contactos_camp, use_container_width=True)
         with c_chart2:
-            if not desglose_campana[desglose_campana['Contactos Manuales Iniciados']>0].empty:
-                fig_sesion_camp = px.bar(desglose_campana[desglose_campana['Contactos Manuales Iniciados']>0].sort_values(by='Tasa Sesión Global (%)', ascending=False),
+            df_for_chart_c2 = desglose_campana[desglose_campana['Contactos Manuales Iniciados']>0].copy()
+            if not df_for_chart_c2.empty:
+                fig_sesion_camp = px.bar(df_for_chart_c2.sort_values(by='Tasa Sesión Global (%)', ascending=False),
                     x=COL_CAMPAIGN, y='Tasa Sesión Global (%)', color=COL_CAMPAIGN,
                     title='Tasa Sesión Global por Campaña', text='Tasa Sesión Global (%)')
                 fig_sesion_camp.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
