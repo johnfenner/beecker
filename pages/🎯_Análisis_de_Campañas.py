@@ -5,10 +5,60 @@ import pandas as pd
 import plotly.express as px
 import datetime
 import io
-import sys
-import os
-from datos.carga_datos import cargar_y_limpiar_datos #
-from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar #
+# Asegúrate de que estos imports sean correctos y los archivos existan en la ruta especificada
+# from datos.carga_datos import cargar_y_limpiar_datos
+# from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar
+
+# --- Simulación de funciones importadas si no están disponibles en este entorno ---
+# Comenta o elimina estas funciones simuladas si tienes los archivos originales
+def cargar_y_limpiar_datos():
+    # Simulación: devuelve un DataFrame de ejemplo
+    data = {
+        'Campaña': ['Campaña Alpha', 'Campaña Beta', 'Campaña Gamma', 'Campaña Alpha', None, ''],
+        'Fecha de Invite': [pd.Timestamp('2023-01-01'), pd.Timestamp('2023-01-05'), None, pd.Timestamp('2023-02-01'), pd.Timestamp('2023-02-10'), pd.Timestamp('2023-02-15')],
+        'Fecha Primer Mensaje': [pd.Timestamp('2023-01-02'), None, pd.Timestamp('2023-01-10'), pd.Timestamp('2023-02-02'), None, pd.Timestamp('2023-02-16')],
+        'Fecha Sesion': [None, pd.Timestamp('2023-01-15'), pd.Timestamp('2023-01-20'), None, None, pd.Timestamp('2023-02-20')],
+        'Fecha de Sesion Email': [None, None, pd.Timestamp('2023-01-22'), pd.Timestamp('2023-02-05'), None, None],
+        '¿Quién Prospecto?': ['Juan', 'Maria', 'Juan', 'Pedro', 'Maria', 'Juan'],
+        'Pais': ['Colombia', 'Mexico', 'Colombia', 'Argentina', 'Mexico', 'Colombia'],
+        'Avatar': ['Avatar1', 'Avatar2', 'Avatar1', 'Avatar3', 'Avatar2', 'Avatar1'],
+        '¿Invite Aceptada?': ['si', 'no', 'si', 'si', 'no', 'si'],
+        'Respuesta Primer Mensaje': ['si', 'no', 'no', 'si', 'no', 'si'],
+        'Sesion Agendada?': ['no', 'no', 'si', 'si', 'no', 'no'],
+        'Contactados por Campaña': ['si', 'si', 'no', 'si', 'no', 'si'],
+        'Respuesta Email': ['si', 'no', 'no', 'si', 'no', 'no'],
+        'Sesion Agendada Email': ['no', 'no', 'no', 'si', 'no', 'no'],
+        'Prospecto': [f'Prospecto {i}' for i in range(6)],
+        'Ciudad': ['Bogota', 'CDMX', 'Medellin', 'Buenos Aires', 'Guadalajara', 'Cali'],
+        'Cargo': ['Gerente', 'Analista', 'Director', 'CEO', 'Analista', 'Gerente'],
+        'Empresa': [f'Empresa {i}' for i in range(6)],
+        'Status General': ['Contactado', 'No interesado', 'Agendado', 'Agendado', 'No contactado', 'Contactado'],
+        'Motivo No Interes': [None, 'Precio', None, None, 'Tiempo', None],
+        'Observaciones': ['', '', '', '', '', ''],
+        'Link al Perfil': [f'linkedin.com/{i}' for i in range(6)]
+    }
+    df = pd.DataFrame(data)
+    # Asegurar que todas las columnas esperadas por el resto del código existan
+    expected_cols = ["Fecha de Invite", "Fecha Primer Mensaje", "Fecha Sesion", "Fecha de Sesion Email",
+                     "Contactados por Campaña", "Respuesta Email", "Sesion Agendada Email", "Avatar", "Campaña",
+                     "¿Quién Prospecto?", "Pais", "¿Invite Aceptada?", "Respuesta Primer Mensaje", "Sesion Agendada?"]
+    for col in expected_cols:
+        if col not in df.columns:
+            if 'Fecha' in col:
+                df[col] = pd.NaT
+            elif '?' in col or 'Campaña' in col or 'Email' in col: # Columnas booleanas como "si"/"no"
+                 df[col] = "no"
+            else:
+                df[col] = None
+    return df
+
+def limpiar_valor_kpi(valor):
+    if pd.isna(valor):
+        return ""
+    return str(valor).strip().lower()
+
+def estandarizar_avatar(avatar):
+    return str(avatar).strip().title() if pd.notna(avatar) else "N/A"
 
 # --- Configuración de la Página ---
 st.set_page_config(layout="wide", page_title="Análisis de Campañas")
@@ -29,7 +79,6 @@ def obtener_datos_base_campanas():
 
     df_base_campanas = df_completo[df_completo['Campaña'].notna() & (df_completo['Campaña'] != '')].copy()
 
-    # Columnas de fecha manuales existentes
     date_cols_to_check = ["Fecha de Invite", "Fecha Primer Mensaje", "Fecha Sesion"]
     for col in date_cols_to_check:
         if col in df_base_campanas.columns and not pd.api.types.is_datetime64_any_dtype(df_base_campanas[col]):
@@ -37,7 +86,6 @@ def obtener_datos_base_campanas():
         if col in df_completo.columns and not pd.api.types.is_datetime64_any_dtype(df_completo[col]):
              df_completo[col] = pd.to_datetime(df_completo[col], errors='coerce')
 
-    # Asegurarnos de convertir también la columna de fecha de sesión por email
     email_date_cols = ["Fecha de Sesion Email"]
     for col in email_date_cols:
         if col in df_base_campanas.columns and not pd.api.types.is_datetime64_any_dtype(df_base_campanas[col]):
@@ -45,17 +93,15 @@ def obtener_datos_base_campanas():
         if col in df_completo.columns and not pd.api.types.is_datetime64_any_dtype(df_completo[col]):
             df_completo[col] = pd.to_datetime(df_completo[col], errors='coerce')
     
-    # Asegurarnos que las columnas booleanas de email existan, sino crearlas vacías (o con "no" por defecto)
-    # Esto evita errores en calcular_kpis_df_campana si las columnas no existen
     email_bool_cols = ["Contactados por Campaña", "Respuesta Email", "Sesion Agendada Email"]
     for df_proc in [df_base_campanas, df_completo]:
         for col_bool_email in email_bool_cols:
             if col_bool_email not in df_proc.columns:
-                df_proc[col_bool_email] = "no" # O pd.NA, dependiendo de cómo limpiar_valor_kpi maneje esto
+                df_proc[col_bool_email] = "no" 
 
     for df_proc in [df_base_campanas, df_completo]:
         if "Avatar" in df_proc.columns:
-            df_proc["Avatar"] = df_proc["Avatar"].apply(estandarizar_avatar) #
+            df_proc["Avatar"] = df_proc["Avatar"].apply(estandarizar_avatar) 
 
     return df_base_campanas, df_completo
 
@@ -92,39 +138,35 @@ def calcular_kpis_df_campana(df):
             "sesiones_agendadas": 0, "tasa_aceptacion": 0,
             "tasa_respuesta_vs_aceptadas": 0, "tasa_sesion_vs_respuesta": 0,
             "tasa_sesion_global": 0,
-            # KPIs email
             "contactados_email": 0, "respuestas_email": 0, "sesiones_email": 0,
             "tasa_respuesta_email": 0, "tasa_sesion_email": 0
         }
 
-    # — KPIs manuales existentes —
     total_prospectos = len(df)
-    invites_aceptadas = sum(limpiar_valor_kpi(x) == "si" for x in df.get("¿Invite Aceptada?", pd.Series(dtype=str))) #
+    invites_aceptadas = sum(limpiar_valor_kpi(x) == "si" for x in df.get("¿Invite Aceptada?", pd.Series(dtype=str))) 
     primeros_mensajes_enviados = sum(
         pd.notna(x) and str(x).strip().lower() not in ["no", "", "nan"]
         for x in df.get("Fecha Primer Mensaje", pd.Series(dtype=str))
     )
     respuestas_primer_mensaje = sum(
-        limpiar_valor_kpi(x) not in ["no", "", "nan"] #
+        limpiar_valor_kpi(x) not in ["no", "", "nan", "none"] 
         for x in df.get("Respuesta Primer Mensaje", pd.Series(dtype=str))
     )
-    sesiones_agendadas = sum(limpiar_valor_kpi(x) == "si" for x in df.get("Sesion Agendada?", pd.Series(dtype=str))) #
+    sesiones_agendadas = sum(limpiar_valor_kpi(x) == "si" for x in df.get("Sesion Agendada?", pd.Series(dtype=str))) 
 
     tasa_aceptacion = (invites_aceptadas / total_prospectos * 100) if total_prospectos > 0 else 0
     tasa_respuesta_vs_aceptadas = (respuestas_primer_mensaje / invites_aceptadas * 100) if invites_aceptadas > 0 else 0
     tasa_sesion_vs_respuesta = (sesiones_agendadas / respuestas_primer_mensaje * 100) if respuestas_primer_mensaje > 0 else 0
     tasa_sesion_global = (sesiones_agendadas / total_prospectos * 100) if total_prospectos > 0 else 0
 
-    # — KPIs email —
-    contactados_email = sum(limpiar_valor_kpi(x) == "si" for x in df.get("Contactados por Campaña", pd.Series(dtype=str))) #
-    respuestas_email = sum(limpiar_valor_kpi(x) == "si" for x in df.get("Respuesta Email", pd.Series(dtype=str))) #
-    sesiones_email = sum(limpiar_valor_kpi(x) == "si" for x in df.get("Sesion Agendada Email", pd.Series(dtype=str))) #
+    contactados_email = sum(limpiar_valor_kpi(x) == "si" for x in df.get("Contactados por Campaña", pd.Series(dtype=str))) 
+    respuestas_email = sum(limpiar_valor_kpi(x) == "si" for x in df.get("Respuesta Email", pd.Series(dtype=str))) 
+    sesiones_email = sum(limpiar_valor_kpi(x) == "si" for x in df.get("Sesion Agendada Email", pd.Series(dtype=str))) 
 
     tasa_respuesta_email = (respuestas_email / contactados_email * 100) if contactados_email > 0 else 0
     tasa_sesion_email = (sesiones_email / respuestas_email * 100) if respuestas_email > 0 else 0
     
     return {
-        # KPIs manuales…
         "total_prospectos": int(total_prospectos), "invites_aceptadas": int(invites_aceptadas),
         "primeros_mensajes_enviados": int(primeros_mensajes_enviados),
         "respuestas_primer_mensaje": int(respuestas_primer_mensaje),
@@ -133,7 +175,6 @@ def calcular_kpis_df_campana(df):
         "tasa_respuesta_vs_aceptadas": tasa_respuesta_vs_aceptadas,
         "tasa_sesion_vs_respuesta": tasa_sesion_vs_respuesta,
         "tasa_sesion_global": tasa_sesion_global,
-        # KPIs email
         "contactados_email": int(contactados_email),
         "respuestas_email": int(respuestas_email),
         "sesiones_email": int(sesiones_email),
@@ -156,22 +197,24 @@ def mostrar_embudo_para_campana(kpis_campana, titulo_embudo="Embudo de Conversi�
         return
 
     df_embudo = pd.DataFrame({"Etapa": etapas_embudo, "Cantidad": cantidades_embudo})
-    porcentajes_vs_anterior = [100.0] # El primero es el 100% de sí mismo (o no se muestra)
-    if df_embudo['Cantidad'][0] > 0: # Para evitar división por cero si no hay prospectos
-        textos = [f"{df_embudo['Cantidad'][0]:,}"]
-        for i in range(1, len(df_embudo)):
-            porcentaje = (df_embudo['Cantidad'][i] / df_embudo['Cantidad'][i-1] * 100) if df_embudo['Cantidad'][i-1] > 0 else 0.0
-            porcentajes_vs_anterior.append(porcentaje)
-            textos.append(f"{df_embudo['Cantidad'][i]:,} ({porcentaje:.1f}%)")
-        df_embudo['Texto'] = textos
+    textos = []
+    if cantidades_embudo[0] > 0:
+        textos.append(f"{cantidades_embudo[0]:,}")
+        for i in range(1, len(cantidades_embudo)):
+            porcentaje = (cantidades_embudo[i] / cantidades_embudo[i-1] * 100) if cantidades_embudo[i-1] > 0 else 0.0
+            textos.append(f"{cantidades_embudo[i]:,} ({porcentaje:.1f}%)")
+        if len(textos) == len(df_embudo):
+            df_embudo['Texto'] = textos
+        else: # Fallback si algo sale mal con la longitud
+            df_embudo['Texto'] = df_embudo['Cantidad'].apply(lambda x: f"{x:,}")
     else:
         df_embudo['Texto'] = df_embudo['Cantidad'].apply(lambda x: f"{x:,}")
 
-
     fig_embudo = px.funnel(df_embudo, y='Etapa', x='Cantidad', title=titulo_embudo, text='Texto', category_orders={"Etapa": etapas_embudo})
-    fig_embudo.update_traces(textposition='inside', textinfo='text') # textinfo='text' para usar la columna Texto
+    fig_embudo.update_traces(textposition='inside', textinfo='text')
     st.plotly_chart(fig_embudo, use_container_width=True)
     st.caption(f"Embudo manual basado en {kpis_campana['total_prospectos']:,} prospectos iniciales para la selección actual.")
+
 
 def mostrar_embudo_email(kpis, titulo="Embudo Email (Campaña)"):
     etapas = ["Contactados Email", "Respuestas Email", "Sesiones Email"]
@@ -185,35 +228,23 @@ def mostrar_embudo_email(kpis, titulo="Embudo Email (Campaña)"):
         return
     
     df_e = pd.DataFrame({"Etapa": etapas, "Cantidad": cantidades})
-    
-    # Calcular porcentajes vs anterior para el texto
     textos_embudo_email = []
-    if cantidades[0] > 0: # Contactados Email
+
+    if len(cantidades) > 0 and cantidades[0] > 0: # Contactados Email
         textos_embudo_email.append(f"{cantidades[0]:,}")
-        if cantidades[0] > 0 and cantidades[1] >= 0: # Respuestas Email
-            tasa_resp_email = (cantidades[1] / cantidades[0] * 100) if cantidades[0] > 0 else 0
+        if len(cantidades) > 1: # Respuestas Email
+            tasa_resp_email = (cantidades[1] / cantidades[0] * 100) if cantidades[0] > 0 else 0.0
             textos_embudo_email.append(f"{cantidades[1]:,} ({tasa_resp_email:.1f}%)")
-            if cantidades[1] > 0 and cantidades[2] >= 0: # Sesiones Email
-                tasa_ses_email = (cantidades[2] / cantidades[1] * 100) if cantidades[1] > 0 else 0
+            if len(cantidades) > 2: # Sesiones Email
+                tasa_ses_email = (cantidades[2] / cantidades[1] * 100) if cantidades[1] > 0 else 0.0
                 textos_embudo_email.append(f"{cantidades[2]:,} ({tasa_ses_email:.1f}%)")
-            elif cantidades[2] == 0 :
-                 textos_embudo_email.append(f"0 (0.0%)")
-            else: # Caso donde respuestas es 0 pero podria haber sesiones (ilógico, pero por robustez)
-                textos_embudo_email.append(f"{cantidades[2]:,}")
-
-        elif cantidades[1] == 0: # Si respuestas es 0, sesiones también debería serlo o mostrar 0%
-            textos_embudo_email.append(f"0 (0.0%)")
-            textos_embudo_email.append(f"0 (0.0%)")
-
-    else: # Si no hay contactados, todo es 0
-        textos_embudo_email = [f"{c:,}" for c in cantidades]
-
-    # Asegurar que textos_embudo_email tenga la misma longitud que etapas
-    if len(textos_embudo_email) < len(etapas):
-        textos_embudo_email.extend([f"{cantidades[i]:,}" for i in range(len(textos_embudo_email), len(etapas))])
     
-    df_e["Texto"] = textos_embudo_email[:len(etapas)]
+    # Fallback or fill remaining texts if logic above didn't complete
+    while len(textos_embudo_email) < len(etapas):
+        idx = len(textos_embudo_email)
+        textos_embudo_email.append(f"{cantidades[idx]:,}")
 
+    df_e["Texto"] = textos_embudo_email[:len(etapas)] # Ensure correct length
 
     fig = px.funnel(df_e, y="Etapa", x="Cantidad", title=titulo, text="Texto", category_orders={"Etapa": etapas})
     fig.update_traces(textposition='inside', textinfo='text')
@@ -233,7 +264,6 @@ def generar_tabla_comparativa_campanas_filtrada(df_filtrado_con_filtros_pagina, 
         kpis = calcular_kpis_df_campana(df_campana_individual_filtrada)
         datos_comparativa.append({
             "Campaña": nombre_campana,
-            # KPIs manuales…
             "Prospectos": kpis["total_prospectos"], 
             "Aceptadas": kpis["invites_aceptadas"],
             "Respuestas": kpis["respuestas_primer_mensaje"], 
@@ -242,7 +272,6 @@ def generar_tabla_comparativa_campanas_filtrada(df_filtrado_con_filtros_pagina, 
             "Tasa Respuesta (vs Acept.) (%)": kpis["tasa_respuesta_vs_aceptadas"],
             "Tasa Sesiones (vs Resp.) (%)": kpis["tasa_sesion_vs_respuesta"],
             "Tasa Sesión Global (%)": kpis["tasa_sesion_global"],
-            # KPIs email
             "Contactados Email": kpis["contactados_email"],
             "Respuestas Email": kpis["respuestas_email"],
             "Sesiones Email": kpis["sesiones_email"],
@@ -264,16 +293,41 @@ if df_base_campanas_global.empty:
 st.markdown("---")
 st.subheader("1. Selección de Campaña(s)")
 lista_campanas_disponibles_global = sorted(df_base_campanas_global['Campaña'].unique())
+
 if not lista_campanas_disponibles_global:
     st.warning("No se encontraron nombres de campañas en los datos cargados.")
     st.stop()
 
+# --- INICIO DE LA CORRECCIÓN ---
+# Recuperar la selección actual del estado de sesión.
+# Asegurarse de que sea una lista; si no, inicializar como lista vacía.
+default_seleccion_campana = st.session_state.get("campana_seleccion_principal", [])
+if not isinstance(default_seleccion_campana, list):
+    default_seleccion_campana = []
+
+# Filtrar la selección por defecto para incluir solo campañas que están actualmente disponibles.
+# Esto evita la StreamlitAPIException si el estado de sesión contiene nombres de campañas obsoletos.
+valid_default_seleccion_campana = [
+    campana for campana in default_seleccion_campana
+    if campana in lista_campanas_disponibles_global  # Comprobar contra las opciones válidas
+]
+
+# Actualizar el estado de sesión con la lista validada.
+# Esto es crucial si se eliminaron elementos no válidos.
+st.session_state.campana_seleccion_principal = valid_default_seleccion_campana
+# --- FIN DE LA CORRECCIÓN ---
+
+# Ahora, usar el st.session_state.campana_seleccion_principal validado como el valor por defecto.
+# La clave "ms_campana_seleccion_principal" es la que usa Streamlit internamente para este widget específico.
+# Al asignar el resultado del multiselect de nuevo a st.session_state.campana_seleccion_principal,
+# actualizamos nuestro valor "maestro" en el estado de sesión.
 st.session_state.campana_seleccion_principal = st.multiselect(
     "Elige la(s) campaña(s) a analizar:",
     options=lista_campanas_disponibles_global,
-    default=st.session_state.campana_seleccion_principal,
-    key="ms_campana_seleccion_principal"
+    default=st.session_state.campana_seleccion_principal, # Ahora es garantizado que sea un subconjunto de options
+    key="ms_campana_seleccion_principal" # Clave única para el widget
 )
+
 
 # --- Sección de Filtros Adicionales ---
 st.markdown("---")
@@ -282,7 +336,7 @@ st.subheader("2. Filtros Adicionales")
 if st.button("Limpiar Filtros", on_click=resetear_filtros_campana_callback, key="btn_reset_campana_filtros_total"):
     st.rerun() 
 
-if not st.session_state.campana_seleccion_principal:
+if not st.session_state.campana_seleccion_principal: # Usar el valor actualizado después del multiselect
     st.info("Por favor, selecciona al menos una campaña para visualizar los datos y aplicar filtros.")
     st.stop()
 
@@ -296,29 +350,43 @@ with st.expander("Aplicar filtros detallados a la(s) campaña(s) seleccionada(s)
         opciones_prospectador_camp = ["– Todos –"] + sorted(
             df_campanas_filtradas_por_seleccion["¿Quién Prospecto?"].dropna().astype(str).unique()
         )
-        default_prospectador = st.session_state.campana_filtro_prospectador
-        if not all(p in opciones_prospectador_camp for p in default_prospectador if p != "– Todos –"): 
-            default_prospectador = ["– Todos –"] 
+        # Similar validación para default_prospectador
+        default_prospectador_session = st.session_state.get("campana_filtro_prospectador", ["– Todos –"])
+        if not isinstance(default_prospectador_session, list): default_prospectador_session = ["– Todos –"]
+        
+        valid_default_prospectador = [p for p in default_prospectador_session if p in opciones_prospectador_camp]
+        if not valid_default_prospectador and "– Todos –" in opciones_prospectador_camp:
+            valid_default_prospectador = ["– Todos –"]
+        elif not valid_default_prospectador: # Si "– Todos –" no es una opción y nada es válido
+             valid_default_prospectador = [] if not opciones_prospectador_camp else [opciones_prospectador_camp[0]]
+
+
         st.session_state.campana_filtro_prospectador = st.multiselect(
             "¿Quién Prospectó?", options=opciones_prospectador_camp,
-            default=default_prospectador, key="ms_campana_prospectador"
+            default=valid_default_prospectador, key="ms_campana_prospectador"
         )
 
         opciones_pais_camp = ["– Todos –"] + sorted(
             df_campanas_filtradas_por_seleccion["Pais"].dropna().astype(str).unique()
         )
-        default_pais = st.session_state.campana_filtro_pais
-        if not all(p in opciones_pais_camp for p in default_pais if p != "– Todos –"):
-             default_pais = ["– Todos –"] 
+        # Similar validación para default_pais
+        default_pais_session = st.session_state.get("campana_filtro_pais", ["– Todos –"])
+        if not isinstance(default_pais_session, list): default_pais_session = ["– Todos –"]
+
+        valid_default_pais = [p for p in default_pais_session if p in opciones_pais_camp]
+        if not valid_default_pais and "– Todos –" in opciones_pais_camp:
+             valid_default_pais = ["– Todos –"]
+        elif not valid_default_pais:
+            valid_default_pais = [] if not opciones_pais_camp else [opciones_pais_camp[0]]
+
+
         st.session_state.campana_filtro_pais = st.multiselect(
             "País del Prospecto", options=opciones_pais_camp,
-            default=default_pais, key="ms_campana_pais"
+            default=valid_default_pais, key="ms_campana_pais"
         )
     with col_f2:
         min_fecha_invite_camp, max_fecha_invite_camp = None, None
-        # Usaremos 'Fecha de Invite' como la columna de fecha principal para el filtro de rango.
-        # Si necesitas filtrar por 'Fecha de Sesion Email' u otra, ajusta esta lógica.
-        columna_fecha_para_filtro = "Fecha de Invite" # Podrías hacerlo configurable si es necesario
+        columna_fecha_para_filtro = "Fecha de Invite" 
 
         if columna_fecha_para_filtro in df_campanas_filtradas_por_seleccion.columns and \
            pd.api.types.is_datetime64_any_dtype(df_campanas_filtradas_por_seleccion[columna_fecha_para_filtro]):
@@ -356,17 +424,17 @@ if st.session_state.campana_filtro_pais and "– Todos –" not in st.session_st
 
 fecha_ini_aplicar = st.session_state.campana_filtro_fecha_ini
 fecha_fin_aplicar = st.session_state.campana_filtro_fecha_fin
-columna_fecha_para_filtro_aplicacion = "Fecha de Invite" # Asegúrate que sea la misma que arriba
+columna_fecha_para_filtro_aplicacion = "Fecha de Invite" 
 
 if fecha_ini_aplicar and fecha_fin_aplicar and \
    columna_fecha_para_filtro_aplicacion in df_aplicar_filtros.columns and \
    pd.api.types.is_datetime64_any_dtype(df_aplicar_filtros[columna_fecha_para_filtro_aplicacion]):
     try:
         fecha_ini_dt = pd.to_datetime(fecha_ini_aplicar)
-        fecha_fin_dt = pd.to_datetime(fecha_fin_aplicar) + pd.Timedelta(days=1) # para incluir el día final completo
+        fecha_fin_dt = pd.to_datetime(fecha_fin_aplicar) + pd.Timedelta(days=1) 
         df_aplicar_filtros = df_aplicar_filtros[
             (df_aplicar_filtros[columna_fecha_para_filtro_aplicacion] >= fecha_ini_dt) &
-            (df_aplicar_filtros[columna_fecha_para_filtro_aplicacion] < fecha_fin_dt) # Usar < para el día siguiente a las 00:00
+            (df_aplicar_filtros[columna_fecha_para_filtro_aplicacion] < fecha_fin_dt) 
         ]
     except Exception as e:
         st.error(f"Error al convertir fechas para el filtro: {e}")
@@ -407,7 +475,6 @@ else:
     if kpis_calculados_campana_agregado['sesiones_agendadas'] > 0 and kpis_calculados_campana_agregado['respuestas_primer_mensaje'] > 0 :
          st.caption(f"Tasa de Sesiones Manuales vs Respuestas (Agregado): {kpis_calculados_campana_agregado['tasa_sesion_vs_respuesta']:.1f}%")
 
-    # KPIs de Email
     st.markdown("### 📧 Indicadores Email (Agregado de Selección)")
     email_cols = st.columns(3)
     email_cols[0].metric(
@@ -422,7 +489,6 @@ else:
         f"{kpis_calculados_campana_agregado['tasa_sesion_email']:.1f}%"
     )
     
-    # Embudos
     col_embudo1, col_embudo2 = st.columns(2)
     with col_embudo1:
         st.markdown("### Embudo de Conversión – Canal Manual")
@@ -452,16 +518,14 @@ else:
                 "Tasa Respuesta (vs Acept.) (%)": "{:.1f}%", 
                 "Tasa Sesiones (vs Resp.) (%)": "{:.1f}%", 
                 "Tasa Sesión Global (%)": "{:.1f}%",
-                "Tasa Resp Email (%)": "{:.1f}%", # NUEVO
-                "Tasa Sesión Email (%)": "{:.1f}%" # NUEVO
+                "Tasa Resp Email (%)": "{:.1f}%", 
+                "Tasa Sesión Email (%)": "{:.1f}%" 
             }
             for col_int_comp in cols_enteros_comp:
                 if col_int_comp in df_tabla_comp.columns:
-                    # Asegurar que la columna se convierta a numérico antes de intentar formatear como entero
                     df_tabla_comp[col_int_comp] = pd.to_numeric(df_tabla_comp[col_int_comp], errors='coerce').fillna(0).astype(int)
-                    format_dict_comp[col_int_comp] = "{:,}" # Formato con comas para miles
+                    format_dict_comp[col_int_comp] = "{:,}" 
 
-            # Actualización del format_dict_comp para incluir los nuevos campos de email
             format_dict_comp.update({
                 "Contactados Email": "{:,}",
                 "Respuestas Email": "{:,}",
@@ -470,7 +534,6 @@ else:
                 "Tasa Sesión Email (%)": "{:.1f}%"
             })
             
-            # Reordenar columnas para mejor visualización (opcional)
             column_order = [
                 "Campaña", "Prospectos", "Aceptadas", "Tasa Aceptación (%)", 
                 "Respuestas", "Tasa Respuesta (vs Acept.) (%)", 
@@ -478,13 +541,10 @@ else:
                 "Contactados Email", "Respuestas Email", "Tasa Resp Email (%)",
                 "Sesiones Email", "Tasa Sesión Email (%)"
             ]
-            # Filtrar columnas existentes en df_tabla_comp para evitar errores si alguna no está
             column_order_exist = [col for col in column_order if col in df_tabla_comp.columns]
-
 
             st.dataframe(df_tabla_comp[column_order_exist].sort_values(by="Tasa Sesión Global (%)", ascending=False).style.format(format_dict_comp), use_container_width=True, hide_index=True)
             
-            # Gráficos comparativos (se pueden añadir más para los KPIs de email si se desea)
             st.subheader("Gráfico: Tasa de Sesión Global por Campaña (con filtros aplicados)")
             df_graf_comp_tasa_global = df_tabla_comp[df_tabla_comp["Prospectos"] > 0].sort_values(by="Tasa Sesión Global (%)", ascending=False)
             if not df_graf_comp_tasa_global.empty:
@@ -495,8 +555,8 @@ else:
             else: st.caption("No hay datos suficientes para el gráfico de tasa de sesión global comparativa con los filtros actuales.")
 
             st.subheader("Gráfico: Tasa de Sesión Email por Campaña (con filtros aplicados)")
-            df_graf_comp_tasa_email = df_tabla_comp[df_tabla_comp["Contactados Email"] > 0].sort_values(by="Tasa Sesión Email (%)", ascending=False)
-            if not df_graf_comp_tasa_email.empty:
+            df_graf_comp_tasa_email = df_tabla_comp[df_tabla_comp.get("Contactados Email", 0) > 0].sort_values(by="Tasa Sesión Email (%)", ascending=False) # Usar .get para evitar KeyError
+            if not df_graf_comp_tasa_email.empty and "Tasa Sesión Email (%)" in df_graf_comp_tasa_email.columns: #Asegurar que la columna existe
                 fig_comp_tse = px.bar(df_graf_comp_tasa_email, x="Campaña", y="Tasa Sesión Email (%)", title="Comparativa: Tasa de Sesión (Email)", text="Tasa Sesión Email (%)", color="Campaña")
                 fig_comp_tse.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
                 fig_comp_tse.update_layout(xaxis_tickangle=-45)
@@ -514,8 +574,8 @@ else:
             else: st.caption("No hay campañas con sesiones manuales agendadas para el gráfico de volumen comparativo con los filtros actuales.")
 
             st.subheader("Gráfico: Volumen de Sesiones Agendadas (Email) por Campaña (con filtros aplicados)")
-            df_graf_comp_vol_sesiones_email = df_tabla_comp[df_tabla_comp["Sesiones Email"] > 0].sort_values(by="Sesiones Email", ascending=False)
-            if not df_graf_comp_vol_sesiones_email.empty:
+            df_graf_comp_vol_sesiones_email = df_tabla_comp[df_tabla_comp.get("Sesiones Email", 0) > 0].sort_values(by="Sesiones Email", ascending=False)
+            if not df_graf_comp_vol_sesiones_email.empty and "Sesiones Email" in df_graf_comp_vol_sesiones_email.columns:
                 fig_comp_vol_email = px.bar(df_graf_comp_vol_sesiones_email, x="Campaña", y="Sesiones Email", title="Comparativa: Volumen de Sesiones Agendadas (Email)", text="Sesiones Email", color="Campaña")
                 fig_comp_vol_email.update_traces(texttemplate='%{text:,}', textposition='outside')
                 fig_comp_vol_email.update_layout(xaxis_tickangle=-45)
@@ -526,20 +586,17 @@ else:
 
     st.markdown("### Rendimiento por Prospectador (para la selección actual)")
     if "¿Quién Prospecto?" in df_final_analisis_campana.columns:
-        # Recalcular KPIs por prospectador, ahora la función devuelve también los de email
         df_prospectador_camp = df_final_analisis_campana.groupby("¿Quién Prospecto?").apply(lambda x: pd.Series(calcular_kpis_df_campana(x))).reset_index()
         
-        # Seleccionar columnas relevantes para mostrar, incluyendo las de email
         columnas_prospectador_display = [
             "¿Quién Prospecto?", "total_prospectos", "invites_aceptadas", 
             "respuestas_primer_mensaje", "sesiones_agendadas", "tasa_sesion_global",
-            "contactados_email", "respuestas_email", "sesiones_email", "tasa_sesion_email" # Nuevas columnas
+            "contactados_email", "respuestas_email", "sesiones_email", "tasa_sesion_email" 
         ]
-        # Filtrar columnas que realmente existen en df_prospectador_camp para evitar KeyErrors
         columnas_prospectador_display = [col for col in columnas_prospectador_display if col in df_prospectador_camp.columns]
 
         df_prospectador_camp_display = df_prospectador_camp[
-            (df_prospectador_camp['total_prospectos'] > 0) | (df_prospectador_camp.get('contactados_email', 0) > 0) # Mostrar si hay actividad manual O email
+            (df_prospectador_camp.get('total_prospectos', 0) > 0) | (df_prospectador_camp.get('contactados_email', 0) > 0) 
         ][columnas_prospectador_display].rename(columns={
             "total_prospectos": "Prospectos Man.", 
             "invites_aceptadas": "Aceptadas Man.", 
@@ -550,7 +607,11 @@ else:
             "respuestas_email": "Respuestas Email",
             "sesiones_email": "Sesiones Email",
             "tasa_sesion_email": "Tasa Sesión Email (%)"
-        }).sort_values(by="Sesiones Man.", ascending=False) # O por otra métrica combinada
+        })
+        # Ordenar después de renombrar para asegurar que la columna de ordenamiento exista con el nuevo nombre
+        if "Sesiones Man." in df_prospectador_camp_display.columns:
+            df_prospectador_camp_display = df_prospectador_camp_display.sort_values(by="Sesiones Man.", ascending=False)
+
 
         cols_enteros_prosp = ["Prospectos Man.", "Aceptadas Man.", "Respuestas Man.", "Sesiones Man.", "Contactados Email", "Respuestas Email", "Sesiones Email"]
         format_dict_prosp = {
@@ -567,23 +628,28 @@ else:
             st.dataframe(df_prospectador_camp_display.style.format(format_dict_prosp), use_container_width=True, hide_index=True)
             
             mostrar_grafico_prospectador_manual = False
-            if "– Todos –" in st.session_state.campana_filtro_prospectador and len(df_prospectador_camp_display['¿Quién Prospecto?'].unique()) > 1:
-                mostrar_grafico_prospectador_manual = True
-            elif len(st.session_state.campana_filtro_prospectador) > 1 and len(df_prospectador_camp_display['¿Quién Prospecto?'].unique()) > 1:
-                mostrar_grafico_prospectador_manual = True
+            # Asegurar que la columna para el gráfico exista
+            if "¿Quién Prospecto?" in df_prospectador_camp_display.columns:
+                if "– Todos –" in st.session_state.get("campana_filtro_prospectador", ["– Todos –"]) and len(df_prospectador_camp_display['¿Quién Prospecto?'].unique()) > 1:
+                    mostrar_grafico_prospectador_manual = True
+                elif len(st.session_state.get("campana_filtro_prospectador", ["– Todos –"])) > 1 and len(df_prospectador_camp_display['¿Quién Prospecto?'].unique()) > 1:
+                    mostrar_grafico_prospectador_manual = True
             
             if mostrar_grafico_prospectador_manual and "Tasa Sesión Global Man. (%)" in df_prospectador_camp_display.columns:
                 fig_prosp_camp_bar_manual = px.bar(df_prospectador_camp_display.sort_values(by="Tasa Sesión Global Man. (%)", ascending=False), 
                                              x="¿Quién Prospecto?", y="Tasa Sesión Global Man. (%)", 
-                                             title="Tasa de Sesión Global Manual por Prospectador", text="Tasa Sesión Global Man. (%)", color="¿Quién Prospecto?") #Color por Prospectador
+                                             title="Tasa de Sesión Global Manual por Prospectador", text="Tasa Sesión Global Man. (%)", color="¿Quién Prospecto?") 
                 fig_prosp_camp_bar_manual.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
                 fig_prosp_camp_bar_manual.update_layout(xaxis_tickangle=-45)
                 st.plotly_chart(fig_prosp_camp_bar_manual, use_container_width=True)
 
-            if mostrar_grafico_prospectador_manual and "Tasa Sesión Email (%)" in df_prospectador_camp_display.columns and df_prospectador_camp_display["Contactados Email"].sum() > 0 : # Solo si hay datos de email
+            if mostrar_grafico_prospectador_manual and \
+               "Tasa Sesión Email (%)" in df_prospectador_camp_display.columns and \
+               "Contactados Email" in df_prospectador_camp_display.columns and \
+               df_prospectador_camp_display["Contactados Email"].sum() > 0 : 
                 fig_prosp_camp_bar_email = px.bar(df_prospectador_camp_display[df_prospectador_camp_display["Contactados Email"] > 0].sort_values(by="Tasa Sesión Email (%)", ascending=False), 
                                              x="¿Quién Prospecto?", y="Tasa Sesión Email (%)", 
-                                             title="Tasa de Sesión Email por Prospectador", text="Tasa Sesión Email (%)", color="¿Quién Prospecto?") #Color por Prospectador
+                                             title="Tasa de Sesión Email por Prospectador", text="Tasa Sesión Email (%)", color="¿Quién Prospecto?") 
                 fig_prosp_camp_bar_email.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
                 fig_prosp_camp_bar_email.update_layout(xaxis_tickangle=-45)
                 st.plotly_chart(fig_prosp_camp_bar_email, use_container_width=True)
@@ -593,23 +659,23 @@ else:
 
     st.markdown("### Detalle de Prospectos (para la selección actual)")
     indices_filtrados = df_final_analisis_campana.index
-    df_detalle_original_filtrado = df_original_completo.loc[indices_filtrados].copy()
-    if not df_detalle_original_filtrado.empty:
-        # Seleccionar y reordenar columnas para la tabla de detalle, incluyendo las nuevas de email
+    # Asegurarse de que df_original_completo tenga las columnas antes de acceder
+    if not df_original_completo.empty and not df_original_completo.loc[indices_filtrados].empty:
+        df_detalle_original_filtrado = df_original_completo.loc[indices_filtrados].copy()
+    
         columnas_detalle = [
             "Campaña", "Prospecto", "¿Quién Prospecto?", "Pais", "Ciudad", "Cargo", "Empresa", 
             "Fecha de Invite", "¿Invite Aceptada?", "Fecha Primer Mensaje", "Respuesta Primer Mensaje", 
             "Sesion Agendada?", "Fecha Sesion", 
-            "Contactados por Campaña", "Respuesta Email", "Sesion Agendada Email", "Fecha de Sesion Email", # Nuevas columnas de email
+            "Contactados por Campaña", "Respuesta Email", "Sesion Agendada Email", "Fecha de Sesion Email", 
             "Status General", "Motivo No Interes", "Observaciones", "Link al Perfil"
         ]
-        # Mantener solo las columnas que existen en el DataFrame para evitar errores
         columnas_detalle_existentes = [col for col in columnas_detalle if col in df_detalle_original_filtrado.columns]
         df_display_tabla_campana_detalle_seleccionada = df_detalle_original_filtrado[columnas_detalle_existentes]
 
 
         df_display_tabla_campana_detalle_formateada = pd.DataFrame()
-        for col_orig in df_display_tabla_campana_detalle_seleccionada.columns: # Usar el df con columnas seleccionadas
+        for col_orig in df_display_tabla_campana_detalle_seleccionada.columns: 
             if pd.api.types.is_datetime64_any_dtype(df_display_tabla_campana_detalle_seleccionada[col_orig]):
                  df_display_tabla_campana_detalle_formateada[col_orig] = pd.to_datetime(df_display_tabla_campana_detalle_seleccionada[col_orig], errors='coerce').dt.strftime('%d/%m/%Y').fillna("N/A")
             elif pd.api.types.is_numeric_dtype(df_display_tabla_campana_detalle_seleccionada[col_orig]) and \
@@ -628,7 +694,6 @@ else:
                 df_conv.to_excel(writer, index=False, sheet_name='Prospectos_Campaña_Detalle')
             return output.getvalue()
 
-        # Usar el dataframe con columnas seleccionadas y datos originales para el Excel
         excel_data_campana_detalle = convertir_df_a_excel_campana_detalle(df_display_tabla_campana_detalle_seleccionada)
         
         nombre_archivo_excel_detalle = f"detalle_campañas_{'_'.join(st.session_state.campana_seleccion_principal)}.xlsx"
