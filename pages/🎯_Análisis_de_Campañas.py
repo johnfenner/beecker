@@ -339,6 +339,9 @@ def display_manual_prospecting_analysis(df_filtered_campaigns):
 # Debes reemplazar la función display_global_manual_prospecting_deep_dive
 # en tu archivo pages/📢_Campañas.py con esta versión completa.
 
+# Debes reemplazar la función display_global_manual_prospecting_deep_dive
+# en tu archivo .py con esta versión completa.
+
 def display_global_manual_prospecting_deep_dive(df_filtered_selection):
     st.header("Desglose General de Prospección Manual en Campañas Seleccionadas")
     st.caption("Este análisis se basa en la selección actual de campañas y filtros de la barra lateral.")
@@ -347,26 +350,20 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
         st.info("No hay datos para este desglose con los filtros actuales.")
         return
 
-    # Considerar solo los prospectos a los que se les inició contacto manual para este análisis profundo
     df_contactos_iniciados = df_filtered_selection[df_filtered_selection[COL_FECHA_INVITE].notna()].copy()
     
     if df_contactos_iniciados.empty:
         st.info("No hay prospectos con contacto manual iniciado en la selección actual para este desglose detallado.")
         return
 
-    # --- 1. Métricas Globales de Prospección Manual (para la selección actual de Contactos Iniciados) ---
     st.markdown("#### Métricas Globales (sobre Contactos Manuales Iniciados)")
     total_contactos_iniciados = len(df_contactos_iniciados)
     total_invites_aceptadas = df_contactos_iniciados[df_contactos_iniciados[COL_INVITE_ACEPTADA] == "si"].shape[0]
     total_respuestas_1er_msj = df_contactos_iniciados[df_contactos_iniciados[COL_RESPUESTA_1ER_MSJ] == "si"].shape[0]
     total_sesiones_agendadas = df_contactos_iniciados[df_contactos_iniciados[COL_SESION_AGENDADA_MANUAL] == "si"].shape[0]
-
     total_asignados_seleccion = len(df_filtered_selection)
     tasa_inicio_general = (total_contactos_iniciados / total_asignados_seleccion * 100) if total_asignados_seleccion > 0 else 0
-    
     tasa_aceptacion_general = (total_invites_aceptadas / total_contactos_iniciados * 100) if total_contactos_iniciados > 0 else 0
-    # tasa_respuesta_general = (total_respuestas_1er_msj / total_invites_aceptadas * 100) if total_invites_aceptadas > 0 else 0 # Comentado para evitar confusión si no se usa directamente en métricas
-    # tasa_sesion_vs_resp_general = (total_sesiones_agendadas / total_respuestas_1er_msj * 100) if total_respuestas_1er_msj > 0 else 0 # Comentado
     tasa_sesion_global_general = (total_sesiones_agendadas / total_contactos_iniciados * 100) if total_contactos_iniciados > 0 else 0
 
     m_col1, m_col2, m_col3 = st.columns(3)
@@ -375,50 +372,43 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
     m_col3.metric("Total Sesiones Agendadas", f"{total_sesiones_agendadas:,} ({tasa_sesion_global_general:.1f}%)")
     st.caption(f"Tasa Inicio Prospección General (sobre {total_asignados_seleccion:,} asignados): {tasa_inicio_general:.1f}%")
 
-    # --- 2. Desglose por Prospectador (`¿Quién Prospecto?`) ---
     st.markdown("---")
     st.markdown("#### Desglose por Prospectador (sobre Contactos Manuales Iniciados)")
-    
     asignados_por_prospectador = df_filtered_selection.groupby(COL_QUIEN_PROSPECTO, as_index=False).size().rename(columns={'size': 'Total Asignados'})
     asignados_por_prospectador = asignados_por_prospectador[asignados_por_prospectador[COL_QUIEN_PROSPECTO] != "N/D_Interno"]
 
     if not df_contactos_iniciados.empty:
-        # CORRECCIÓN: Usar una columna existente (ej. COL_FECHA_INVITE) para el 'count'
-        desglose_prospectador = df_contactos_iniciados.groupby(COL_QUIEN_PROSPECTO, as_index=False).agg(
-            Contactos_Manuales_Iniciados=(COL_FECHA_INVITE, 'count'), 
-            Invites_Aceptadas=(COL_INVITE_ACEPTADA, lambda x: (x == "si").sum()),
-            Respuestas_1er_Msj=(COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum()),
-            Sesiones_Agendadas=(COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
-        ).rename(columns={'Contactos_Manuales_Iniciados': 'Contactos Manuales Iniciados'}) # Renombrar después si es necesario
-
+        # CORRECCIÓN: Nombrar columnas directamente con espacios en la agregación
+        desglose_prospectador_agg_spec = {
+            'Contactos Manuales Iniciados': (COL_FECHA_INVITE, 'count'),
+            'Invites Aceptadas': (COL_INVITE_ACEPTADA, lambda x: (x == "si").sum()),
+            'Respuestas 1er Msj': (COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum()),
+            'Sesiones Agendadas': (COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
+        }
+        desglose_prospectador = df_contactos_iniciados.groupby(COL_QUIEN_PROSPECTO, as_index=False).agg(**desglose_prospectador_agg_spec)
         desglose_prospectador = desglose_prospectador[desglose_prospectador[COL_QUIEN_PROSPECTO] != "N/D_Interno"]
         desglose_prospectador_final = pd.merge(asignados_por_prospectador, desglose_prospectador, on=COL_QUIEN_PROSPECTO, how='left').fillna(0)
         
-        # Asegurar que las columnas de conteo existan y sean numéricas después del merge
-        cols_to_ensure_numeric = ['Contactos Manuales Iniciados', 'Invites_Aceptadas', 'Respuestas_1er_Msj', 'Sesiones_Agendadas', 'Total Asignados']
+        cols_to_ensure_numeric = ['Contactos Manuales Iniciados', 'Invites Aceptadas', 'Respuestas 1er Msj', 'Sesiones Agendadas', 'Total Asignados']
         for col in cols_to_ensure_numeric:
-            if col not in desglose_prospectador_final.columns:
-                desglose_prospectador_final[col] = 0
+            if col not in desglose_prospectador_final.columns: desglose_prospectador_final[col] = 0
             desglose_prospectador_final[col] = pd.to_numeric(desglose_prospectador_final[col], errors='coerce').fillna(0).astype(int)
-
 
         desglose_prospectador_final['Tasa Inicio (%)'] = ((desglose_prospectador_final['Contactos Manuales Iniciados'] / desglose_prospectador_final['Total Asignados']) * 100).fillna(0).round(1)
         base_embudo_prosp = desglose_prospectador_final['Contactos Manuales Iniciados']
-        desglose_prospectador_final['Tasa Aceptación (%)'] = ((desglose_prospectador_final['Invites_Aceptadas'] / base_embudo_prosp) * 100).fillna(0).round(1)
-        desglose_prospectador_final['Tasa Respuesta (%)'] = ((desglose_prospectador_final['Respuestas_1er_Msj'] / desglose_prospectador_final['Invites_Aceptadas']) * 100).fillna(0).round(1)
-        desglose_prospectador_final['Tasa Sesión vs Resp. (%)'] = ((desglose_prospectador_final['Sesiones_Agendadas'] / desglose_prospectador_final['Respuestas_1er_Msj']) * 100).fillna(0).round(1)
-        desglose_prospectador_final['Tasa Sesión Global (%)'] = ((desglose_prospectador_final['Sesiones_Agendadas'] / base_embudo_prosp) * 100).fillna(0).round(1)
-
+        desglose_prospectador_final['Tasa Aceptación (%)'] = ((desglose_prospectador_final['Invites Aceptadas'] / base_embudo_prosp) * 100).fillna(0).round(1)
+        desglose_prospectador_final['Tasa Respuesta (%)'] = ((desglose_prospectador_final['Respuestas 1er Msj'] / desglose_prospectador_final['Invites Aceptadas']) * 100).fillna(0).round(1)
+        desglose_prospectador_final['Tasa Sesión vs Resp. (%)'] = ((desglose_prospectador_final['Sesiones Agendadas'] / desglose_prospectador_final['Respuestas 1er Msj']) * 100).fillna(0).round(1)
+        desglose_prospectador_final['Tasa Sesión Global (%)'] = ((desglose_prospectador_final['Sesiones Agendadas'] / base_embudo_prosp) * 100).fillna(0).round(1)
         rate_cols_prosp = ['Tasa Inicio (%)', 'Tasa Aceptación (%)', 'Tasa Respuesta (%)', 'Tasa Sesión vs Resp. (%)', 'Tasa Sesión Global (%)']
-        for r_col in rate_cols_prosp:
-            desglose_prospectador_final[r_col] = desglose_prospectador_final[r_col].apply(lambda x: 0 if pd.isna(x) or x == float('inf') or x == float('-inf') else x)
+        for r_col in rate_cols_prosp: desglose_prospectador_final[r_col] = desglose_prospectador_final[r_col].apply(lambda x: 0 if pd.isna(x) or x == float('inf') or x == float('-inf') else x)
 
         st.dataframe(desglose_prospectador_final.style.format(
-            {'Total Asignados': "{:,}", 'Contactos Manuales Iniciados': "{:,}", 'Invites_Aceptadas': "{:,}", 'Respuestas_1er_Msj': "{:,}", 'Sesiones_Agendadas': "{:,}",
+            {'Total Asignados': "{:,}", 'Contactos Manuales Iniciados': "{:,}", 'Invites Aceptadas': "{:,}", 'Respuestas 1er Msj': "{:,}", 'Sesiones Agendadas': "{:,}",
              'Tasa Inicio (%)': "{:.1f}%", 'Tasa Aceptación (%)': "{:.1f}%", 'Tasa Respuesta (%)': "{:.1f}%", 
              'Tasa Sesión vs Resp. (%)': "{:.1f}%", 'Tasa Sesión Global (%)': "{:.1f}%"}
         ), use_container_width=True)
-
+        # ... (resto de los gráficos por prospectador sin cambios)
         p_chart1, p_chart2 = st.columns(2)
         with p_chart1:
             if not desglose_prospectador_final.empty:
@@ -435,37 +425,35 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
                 fig_sesion_prosp.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
                 fig_sesion_prosp.update_layout(yaxis_range=[0,105])
                 st.plotly_chart(fig_sesion_prosp, use_container_width=True)
+
     else:
         st.info("No hay contactos manuales iniciados para mostrar desglose por prospectador.")
 
-    # --- 3. Desglose por Avatar ---
     st.markdown("---")
     st.markdown("#### Desglose por Avatar (sobre Contactos Manuales Iniciados)")
     if not df_contactos_iniciados.empty and COL_AVATAR in df_contactos_iniciados.columns:
-        # CORRECCIÓN: Usar una columna existente (ej. COL_FECHA_INVITE) para el 'count'
-        desglose_avatar = df_contactos_iniciados.groupby(COL_AVATAR, as_index=False).agg(
-            Contactos_Manuales_Iniciados=(COL_FECHA_INVITE, 'count'),
-            Invites_Aceptadas=(COL_INVITE_ACEPTADA, lambda x: (x == "si").sum()),
-            Respuestas_1er_Msj=(COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum()),
-            Sesiones_Agendadas=(COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
-        ) # No es necesario renombrar 'Contactos_Manuales_Iniciados' aquí si se nombra bien en agg
-
+        # CORRECCIÓN: Nombrar columnas directamente con espacios en la agregación
+        desglose_avatar_agg_spec = {
+            'Contactos Manuales Iniciados': (COL_FECHA_INVITE, 'count'),
+            'Invites Aceptadas': (COL_INVITE_ACEPTADA, lambda x: (x == "si").sum()),
+            'Respuestas 1er Msj': (COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum()),
+            'Sesiones Agendadas': (COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
+        }
+        desglose_avatar = df_contactos_iniciados.groupby(COL_AVATAR, as_index=False).agg(**desglose_avatar_agg_spec)
         desglose_avatar = desglose_avatar[desglose_avatar[COL_AVATAR] != "N/D_Interno"]
         
-        base_embudo_avatar = desglose_avatar['Contactos Manuales Iniciados']
-        desglose_avatar['Tasa Aceptación (%)'] = ((desglose_avatar['Invites_Aceptadas'] / base_embudo_avatar) * 100).fillna(0).round(1)
-        desglose_avatar['Tasa Respuesta (%)'] = ((desglose_avatar['Respuestas_1er_Msj'] / desglose_avatar['Invites_Aceptadas']) * 100).fillna(0).round(1)
-        desglose_avatar['Tasa Sesión Global (%)'] = ((desglose_avatar['Sesiones_Agendadas'] / base_embudo_avatar) * 100).fillna(0).round(1)
-        
+        base_embudo_avatar = desglose_avatar['Contactos Manuales Iniciados'] # Ahora debería funcionar
+        desglose_avatar['Tasa Aceptación (%)'] = ((desglose_avatar['Invites Aceptadas'] / base_embudo_avatar) * 100).fillna(0).round(1)
+        desglose_avatar['Tasa Respuesta (%)'] = ((desglose_avatar['Respuestas 1er Msj'] / desglose_avatar['Invites Aceptadas']) * 100).fillna(0).round(1)
+        desglose_avatar['Tasa Sesión Global (%)'] = ((desglose_avatar['Sesiones Agendadas'] / base_embudo_avatar) * 100).fillna(0).round(1)
         rate_cols_avatar = ['Tasa Aceptación (%)', 'Tasa Respuesta (%)', 'Tasa Sesión Global (%)']
-        for r_col in rate_cols_avatar:
-            desglose_avatar[r_col] = desglose_avatar[r_col].apply(lambda x: 0 if pd.isna(x) or x == float('inf') or x == float('-inf') else x)
+        for r_col in rate_cols_avatar: desglose_avatar[r_col] = desglose_avatar[r_col].apply(lambda x: 0 if pd.isna(x) or x == float('inf') or x == float('-inf') else x)
 
         st.dataframe(desglose_avatar.style.format(
-            {'Contactos Manuales Iniciados': "{:,}", 'Invites_Aceptadas': "{:,}", 'Respuestas_1er_Msj': "{:,}", 'Sesiones_Agendadas': "{:,}",
+            {'Contactos Manuales Iniciados': "{:,}", 'Invites Aceptadas': "{:,}", 'Respuestas 1er Msj': "{:,}", 'Sesiones Agendadas': "{:,}",
              'Tasa Aceptación (%)': "{:.1f}%", 'Tasa Respuesta (%)': "{:.1f}%", 'Tasa Sesión Global (%)': "{:.1f}%"}
         ), use_container_width=True)
-
+        # ... (resto de los gráficos por avatar sin cambios)
         a_chart1, a_chart2 = st.columns(2)
         with a_chart1:
             if not desglose_avatar.empty:
@@ -485,10 +473,8 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
     else:
         st.info("No hay contactos manuales iniciados o columna Avatar no disponible para mostrar desglose por avatar.")
 
-    # --- 4. Desglose por Campaña (si múltiples seleccionadas) ---
     st.markdown("---")
     st.markdown("#### Desglose por Campaña (sobre Contactos Manuales Iniciados)")
-    
     campaign_filter_active = st.session_state.get(SES_CAMPAIGN_FILTER_KEY, ["– Todas –"])
     show_campaign_breakdown = False
     if ("– Todas –" in campaign_filter_active and df_contactos_iniciados[COL_CAMPAIGN].nunique() > 1) or \
@@ -496,28 +482,27 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
         show_campaign_breakdown = True
 
     if not df_contactos_iniciados.empty and COL_CAMPAIGN in df_contactos_iniciados.columns and show_campaign_breakdown:
-        # CORRECCIÓN: Usar una columna existente (ej. COL_FECHA_INVITE) para el 'count'
-        desglose_campana = df_contactos_iniciados.groupby(COL_CAMPAIGN, as_index=False).agg(
-            Contactos_Manuales_Iniciados=(COL_FECHA_INVITE, 'count'),
-            Invites_Aceptadas=(COL_INVITE_ACEPTADA, lambda x: (x == "si").sum()),
-            Respuestas_1er_Msj=(COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum()),
-            Sesiones_Agendadas=(COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
-        )
+        # CORRECCIÓN: Nombrar columnas directamente con espacios en la agregación
+        desglose_campana_agg_spec = {
+            'Contactos Manuales Iniciados': (COL_FECHA_INVITE, 'count'),
+            'Invites Aceptadas': (COL_INVITE_ACEPTADA, lambda x: (x == "si").sum()),
+            'Respuestas 1er Msj': (COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum()),
+            'Sesiones Agendadas': (COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
+        }
+        desglose_campana = df_contactos_iniciados.groupby(COL_CAMPAIGN, as_index=False).agg(**desglose_campana_agg_spec)
         
-        base_embudo_camp = desglose_campana['Contactos Manuales Iniciados']
-        desglose_campana['Tasa Aceptación (%)'] = ((desglose_campana['Invites_Aceptadas'] / base_embudo_camp) * 100).fillna(0).round(1)
-        desglose_campana['Tasa Respuesta (%)'] = ((desglose_campana['Respuestas_1er_Msj'] / desglose_campana['Invites_Aceptadas']) * 100).fillna(0).round(1)
-        desglose_campana['Tasa Sesión Global (%)'] = ((desglose_campana['Sesiones_Agendadas'] / base_embudo_camp) * 100).fillna(0).round(1)
-
+        base_embudo_camp = desglose_campana['Contactos Manuales Iniciados'] # Ahora debería funcionar
+        desglose_campana['Tasa Aceptación (%)'] = ((desglose_campana['Invites Aceptadas'] / base_embudo_camp) * 100).fillna(0).round(1)
+        desglose_campana['Tasa Respuesta (%)'] = ((desglose_campana['Respuestas 1er Msj'] / desglose_campana['Invites Aceptadas']) * 100).fillna(0).round(1)
+        desglose_campana['Tasa Sesión Global (%)'] = ((desglose_campana['Sesiones Agendadas'] / base_embudo_camp) * 100).fillna(0).round(1)
         rate_cols_camp = ['Tasa Aceptación (%)', 'Tasa Respuesta (%)', 'Tasa Sesión Global (%)']
-        for r_col in rate_cols_camp:
-            desglose_campana[r_col] = desglose_campana[r_col].apply(lambda x: 0 if pd.isna(x) or x == float('inf') or x == float('-inf') else x)
+        for r_col in rate_cols_camp: desglose_campana[r_col] = desglose_campana[r_col].apply(lambda x: 0 if pd.isna(x) or x == float('inf') or x == float('-inf') else x)
         
         st.dataframe(desglose_campana.style.format(
-            {'Contactos Manuales Iniciados': "{:,}", 'Invites_Aceptadas': "{:,}", 'Respuestas_1er_Msj': "{:,}", 'Sesiones_Agendadas': "{:,}",
+            {'Contactos Manuales Iniciados': "{:,}", 'Invites Aceptadas': "{:,}", 'Respuestas 1er Msj': "{:,}", 'Sesiones Agendadas': "{:,}",
              'Tasa Aceptación (%)': "{:.1f}%", 'Tasa Respuesta (%)': "{:.1f}%", 'Tasa Sesión Global (%)': "{:.1f}%"}
         ), use_container_width=True)
-
+        # ... (resto de los gráficos por campaña sin cambios)
         c_chart1, c_chart2 = st.columns(2)
         with c_chart1:
             if not desglose_campana.empty:
@@ -534,12 +519,12 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
                 fig_sesion_camp.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
                 fig_sesion_camp.update_layout(yaxis_range=[0,105])
                 st.plotly_chart(fig_sesion_camp, use_container_width=True)
+
     elif not show_campaign_breakdown:
          st.info("Selecciona '– Todas las Campañas –' o múltiples campañas en la barra lateral para ver este desglose comparativo.")
     else:
         st.info("No hay contactos manuales iniciados para mostrar desglose por campaña.")
     st.markdown("---")
-
 
 # ... (la función display_email_prospecting_analysis permanece igual)...
 def display_email_prospecting_analysis(df_filtered_campaigns):
