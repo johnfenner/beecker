@@ -154,52 +154,92 @@ def load_and_prepare_campaign_data():
 # ... (la función display_campaign_filters permanece igual que en la versión anterior)...
 def display_campaign_filters(df_options):
     st.sidebar.header("🎯 Filtros de Campaña")
-    default_filters = {
-        SES_CAMPAIGN_FILTER_KEY: ["– Todas –"], SES_START_DATE_KEY: None, SES_END_DATE_KEY: None,
-        SES_PROSPECTOR_FILTER_KEY: ["– Todos –"], SES_AVATAR_FILTER_KEY: ["– Todos –"]
-    }
-    for key, value in default_filters.items():
-        if key not in st.session_state: st.session_state[key] = value
 
+    # 1. Initialize session state for all filter keys if they don't exist
+    # Este bloque es crucial y debe estar exactamente así.
+    default_filters_init = {
+        SES_CAMPAIGN_FILTER_KEY: ["– Todas –"], 
+        SES_START_DATE_KEY: None, 
+        SES_END_DATE_KEY: None,
+        SES_PROSPECTOR_FILTER_KEY: ["– Todos –"], 
+        SES_AVATAR_FILTER_KEY: ["– Todos –"]
+    }
+    for key, value in default_filters_init.items():
+        if key not in st.session_state:  # <-- ASEGÚRATE DE QUE ESTE IF ESTÉ PRESENTE
+            st.session_state[key] = value
+
+    # --- Campaign Filter ---
     campaign_options = ["– Todas –"]
     if COL_CAMPAIGN in df_options.columns and not df_options[COL_CAMPAIGN].empty:
-        campaign_options.extend(sorted(df_options[COL_CAMPAIGN].dropna().unique())) 
-    current_campaign_selection = st.session_state[SES_CAMPAIGN_FILTER_KEY]
-    valid_campaign_selection = [c for c in current_campaign_selection if c in campaign_options]
-    if not valid_campaign_selection: valid_campaign_selection = ["– Todas –"]
-    st.session_state[SES_CAMPAIGN_FILTER_KEY] = valid_campaign_selection
-    selected_campaigns = st.sidebar.multiselect("Seleccionar Campaña(s)", options=campaign_options, key=SES_CAMPAIGN_FILTER_KEY)
+        campaign_options.extend(sorted(df_options[COL_CAMPAIGN].dropna().unique()))
+    
+    current_campaign_selection_in_state = st.session_state[SES_CAMPAIGN_FILTER_KEY]
+    validated_default_campaigns = [c for c in current_campaign_selection_in_state if c in campaign_options]
+    if not validated_default_campaigns:
+        validated_default_campaigns = ["– Todas –"]
+    
+    selected_campaigns = st.sidebar.multiselect(
+        "Seleccionar Campaña(s)",
+        options=campaign_options,
+        default=validated_default_campaigns,
+        key=SES_CAMPAIGN_FILTER_KEY
+    )
 
+    # --- Date Filter ---
     min_date, max_date = None, None
     if "FechaFiltroPrincipal" in df_options.columns and pd.api.types.is_datetime64_any_dtype(df_options["FechaFiltroPrincipal"]):
         valid_dates = df_options["FechaFiltroPrincipal"].dropna()
-        if not valid_dates.empty: min_date, max_date = valid_dates.min().date(), valid_dates.max().date()
+        if not valid_dates.empty:
+            min_date = valid_dates.min().date()
+            max_date = valid_dates.max().date()
+
     date_col1, date_col2 = st.sidebar.columns(2)
     start_date = date_col1.date_input("Fecha Desde", value=st.session_state[SES_START_DATE_KEY], min_value=min_date, max_value=max_date, format="DD/MM/YYYY", key=SES_START_DATE_KEY)
     end_date = date_col2.date_input("Fecha Hasta", value=st.session_state[SES_END_DATE_KEY], min_value=min_date, max_value=max_date, format="DD/MM/YYYY", key=SES_END_DATE_KEY)
 
-    prospector_options = ["– Todos –"]
+    # --- Prospector Filter ---
+    prospector_options = ["– Todas –"]
     if COL_QUIEN_PROSPECTO in df_options.columns and not df_options[COL_QUIEN_PROSPECTO].empty:
         prospector_options.extend(sorted(df_options[df_options[COL_QUIEN_PROSPECTO] != "N/D_Interno"][COL_QUIEN_PROSPECTO].dropna().unique()))
-    current_prospector_selection = st.session_state[SES_PROSPECTOR_FILTER_KEY]
-    valid_prospector_selection = [p for p in current_prospector_selection if p in prospector_options]
-    if not valid_prospector_selection: valid_prospector_selection = ["– Todos –"]
-    st.session_state[SES_PROSPECTOR_FILTER_KEY] = valid_prospector_selection
-    selected_prospectors = st.sidebar.multiselect("¿Quién Prospectó?", prospector_options, key=SES_PROSPECTOR_FILTER_KEY)
+    
+    current_prospector_selection_in_state = st.session_state[SES_PROSPECTOR_FILTER_KEY]
+    validated_default_prospectors = [p for p in current_prospector_selection_in_state if p in prospector_options]
+    if not validated_default_prospectors:
+        validated_default_prospectors = ["– Todas –"]
+        
+    selected_prospectors = st.sidebar.multiselect(
+        "¿Quién Prospectó?",
+        options=prospector_options,
+        default=validated_default_prospectors,
+        key=SES_PROSPECTOR_FILTER_KEY
+    )
 
-    avatar_options = ["– Todos –"]
+    # --- Avatar Filter ---
+    avatar_options = ["– Todas –"]
     if COL_AVATAR in df_options.columns and not df_options[COL_AVATAR].empty:
         avatar_options.extend(sorted(df_options[df_options[COL_AVATAR] != "N/D_Interno"][COL_AVATAR].dropna().unique()))
-    current_avatar_selection = st.session_state[SES_AVATAR_FILTER_KEY]
-    valid_avatar_selection = [a for a in current_avatar_selection if a in avatar_options]
-    if not valid_avatar_selection: valid_avatar_selection = ["– Todos –"]
-    st.session_state[SES_AVATAR_FILTER_KEY] = valid_avatar_selection
-    selected_avatars = st.sidebar.multiselect("Avatar", avatar_options, key=SES_AVATAR_FILTER_KEY)
+        
+    current_avatar_selection_in_state = st.session_state[SES_AVATAR_FILTER_KEY]
+    validated_default_avatars = [a for a in current_avatar_selection_in_state if a in avatar_options]
+    if not validated_default_avatars:
+        validated_default_avatars = ["– Todas –"]
+        
+    selected_avatars = st.sidebar.multiselect(
+        "Avatar",
+        options=avatar_options,
+        default=validated_default_avatars,
+        key=SES_AVATAR_FILTER_KEY
+    )
     
     st.sidebar.markdown("---")
-    if st.sidebar.button("🧹 Limpiar Filtros", use_container_width=True):
-        for key, value in default_filters.items(): st.session_state[key] = value
+    if st.sidebar.button("🧹 Limpiar Filtros", use_container_width=True, key=f"{SES_CAMPAIGN_FILTER_KEY}_clear_button"): # Añadir key única al botón
+        st.session_state[SES_CAMPAIGN_FILTER_KEY] = ["– Todas –"]
+        st.session_state[SES_START_DATE_KEY] = None
+        st.session_state[SES_END_DATE_KEY] = None
+        st.session_state[SES_PROSPECTOR_FILTER_KEY] = ["– Todas –"]
+        st.session_state[SES_AVATAR_FILTER_KEY] = ["– Todas –"]
         st.rerun()
+
     return selected_campaigns, start_date, end_date, selected_prospectors, selected_avatars
 
 # --- Apply Filters ---
