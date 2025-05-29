@@ -316,7 +316,7 @@ def display_manual_prospecting_analysis(df_filtered_campaigns):
             'Tasa Inicio Prospección (%)': "{:.1f}%", 'Tasa Aceptación vs Contactos (%)': "{:.1f}%",
             'Tasa Respuesta vs Aceptadas (%)': "{:.1f}%", 'Tasa Sesión vs Respuestas (%)': "{:.1f}%",
             'Tasa Sesión Global vs Contactos (%)': "{:.1f}%"
-        }), use_container_width=True, height=400)
+        }), use_container_width=True)
     else: 
         st.info("No hay datos para la tabla de trazabilidad detallada después de filtrar N/D_Interno o no hay prospectadores asignados.")
 
