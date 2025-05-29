@@ -17,7 +17,7 @@ st.markdown(
 # --- Constants and Session State Keys ---
 SHEET_URL_SECRET_KEY = "main_prostraction_sheet_url"
 DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0"
-NO_CAMPAIGN_VALUES = ["Sin Campaña Asignada", "N/D", ""] 
+NO_CAMPAIGN_VALUES = ["Sin Campaña Asignada", "N/D", ""]
 
 COL_CAMPAIGN = "Campaña"
 COL_FECHA_INVITE = "Fecha de Invite"
@@ -49,7 +49,7 @@ def clean_yes_no_value(val, true_val="si", false_val="no", default_val="no"):
     if cleaned == true_val.lower(): return true_val
     elif cleaned == false_val.lower(): return false_val
     elif cleaned in ["", "nan", "na", "<na>"]: return default_val
-    return cleaned 
+    return cleaned
 
 def parse_date_robustly(date_val):
     if pd.isna(date_val) or str(date_val).strip() == "": return pd.NaT
@@ -118,17 +118,17 @@ def load_and_prepare_campaign_data():
     for col in date_cols_manual:
         if col in df.columns: df[col] = df[col].apply(parse_date_robustly)
         else: df[col] = pd.NaT
-    
+
     yes_no_cols_manual = [COL_INVITE_ACEPTADA, COL_RESPUESTA_1ER_MSJ, COL_SESION_AGENDADA_MANUAL]
     for col in yes_no_cols_manual:
         if col in df.columns: df[col] = df[col].apply(clean_yes_no_value)
-        else: df[col] = "no" 
-            
+        else: df[col] = "no"
+
     text_cols_manual = [COL_QUIEN_PROSPECTO, COL_AVATAR]
     for col in text_cols_manual:
         if col in df.columns: df[col] = df[col].apply(lambda x: clean_text_value(x, default="N/D_Interno"))
         else: df[col] = "N/D_Interno"
-            
+
     if COL_AVATAR in df.columns:
         df[COL_AVATAR] = df[COL_AVATAR].astype(str).str.strip().str.title()
         equivalencias_avatar = {"Jonh Fenner": "John Bermúdez", "Jonh Bermúdez": "John Bermúdez", "Jonh": "John Bermúdez", "John Fenner": "John Bermúdez"}
@@ -138,65 +138,50 @@ def load_and_prepare_campaign_data():
     for col in email_yes_no_cols:
         if col in df.columns: df[col] = df[col].apply(clean_yes_no_value)
         else: df[col] = "no"
-            
+
     if COL_FECHA_SESION_EMAIL in df.columns: df[COL_FECHA_SESION_EMAIL] = df[COL_FECHA_SESION_EMAIL].apply(parse_date_robustly)
     else: df[COL_FECHA_SESION_EMAIL] = pd.NaT
-        
+
     if COL_FECHA_INVITE in df.columns and not df[COL_FECHA_INVITE].isnull().all():
          df["FechaFiltroPrincipal"] = df[COL_FECHA_INVITE]
-    elif COL_FECHA_SESION_EMAIL in df.columns and not df[COL_FECHA_SESION_EMAIL].isnull().all(): 
+    elif COL_FECHA_SESION_EMAIL in df.columns and not df[COL_FECHA_SESION_EMAIL].isnull().all():
          df["FechaFiltroPrincipal"] = df[COL_FECHA_SESION_EMAIL]
     else: df["FechaFiltroPrincipal"] = pd.NaT
     return df
 
 
 # --- Sidebar Filters ---
-# Reemplaza la función display_campaign_filters en tu archivo .py
-
 def display_campaign_filters(df_options):
     st.sidebar.header("🎯 Filtros de Campaña")
 
-    # Clave para la bandera de reseteo
-    RESET_FLAG_KEY = f"{SES_CAMPAIGN_FILTER_KEY}_reset_flag"
-
-    # Si la bandera de reseteo está activa, limpiar los estados y desactivar la bandera
-    if st.session_state.get(RESET_FLAG_KEY, False):
-        st.session_state[SES_CAMPAIGN_FILTER_KEY] = ["– Todas –"]
-        st.session_state[SES_START_DATE_KEY] = None
-        st.session_state[SES_END_DATE_KEY] = None
-        st.session_state[SES_PROSPECTOR_FILTER_KEY] = ["– Todos –"]
-        st.session_state[SES_AVATAR_FILTER_KEY] = ["– Todas –"]
-        st.session_state[RESET_FLAG_KEY] = False # Importante: resetear la bandera
-
-    # 1. Inicializar session state para todas las claves de filtro si no existen
     default_filters_init = {
-        SES_CAMPAIGN_FILTER_KEY: ["– Todas –"], 
-        SES_START_DATE_KEY: None, 
+        SES_CAMPAIGN_FILTER_KEY: ["– Todas –"],
+        SES_START_DATE_KEY: None,
         SES_END_DATE_KEY: None,
-        SES_PROSPECTOR_FILTER_KEY: ["– Todos –"], 
-        SES_AVATAR_FILTER_KEY: ["– Todas –"]
+        SES_PROSPECTOR_FILTER_KEY: ["– Todos –"],
+        SES_AVATAR_FILTER_KEY: ["– Todos –"]
     }
     for key, value in default_filters_init.items():
         if key not in st.session_state:
             st.session_state[key] = value
-    
+
     # --- Campaign Filter ---
     campaign_options = ["– Todas –"]
     if COL_CAMPAIGN in df_options.columns and not df_options[COL_CAMPAIGN].empty:
         campaign_options.extend(sorted(df_options[COL_CAMPAIGN].dropna().unique()))
-    
-    # Usar el valor actual del session_state para el default del widget
-    # El session_state ya fue inicializado o reseteado (si la bandera estaba activa)
-    validated_default_campaigns = [
-        c for c in st.session_state.get(SES_CAMPAIGN_FILTER_KEY, ["– Todas –"]) 
-        if c in campaign_options
-    ]
-    if not validated_default_campaigns: validated_default_campaigns = ["– Todas –"]
-        
+
+    current_campaign_selection_in_state = st.session_state[SES_CAMPAIGN_FILTER_KEY]
+    validated_campaign_selection = [c for c in current_campaign_selection_in_state if c in campaign_options]
+
+    if not validated_campaign_selection: # If empty or all items became invalid
+        st.session_state[SES_CAMPAIGN_FILTER_KEY] = default_filters_init[SES_CAMPAIGN_FILTER_KEY]
+    elif len(validated_campaign_selection) != len(current_campaign_selection_in_state): # Some items were invalid
+        st.session_state[SES_CAMPAIGN_FILTER_KEY] = validated_campaign_selection
+
     selected_campaigns = st.sidebar.multiselect(
         "Seleccionar Campaña(s)",
         options=campaign_options,
-        default=validated_default_campaigns, # Usar el valor de session_state como default
+        default=default_filters_init[SES_CAMPAIGN_FILTER_KEY], # Use initial default
         key=SES_CAMPAIGN_FILTER_KEY
     )
 
@@ -209,34 +194,28 @@ def display_campaign_filters(df_options):
             max_date = valid_dates.max().date()
 
     date_col1, date_col2 = st.sidebar.columns(2)
-    start_date = date_col1.date_input(
-        "Fecha Desde", 
-        value=st.session_state.get(SES_START_DATE_KEY), # Leer de session_state
-        min_value=min_date, max_value=max_date, format="DD/MM/YYYY", 
-        key=SES_START_DATE_KEY
-    )
-    end_date = date_col2.date_input(
-        "Fecha Hasta", 
-        value=st.session_state.get(SES_END_DATE_KEY), # Leer de session_state
-        min_value=min_date, max_value=max_date, format="DD/MM/YYYY", 
-        key=SES_END_DATE_KEY
-    )
+    # For date_input, using 'value' is the standard way for controlled components
+    start_date = date_col1.date_input("Fecha Desde", value=st.session_state[SES_START_DATE_KEY], min_value=min_date, max_value=max_date, format="DD/MM/YYYY", key=SES_START_DATE_KEY)
+    end_date = date_col2.date_input("Fecha Hasta", value=st.session_state[SES_END_DATE_KEY], min_value=min_date, max_value=max_date, format="DD/MM/YYYY", key=SES_END_DATE_KEY)
+
 
     # --- Prospector Filter ---
     prospector_options = ["– Todas –"]
     if COL_QUIEN_PROSPECTO in df_options.columns and not df_options[COL_QUIEN_PROSPECTO].empty:
         prospector_options.extend(sorted(df_options[df_options[COL_QUIEN_PROSPECTO] != "N/D_Interno"][COL_QUIEN_PROSPECTO].dropna().unique()))
-    
-    validated_default_prospectors = [
-        p for p in st.session_state.get(SES_PROSPECTOR_FILTER_KEY, ["– Todos –"]) 
-        if p in prospector_options
-    ]
-    if not validated_default_prospectors: validated_default_prospectors = ["– Todas –"]
+
+    current_prospector_selection_in_state = st.session_state[SES_PROSPECTOR_FILTER_KEY]
+    validated_prospector_selection = [p for p in current_prospector_selection_in_state if p in prospector_options]
+
+    if not validated_prospector_selection:
+        st.session_state[SES_PROSPECTOR_FILTER_KEY] = default_filters_init[SES_PROSPECTOR_FILTER_KEY]
+    elif len(validated_prospector_selection) != len(current_prospector_selection_in_state):
+        st.session_state[SES_PROSPECTOR_FILTER_KEY] = validated_prospector_selection
 
     selected_prospectors = st.sidebar.multiselect(
         "¿Quién Prospectó?",
         options=prospector_options,
-        default=validated_default_prospectors, # Usar el valor de session_state
+        default=default_filters_init[SES_PROSPECTOR_FILTER_KEY], # Use initial default
         key=SES_PROSPECTOR_FILTER_KEY
     )
 
@@ -244,34 +223,37 @@ def display_campaign_filters(df_options):
     avatar_options = ["– Todas –"]
     if COL_AVATAR in df_options.columns and not df_options[COL_AVATAR].empty:
         avatar_options.extend(sorted(df_options[df_options[COL_AVATAR] != "N/D_Interno"][COL_AVATAR].dropna().unique()))
-        
-    validated_default_avatars = [
-        a for a in st.session_state.get(SES_AVATAR_FILTER_KEY, ["– Todos –"]) 
-        if a in avatar_options
-    ]
-    if not validated_default_avatars: validated_default_avatars = ["– Todas –"]
-        
+
+    current_avatar_selection_in_state = st.session_state[SES_AVATAR_FILTER_KEY]
+    validated_avatar_selection = [a for a in current_avatar_selection_in_state if a in avatar_options]
+
+    if not validated_avatar_selection:
+        st.session_state[SES_AVATAR_FILTER_KEY] = default_filters_init[SES_AVATAR_FILTER_KEY]
+    elif len(validated_avatar_selection) != len(current_avatar_selection_in_state):
+        st.session_state[SES_AVATAR_FILTER_KEY] = validated_avatar_selection
+
     selected_avatars = st.sidebar.multiselect(
         "Avatar",
         options=avatar_options,
-        default=validated_default_avatars, # Usar el valor de session_state
+        default=default_filters_init[SES_AVATAR_FILTER_KEY], # Use initial default
         key=SES_AVATAR_FILTER_KEY
     )
-    
+
     st.sidebar.markdown("---")
-    # Botón de Limpiar Filtros ahora activa la bandera y hace rerun
-    if st.sidebar.button("🧹 Limpiar Filtros", use_container_width=True, key=f"{SES_CAMPAIGN_FILTER_KEY}_clear_button_v2"):
-        st.session_state[RESET_FLAG_KEY] = True
+    if st.sidebar.button("🧹 Limpiar Filtros", use_container_width=True, key=f"{SES_CAMPAIGN_FILTER_KEY}_clear_button_v2"): # Ensure unique key for button
+        st.session_state[SES_CAMPAIGN_FILTER_KEY] = default_filters_init[SES_CAMPAIGN_FILTER_KEY]
+        st.session_state[SES_START_DATE_KEY] = default_filters_init[SES_START_DATE_KEY]
+        st.session_state[SES_END_DATE_KEY] = default_filters_init[SES_END_DATE_KEY]
+        st.session_state[SES_PROSPECTOR_FILTER_KEY] = default_filters_init[SES_PROSPECTOR_FILTER_KEY]
+        st.session_state[SES_AVATAR_FILTER_KEY] = default_filters_init[SES_AVATAR_FILTER_KEY]
         st.rerun()
 
-    # Los valores retornados son los que los widgets han puesto en st.session_state
-    return (
-        st.session_state[SES_CAMPAIGN_FILTER_KEY],
-        st.session_state[SES_START_DATE_KEY],
-        st.session_state[SES_END_DATE_KEY],
-        st.session_state[SES_PROSPECTOR_FILTER_KEY],
-        st.session_state[SES_AVATAR_FILTER_KEY]
-    )
+    # The selected_... variables will reflect st.session_state[KEY] due to the key argument
+    return st.session_state[SES_CAMPAIGN_FILTER_KEY], \
+           st.session_state[SES_START_DATE_KEY], \
+           st.session_state[SES_END_DATE_KEY], \
+           st.session_state[SES_PROSPECTOR_FILTER_KEY], \
+           st.session_state[SES_AVATAR_FILTER_KEY]
 
 # --- Apply Filters ---
 # ... (la función apply_campaign_filters permanece igual que en la versión anterior)...
@@ -325,7 +307,7 @@ def display_manual_prospecting_analysis(df_filtered_campaigns):
     col_metric1, col_metric2 = st.columns(2)
     col_metric1.metric("Prospectos en Selección Actual (Asignados en Campaña)", f"{total_in_current_filter:,}")
     col_metric2.metric("De estos, con Contacto Manual Iniciado (tienen Fecha Invite)", f"{total_contactos_iniciados_manual:,}")
-    
+
     if total_contactos_iniciados_manual == 0 and total_in_current_filter > 0:
         st.warning("De los prospectos en la selección actual, ninguno tiene un contacto manual iniciado (Fecha de Invite registrada).")
     elif total_contactos_iniciados_manual == 0 and total_in_current_filter == 0:
@@ -335,36 +317,36 @@ def display_manual_prospecting_analysis(df_filtered_campaigns):
     st.markdown("#### Trazabilidad Detallada: Asignados vs. Contactados y Embudo por Prospectador")
     assigned_counts = df_filtered_campaigns.groupby([COL_CAMPAIGN, COL_QUIEN_PROSPECTO], as_index=False).size().rename(columns={'size': 'Prospectos Asignados'})
     contactos_iniciados_counts = df_contactos_iniciados.groupby([COL_CAMPAIGN, COL_QUIEN_PROSPECTO], as_index=False).size().rename(columns={'size': 'Contactos Manuales Iniciados'})
-    
-    funnel_metrics = pd.DataFrame() 
+
+    funnel_metrics = pd.DataFrame()
     if not df_contactos_iniciados.empty:
         funnel_metrics = df_contactos_iniciados.groupby([COL_CAMPAIGN, COL_QUIEN_PROSPECTO], as_index=False).agg(
             Invites_Aceptadas=(COL_INVITE_ACEPTADA, lambda x: (x == "si").sum()),
-            Respuestas_1er_Msj=(COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum()), 
+            Respuestas_1er_Msj=(COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum()),
             Sesiones_Agendadas=(COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
         )
 
     trace_df = pd.merge(assigned_counts, contactos_iniciados_counts, on=[COL_CAMPAIGN, COL_QUIEN_PROSPECTO], how='left')
     if not funnel_metrics.empty:
         trace_df = pd.merge(trace_df, funnel_metrics, on=[COL_CAMPAIGN, COL_QUIEN_PROSPECTO], how='left')
-    else: 
+    else:
         trace_df['Invites_Aceptadas'] = 0
         trace_df['Respuestas_1er_Msj'] = 0
         trace_df['Sesiones_Agendadas'] = 0
-    
+
     count_cols_fill = ['Contactos Manuales Iniciados', 'Invites_Aceptadas', 'Respuestas_1er_Msj', 'Sesiones_Agendadas']
     for col in count_cols_fill:
-        if col not in trace_df.columns: 
+        if col not in trace_df.columns:
             trace_df[col] = 0
         trace_df[col] = trace_df[col].fillna(0).astype(int)
 
     trace_df['Tasa Inicio Prospección (%)'] = ((trace_df['Contactos Manuales Iniciados'] / trace_df['Prospectos Asignados']) * 100).fillna(0).round(1)
-    base_rates_embudo = trace_df['Contactos Manuales Iniciados'] 
+    base_rates_embudo = trace_df['Contactos Manuales Iniciados']
     trace_df['Tasa Aceptación vs Contactos (%)'] = ((trace_df['Invites_Aceptadas'] / base_rates_embudo) * 100).fillna(0).round(1)
     trace_df['Tasa Respuesta vs Aceptadas (%)'] = ((trace_df['Respuestas_1er_Msj'] / trace_df['Invites_Aceptadas']) * 100).fillna(0).round(1)
     trace_df['Tasa Sesión vs Respuestas (%)'] = ((trace_df['Sesiones_Agendadas'] / trace_df['Respuestas_1er_Msj']) * 100).fillna(0).round(1)
     trace_df['Tasa Sesión Global vs Contactos (%)'] = ((trace_df['Sesiones_Agendadas'] / base_rates_embudo) * 100).fillna(0).round(1)
-    
+
     rate_cols = ['Tasa Inicio Prospección (%)', 'Tasa Aceptación vs Contactos (%)', 'Tasa Respuesta vs Aceptadas (%)', 'Tasa Sesión vs Respuestas (%)', 'Tasa Sesión Global vs Contactos (%)']
     for r_col in rate_cols:
         trace_df[r_col] = trace_df[r_col].apply(lambda x: 0 if pd.isna(x) or x == float('inf') or x == float('-inf') else x)
@@ -373,7 +355,7 @@ def display_manual_prospecting_analysis(df_filtered_campaigns):
 
     if not trace_df_display.empty:
         column_order = [
-            COL_CAMPAIGN, COL_QUIEN_PROSPECTO, 
+            COL_CAMPAIGN, COL_QUIEN_PROSPECTO,
             'Prospectos Asignados', 'Contactos Manuales Iniciados', 'Tasa Inicio Prospección (%)',
             'Invites_Aceptadas', 'Tasa Aceptación vs Contactos (%)',
             'Respuestas_1er_Msj', 'Tasa Respuesta vs Aceptadas (%)',
@@ -382,13 +364,13 @@ def display_manual_prospecting_analysis(df_filtered_campaigns):
         ]
         column_order_existing = [col for col in column_order if col in trace_df_display.columns]
         st.dataframe(trace_df_display[column_order_existing].style.format({
-            'Prospectos Asignados': "{:,}", 'Contactos Manuales Iniciados': "{:,}", 
+            'Prospectos Asignados': "{:,}", 'Contactos Manuales Iniciados': "{:,}",
             'Invites_Aceptadas': "{:,}", 'Respuestas_1er_Msj': "{:,}", 'Sesiones_Agendadas': "{:,}",
             'Tasa Inicio Prospección (%)': "{:.1f}%", 'Tasa Aceptación vs Contactos (%)': "{:.1f}%",
             'Tasa Respuesta vs Aceptadas (%)': "{:.1f}%", 'Tasa Sesión vs Respuestas (%)': "{:.1f}%",
             'Tasa Sesión Global vs Contactos (%)': "{:.1f}%"
         }), use_container_width=True)
-    else: 
+    else:
         st.info("No hay datos para la tabla de trazabilidad detallada después de filtrar N/D_Interno o no hay prospectadores asignados.")
 
     if total_contactos_iniciados_manual > 0:
@@ -422,7 +404,7 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
         return
 
     df_contactos_iniciados = df_filtered_selection[df_filtered_selection[COL_FECHA_INVITE].notna()].copy()
-    
+
     if df_contactos_iniciados.empty:
         st.info("No hay prospectos con contacto manual iniciado en la selección actual para este desglose detallado.")
         return
@@ -459,7 +441,7 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
         desglose_prospectador = df_contactos_iniciados.groupby(COL_QUIEN_PROSPECTO, as_index=False).agg(**desglose_prospectador_agg_spec)
         desglose_prospectador = desglose_prospectador[desglose_prospectador[COL_QUIEN_PROSPECTO] != "N/D_Interno"]
         desglose_prospectador_final = pd.merge(asignados_por_prospectador, desglose_prospectador, on=COL_QUIEN_PROSPECTO, how='left').fillna(0)
-        
+
         cols_to_ensure_numeric = ['Contactos Manuales Iniciados', 'Invites Aceptadas', 'Respuestas 1er Msj', 'Sesiones Agendadas', 'Total Asignados']
         for col in cols_to_ensure_numeric:
             if col not in desglose_prospectador_final.columns: desglose_prospectador_final[col] = 0
@@ -476,7 +458,7 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
 
         st.dataframe(desglose_prospectador_final.style.format(
             {'Total Asignados': "{:,}", 'Contactos Manuales Iniciados': "{:,}", 'Invites Aceptadas': "{:,}", 'Respuestas 1er Msj': "{:,}", 'Sesiones Agendadas': "{:,}",
-             'Tasa Inicio (%)': "{:.1f}%", 'Tasa Aceptación (%)': "{:.1f}%", 'Tasa Respuesta (%)': "{:.1f}%", 
+             'Tasa Inicio (%)': "{:.1f}%", 'Tasa Aceptación (%)': "{:.1f}%", 'Tasa Respuesta (%)': "{:.1f}%",
              'Tasa Sesión vs Resp. (%)': "{:.1f}%", 'Tasa Sesión Global (%)': "{:.1f}%"}
         ), use_container_width=True)
         # ... (resto de los gráficos por prospectador sin cambios)
@@ -512,7 +494,7 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
         }
         desglose_avatar = df_contactos_iniciados.groupby(COL_AVATAR, as_index=False).agg(**desglose_avatar_agg_spec)
         desglose_avatar = desglose_avatar[desglose_avatar[COL_AVATAR] != "N/D_Interno"]
-        
+
         base_embudo_avatar = desglose_avatar['Contactos Manuales Iniciados'] # Ahora debería funcionar
         desglose_avatar['Tasa Aceptación (%)'] = ((desglose_avatar['Invites Aceptadas'] / base_embudo_avatar) * 100).fillna(0).round(1)
         desglose_avatar['Tasa Respuesta (%)'] = ((desglose_avatar['Respuestas 1er Msj'] / desglose_avatar['Invites Aceptadas']) * 100).fillna(0).round(1)
@@ -561,14 +543,14 @@ def display_global_manual_prospecting_deep_dive(df_filtered_selection):
             'Sesiones Agendadas': (COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
         }
         desglose_campana = df_contactos_iniciados.groupby(COL_CAMPAIGN, as_index=False).agg(**desglose_campana_agg_spec)
-        
+
         base_embudo_camp = desglose_campana['Contactos Manuales Iniciados'] # Ahora debería funcionar
         desglose_campana['Tasa Aceptación (%)'] = ((desglose_campana['Invites Aceptadas'] / base_embudo_camp) * 100).fillna(0).round(1)
         desglose_campana['Tasa Respuesta (%)'] = ((desglose_campana['Respuestas 1er Msj'] / desglose_campana['Invites Aceptadas']) * 100).fillna(0).round(1)
         desglose_campana['Tasa Sesión Global (%)'] = ((desglose_campana['Sesiones Agendadas'] / base_embudo_camp) * 100).fillna(0).round(1)
         rate_cols_camp = ['Tasa Aceptación (%)', 'Tasa Respuesta (%)', 'Tasa Sesión Global (%)']
         for r_col in rate_cols_camp: desglose_campana[r_col] = desglose_campana[r_col].apply(lambda x: 0 if pd.isna(x) or x == float('inf') or x == float('-inf') else x)
-        
+
         st.dataframe(desglose_campana.style.format(
             {'Contactos Manuales Iniciados': "{:,}", 'Invites Aceptadas': "{:,}", 'Respuestas 1er Msj': "{:,}", 'Sesiones Agendadas': "{:,}",
              'Tasa Aceptación (%)': "{:.1f}%", 'Tasa Respuesta (%)': "{:.1f}%", 'Tasa Sesión Global (%)': "{:.1f}%"}
