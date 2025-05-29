@@ -586,4 +586,20 @@ if df_base_campaigns_loaded.empty:
     st.error("No se pudieron cargar datos de campañas válidas. La página no puede continuar.")
     st.stop()
 
-selected_campaigns, start_date_filter, end_date_filter, selected_prospectors, selected_avatars = display_campaign
+selected_campaigns, start_date_filter, end_date_filter, selected_prospectors, selected_avatars = display_campaign_filters(df_base_campaigns_loaded.copy())
+df_filtered_by_sidebar = apply_campaign_filters(df_base_campaigns_loaded.copy(), selected_campaigns, start_date_filter, end_date_filter, selected_prospectors, selected_avatars)
+
+# Sección 1: Potencial de Campaña
+display_campaign_potential(df_base_campaigns_loaded.copy())
+
+# Sección 2: Trazabilidad Detallada (Campaña -> Prospectador -> Embudo)
+display_manual_prospecting_analysis(df_filtered_by_sidebar.copy())
+
+# NUEVA Sección 3: Desglose General de Prospección Manual
+display_global_manual_prospecting_deep_dive(df_filtered_by_sidebar.copy()) # Usar el mismo df filtrado
+
+# Sección 4: Análisis de Prospección por Email
+display_email_prospecting_analysis(df_filtered_by_sidebar.copy())
+
+st.markdown("---")
+st.info("Esta página de análisis de campañas ha sido desarrollada por Johnsito ✨")
