@@ -301,26 +301,49 @@ def display_manual_prospecting_analysis(df_filtered_campaigns):
     st.plotly_chart(fig_funnel_manual_agg, use_container_width=True)
 
     # Gráficos comparativos adicionales por Prospectador
-    if not trace_df.empty:
+    # Asegurarse de que trace_df no esté vacío y COL_QUIEN_PROSPECTO exista.
+    if not trace_df.empty and COL_QUIEN_PROSPECTO in trace_df.columns:
         col_chart1, col_chart2 = st.columns(2)
         with col_chart1:
-            df_chart_inicio = trace_df[trace_df['Prospectos Asignados'] > 0].copy()
+            # Filtrar N/D_Interno ANTES de pasar al gráfico
+            df_chart_inicio = trace_df[
+                (trace_df['Prospectos Asignados'] > 0) & 
+                (trace_df[COL_QUIEN_PROSPECTO] != "N/D_Interno")
+            ].copy()
             if not df_chart_inicio.empty:
                 fig_tasa_inicio = px.bar(df_chart_inicio.sort_values(by='Tasa Inicio Prospección (%)', ascending=False),
                     x=COL_QUIEN_PROSPECTO, y='Tasa Inicio Prospección (%)', color=COL_CAMPAIGN, barmode='group',
-                    title='Tasa Inicio Prospección Manual por Prospectador y Campaña', text_auto='.1f')
-                fig_tasa_inicio.update_traces(texttemplate='%{text}%')
+                    title='Tasa Inicio Prospección Manual por Prospectador y Campaña', 
+                    text='Tasa Inicio Prospección (%)') # Usar la columna como texto
+                fig_tasa_inicio.update_traces(texttemplate='%{text:.1f}%', textposition='outside') # Formatear el texto
+                fig_tasa_inicio.update_layout(yaxis_title="Tasa Inicio Prospección (%)", yaxis_range=[0,105]) # Eje Y de 0 a 105%
                 st.plotly_chart(fig_tasa_inicio, use_container_width=True)
+            else:
+                st.caption("No hay datos para el gráfico de Tasa Inicio Prospección (excluyendo N/D_Interno).")
+        
         with col_chart2:
-            df_chart_sesion = trace_df[trace_df['Contactos Manuales Iniciados'] > 0].copy()
+            # Filtrar N/D_Interno ANTES de pasar al gráfico
+            df_chart_sesion = trace_df[
+                (trace_df['Contactos Manuales Iniciados'] > 0) &
+                (trace_df[COL_QUIEN_PROSPECTO] != "N/D_Interno")
+            ].copy()
             if not df_chart_sesion.empty:
                 fig_tasa_sesion_g = px.bar(df_chart_sesion.sort_values(by='Tasa Sesión Global vs Contactos (%)', ascending=False),
                     x=COL_QUIEN_PROSPECTO, y='Tasa Sesión Global vs Contactos (%)', color=COL_CAMPAIGN, barmode='group',
-                    title='Tasa Sesión Global (Manual) por Prospectador y Campaña', text_auto='.1f')
-                fig_tasa_sesion_g.update_traces(texttemplate='%{text}%')
-                st.plotly_chart(fig_tasa_sesion_g, use_container_width=True)
-    st.markdown("---")
+                    title='Tasa Sesión Global (Manual) por Prospectador y Campaña',
+                    text='Tasa Sesión Global vs Contactos (%)') # Usar la columna como texto
+                fig_tasa_sesion_g.update_traces(texttemplate='%{text:.1f}%', textposition='outside') # Formatear el texto
+                
+                # Ajustar el rango del eje Y dinámicamente
+                max_rate_val = df_chart_sesion['Tasa Sesión Global vs Contactos (%)'].max()
+                upper_y_limit = max(10, max_rate_val + 5) if pd.notna(max_rate_val) and max_rate_val > 0 else 10
+                if upper_y_limit > 100: upper_y_limit = 105 # Cap at 105% if rates exceed 100 for some reason
 
+                fig_tasa_sesion_g.update_layout(yaxis_title="Tasa Sesión Global vs Contactos (%)", yaxis_range=[0,upper_y_limit])
+                st.plotly_chart(fig_tasa_sesion_g, use_container_width=True)
+            else:
+                st.caption("No hay datos para el gráfico de Tasa Sesión Global (excluyendo N/D_Interno).")
+    st.markdown("---")
 def display_email_prospecting_analysis(df_filtered_campaigns):
     st.subheader("Análisis de Prospección por Email")
     st.caption("Basado en campañas y filtros seleccionados en la barra lateral.")
