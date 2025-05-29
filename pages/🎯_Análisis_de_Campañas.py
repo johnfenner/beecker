@@ -16,7 +16,7 @@ st.markdown(
 
 # --- Constants and Session State Keys ---
 SHEET_URL_SECRET_KEY = "main_prostraction_sheet_url"
-DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0" # Fallback
+DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0"
 NO_CAMPAIGN_VALUES = ["Sin Campaña Asignada", "N/D", ""] 
 
 COL_CAMPAIGN = "Campaña"
@@ -32,14 +32,13 @@ COL_RESPUESTA_EMAIL = "Respuesta Email"
 COL_SESION_AGENDADA_EMAIL = "Sesion Agendada Email"
 COL_FECHA_SESION_EMAIL = "Fecha de Sesion Email"
 
-SES_CAMPAIGN_FILTER_KEY = "campaign_page_campaign_filter_v3"
-SES_START_DATE_KEY = "campaign_page_start_date_v3"
-SES_END_DATE_KEY = "campaign_page_end_date_v3"
-SES_PROSPECTOR_FILTER_KEY = "campaign_page_prospector_filter_v3"
-SES_AVATAR_FILTER_KEY = "campaign_page_avatar_filter_v3"
+SES_CAMPAIGN_FILTER_KEY = "campaign_page_campaign_filter_v4" # Incremented version
+SES_START_DATE_KEY = "campaign_page_start_date_v4"
+SES_END_DATE_KEY = "campaign_page_end_date_v4"
+SES_PROSPECTOR_FILTER_KEY = "campaign_page_prospector_filter_v4"
+SES_AVATAR_FILTER_KEY = "campaign_page_avatar_filter_v4"
 
 # --- Helper Functions (Self-Contained) ---
-
 def clean_text_value(val, default="N/D"):
     if pd.isna(val) or str(val).strip() == "": return default
     return str(val).strip()
@@ -86,6 +85,7 @@ def load_and_prepare_campaign_data():
     except KeyError:
         st.error("Error de Configuración (Secrets): Falta [gcp_service_account].")
         return pd.DataFrame()
+    # ... (resto de la función load_and_prepare_campaign_data sin cambios)...
     except Exception as e:
         st.error(f"Error al cargar credenciales de Google Sheets: {e}")
         return pd.DataFrame()
@@ -144,12 +144,14 @@ def load_and_prepare_campaign_data():
         
     if COL_FECHA_INVITE in df.columns and not df[COL_FECHA_INVITE].isnull().all():
          df["FechaFiltroPrincipal"] = df[COL_FECHA_INVITE]
-    elif COL_FECHA_SESION_EMAIL in df.columns and not df[COL_FECHA_SESION_EMAIL].isnull().all(): # Fallback
+    elif COL_FECHA_SESION_EMAIL in df.columns and not df[COL_FECHA_SESION_EMAIL].isnull().all(): 
          df["FechaFiltroPrincipal"] = df[COL_FECHA_SESION_EMAIL]
     else: df["FechaFiltroPrincipal"] = pd.NaT
     return df
 
+
 # --- Sidebar Filters ---
+# ... (la función display_campaign_filters permanece igual que en la versión anterior)...
 def display_campaign_filters(df_options):
     st.sidebar.header("🎯 Filtros de Campaña")
     default_filters = {
@@ -200,6 +202,8 @@ def display_campaign_filters(df_options):
         st.rerun()
     return selected_campaigns, start_date, end_date, selected_prospectors, selected_avatars
 
+# --- Apply Filters ---
+# ... (la función apply_campaign_filters permanece igual que en la versión anterior)...
 def apply_campaign_filters(df, campaigns, start_date, end_date, prospectors, avatars):
     if df.empty: return df
     df_filtered = df.copy()
@@ -218,6 +222,7 @@ def apply_campaign_filters(df, campaigns, start_date, end_date, prospectors, ava
 
 # --- Analysis and Display Functions ---
 
+# ... (la función display_campaign_potential permanece igual)...
 def display_campaign_potential(df_valid_campaigns):
     st.subheader("Potencial de Prospección por Campaña")
     if df_valid_campaigns.empty:
@@ -233,9 +238,7 @@ def display_campaign_potential(df_valid_campaigns):
         st.dataframe(potential_counts.style.format({'Total Prospectos en Campaña': "{:,}"}), use_container_width=True)
     st.markdown("---")
 
-# Debes reemplazar la función display_manual_prospecting_analysis existente
-# en tu archivo pages/📢_Campañas.py con esta versión completa.
-
+# ... (la función display_manual_prospecting_analysis con la lógica de trazabilidad que ya hicimos permanece igual)...
 def display_manual_prospecting_analysis(df_filtered_campaigns):
     st.subheader("Análisis de Prospección Manual")
     st.caption("Basado en campañas y filtros seleccionados en la barra lateral. Muestra prospectos asignados, cuántos fueron contactados manualmente y su progreso en el embudo.")
@@ -245,7 +248,6 @@ def display_manual_prospecting_analysis(df_filtered_campaigns):
         return
 
     total_in_current_filter = len(df_filtered_campaigns)
-    # Contactos Manuales Iniciados son aquellos con Fecha de Invite
     df_contactos_iniciados = df_filtered_campaigns[df_filtered_campaigns[COL_FECHA_INVITE].notna()].copy()
     total_contactos_iniciados_manual = len(df_contactos_iniciados)
 
@@ -255,21 +257,15 @@ def display_manual_prospecting_analysis(df_filtered_campaigns):
     
     if total_contactos_iniciados_manual == 0 and total_in_current_filter > 0:
         st.warning("De los prospectos en la selección actual, ninguno tiene un contacto manual iniciado (Fecha de Invite registrada).")
-        # Aún así, mostraremos la tabla de asignados si hay prospectos en el filtro.
     elif total_contactos_iniciados_manual == 0 and total_in_current_filter == 0:
         st.info("No se encontraron prospectos asignados ni contactos manuales iniciados para la selección actual.")
         return
 
-
     st.markdown("#### Trazabilidad Detallada: Asignados vs. Contactados y Embudo por Prospectador")
-    # Prospectos Asignados en la selección actual (cumplen filtros de sidebar)
     assigned_counts = df_filtered_campaigns.groupby([COL_CAMPAIGN, COL_QUIEN_PROSPECTO], as_index=False).size().rename(columns={'size': 'Prospectos Asignados'})
-    
-    # Contactos Manuales Iniciados (tienen Fecha de Invite)
     contactos_iniciados_counts = df_contactos_iniciados.groupby([COL_CAMPAIGN, COL_QUIEN_PROSPECTO], as_index=False).size().rename(columns={'size': 'Contactos Manuales Iniciados'})
     
-    # Métricas del embudo para aquellos con Contacto Manual Iniciado
-    funnel_metrics = pd.DataFrame() # Inicializar vacío
+    funnel_metrics = pd.DataFrame() 
     if not df_contactos_iniciados.empty:
         funnel_metrics = df_contactos_iniciados.groupby([COL_CAMPAIGN, COL_QUIEN_PROSPECTO], as_index=False).agg(
             Invites_Aceptadas=(COL_INVITE_ACEPTADA, lambda x: (x == "si").sum()),
@@ -277,28 +273,22 @@ def display_manual_prospecting_analysis(df_filtered_campaigns):
             Sesiones_Agendadas=(COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
         )
 
-    # Unir la información
-    # Empezar con assigned_counts para asegurar que todos los asignados aparezcan
     trace_df = pd.merge(assigned_counts, contactos_iniciados_counts, on=[COL_CAMPAIGN, COL_QUIEN_PROSPECTO], how='left')
     if not funnel_metrics.empty:
         trace_df = pd.merge(trace_df, funnel_metrics, on=[COL_CAMPAIGN, COL_QUIEN_PROSPECTO], how='left')
-    else: # Si no hay contactos iniciados, las columnas del funnel no existirán en funnel_metrics
+    else: 
         trace_df['Invites_Aceptadas'] = 0
         trace_df['Respuestas_1er_Msj'] = 0
         trace_df['Sesiones_Agendadas'] = 0
-
     
-    # Rellenar NaNs para las cuentas (si un prospectador tiene asignados pero 0 contactados, o 0 en etapas del embudo)
     count_cols_fill = ['Contactos Manuales Iniciados', 'Invites_Aceptadas', 'Respuestas_1er_Msj', 'Sesiones_Agendadas']
     for col in count_cols_fill:
-        if col not in trace_df.columns: # Añadir columna si no existe por un merge vacío
+        if col not in trace_df.columns: 
             trace_df[col] = 0
         trace_df[col] = trace_df[col].fillna(0).astype(int)
 
-    # Calcular tasas
     trace_df['Tasa Inicio Prospección (%)'] = ((trace_df['Contactos Manuales Iniciados'] / trace_df['Prospectos Asignados']) * 100).fillna(0).round(1)
-    
-    base_rates_embudo = trace_df['Contactos Manuales Iniciados'] # El embudo se calcula sobre los contactados
+    base_rates_embudo = trace_df['Contactos Manuales Iniciados'] 
     trace_df['Tasa Aceptación vs Contactos (%)'] = ((trace_df['Invites_Aceptadas'] / base_rates_embudo) * 100).fillna(0).round(1)
     trace_df['Tasa Respuesta vs Aceptadas (%)'] = ((trace_df['Respuestas_1er_Msj'] / trace_df['Invites_Aceptadas']) * 100).fillna(0).round(1)
     trace_df['Tasa Sesión vs Respuestas (%)'] = ((trace_df['Sesiones_Agendadas'] / trace_df['Respuestas_1er_Msj']) * 100).fillna(0).round(1)
@@ -308,7 +298,6 @@ def display_manual_prospecting_analysis(df_filtered_campaigns):
     for r_col in rate_cols:
         trace_df[r_col] = trace_df[r_col].apply(lambda x: 0 if pd.isna(x) or x == float('inf') or x == float('-inf') else x)
 
-    # Excluir "N/D_Interno" de la tabla final si existe como prospectador
     trace_df_display = trace_df[trace_df[COL_QUIEN_PROSPECTO] != "N/D_Interno"].copy()
 
     if not trace_df_display.empty:
@@ -320,24 +309,20 @@ def display_manual_prospecting_analysis(df_filtered_campaigns):
             'Sesiones_Agendadas', 'Tasa Sesión vs Respuestas (%)',
             'Tasa Sesión Global vs Contactos (%)'
         ]
-        # Asegurar que solo se seleccionan columnas que existen en trace_df_display
         column_order_existing = [col for col in column_order if col in trace_df_display.columns]
-
         st.dataframe(trace_df_display[column_order_existing].style.format({
             'Prospectos Asignados': "{:,}", 'Contactos Manuales Iniciados': "{:,}", 
             'Invites_Aceptadas': "{:,}", 'Respuestas_1er_Msj': "{:,}", 'Sesiones_Agendadas': "{:,}",
-            'Tasa Inicio Prospección (%)': "{:.1f}%", 
-            'Tasa Aceptación vs Contactos (%)': "{:.1f}%",
-            'Tasa Respuesta vs Aceptadas (%)': "{:.1f}%", 
-            'Tasa Sesión vs Respuestas (%)': "{:.1f}%",
+            'Tasa Inicio Prospección (%)': "{:.1f}%", 'Tasa Aceptación vs Contactos (%)': "{:.1f}%",
+            'Tasa Respuesta vs Aceptadas (%)': "{:.1f}%", 'Tasa Sesión vs Respuestas (%)': "{:.1f}%",
             'Tasa Sesión Global vs Contactos (%)': "{:.1f}%"
-        }), use_container_width=True, height=400) # Aumenté un poco la altura
+        }), use_container_width=True, height=400)
     else: 
         st.info("No hay datos para la tabla de trazabilidad detallada después de filtrar N/D_Interno o no hay prospectadores asignados.")
 
-    # Embudo Agregado (solo si hay contactos manuales iniciados)
     if total_contactos_iniciados_manual > 0:
         st.markdown("#### Embudo de Conversión Agregado (para Contactos Manuales Iniciados)")
+        # ... (lógica del embudo agregado permanece igual) ...
         invites_aceptadas_agg = df_contactos_iniciados[df_contactos_iniciados[COL_INVITE_ACEPTADA] == "si"].shape[0]
         respuestas_1er_msj_agg = df_contactos_iniciados[df_contactos_iniciados[COL_RESPUESTA_1ER_MSJ] == "si"].shape[0]
         sesiones_agendadas_agg = df_contactos_iniciados[df_contactos_iniciados[COL_SESION_AGENDADA_MANUAL] == "si"].shape[0]
@@ -348,10 +333,221 @@ def display_manual_prospecting_analysis(df_filtered_campaigns):
         })
         fig_funnel_manual_agg = px.funnel(funnel_data_manual_agg, x='Cantidad', y='Etapa', title="Embudo Agregado Prospección Manual")
         st.plotly_chart(fig_funnel_manual_agg, use_container_width=True)
-    
     st.markdown("---")
 
 
+# --- NUEVA SECCIÓN: Desglose General de Prospección Manual ---
+def display_global_manual_prospecting_deep_dive(df_filtered_selection):
+    st.header("Desglose General de Prospección Manual en Campañas Seleccionadas")
+    st.caption("Este análisis se basa en la selección actual de campañas y filtros de la barra lateral.")
+
+    if df_filtered_selection.empty:
+        st.info("No hay datos para este desglose con los filtros actuales.")
+        return
+
+    # Considerar solo los prospectos a los que se les inició contacto manual para este análisis profundo
+    df_contactos_iniciados = df_filtered_selection[df_filtered_selection[COL_FECHA_INVITE].notna()].copy()
+    
+    if df_contactos_iniciados.empty:
+        st.info("No hay prospectos con contacto manual iniciado en la selección actual para este desglose detallado.")
+        return
+
+    # --- 1. Métricas Globales de Prospección Manual (para la selección actual de Contactos Iniciados) ---
+    st.markdown("#### Métricas Globales (sobre Contactos Manuales Iniciados)")
+    total_contactos_iniciados = len(df_contactos_iniciados)
+    total_invites_aceptadas = df_contactos_iniciados[df_contactos_iniciados[COL_INVITE_ACEPTADA] == "si"].shape[0]
+    total_respuestas_1er_msj = df_contactos_iniciados[df_contactos_iniciados[COL_RESPUESTA_1ER_MSJ] == "si"].shape[0]
+    total_sesiones_agendadas = df_contactos_iniciados[df_contactos_iniciados[COL_SESION_AGENDADA_MANUAL] == "si"].shape[0]
+
+    # Tasa de Inicio General (Contactos Iniciados / Prospectos Asignados en la selección)
+    # Necesitamos el total de asignados en la selección original (df_filtered_selection)
+    total_asignados_seleccion = len(df_filtered_selection)
+    tasa_inicio_general = (total_contactos_iniciados / total_asignados_seleccion * 100) if total_asignados_seleccion > 0 else 0
+    
+    tasa_aceptacion_general = (total_invites_aceptadas / total_contactos_iniciados * 100) if total_contactos_iniciados > 0 else 0
+    tasa_respuesta_general = (total_respuestas_1er_msj / total_invites_aceptadas * 100) if total_invites_aceptadas > 0 else 0
+    tasa_sesion_vs_resp_general = (total_sesiones_agendadas / total_respuestas_1er_msj * 100) if total_respuestas_1er_msj > 0 else 0
+    tasa_sesion_global_general = (total_sesiones_agendadas / total_contactos_iniciados * 100) if total_contactos_iniciados > 0 else 0
+
+    m_col1, m_col2, m_col3 = st.columns(3)
+    m_col1.metric("Total Contactos Manuales Iniciados", f"{total_contactos_iniciados:,}")
+    m_col2.metric("Total Invites Aceptadas", f"{total_invites_aceptadas:,} ({tasa_aceptacion_general:.1f}%)")
+    m_col3.metric("Total Sesiones Agendadas", f"{total_sesiones_agendadas:,} ({tasa_sesion_global_general:.1f}%)")
+    st.caption(f"Tasa Inicio Prospección General (sobre {total_asignados_seleccion:,} asignados): {tasa_inicio_general:.1f}%")
+
+
+    # --- 2. Desglose por Prospectador (`¿Quién Prospecto?`) ---
+    st.markdown("---")
+    st.markdown("#### Desglose por Prospectador (sobre Contactos Manuales Iniciados)")
+    
+    # Agrupar sobre df_contactos_iniciados para el embudo por prospectador
+    # Y sobre df_filtered_selection para los asignados por prospectador
+    asignados_por_prospectador = df_filtered_selection.groupby(COL_QUIEN_PROSPECTO, as_index=False).size().rename(columns={'size': 'Total Asignados'})
+    
+    # Filtrar 'N/D_Interno' antes de mostrar
+    asignados_por_prospectador = asignados_por_prospectador[asignados_por_prospectador[COL_QUIEN_PROSPECTO] != "N/D_Interno"]
+
+
+    if not df_contactos_iniciados.empty:
+        desglose_prospectador = df_contactos_iniciados.groupby(COL_QUIEN_PROSPECTO, as_index=False).agg(
+            Contactos_Manuales_Iniciados=('Contacto_ID_Placeholder', 'count'), # Usar una columna dummy para contar filas
+            Invites_Aceptadas=(COL_INVITE_ACEPTADA, lambda x: (x == "si").sum()),
+            Respuestas_1er_Msj=(COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum()),
+            Sesiones_Agendadas=(COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
+        ).rename(columns={'Contacto_ID_Placeholder': 'Contactos Manuales Iniciados'}) # Corregir nombre si es necesario
+
+        desglose_prospectador = desglose_prospectador[desglose_prospectador[COL_QUIEN_PROSPECTO] != "N/D_Interno"]
+
+        # Unir con asignados
+        desglose_prospectador_final = pd.merge(asignados_por_prospectador, desglose_prospectador, on=COL_QUIEN_PROSPECTO, how='left').fillna(0)
+        
+        # Recalcular Contactos_Manuales_Iniciados si no hubo merge (todos los asignados tienen 0 contactos)
+        if 'Contactos Manuales Iniciados' not in desglose_prospectador_final.columns and 'Contactos_Manuales_Iniciados' in desglose_prospectador.columns: # Error de nombre
+             desglose_prospectador_final = pd.merge(asignados_por_prospectador, desglose_prospectador.rename(columns={'Contactos_Manuales_Iniciados':'Contactos Manuales Iniciados'}), on=COL_QUIEN_PROSPECTO, how='left').fillna(0)
+        elif 'Contactos Manuales Iniciados' not in desglose_prospectador_final.columns: # Si sigue sin existir
+            desglose_prospectador_final['Contactos Manuales Iniciados'] = 0
+
+
+        desglose_prospectador_final['Tasa Inicio (%)'] = ((desglose_prospectador_final['Contactos Manuales Iniciados'] / desglose_prospectador_final['Total Asignados']) * 100).fillna(0).round(1)
+        base_embudo_prosp = desglose_prospectador_final['Contactos Manuales Iniciados']
+        desglose_prospectador_final['Tasa Aceptación (%)'] = ((desglose_prospectador_final['Invites_Aceptadas'] / base_embudo_prosp) * 100).fillna(0).round(1)
+        desglose_prospectador_final['Tasa Respuesta (%)'] = ((desglose_prospectador_final['Respuestas_1er_Msj'] / desglose_prospectador_final['Invites_Aceptadas']) * 100).fillna(0).round(1)
+        desglose_prospectador_final['Tasa Sesión vs Resp. (%)'] = ((desglose_prospectador_final['Sesiones_Agendadas'] / desglose_prospectador_final['Respuestas_1er_Msj']) * 100).fillna(0).round(1)
+        desglose_prospectador_final['Tasa Sesión Global (%)'] = ((desglose_prospectador_final['Sesiones_Agendadas'] / base_embudo_prosp) * 100).fillna(0).round(1)
+
+        # Limpiar tasas NaN/inf de nuevo
+        rate_cols_prosp = ['Tasa Inicio (%)', 'Tasa Aceptación (%)', 'Tasa Respuesta (%)', 'Tasa Sesión vs Resp. (%)', 'Tasa Sesión Global (%)']
+        for r_col in rate_cols_prosp:
+            desglose_prospectador_final[r_col] = desglose_prospectador_final[r_col].apply(lambda x: 0 if pd.isna(x) or x == float('inf') or x == float('-inf') else x)
+
+
+        st.dataframe(desglose_prospectador_final.style.format(
+            {'Total Asignados': "{:,}", 'Contactos Manuales Iniciados': "{:,}", 'Invites_Aceptadas': "{:,}", 'Respuestas_1er_Msj': "{:,}", 'Sesiones_Agendadas': "{:,}",
+             'Tasa Inicio (%)': "{:.1f}%", 'Tasa Aceptación (%)': "{:.1f}%", 'Tasa Respuesta (%)': "{:.1f}%", 
+             'Tasa Sesión vs Resp. (%)': "{:.1f}%", 'Tasa Sesión Global (%)': "{:.1f}%"}
+        ), use_container_width=True)
+
+        p_chart1, p_chart2 = st.columns(2)
+        with p_chart1:
+            if not desglose_prospectador_final.empty:
+                fig_contactos_prosp = px.bar(desglose_prospectador_final.sort_values(by='Contactos Manuales Iniciados', ascending=False),
+                    x=COL_QUIEN_PROSPECTO, y='Contactos Manuales Iniciados', color=COL_QUIEN_PROSPECTO,
+                    title='Contactos Manuales Iniciados por Prospectador', text_auto=True)
+                st.plotly_chart(fig_contactos_prosp, use_container_width=True)
+        with p_chart2:
+            if not desglose_prospectador_final[desglose_prospectador_final['Contactos Manuales Iniciados']>0].empty:
+                fig_sesion_prosp = px.bar(desglose_prospectador_final[desglose_prospectador_final['Contactos Manuales Iniciados']>0].sort_values(by='Tasa Sesión Global (%)', ascending=False),
+                    x=COL_QUIEN_PROSPECTO, y='Tasa Sesión Global (%)', color=COL_QUIEN_PROSPECTO,
+                    title='Tasa Sesión Global por Prospectador', text='Tasa Sesión Global (%)')
+                fig_sesion_prosp.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+                fig_sesion_prosp.update_layout(yaxis_range=[0,105])
+                st.plotly_chart(fig_sesion_prosp, use_container_width=True)
+    else:
+        st.info("No hay contactos manuales iniciados para mostrar desglose por prospectador.")
+
+    # --- 3. Desglose por Avatar ---
+    st.markdown("---")
+    st.markdown("#### Desglose por Avatar (sobre Contactos Manuales Iniciados)")
+    if not df_contactos_iniciados.empty and COL_AVATAR in df_contactos_iniciados.columns:
+        desglose_avatar = df_contactos_iniciados.groupby(COL_AVATAR, as_index=False).agg(
+            Contactos_Manuales_Iniciados_Avatar=('Contacto_ID_Placeholder_Avatar', 'count'), # Dummy for count
+            Invites_Aceptadas=(COL_INVITE_ACEPTADA, lambda x: (x == "si").sum()),
+            Respuestas_1er_Msj=(COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum()),
+            Sesiones_Agendadas=(COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
+        ).rename(columns={'Contacto_ID_Placeholder_Avatar': 'Contactos Manuales Iniciados'})
+
+        desglose_avatar = desglose_avatar[desglose_avatar[COL_AVATAR] != "N/D_Interno"]
+        
+        base_embudo_avatar = desglose_avatar['Contactos Manuales Iniciados']
+        desglose_avatar['Tasa Aceptación (%)'] = ((desglose_avatar['Invites_Aceptadas'] / base_embudo_avatar) * 100).fillna(0).round(1)
+        desglose_avatar['Tasa Respuesta (%)'] = ((desglose_avatar['Respuestas_1er_Msj'] / desglose_avatar['Invites_Aceptadas']) * 100).fillna(0).round(1)
+        desglose_avatar['Tasa Sesión Global (%)'] = ((desglose_avatar['Sesiones_Agendadas'] / base_embudo_avatar) * 100).fillna(0).round(1)
+        
+        rate_cols_avatar = ['Tasa Aceptación (%)', 'Tasa Respuesta (%)', 'Tasa Sesión Global (%)']
+        for r_col in rate_cols_avatar:
+            desglose_avatar[r_col] = desglose_avatar[r_col].apply(lambda x: 0 if pd.isna(x) or x == float('inf') or x == float('-inf') else x)
+
+        st.dataframe(desglose_avatar.style.format(
+            {'Contactos Manuales Iniciados': "{:,}", 'Invites_Aceptadas': "{:,}", 'Respuestas_1er_Msj': "{:,}", 'Sesiones_Agendadas': "{:,}",
+             'Tasa Aceptación (%)': "{:.1f}%", 'Tasa Respuesta (%)': "{:.1f}%", 'Tasa Sesión Global (%)': "{:.1f}%"}
+        ), use_container_width=True)
+
+        a_chart1, a_chart2 = st.columns(2)
+        with a_chart1:
+            if not desglose_avatar.empty:
+                fig_contactos_avatar = px.bar(desglose_avatar.sort_values(by='Contactos Manuales Iniciados', ascending=False),
+                    x=COL_AVATAR, y='Contactos Manuales Iniciados', color=COL_AVATAR,
+                    title='Contactos Manuales Iniciados por Avatar', text_auto=True)
+                st.plotly_chart(fig_contactos_avatar, use_container_width=True)
+        with a_chart2:
+             if not desglose_avatar[desglose_avatar['Contactos Manuales Iniciados']>0].empty:
+                fig_sesion_avatar = px.bar(desglose_avatar[desglose_avatar['Contactos Manuales Iniciados']>0].sort_values(by='Tasa Sesión Global (%)', ascending=False),
+                    x=COL_AVATAR, y='Tasa Sesión Global (%)', color=COL_AVATAR,
+                    title='Tasa Sesión Global por Avatar', text='Tasa Sesión Global (%)')
+                fig_sesion_avatar.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+                fig_sesion_avatar.update_layout(yaxis_range=[0,105])
+                st.plotly_chart(fig_sesion_avatar, use_container_width=True)
+    else:
+        st.info("No hay contactos manuales iniciados o columna Avatar no disponible para mostrar desglose por avatar.")
+
+    # --- 4. Desglose por Campaña (si múltiples seleccionadas) ---
+    st.markdown("---")
+    st.markdown("#### Desglose por Campaña (sobre Contactos Manuales Iniciados)")
+    
+    # Verificar si hay múltiples campañas en la selección actual de df_contactos_iniciados
+    # o si la selección original de campañas en la sidebar era "Todas" o más de una.
+    campaign_filter_active = st.session_state.get(SES_CAMPAIGN_FILTER_KEY, ["– Todas –"])
+    show_campaign_breakdown = False
+    if "– Todas –" in campaign_filter_active and df_contactos_iniciados[COL_CAMPAIGN].nunique() > 1:
+        show_campaign_breakdown = True
+    elif len(campaign_filter_active) > 1 and "– Todas –" not in campaign_filter_active:
+         show_campaign_breakdown = True
+
+    if not df_contactos_iniciados.empty and COL_CAMPAIGN in df_contactos_iniciados.columns and show_campaign_breakdown:
+        desglose_campana = df_contactos_iniciados.groupby(COL_CAMPAIGN, as_index=False).agg(
+            Contactos_Manuales_Iniciados_Camp=('Contacto_ID_Placeholder_Camp', 'count'), # Dummy for count
+            Invites_Aceptadas=(COL_INVITE_ACEPTADA, lambda x: (x == "si").sum()),
+            Respuestas_1er_Msj=(COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum()),
+            Sesiones_Agendadas=(COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
+        ).rename(columns={'Contacto_ID_Placeholder_Camp': 'Contactos Manuales Iniciados'})
+        
+        base_embudo_camp = desglose_campana['Contactos Manuales Iniciados']
+        desglose_campana['Tasa Aceptación (%)'] = ((desglose_campana['Invites_Aceptadas'] / base_embudo_camp) * 100).fillna(0).round(1)
+        desglose_campana['Tasa Respuesta (%)'] = ((desglose_campana['Respuestas_1er_Msj'] / desglose_campana['Invites_Aceptadas']) * 100).fillna(0).round(1)
+        desglose_campana['Tasa Sesión Global (%)'] = ((desglose_campana['Sesiones_Agendadas'] / base_embudo_camp) * 100).fillna(0).round(1)
+
+        rate_cols_camp = ['Tasa Aceptación (%)', 'Tasa Respuesta (%)', 'Tasa Sesión Global (%)']
+        for r_col in rate_cols_camp:
+            desglose_campana[r_col] = desglose_campana[r_col].apply(lambda x: 0 if pd.isna(x) or x == float('inf') or x == float('-inf') else x)
+        
+        st.dataframe(desglose_campana.style.format(
+            {'Contactos Manuales Iniciados': "{:,}", 'Invites_Aceptadas': "{:,}", 'Respuestas_1er_Msj': "{:,}", 'Sesiones_Agendadas': "{:,}",
+             'Tasa Aceptación (%)': "{:.1f}%", 'Tasa Respuesta (%)': "{:.1f}%", 'Tasa Sesión Global (%)': "{:.1f}%"}
+        ), use_container_width=True)
+
+        c_chart1, c_chart2 = st.columns(2)
+        with c_chart1:
+            if not desglose_campana.empty:
+                fig_contactos_camp = px.bar(desglose_campana.sort_values(by='Contactos Manuales Iniciados', ascending=False),
+                    x=COL_CAMPAIGN, y='Contactos Manuales Iniciados', color=COL_CAMPAIGN,
+                    title='Contactos Manuales Iniciados por Campaña', text_auto=True)
+                st.plotly_chart(fig_contactos_camp, use_container_width=True)
+        with c_chart2:
+            if not desglose_campana[desglose_campana['Contactos Manuales Iniciados']>0].empty:
+                fig_sesion_camp = px.bar(desglose_campana[desglose_campana['Contactos Manuales Iniciados']>0].sort_values(by='Tasa Sesión Global (%)', ascending=False),
+                    x=COL_CAMPAIGN, y='Tasa Sesión Global (%)', color=COL_CAMPAIGN,
+                    title='Tasa Sesión Global por Campaña', text='Tasa Sesión Global (%)')
+                fig_sesion_camp.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+                fig_sesion_camp.update_layout(yaxis_range=[0,105])
+                st.plotly_chart(fig_sesion_camp, use_container_width=True)
+    elif not show_campaign_breakdown:
+         st.info("Selecciona '– Todas las Campañas –' o múltiples campañas en la barra lateral para ver este desglose comparativo.")
+    else:
+        st.info("No hay contactos manuales iniciados para mostrar desglose por campaña.")
+    st.markdown("---")
+
+
+# ... (la función display_email_prospecting_analysis permanece igual)...
 def display_email_prospecting_analysis(df_filtered_campaigns):
     st.subheader("Análisis de Prospección por Email")
     st.caption("Basado en campañas y filtros seleccionados en la barra lateral.")
@@ -390,12 +586,4 @@ if df_base_campaigns_loaded.empty:
     st.error("No se pudieron cargar datos de campañas válidas. La página no puede continuar.")
     st.stop()
 
-selected_campaigns, start_date_filter, end_date_filter, selected_prospectors, selected_avatars = display_campaign_filters(df_base_campaigns_loaded.copy())
-df_filtered_by_sidebar = apply_campaign_filters(df_base_campaigns_loaded.copy(), selected_campaigns, start_date_filter, end_date_filter, selected_prospectors, selected_avatars)
-
-display_campaign_potential(df_base_campaigns_loaded.copy())
-display_manual_prospecting_analysis(df_filtered_by_sidebar.copy())
-display_email_prospecting_analysis(df_filtered_by_sidebar.copy())
-
-st.markdown("---")
-st.info("Esta página de análisis de campañas ha sido desarrollada por Johnsito ✨")
+selected_campaigns, start_date_filter, end_date_filter, selected_prospectors, selected_avatars = display_campaign
