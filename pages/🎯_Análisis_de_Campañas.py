@@ -157,7 +157,7 @@ def load_and_prepare_campaign_data():
     return df
 
 # --- Filtros de Barra Lateral ---
-def display_campaign_filters(df_options): # df_options is a copy of df_base_campaigns_loaded
+def display_campaign_filters(df_options):
     st.sidebar.header("🎯 Filtros de Campaña")
 
     default_filters_init = {
@@ -168,7 +168,7 @@ def display_campaign_filters(df_options): # df_options is a copy of df_base_camp
         SES_AVATAR_FILTER_KEY: [ALL_AVATARS_STRING]
     }
 
-    # Initialize session state for all filter keys if they are not already present
+    # Initialize session state keys if they don't exist
     for key, value in default_filters_init.items():
         if key not in st.session_state:
             st.session_state[key] = value
@@ -180,25 +180,25 @@ def display_campaign_filters(df_options): # df_options is a copy of df_base_camp
         for item in sorted(list(unique_items)):
             if item != ALL_CAMPAIGNS_STRING: campaign_options.append(item)
     
-    # Validate and potentially correct st.session_state for campaign filter
-    current_campaign_selection_from_state = st.session_state[SES_CAMPAIGN_FILTER_KEY]
-    campaign_selection_is_valid = True
-    if not isinstance(current_campaign_selection_from_state, list): # Ensure it's a list
-        campaign_selection_is_valid = False
-    else:
-        for item in current_campaign_selection_from_state: # Ensure all selected items are in current options
-            if item not in campaign_options:
-                campaign_selection_is_valid = False
-                break
+    # Determine the default value for the widget based on current state and options
+    # This does NOT modify session_state here, only calculates the value to pass to the widget
+    current_campaign_selection = st.session_state.get(SES_CAMPAIGN_FILTER_KEY, default_filters_init[SES_CAMPAIGN_FILTER_KEY])
+    if not isinstance(current_campaign_selection, list): # Defensive: ensure it's a list
+        current_campaign_selection = list(current_campaign_selection) if isinstance(current_campaign_selection, (tuple,set)) else [current_campaign_selection]
     
-    if not campaign_selection_is_valid:
-        st.session_state[SES_CAMPAIGN_FILTER_KEY] = default_filters_init[SES_CAMPAIGN_FILTER_KEY] # Reset to default
-        st.rerun() # Force a rerun with the corrected state
-
-    # Render the campaign multiselect widget
-    # Streamlit uses st.session_state[KEY] as the widget's current value if KEY is provided.
+    validated_campaign_selection_for_widget = [s for s in current_campaign_selection if s in campaign_options]
+    if not validated_campaign_selection_for_widget: # If validation results in empty, use overall default
+        # This could happen if st.session_state had values no longer in campaign_options
+        validated_campaign_selection_for_widget = default_filters_init[SES_CAMPAIGN_FILTER_KEY]
+    
+    # If after validation, the content of st.session_state[KEY] is not what validated_selection_for_widget is,
+    # Streamlit's `key` mechanism in the widget will update st.session_state[KEY] to reflect
+    # validated_campaign_selection_for_widget if no user interaction happens, or user's choice.
+    # The critical line 269 from traceback is avoided by not directly setting st.session_state here.
     selected_campaigns = st.sidebar.multiselect(
-        "Seleccionar Campaña(s)", options=campaign_options,
+        "Seleccionar Campaña(s)", 
+        options=campaign_options,
+        default=validated_campaign_selection_for_widget, # Use the calculated safe default
         key=SES_CAMPAIGN_FILTER_KEY 
     )
 
@@ -209,21 +209,18 @@ def display_campaign_filters(df_options): # df_options is a copy of df_base_camp
         for item in sorted(list(unique_items)):
             if item != ALL_PROSPECTORS_STRING: prospector_options.append(item)
 
-    current_prospector_selection_from_state = st.session_state[SES_PROSPECTOR_FILTER_KEY]
-    prospector_selection_is_valid = True
-    if not isinstance(current_prospector_selection_from_state, list):
-        prospector_selection_is_valid = False
-    else:
-        for item in current_prospector_selection_from_state:
-            if item not in prospector_options:
-                prospector_selection_is_valid = False
-                break
-    if not prospector_selection_is_valid:
-        st.session_state[SES_PROSPECTOR_FILTER_KEY] = default_filters_init[SES_PROSPECTOR_FILTER_KEY]
-        st.rerun()
+    current_prospector_selection = st.session_state.get(SES_PROSPECTOR_FILTER_KEY, default_filters_init[SES_PROSPECTOR_FILTER_KEY])
+    if not isinstance(current_prospector_selection, list):
+        current_prospector_selection = list(current_prospector_selection) if isinstance(current_prospector_selection, (tuple,set)) else [current_prospector_selection]
+
+    validated_prospector_selection_for_widget = [s for s in current_prospector_selection if s in prospector_options]
+    if not validated_prospector_selection_for_widget:
+        validated_prospector_selection_for_widget = default_filters_init[SES_PROSPECTOR_FILTER_KEY]
 
     selected_prospectors = st.sidebar.multiselect(
-        "¿Quién Prospectó?", options=prospector_options,
+        "¿Quién Prospectó?", 
+        options=prospector_options,
+        default=validated_prospector_selection_for_widget,
         key=SES_PROSPECTOR_FILTER_KEY
     )
 
@@ -234,46 +231,66 @@ def display_campaign_filters(df_options): # df_options is a copy of df_base_camp
         for item in sorted(list(unique_items)):
             if item != ALL_AVATARS_STRING: avatar_options.append(item)
         
-    current_avatar_selection_from_state = st.session_state[SES_AVATAR_FILTER_KEY]
-    avatar_selection_is_valid = True
-    if not isinstance(current_avatar_selection_from_state, list):
-        avatar_selection_is_valid = False
-    else:
-        for item in current_avatar_selection_from_state:
-            if item not in avatar_options:
-                avatar_selection_is_valid = False
-                break
-    if not avatar_selection_is_valid:
-        st.session_state[SES_AVATAR_FILTER_KEY] = default_filters_init[SES_AVATAR_FILTER_KEY]
-        st.rerun()
+    current_avatar_selection = st.session_state.get(SES_AVATAR_FILTER_KEY, default_filters_init[SES_AVATAR_FILTER_KEY])
+    if not isinstance(current_avatar_selection, list):
+        current_avatar_selection = list(current_avatar_selection) if isinstance(current_avatar_selection, (tuple,set)) else [current_avatar_selection]
+        
+    validated_avatar_selection_for_widget = [s for s in current_avatar_selection if s in avatar_options]
+    if not validated_avatar_selection_for_widget:
+        validated_avatar_selection_for_widget = default_filters_init[SES_AVATAR_FILTER_KEY]
 
     selected_avatars = st.sidebar.multiselect(
-        "Avatar", options=avatar_options,
+        "Avatar", 
+        options=avatar_options,
+        default=validated_avatar_selection_for_widget,
         key=SES_AVATAR_FILTER_KEY
     )
     
-    # --- Filtro de Fecha (uses FechaFiltroManual for min/max) ---
-    min_date, max_date = None, None
+    # --- Filtro de Fecha ---
+    # For date_input, the 'value' parameter acts like 'default'.
+    # Session state (via 'key') will store the actual current value.
+    min_date_val, max_date_val = None, None # Renamed to avoid conflict with 'max_date' variable name if it existed
     if "FechaFiltroManual" in df_options.columns and pd.api.types.is_datetime64_any_dtype(df_options["FechaFiltroManual"]):
         valid_dates = df_options["FechaFiltroManual"].dropna()
         if not valid_dates.empty:
-            min_date = valid_dates.min().date()
-            max_date = valid_dates.max().date()
-    date_col1, date_col2 = st.sidebar.columns(2)
+            min_date_val = valid_dates.min().date()
+            max_date_val = valid_dates.max().date()
     
-    start_date = date_col1.date_input("Fecha Desde", min_value=min_date, max_value=max_date, format="DD/MM/YYYY", key=SES_START_DATE_KEY)
-    end_date = date_col2.date_input("Fecha Hasta", min_value=min_date, max_value=max_date, format="DD/MM/YYYY", key=SES_END_DATE_KEY)
+    # Get current values from session state or use default_filters_init if not set (though init loop should cover this)
+    start_date_value = st.session_state.get(SES_START_DATE_KEY, default_filters_init[SES_START_DATE_KEY])
+    end_date_value = st.session_state.get(SES_END_DATE_KEY, default_filters_init[SES_END_DATE_KEY])
+
+    date_col1, date_col2 = st.sidebar.columns(2)
+    start_date = date_col1.date_input(
+        "Fecha Desde", 
+        value=start_date_value, # Use value from session state or initial default
+        min_value=min_date_val, 
+        max_value=max_date_val, 
+        format="DD/MM/YYYY", 
+        key=SES_START_DATE_KEY
+    )
+    end_date = date_col2.date_input(
+        "Fecha Hasta", 
+        value=end_date_value, # Use value from session state or initial default
+        min_value=min_date_val, # Should be min_date_val, not max_date_val
+        max_value=max_date_val, 
+        format="DD/MM/YYYY", 
+        key=SES_END_DATE_KEY
+    )
 
     st.sidebar.markdown("---")
-    if st.sidebar.button("🧹 Limpiar Filtros", use_container_width=True, key=f"{SES_CAMPAIGN_FILTER_KEY}_clear_button_final_v3"): # Changed key again just in case
+    # The button correctly resets session state and calls rerun.
+    # This ensures that on the next run, the logic above will pick up the reset defaults.
+    if st.sidebar.button("🧹 Limpiar Filtros", use_container_width=True, key=f"{SES_CAMPAIGN_FILTER_KEY}_clear_button_final_v4"): # Changed key again
         st.session_state[SES_CAMPAIGN_FILTER_KEY] = default_filters_init[SES_CAMPAIGN_FILTER_KEY]
         st.session_state[SES_START_DATE_KEY] = default_filters_init[SES_START_DATE_KEY]
         st.session_state[SES_END_DATE_KEY] = default_filters_init[SES_END_DATE_KEY]
         st.session_state[SES_PROSPECTOR_FILTER_KEY] = default_filters_init[SES_PROSPECTOR_FILTER_KEY]
         st.session_state[SES_AVATAR_FILTER_KEY] = default_filters_init[SES_AVATAR_FILTER_KEY]
-        st.rerun() # Essential for changes to reflect
+        st.rerun()
 
-    # Return values directly from session_state, as widgets are bound to these keys.
+    # The return values should be what's currently in session_state,
+    # as the widgets with 'key' arguments are the source of truth for these values after rendering.
     return (
         st.session_state[SES_CAMPAIGN_FILTER_KEY],
         st.session_state[SES_START_DATE_KEY],
@@ -402,7 +419,7 @@ def display_manual_prospecting_analysis(df_common_filtered, start_date, end_date
     
     count_cols_fill = ['Contactos Manuales Iniciados', 'Invites_Aceptadas', 'Respuestas_1er_Msj', 'Sesiones_Agendadas']
     for col in count_cols_fill:
-        if col not in trace_df.columns: trace_df[col] = 0 # Ensure column exists
+        if col not in trace_df.columns: trace_df[col] = 0 
         trace_df[col] = trace_df[col].fillna(0).astype(int)
 
 
@@ -522,7 +539,7 @@ def display_global_manual_prospecting_deep_dive(df_common_filtered, start_date, 
             
             cols_to_ensure_numeric = ['Contactos Manuales Iniciados', 'Invites Aceptadas', 'Respuestas 1er Msj', 'Sesiones Agendadas', 'Total Asignados']
             for col in cols_to_ensure_numeric:
-                if col not in desglose_prospectador_final.columns: desglose_prospectador_final[col] = 0 # Ensure column exists
+                if col not in desglose_prospectador_final.columns: desglose_prospectador_final[col] = 0 
                 desglose_prospectador_final[col] = pd.to_numeric(desglose_prospectador_final[col], errors='coerce').fillna(0).astype(int)
 
 
@@ -587,7 +604,7 @@ def display_global_manual_prospecting_deep_dive(df_common_filtered, start_date, 
         desglose_avatar = desglose_avatar[desglose_avatar[COL_AVATAR] != "N/D_Interno"]
         
         for col_name in ['Invites Aceptadas', 'Respuestas 1er Msj', 'Sesiones Agendadas']: 
-            if col_name not in desglose_avatar.columns: desglose_avatar[col_name] = 0 # Ensure column exists
+            if col_name not in desglose_avatar.columns: desglose_avatar[col_name] = 0 
             desglose_avatar[col_name] = pd.to_numeric(desglose_avatar[col_name], errors='coerce').fillna(0).astype(int)
 
         base_embudo_avatar = desglose_avatar['Contactos Manuales Iniciados'].astype(float)
@@ -651,7 +668,7 @@ def display_global_manual_prospecting_deep_dive(df_common_filtered, start_date, 
         desglose_campana = df_contactos_iniciados.groupby(COL_CAMPAIGN, as_index=False).agg(**desglose_campana_agg_spec)
         
         for col_name in ['Invites Aceptadas', 'Respuestas 1er Msj', 'Sesiones Agendadas']: 
-            if col_name not in desglose_campana.columns: desglose_campana[col_name] = 0 # Ensure column exists
+            if col_name not in desglose_campana.columns: desglose_campana[col_name] = 0 
             desglose_campana[col_name] = pd.to_numeric(desglose_campana[col_name], errors='coerce').fillna(0).astype(int)
 
         base_embudo_camp = desglose_campana['Contactos Manuales Iniciados'].astype(float)
