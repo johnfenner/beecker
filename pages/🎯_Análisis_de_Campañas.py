@@ -144,7 +144,7 @@ def calcular_kpis_df_campana(df_filtrado_campana):
 
 def mostrar_embudo_para_campana(kpis_campana, titulo_embudo="Embudo de Conversión de Campaña (Manual)"):
     etapas_embudo = [
-        "Prospectos en Proceso (Post-Filtros)", "Invites Aceptadas",
+        "Prospectos en Proceso ", "Invites Aceptadas",
         "1er Mensaje Enviado", "Respuesta 1er Mensaje", "Sesiones Agendadas (Manual)"
     ]
     cantidades_embudo = [
@@ -185,7 +185,7 @@ def generar_tabla_comparativa_campanas_filtrada(df_filtrado_con_filtros_pagina, 
         kpis = calcular_kpis_df_campana(df_campana_individual_filtrada)
         datos_comparativa.append({
             "Campaña": nombre_campana,
-            "Prospectos en Proceso (Post-Filtros)": kpis["total_prospectos_manual"],
+            "Prospectos en Proceso": kpis["total_prospectos_manual"],
             "Aceptadas": kpis["invites_aceptadas"],
             "Respuestas Manual": kpis["respuestas_primer_mensaje"],
             "Sesiones Manual": kpis["sesiones_agendadas_manual"],
