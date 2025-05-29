@@ -11,12 +11,14 @@ from collections import Counter
 st.set_page_config(page_title="Análisis de Campañas", layout="wide")
 st.title("📢 Análisis de Campañas")
 st.markdown(
-    "Análisis del potencial de campañas, prospección manual y prospección por email."
+    "Análisis del potencial de campañas, prospección manual y prospección por email. "
+    "Este análisis excluye prospectos sin una campaña asignada."
 )
 
 # --- Constants and Session State Keys ---
 SHEET_URL_SECRET_KEY = "main_prostraction_sheet_url"
 DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0" # Fallback
+NO_CAMPAIGN_VALUES = ["Sin Campaña Asignada", "N/D", ""] # Values indicating no campaign
 
 # Columns related to Campaign Potential
 COL_CAMPAIGN = "Campaña"
@@ -38,11 +40,11 @@ COL_SESION_AGENDADA_EMAIL = "Sesion Agendada Email"
 COL_FECHA_SESION_EMAIL = "Fecha de Sesion Email"
 
 # Session State Keys for Filters
-SES_CAMPAIGN_FILTER_KEY = "campaign_page_campaign_filter_v1"
-SES_START_DATE_KEY = "campaign_page_start_date_v1"
-SES_END_DATE_KEY = "campaign_page_end_date_v1"
-SES_PROSPECTOR_FILTER_KEY = "campaign_page_prospector_filter_v1"
-SES_AVATAR_FILTER_KEY = "campaign_page_avatar_filter_v1"
+SES_CAMPAIGN_FILTER_KEY = "campaign_page_campaign_filter_v2" # Incremented version
+SES_START_DATE_KEY = "campaign_page_start_date_v2"
+SES_END_DATE_KEY = "campaign_page_end_date_v2"
+SES_PROSPECTOR_FILTER_KEY = "campaign_page_prospector_filter_v2"
+SES_AVATAR_FILTER_KEY = "campaign_page_avatar_filter_v2"
 
 # --- Helper Functions (Self-Contained) ---
 
@@ -59,9 +61,9 @@ def clean_yes_no_value(val, true_val="si", false_val="no", default_val="no"):
     cleaned = str(val).strip().lower()
     if cleaned == true_val.lower():
         return true_val
-    elif cleaned == false_val.lower():
+    elif cleaned == false_val.lower(): # Includes "no"
         return false_val
-    elif cleaned in ["", "nan"]: # Treat common empty/NaN strings as default_val
+    elif cleaned in ["", "nan", "na", "<na>"]: # Treat common empty/NaN strings as default_val
         return default_val
     return cleaned # Return original if not a clear yes/no and not empty/nan
 
@@ -73,6 +75,14 @@ def parse_date_robustly(date_val):
         return pd.to_datetime(date_val)
     
     date_str = str(date_val).strip()
+    # Handle potential numeric representations of dates (Excel dates)
+    if date_str.isdigit():
+        try:
+            # Assuming it might be an Excel serial date (days since 1900-01-00)
+            return pd.to_datetime('1899-12-30') + pd.to_timedelta(float(date_str), 'D')
+        except ValueError:
+            pass # If conversion fails, proceed to other formats
+
     common_formats = [
         "%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M", "%d/%m/%Y",
         "%Y-%m-%d %H:%M:%S", "%Y-%m-%d",
@@ -83,7 +93,6 @@ def parse_date_robustly(date_val):
             return pd.to_datetime(date_str, format=fmt)
         except (ValueError, TypeError):
             continue
-    # Fallback to pandas' general parser, coercing errors
     return pd.to_datetime(date_str, errors='coerce')
 
 
@@ -102,7 +111,7 @@ def make_unique_column_names(headers_list):
             new_headers.append(f"{h_stripped}_{counts[h_stripped]-1}")
     return new_headers
 
-@st.cache_data(ttl=600) # Cache for 10 minutes
+@st.cache_data(ttl=600)
 def load_and_prepare_campaign_data():
     """Loads and prepares data specifically for the campaign analysis page."""
     try:
@@ -118,7 +127,7 @@ def load_and_prepare_campaign_data():
     try:
         sheet_url = st.secrets.get(SHEET_URL_SECRET_KEY, DEFAULT_SHEET_URL)
         workbook = client.open_by_url(sheet_url)
-        sheet = workbook.sheet1 # Assuming data is in the first sheet
+        sheet = workbook.sheet1
         raw_data = sheet.get_all_values()
 
         if not raw_data or len(raw_data) < 1:
@@ -136,11 +145,16 @@ def load_and_prepare_campaign_data():
         return pd.DataFrame()
 
     # --- Data Cleaning and Preparation ---
-    # Campaign Column
     if COL_CAMPAIGN not in df.columns:
-        st.warning(f"La columna '{COL_CAMPAIGN}' es esencial y no se encontró. Se creará vacía.")
-        df[COL_CAMPAIGN] = "N/D"
-    df[COL_CAMPAIGN] = df[COL_CAMPAIGN].apply(lambda x: clean_text_value(x, default="Sin Campaña Asignada"))
+        st.error(f"La columna '{COL_CAMPAIGN}' es esencial y no se encontró. No se puede continuar con el análisis de campañas.")
+        return pd.DataFrame()
+        
+    df[COL_CAMPAIGN] = df[COL_CAMPAIGN].apply(lambda x: clean_text_value(x, default="")) # Keep empty for now
+    # **CRITICAL FILTER**: Exclude rows without a valid campaign assignment early on.
+    df = df[~df[COL_CAMPAIGN].isin(NO_CAMPAIGN_VALUES)].copy()
+    if df.empty:
+        st.warning("No se encontraron prospectos con campañas asignadas válidas después del filtrado inicial.")
+        return pd.DataFrame()
 
     # Manual Prospecting Columns
     date_cols_manual = [COL_FECHA_INVITE, COL_FECHA_SESION_MANUAL]
@@ -149,25 +163,21 @@ def load_and_prepare_campaign_data():
             df[col] = df[col].apply(parse_date_robustly)
         else:
             df[col] = pd.NaT
-            st.info(f"Columna '{col}' para prospección manual no encontrada. Se tratará como vacía.")
-            
+    
     yes_no_cols_manual = [COL_INVITE_ACEPTADA, COL_RESPUESTA_1ER_MSJ, COL_SESION_AGENDADA_MANUAL]
     for col in yes_no_cols_manual:
         if col in df.columns:
             df[col] = df[col].apply(clean_yes_no_value)
         else:
-            df[col] = "no" # Default to 'no' if column is missing
-            st.info(f"Columna '{col}' para prospección manual no encontrada. Se tratará como 'no'.")
-
+            df[col] = "no" 
+            
     text_cols_manual = [COL_QUIEN_PROSPECTO, COL_AVATAR]
     for col in text_cols_manual:
         if col in df.columns:
-            df[col] = df[col].apply(clean_text_value)
+            df[col] = df[col].apply(lambda x: clean_text_value(x, default="N/D_Prospector_Avatar"))
         else:
-            df[col] = "N/D"
-            st.info(f"Columna '{col}' para prospección manual no encontrada. Se tratará como 'N/D'.")
+            df[col] = "N/D_Prospector_Avatar"
             
-    # Standardize Avatar (example from existing utils, adapted)
     if COL_AVATAR in df.columns:
         df[COL_AVATAR] = df[COL_AVATAR].astype(str).str.strip().str.title()
         equivalencias_avatar = {
@@ -176,43 +186,25 @@ def load_and_prepare_campaign_data():
         }
         df[COL_AVATAR] = df[COL_AVATAR].replace(equivalencias_avatar)
 
-
     # Email Prospecting Columns
-    if COL_CONTACTADOS_EMAIL in df.columns:
-        df[COL_CONTACTADOS_EMAIL] = df[COL_CONTACTADOS_EMAIL].apply(lambda x: clean_yes_no_value(x, true_val="si", false_val="no", default_val="no"))
-    else:
-        df[COL_CONTACTADOS_EMAIL] = "no"
-        st.info(f"Columna '{COL_CONTACTADOS_EMAIL}' para prospección por email no encontrada. Se tratará como 'no'.")
-
-    if COL_RESPUESTA_EMAIL in df.columns:
-        df[COL_RESPUESTA_EMAIL] = df[COL_RESPUESTA_EMAIL].apply(lambda x: clean_yes_no_value(x, true_val="si", false_val="no", default_val="no"))
-    else:
-        df[COL_RESPUESTA_EMAIL] = "no"
-        st.info(f"Columna '{COL_RESPUESTA_EMAIL}' para prospección por email no encontrada. Se tratará como 'no'.")
-        
-    if COL_SESION_AGENDADA_EMAIL in df.columns:
-        df[COL_SESION_AGENDADA_EMAIL] = df[COL_SESION_AGENDADA_EMAIL].apply(lambda x: clean_yes_no_value(x, true_val="si", false_val="no", default_val="no"))
-    else:
-        df[COL_SESION_AGENDADA_EMAIL] = "no"
-        st.info(f"Columna '{COL_SESION_AGENDADA_EMAIL}' para prospección por email no encontrada. Se tratará como 'no'.")
-
+    email_yes_no_cols = [COL_CONTACTADOS_EMAIL, COL_RESPUESTA_EMAIL, COL_SESION_AGENDADA_EMAIL]
+    for col in email_yes_no_cols:
+        if col in df.columns:
+            df[col] = df[col].apply(clean_yes_no_value)
+        else:
+            df[col] = "no"
+            
     if COL_FECHA_SESION_EMAIL in df.columns:
         df[COL_FECHA_SESION_EMAIL] = df[COL_FECHA_SESION_EMAIL].apply(parse_date_robustly)
     else:
         df[COL_FECHA_SESION_EMAIL] = pd.NaT
-        st.info(f"Columna '{COL_FECHA_SESION_EMAIL}' para prospección por email no encontrada. Se tratará como vacía.")
         
-    # Create a general date column for filtering if Fecha de Invite exists, otherwise use a placeholder for calculations.
-    # This will be used for the main date filter in the sidebar.
-    # If you have a specific "Campaign Start Date" or "Email Sent Date" that should be primary, adjust here.
     if COL_FECHA_INVITE in df.columns and not df[COL_FECHA_INVITE].isnull().all():
          df["FechaFiltroPrincipal"] = df[COL_FECHA_INVITE]
-    elif COL_FECHA_SESION_EMAIL in df.columns and not df[COL_FECHA_SESION_EMAIL].isnull().all(): # Fallback if no invite date
+    elif COL_FECHA_SESION_EMAIL in df.columns and not df[COL_FECHA_SESION_EMAIL].isnull().all():
          df["FechaFiltroPrincipal"] = df[COL_FECHA_SESION_EMAIL]
-    else: # If no relevant date column found for primary filtering
-        df["FechaFiltroPrincipal"] = pd.NaT # No primary date to filter on
-        st.warning("No se encontró una columna de fecha principal (como Fecha de Invite) para los filtros de fecha generales. Los filtros de fecha pueden no funcionar como se espera.")
-
+    else:
+        df["FechaFiltroPrincipal"] = pd.NaT
 
     return df
 
@@ -220,34 +212,31 @@ def load_and_prepare_campaign_data():
 def display_campaign_filters(df_options):
     st.sidebar.header("🎯 Filtros de Campaña")
 
-    # Initialize session state for filters if not already present
-    if SES_CAMPAIGN_FILTER_KEY not in st.session_state:
-        st.session_state[SES_CAMPAIGN_FILTER_KEY] = ["– Todas –"]
-    if SES_START_DATE_KEY not in st.session_state:
-        st.session_state[SES_START_DATE_KEY] = None
-    if SES_END_DATE_KEY not in st.session_state:
-        st.session_state[SES_END_DATE_KEY] = None
-    if SES_PROSPECTOR_FILTER_KEY not in st.session_state:
-        st.session_state[SES_PROSPECTOR_FILTER_KEY] = ["– Todos –"]
-    if SES_AVATAR_FILTER_KEY not in st.session_state:
-        st.session_state[SES_AVATAR_FILTER_KEY] = ["– Todos –"]
+    # Initialize session state
+    default_filters = {
+        SES_CAMPAIGN_FILTER_KEY: ["– Todas –"],
+        SES_START_DATE_KEY: None,
+        SES_END_DATE_KEY: None,
+        SES_PROSPECTOR_FILTER_KEY: ["– Todos –"],
+        SES_AVATAR_FILTER_KEY: ["– Todos –"]
+    }
+    for key, value in default_filters.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
 
     # Campaign Filter
     campaign_options = ["– Todas –"]
     if COL_CAMPAIGN in df_options.columns and not df_options[COL_CAMPAIGN].empty:
-        campaign_options.extend(sorted(df_options[COL_CAMPAIGN].dropna().unique()))
+        # Options should only be actual campaign names now
+        campaign_options.extend(sorted(df_options[COL_CAMPAIGN].dropna().unique())) 
     
-    # Validate current selection against available options
     current_campaign_selection = st.session_state[SES_CAMPAIGN_FILTER_KEY]
     valid_campaign_selection = [c for c in current_campaign_selection if c in campaign_options]
-    if not valid_campaign_selection: # If current selection is invalid (e.g. data changed)
-        valid_campaign_selection = ["– Todas –"]
+    if not valid_campaign_selection: valid_campaign_selection = ["– Todas –"]
     st.session_state[SES_CAMPAIGN_FILTER_KEY] = valid_campaign_selection
     
     selected_campaigns = st.sidebar.multiselect(
-        "Seleccionar Campaña(s)",
-        options=campaign_options,
-        key=SES_CAMPAIGN_FILTER_KEY # Uses validated value from session state as default
+        "Seleccionar Campaña(s)", options=campaign_options, key=SES_CAMPAIGN_FILTER_KEY
     )
 
     # Date Filter
@@ -265,50 +254,39 @@ def display_campaign_filters(df_options):
     # Prospector Filter
     prospector_options = ["– Todos –"]
     if COL_QUIEN_PROSPECTO in df_options.columns and not df_options[COL_QUIEN_PROSPECTO].empty:
-        prospector_options.extend(sorted(df_options[COL_QUIEN_PROSPECTO].dropna().unique()))
-    
+        prospector_options.extend(sorted(df_options[df_options[COL_QUIEN_PROSPECTO] != "N/D_Prospector_Avatar"][COL_QUIEN_PROSPECTO].dropna().unique()))
+
     current_prospector_selection = st.session_state[SES_PROSPECTOR_FILTER_KEY]
     valid_prospector_selection = [p for p in current_prospector_selection if p in prospector_options]
     if not valid_prospector_selection: valid_prospector_selection = ["– Todos –"]
     st.session_state[SES_PROSPECTOR_FILTER_KEY] = valid_prospector_selection
-
     selected_prospectors = st.sidebar.multiselect("¿Quién Prospectó?", prospector_options, key=SES_PROSPECTOR_FILTER_KEY)
 
     # Avatar Filter
     avatar_options = ["– Todos –"]
     if COL_AVATAR in df_options.columns and not df_options[COL_AVATAR].empty:
-        avatar_options.extend(sorted(df_options[COL_AVATAR].dropna().unique()))
-
+        avatar_options.extend(sorted(df_options[df_options[COL_AVATAR] != "N/D_Prospector_Avatar"][COL_AVATAR].dropna().unique()))
+    
     current_avatar_selection = st.session_state[SES_AVATAR_FILTER_KEY]
     valid_avatar_selection = [a for a in current_avatar_selection if a in avatar_options]
     if not valid_avatar_selection: valid_avatar_selection = ["– Todos –"]
     st.session_state[SES_AVATAR_FILTER_KEY] = valid_avatar_selection
-
     selected_avatars = st.sidebar.multiselect("Avatar", avatar_options, key=SES_AVATAR_FILTER_KEY)
     
     st.sidebar.markdown("---")
     if st.sidebar.button("🧹 Limpiar Filtros", use_container_width=True):
-        st.session_state[SES_CAMPAIGN_FILTER_KEY] = ["– Todas –"]
-        st.session_state[SES_START_DATE_KEY] = None
-        st.session_state[SES_END_DATE_KEY] = None
-        st.session_state[SES_PROSPECTOR_FILTER_KEY] = ["– Todos –"]
-        st.session_state[SES_AVATAR_FILTER_KEY] = ["– Todos –"]
+        for key, value in default_filters.items():
+            st.session_state[key] = value
         st.rerun()
 
     return selected_campaigns, start_date, end_date, selected_prospectors, selected_avatars
 
 def apply_campaign_filters(df, campaigns, start_date, end_date, prospectors, avatars):
-    """Applies selected filters to the DataFrame."""
-    if df.empty:
-        return df
-    
+    if df.empty: return df
     df_filtered = df.copy()
 
-    # Campaign filter
     if campaigns and "– Todas –" not in campaigns:
         df_filtered = df_filtered[df_filtered[COL_CAMPAIGN].isin(campaigns)]
-
-    # Date filter (using the general "FechaFiltroPrincipal" column)
     if "FechaFiltroPrincipal" in df_filtered.columns and pd.api.types.is_datetime64_any_dtype(df_filtered["FechaFiltroPrincipal"]):
         if start_date and end_date:
             df_filtered = df_filtered[(df_filtered["FechaFiltroPrincipal"].dt.date >= start_date) & (df_filtered["FechaFiltroPrincipal"].dt.date <= end_date)]
@@ -316,129 +294,153 @@ def apply_campaign_filters(df, campaigns, start_date, end_date, prospectors, ava
             df_filtered = df_filtered[df_filtered["FechaFiltroPrincipal"].dt.date >= start_date]
         elif end_date:
             df_filtered = df_filtered[df_filtered["FechaFiltroPrincipal"].dt.date <= end_date]
-    
-    # Prospector filter
     if prospectors and "– Todos –" not in prospectors:
         df_filtered = df_filtered[df_filtered[COL_QUIEN_PROSPECTO].isin(prospectors)]
-    
-    # Avatar filter
     if avatars and "– Todos –" not in avatars:
         df_filtered = df_filtered[df_filtered[COL_AVATAR].isin(avatars)]
-        
     return df_filtered
 
 # --- Analysis and Display Functions ---
 
-def display_campaign_potential(df_all_data, df_filtered_for_potential):
+def display_campaign_potential(df_valid_campaigns):
     st.subheader("📊 Potencial de Prospección por Campaña")
     
-    if COL_CAMPAIGN not in df_all_data.columns:
-        st.warning(f"Columna '{COL_CAMPAIGN}' no encontrada. No se puede mostrar el potencial.")
+    if df_valid_campaigns.empty:
+        st.info("No hay datos de campañas válidas para analizar el potencial.")
         return
 
-    # Calculate potential based on *all* data, before time/prospector filters for this specific metric
-    # as potential is about total records per campaign category in the source.
-    potential_counts = df_all_data[COL_CAMPAIGN].value_counts().reset_index()
+    potential_counts = df_valid_campaigns[COL_CAMPAIGN].value_counts().reset_index()
     potential_counts.columns = [COL_CAMPAIGN, 'Total Prospectos Potenciales']
-
-    if potential_counts.empty:
-        st.info("No hay datos de campaña para analizar el potencial.")
-        return
 
     fig = px.bar(
         potential_counts.sort_values(by='Total Prospectos Potenciales', ascending=False),
-        x=COL_CAMPAIGN,
-        y='Total Prospectos Potenciales',
-        title='Total de Prospectos Potenciales por Campaña (Datos Base)',
-        text_auto=True,
-        color=COL_CAMPAIGN
+        x=COL_CAMPAIGN, y='Total Prospectos Potenciales',
+        title='Total de Prospectos con Campaña Asignada', text_auto=True, color=COL_CAMPAIGN
     )
     fig.update_layout(xaxis_tickangle=-45)
     st.plotly_chart(fig, use_container_width=True)
     
     with st.expander("Ver tabla de potencial por campaña"):
         st.dataframe(potential_counts.style.format({'Total Prospectos Potenciales': "{:,}"}), use_container_width=True)
-
-    # Info about current filter context for other analyses
     st.markdown("---")
-    st.info(f"Los análisis de prospección (manual y email) a continuación se basan en los filtros de la barra lateral, incluyendo el rango de fechas y los prospectadores/avatares seleccionados, aplicados a las campañas elegidas.")
 
+def display_manual_prospecting_analysis(df_filtered_campaigns):
+    st.subheader("🛠️ Análisis de Prospección Manual (Dentro de Campañas Seleccionadas)")
 
-def display_manual_prospecting_analysis(df_manual):
-    st.subheader("🛠️ Análisis de Prospección Manual")
-
-    if df_manual.empty:
-        st.info("No hay datos de prospección manual para las campañas y filtros seleccionados.")
+    if df_filtered_campaigns.empty:
+        st.info("No hay datos para las campañas y filtros seleccionados.")
         return
 
-    # Filter for actual manual prospecting attempts (Fecha de Invite is filled)
-    df_attempted_manual = df_manual[df_manual[COL_FECHA_INVITE].notna()].copy()
-    
-    total_manual_prospects_in_filter = len(df_attempted_manual)
+    # This df_filtered_campaigns already has campaign, date, prospector, avatar filters from sidebar applied.
+    # It also only contains rows with valid campaigns.
 
-    if total_manual_prospects_in_filter == 0:
+    # Calculate overall metrics for the current filtered view
+    total_in_current_filter = len(df_filtered_campaigns)
+    
+    # Metrics for actual manual prospecting attempts (Fecha de Invite is filled)
+    df_attempted_manual_overall = df_filtered_campaigns[df_filtered_campaigns[COL_FECHA_INVITE].notna()].copy()
+    total_manually_prospected_overall = len(df_attempted_manual_overall)
+
+    st.metric("Prospectos en Campaña(s) y Filtros Seleccionados", f"{total_in_current_filter:,}")
+    st.metric("De estos, Prospectados Manualmente (con Fecha de Invite)", f"{total_manually_prospected_overall:,}")
+    
+    if total_manually_prospected_overall == 0:
         st.info("No se encontraron intentos de prospección manual (con Fecha de Invite) para los filtros actuales.")
         return
-        
-    st.metric("Total Prospectos (Manualmente, con Fecha Invite)", f"{total_manual_prospects_in_filter:,}")
 
-    # KPIs Manual
-    invites_aceptadas_manual = df_attempted_manual[df_attempted_manual[COL_INVITE_ACEPTADA] == "si"].shape[0]
-    respuestas_1er_msj_manual = df_attempted_manual[df_attempted_manual[COL_RESPUESTA_1ER_MSJ] == "si"].shape[0] # Assuming 'si' means responded positively or at all
-    sesiones_agendadas_manual = df_attempted_manual[df_attempted_manual[COL_SESION_AGENDADA_MANUAL] == "si"].shape[0]
+    # --- Detailed Traceability Table ---
+    st.markdown("#### Trazabilidad Detallada de Prospección Manual")
+    
+    # Group by Campaign and Prospector
+    # 1. Total Assigned to Prospector in Campaign (from df_filtered_campaigns)
+    assigned_counts = df_filtered_campaigns.groupby([COL_CAMPAIGN, COL_QUIEN_PROSPECTO]).size().reset_index(name='Total Asignado en Campaña')
+    
+    # 2. Total Manually Prospected by Prospector (Fecha Invite) (from df_attempted_manual_overall)
+    manually_prospected_counts = df_attempted_manual_overall.groupby([COL_CAMPAIGN, COL_QUIEN_PROSPECTO]).size().reset_index(name='Prospectado Manualmente (con Fecha Invite)')
+    
+    # 3. Funnel metrics (from df_attempted_manual_overall)
+    funnel_metrics = df_attempted_manual_overall.groupby([COL_CAMPAIGN, COL_QUIEN_PROSPECTO]).agg(
+        Invites_Aceptadas_Manual=(COL_INVITE_ACEPTADA, lambda x: (x == "si").sum()),
+        Respuestas_1er_Msj_Manual=(COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum()),
+        Sesiones_Agendadas_Manual=(COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
+    ).reset_index()
 
-    m_col1, m_col2, m_col3 = st.columns(3)
-    m_col1.metric("Invites Aceptadas (Manual)", f"{invites_aceptadas_manual:,}")
-    m_col2.metric("Respuestas 1er Mensaje (Manual)", f"{respuestas_1er_msj_manual:,}")
-    m_col3.metric("Sesiones Agendadas (Manual)", f"{sesiones_agendadas_manual:,}")
+    # Merge the dataframes
+    trace_df = pd.merge(assigned_counts, manually_prospected_counts, on=[COL_CAMPAIGN, COL_QUIEN_PROSPECTO], how='left')
+    trace_df = pd.merge(trace_df, funnel_metrics, on=[COL_CAMPAIGN, COL_QUIEN_PROSPECTO], how='left')
+    
+    # Fill NaNs for counts where no manual prospecting occurred after assignment, or no funnel activity
+    count_cols_to_fill = ['Prospectado Manualmente (con Fecha Invite)', 'Invites_Aceptadas_Manual', 'Respuestas_1er_Msj_Manual', 'Sesiones_Agendadas_Manual']
+    for col in count_cols_to_fill:
+        trace_df[col] = trace_df[col].fillna(0).astype(int)
 
-    # Funnel Manual
-    funnel_data_manual = pd.DataFrame({
-        "Etapa": ["Prospectos con Fecha Invite", "Invites Aceptadas", "Respuestas 1er Msj", "Sesiones Agendadas"],
-        "Cantidad": [total_manual_prospects_in_filter, invites_aceptadas_manual, respuestas_1er_msj_manual, sesiones_agendadas_manual]
+    # Calculate conversion rates
+    base_for_rates = trace_df['Prospectado Manualmente (con Fecha Invite)']
+    trace_df['Tasa Aceptación (vs Prospectado)'] = ((trace_df['Invites_Aceptadas_Manual'] / base_for_rates) * 100).fillna(0).round(1)
+    trace_df['Tasa Respuesta (vs Aceptadas)'] = ((trace_df['Respuestas_1er_Msj_Manual'] / trace_df['Invites_Aceptadas_Manual']) * 100).fillna(0).round(1)
+    trace_df['Tasa Sesión (vs Respuestas)'] = ((trace_df['Sesiones_Agendadas_Manual'] / trace_df['Respuestas_1er_Msj_Manual']) * 100).fillna(0).round(1)
+    trace_df['Tasa Sesión Global (vs Prospectado)'] = ((trace_df['Sesiones_Agendadas_Manual'] / base_for_rates) * 100).fillna(0).round(1)
+    
+    # Handle division by zero again for rates if base_for_rates was 0 for some rows but Invites_Aceptadas > 0 etc. (edge case)
+    rate_cols = ['Tasa Aceptación (vs Prospectado)', 'Tasa Respuesta (vs Aceptadas)', 'Tasa Sesión (vs Respuestas)', 'Tasa Sesión Global (vs Prospectado)']
+    for r_col in rate_cols:
+        trace_df[r_col] = trace_df[r_col].apply(lambda x: 0 if pd.isna(x) or x == float('inf') or x == float('-inf') else x)
+
+
+    if not trace_df.empty:
+        st.dataframe(trace_df.style.format({
+            'Total Asignado en Campaña': "{:,}",
+            'Prospectado Manualmente (con Fecha Invite)': "{:,}",
+            'Invites_Aceptadas_Manual': "{:,}",
+            'Respuestas_1er_Msj_Manual': "{:,}",
+            'Sesiones_Agendadas_Manual': "{:,}",
+            'Tasa Aceptación (vs Prospectado)': "{:.1f}%",
+            'Tasa Respuesta (vs Aceptadas)': "{:.1f}%",
+            'Tasa Sesión (vs Respuestas)': "{:.1f}%",
+            'Tasa Sesión Global (vs Prospectado)': "{:.1f}%"
+        }), use_container_width=True)
+    else:
+        st.info("No hay datos suficientes para la tabla de trazabilidad detallada.")
+
+    # --- Aggregated Funnel for current selection ---
+    st.markdown("#### Embudo de Conversión Agregado (Prospección Manual para Selección Actual)")
+    invites_aceptadas_agg = df_attempted_manual_overall[df_attempted_manual_overall[COL_INVITE_ACEPTADA] == "si"].shape[0]
+    respuestas_1er_msj_agg = df_attempted_manual_overall[df_attempted_manual_overall[COL_RESPUESTA_1ER_MSJ] == "si"].shape[0]
+    sesiones_agendadas_agg = df_attempted_manual_overall[df_attempted_manual_overall[COL_SESION_AGENDADA_MANUAL] == "si"].shape[0]
+
+    funnel_data_manual_agg = pd.DataFrame({
+        "Etapa": ["Prospectados Manualmente (con Fecha Invite)", "Invites Aceptadas", "Respuestas 1er Msj", "Sesiones Agendadas"],
+        "Cantidad": [total_manually_prospected_overall, invites_aceptadas_agg, respuestas_1er_msj_agg, sesiones_agendadas_agg]
     })
-    fig_funnel_manual = px.funnel(funnel_data_manual, x='Cantidad', y='Etapa', title="Embudo de Conversión (Prospección Manual)")
-    st.plotly_chart(fig_funnel_manual, use_container_width=True)
+    fig_funnel_manual_agg = px.funnel(funnel_data_manual_agg, x='Cantidad', y='Etapa', title="Embudo Agregado (Prospección Manual)")
+    st.plotly_chart(fig_funnel_manual_agg, use_container_width=True)
 
-    # Breakdown by Prospector (Manual)
-    if COL_QUIEN_PROSPECTO in df_attempted_manual.columns:
-        prospector_counts_manual = df_attempted_manual[COL_QUIEN_PROSPECTO].value_counts().reset_index()
-        prospector_counts_manual.columns = ["Prospectador", "Total Prospectado (Manual)"]
-        if not prospector_counts_manual.empty:
-            fig_prospector_manual = px.bar(prospector_counts_manual, x="Prospectador", y="Total Prospectado (Manual)", title="Prospección Manual por Prospectador", text_auto=True, color="Prospectador")
-            st.plotly_chart(fig_prospector_manual, use_container_width=True)
-            with st.expander("Ver tabla de prospección manual por prospectador"):
-                st.dataframe(prospector_counts_manual.style.format({'Total Prospectado (Manual)': "{:,}"}), use_container_width=True)
+    # Optional: Breakdowns by Prospector/Avatar for 'Prospectado Manualmente (con Fecha Invite)'
+    if COL_QUIEN_PROSPECTO in df_attempted_manual_overall.columns:
+        prospector_counts_actual = df_attempted_manual_overall[COL_QUIEN_PROSPECTO].value_counts().reset_index()
+        prospector_counts_actual.columns = ["Prospectador", "Nº Prospectado Manualmente (con Fecha Invite)"]
+        if not prospector_counts_actual.empty:
+            fig_prospector_actual = px.bar(prospector_counts_actual, x="Prospectador", y="Nº Prospectado Manualmente (con Fecha Invite)", title="Nº Prospectado Manualmente por Prospectador", text_auto=True, color="Prospectador")
+            st.plotly_chart(fig_prospector_actual, use_container_width=True)
+    st.markdown("---")
 
 
-    # Breakdown by Avatar (Manual)
-    if COL_AVATAR in df_attempted_manual.columns:
-        avatar_counts_manual = df_attempted_manual[COL_AVATAR].value_counts().reset_index()
-        avatar_counts_manual.columns = ["Avatar", "Total Prospectado (Manual)"]
-        if not avatar_counts_manual.empty:
-            fig_avatar_manual = px.bar(avatar_counts_manual, x="Avatar", y="Total Prospectado (Manual)", title="Prospección Manual por Avatar", text_auto=True, color="Avatar")
-            st.plotly_chart(fig_avatar_manual, use_container_width=True)
-            with st.expander("Ver tabla de prospección manual por avatar"):
-                st.dataframe(avatar_counts_manual.style.format({'Total Prospectado (Manual)': "{:,}"}), use_container_width=True)
+def display_email_prospecting_analysis(df_filtered_campaigns):
+    st.subheader("📧 Análisis de Prospección por Email (Dentro de Campañas Seleccionadas)")
 
-def display_email_prospecting_analysis(df_email):
-    st.subheader("📧 Análisis de Prospección por Email")
-
-    if df_email.empty:
-        st.info("No hay datos de prospección por email para las campañas y filtros seleccionados.")
+    if df_filtered_campaigns.empty:
+        st.info("No hay datos para las campañas y filtros seleccionados.")
         return
 
-    # Filter for actual email prospecting attempts
-    df_attempted_email = df_email[df_email[COL_CONTACTADOS_EMAIL] == "si"].copy()
+    df_attempted_email = df_filtered_campaigns[df_filtered_campaigns[COL_CONTACTADOS_EMAIL] == "si"].copy()
     total_email_prospects_in_filter = len(df_attempted_email)
 
     if total_email_prospects_in_filter == 0:
         st.info("No se encontraron intentos de prospección por email (Contactados por Campaña = 'si') para los filtros actuales.")
         return
 
-    st.metric("Total Contactados por Email", f"{total_email_prospects_in_filter:,}")
+    st.metric("Total Contactados por Email (en selección)", f"{total_email_prospects_in_filter:,}")
 
-    # KPIs Email
     respuestas_email = df_attempted_email[df_attempted_email[COL_RESPUESTA_EMAIL] == "si"].shape[0]
     sesiones_agendadas_email = df_attempted_email[df_attempted_email[COL_SESION_AGENDADA_EMAIL] == "si"].shape[0]
 
@@ -446,32 +448,25 @@ def display_email_prospecting_analysis(df_email):
     e_col1.metric("Respuestas Email", f"{respuestas_email:,}")
     e_col2.metric("Sesiones Agendadas (Email)", f"{sesiones_agendadas_email:,}")
 
-    # Funnel Email
     funnel_data_email = pd.DataFrame({
         "Etapa": ["Contactados por Email", "Respuestas Email", "Sesiones Agendadas (Email)"],
         "Cantidad": [total_email_prospects_in_filter, respuestas_email, sesiones_agendadas_email]
     })
     fig_funnel_email = px.funnel(funnel_data_email, x='Cantidad', y='Etapa', title="Embudo de Conversión (Prospección por Email)")
     st.plotly_chart(fig_funnel_email, use_container_width=True)
-    
-    # Note: Breakdowns by Prospector/Avatar for email campaigns might not be directly applicable
-    # if the email sending process is automated or attributed differently.
-    # If "Quién Prospectó" or "Avatar" is relevant for email campaigns, that logic can be added here similar to manual.
-
+    st.markdown("---")
 
 # --- Main Page Logic ---
-df_base_campaigns = load_and_prepare_campaign_data()
+df_base_campaigns_loaded = load_and_prepare_campaign_data()
 
-if df_base_campaigns.empty:
-    st.error("No se pudieron cargar o procesar los datos para el análisis de campañas. La página no puede continuar.")
+if df_base_campaigns_loaded.empty:
+    st.error("No se pudieron cargar o procesar los datos para el análisis de campañas con campañas asignadas. La página no puede continuar.")
     st.stop()
 
-# Display filters in the sidebar
-selected_campaigns, start_date_filter, end_date_filter, selected_prospectors, selected_avatars = display_campaign_filters(df_base_campaigns.copy())
+selected_campaigns, start_date_filter, end_date_filter, selected_prospectors, selected_avatars = display_campaign_filters(df_base_campaigns_loaded.copy())
 
-# Apply filters to the base DataFrame
-df_filtered_campaigns = apply_campaign_filters(
-    df_base_campaigns.copy(),
+df_filtered_by_sidebar = apply_campaign_filters(
+    df_base_campaigns_loaded.copy(),
     selected_campaigns,
     start_date_filter,
     end_date_filter,
@@ -480,42 +475,35 @@ df_filtered_campaigns = apply_campaign_filters(
 )
 
 # --- Display Sections ---
-st.markdown("---")
-# Section 1: Campaign Potential (uses df_base_campaigns for potential, and df_filtered_campaigns to show context)
-display_campaign_potential(df_base_campaigns.copy(), df_filtered_campaigns.copy()) # Pass full base for potential calculation
+# Section 1: Campaign Potential (uses df_base_campaigns_loaded as it represents all valid campaign data)
+display_campaign_potential(df_base_campaigns_loaded.copy())
+
+# Section 2: Manual Prospecting Analysis (uses df_filtered_by_sidebar)
+display_manual_prospecting_analysis(df_filtered_by_sidebar.copy())
+
+# Section 3: Email Prospecting Analysis (uses df_filtered_by_sidebar)
+display_email_prospecting_analysis(df_filtered_by_sidebar.copy())
 
 st.markdown("---")
-# Section 2: Manual Prospecting Analysis (uses df_filtered_campaigns)
-display_manual_prospecting_analysis(df_filtered_campaigns.copy())
-
-st.markdown("---")
-# Section 3: Email Prospecting Analysis (uses df_filtered_campaigns)
-display_email_prospecting_analysis(df_filtered_campaigns.copy())
-
-
-st.markdown("---")
-with st.expander("ℹ️ Columnas y Lógica Clave Utilizada"):
+with st.expander("ℹ️ Columnas y Lógica Clave Utilizada (Excluye prospectos sin campaña asignada)"):
     st.markdown(f"""
+    **Filtro Inicial:** Solo se consideran prospectos con un valor en la columna `{COL_CAMPAIGN}` que no esté en `{", ".join(NO_CAMPAIGN_VALUES)}`.
+    
     **Columna de Campaña Principal:** `{COL_CAMPAIGN}`
     
     **Prospección Manual:**
-    - Identificador de intento: `{COL_FECHA_INVITE}` (debe tener una fecha)
+    - Trazabilidad: Campaña -> `{COL_QUIEN_PROSPECTO}` -> Prospectos Asignados -> Prospectados Manualmente (con `{COL_FECHA_INVITE}`) -> Embudo.
     - Invite Aceptada: `{COL_INVITE_ACEPTADA}` (valor esperado: 'si')
-    - Respuesta 1er Mensaje: `{COL_RESPUESTA_1ER_MSJ}` (valor esperado: 'si')
+    - Respuesta 1er Mensaje: `{COL_RESPUESTA_1ER_MSJ}` (valor esperado: 'si' o no 'no')
     - Sesión Agendada (Manual): `{COL_SESION_AGENDADA_MANUAL}` (valor esperado: 'si')
-    - Fecha Sesión (Manual): `{COL_FECHA_SESION_MANUAL}`
-    - Prospectador: `{COL_QUIEN_PROSPECTO}`
-    - Avatar: `{COL_AVATAR}`
     
     **Prospección por Email:**
     - Identificador de contacto: `{COL_CONTACTADOS_EMAIL}` (valor esperado: 'si')
-    - Respuesta Email: `{COL_RESPUESTA_EMAIL}` (valor esperado: 'si')
+    - Respuesta Email: `{COL_RESPUESTA_EMAIL}` (valor esperado: 'si' o no 'no')
     - Sesión Agendada (Email): `{COL_SESION_AGENDADA_EMAIL}` (valor esperado: 'si')
-    - Fecha Sesión (Email): `{COL_FECHA_SESION_EMAIL}`
     
-    **Filtro de Fecha Principal (Sidebar):** Se basa en la columna `FechaFiltroPrincipal`, que se deriva de `{COL_FECHA_INVITE}` o, si esta está vacía, de `{COL_FECHA_SESION_EMAIL}`.
+    **Filtro de Fecha Principal (Sidebar):** Se basa en la columna `FechaFiltroPrincipal`.
     """)
-
 
 st.markdown("---")
 st.info("Esta página de análisis de campañas ha sido desarrollada por Johnsito ✨")
