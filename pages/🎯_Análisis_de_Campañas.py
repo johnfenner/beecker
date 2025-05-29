@@ -405,7 +405,7 @@ st.header(f"📊 Resultados para: {', '.join(st.session_state.campana_seleccion_
 total_registros_originales_seleccion = len(df_campanas_filtradas_por_seleccion)
 
 st.metric("Total Registros Originales en Campaña(s) Seleccionada(s) (Fuente Completa, ANTES de filtros de página)", f"{total_registros_originales_seleccion:,}")
-st.caption("Este es el número total de prospectos en `df_original_completo_global` para la(s) campaña(s) seleccionada(s), ANTES de aplicar los filtros de esta página (Prospectador, País, Fecha).")
+
 
 
 # 2. MÉTRICA MODIFICADA: Total de prospectos designados a la campaña desde la fuente original.
@@ -416,7 +416,6 @@ st.caption("Este es el número total de prospectos en `df_original_completo_glob
 total_prospectos_designados_campana_fuente_original = len(df_campanas_filtradas_por_seleccion)
 
 st.metric("Prospectos Totales Designados a Campaña(s) (Fuente Original, ANTES de filtros de página)", f"{total_prospectos_designados_campana_fuente_original:,}")
-st.caption("Este es el número total de registros en la fuente de datos original (`df_original_completo_global`) que pertenecen a la(s) campaña(s) seleccionada(s), ANTES de filtros de página. Representa el potencial total. Si este número es bajo, revise `datos/carga_datos.py`.")
 
 st.markdown("---")
 
