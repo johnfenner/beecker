@@ -729,8 +729,12 @@ def display_email_prospecting_analysis(df_common_filtered): # Removed date_param
 
     st.metric("Total Contactados por Email en Selección", f"{total_contactados_email_seleccion:,}")
     
-    respuestas_email = df_contactados_email[df_contactos_email[COL_RESPUESTA_EMAIL] == "si"].shape[0] if COL_RESPUESTA_EMAIL in df_contactos_email else 0
-    sesiones_agendadas_email = df_contactados_email[df_contactados_email[COL_SESION_AGENDADA_EMAIL] == "si"].shape[0] if COL_SESION_AGENDADA_EMAIL in df_contactos_email else 0
+    # Corrected typo: df_contactados_email instead of df_contactos_email
+    respuestas_email = df_contactados_email[df_contactados_email[COL_RESPUESTA_EMAIL] == "si"].shape[0] if COL_RESPUESTA_EMAIL in df_contactados_email.columns else 0
+    
+    # Corrected typo: df_contactados_email instead of df_contactos_email
+    # Also ensure checking .columns for clarity, though 'in df' works for columns.
+    sesiones_agendadas_email = df_contactados_email[df_contactados_email[COL_SESION_AGENDADA_EMAIL] == "si"].shape[0] if COL_SESION_AGENDADA_EMAIL in df_contactados_email.columns else 0
 
     e_col1, e_col2 = st.columns(2)
     e_col1.metric("Respuestas Email", f"{respuestas_email:,}")
