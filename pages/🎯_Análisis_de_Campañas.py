@@ -641,15 +641,4 @@ else:
 
 
 st.markdown("---")
-st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")ef convertir_df_a_excel_campana_detalle(df_conv):
-            output = io.BytesIO();
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer: df_conv.to_excel(writer, index=False, sheet_name='Prospectos_Campaña_Detalle')
-            return output.getvalue()
-        excel_data_campana_detalle = convertir_df_a_excel_campana_detalle(df_detalle_original_filtrado)
-        nombres_campana_str = "_".join(st.session_state.campana_seleccion_principal).replace(" ", "")[:50]
-        nombre_archivo_excel_detalle = f"detalle_sel_filtrada_{nombres_campana_str}.xlsx"
-        st.download_button(label="⬇️ Descargar Detalle de Selección Filtrada (Excel)", data=excel_data_campana_detalle, file_name=nombre_archivo_excel_detalle, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="download_excel_campana_detalle")
-    else: st.caption("No hay prospectos detallados para mostrar con los filtros actuales.")
-
-st.markdown("---")
-st.info("Plataforma analítica potenciada por IA y el ingenio de Johnsito. ✨")
+st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")
