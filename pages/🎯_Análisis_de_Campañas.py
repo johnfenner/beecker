@@ -122,7 +122,7 @@ def load_and_prepare_campaign_data():
         st.warning("No se encontraron prospectos con campañas asignadas válidas después de la limpieza inicial.")
         return pd.DataFrame()
 
-    date_cols_manual_processing = [COL_FECHA_INVITE, COL_FECHA_SESION_MANUAL] # Renamed for clarity
+    date_cols_manual_processing = [COL_FECHA_INVITE, COL_FECHA_SESION_MANUAL]
     for col in date_cols_manual_processing:
         if col in df.columns: df[col] = df[col].apply(parse_date_robustly)
         else: df[col] = pd.NaT
@@ -150,18 +150,14 @@ def load_and_prepare_campaign_data():
     if COL_FECHA_SESION_EMAIL in df.columns: df[COL_FECHA_SESION_EMAIL] = df[COL_FECHA_SESION_EMAIL].apply(parse_date_robustly)
     else: df[COL_FECHA_SESION_EMAIL] = pd.NaT
 
-    # Create specific date filter column for manual prospecting
     df["FechaFiltroManual"] = pd.NaT
     if COL_FECHA_INVITE in df.columns and not df[COL_FECHA_INVITE].isnull().all():
          df["FechaFiltroManual"] = df[COL_FECHA_INVITE]
     
-    # If you had other primary dates for other filter types, they would be created here.
-    # For now, only manual prospecting has a dedicated date filter column from sidebar.
-
     return df
 
 # --- Filtros de Barra Lateral ---
-def display_campaign_filters(df_options):
+def display_campaign_filters(df_options): # df_options is a copy of df_base_campaigns_loaded
     st.sidebar.header("🎯 Filtros de Campaña")
 
     default_filters_init = {
@@ -172,6 +168,7 @@ def display_campaign_filters(df_options):
         SES_AVATAR_FILTER_KEY: [ALL_AVATARS_STRING]
     }
 
+    # Initialize session state for all filter keys if they are not already present
     for key, value in default_filters_init.items():
         if key not in st.session_state:
             st.session_state[key] = value
@@ -183,41 +180,27 @@ def display_campaign_filters(df_options):
         for item in sorted(list(unique_items)):
             if item != ALL_CAMPAIGNS_STRING: campaign_options.append(item)
     
-    current_selection_campaign = st.session_state.get(SES_CAMPAIGN_FILTER_KEY, default_filters_init[SES_CAMPAIGN_FILTER_KEY])
-    # Ensure current_selection_campaign is a list, even if default_filters_init was somehow wrong (defensive)
-    if not isinstance(current_selection_campaign, list): current_selection_campaign = list(current_selection_campaign) if isinstance(current_selection_campaign, (tuple,set)) else [current_selection_campaign]
-
-
-    validated_selection_campaign = [c for c in current_selection_campaign if c in campaign_options]
-    if not validated_selection_campaign or len(validated_selection_campaign) != len(current_selection_campaign):
-        new_default = default_filters_init[SES_CAMPAIGN_FILTER_KEY] if not validated_selection_campaign else validated_selection_campaign
-        st.session_state[SES_CAMPAIGN_FILTER_KEY] = new_default
-        # If state was corrected, it's often good to rerun, but let's see if Streamlit handles it with key binding.
-        # If error persists, uncommenting st.rerun() here might be a more forceful fix.
-        # st.rerun() 
+    # Validate and potentially correct st.session_state for campaign filter
+    current_campaign_selection_from_state = st.session_state[SES_CAMPAIGN_FILTER_KEY]
+    campaign_selection_is_valid = True
+    if not isinstance(current_campaign_selection_from_state, list): # Ensure it's a list
+        campaign_selection_is_valid = False
+    else:
+        for item in current_campaign_selection_from_state: # Ensure all selected items are in current options
+            if item not in campaign_options:
+                campaign_selection_is_valid = False
+                break
     
-    # Use the (potentially corrected) session state value for the widget.
-    # Streamlit widgets primarily use st.session_state[KEY] if KEY is provided.
-    # The 'default' parameter is mainly for the initial run IF the key is not yet in session_state.
+    if not campaign_selection_is_valid:
+        st.session_state[SES_CAMPAIGN_FILTER_KEY] = default_filters_init[SES_CAMPAIGN_FILTER_KEY] # Reset to default
+        st.rerun() # Force a rerun with the corrected state
+
+    # Render the campaign multiselect widget
+    # Streamlit uses st.session_state[KEY] as the widget's current value if KEY is provided.
     selected_campaigns = st.sidebar.multiselect(
         "Seleccionar Campaña(s)", options=campaign_options,
-        key=SES_CAMPAIGN_FILTER_KEY # Let Streamlit manage state via key
+        key=SES_CAMPAIGN_FILTER_KEY 
     )
-
-
-    # --- Filtro de Fecha (uses FechaFiltroManual for min/max) ---
-    min_date, max_date = None, None
-    if "FechaFiltroManual" in df_options.columns and pd.api.types.is_datetime64_any_dtype(df_options["FechaFiltroManual"]): # Changed to FechaFiltroManual
-        valid_dates = df_options["FechaFiltroManual"].dropna()
-        if not valid_dates.empty:
-            min_date = valid_dates.min().date()
-            max_date = valid_dates.max().date()
-    date_col1, date_col2 = st.sidebar.columns(2)
-    
-    # For date_input, value is taken from session_state if key exists.
-    start_date = date_col1.date_input("Fecha Desde", min_value=min_date, max_value=max_date, format="DD/MM/YYYY", key=SES_START_DATE_KEY)
-    end_date = date_col2.date_input("Fecha Hasta", min_value=min_date, max_value=max_date, format="DD/MM/YYYY", key=SES_END_DATE_KEY)
-
 
     # --- Filtro de Prospectador ---
     prospector_options = [ALL_PROSPECTORS_STRING]
@@ -226,14 +209,18 @@ def display_campaign_filters(df_options):
         for item in sorted(list(unique_items)):
             if item != ALL_PROSPECTORS_STRING: prospector_options.append(item)
 
-    current_selection_prospector = st.session_state.get(SES_PROSPECTOR_FILTER_KEY, default_filters_init[SES_PROSPECTOR_FILTER_KEY])
-    if not isinstance(current_selection_prospector, list): current_selection_prospector = list(current_selection_prospector) if isinstance(current_selection_prospector, (tuple,set)) else [current_selection_prospector]
-
-    validated_selection_prospector = [p for p in current_selection_prospector if p in prospector_options]
-    if not validated_selection_prospector or len(validated_selection_prospector) != len(current_selection_prospector):
-        new_default = default_filters_init[SES_PROSPECTOR_FILTER_KEY] if not validated_selection_prospector else validated_selection_prospector
-        st.session_state[SES_PROSPECTOR_FILTER_KEY] = new_default
-        # st.rerun()
+    current_prospector_selection_from_state = st.session_state[SES_PROSPECTOR_FILTER_KEY]
+    prospector_selection_is_valid = True
+    if not isinstance(current_prospector_selection_from_state, list):
+        prospector_selection_is_valid = False
+    else:
+        for item in current_prospector_selection_from_state:
+            if item not in prospector_options:
+                prospector_selection_is_valid = False
+                break
+    if not prospector_selection_is_valid:
+        st.session_state[SES_PROSPECTOR_FILTER_KEY] = default_filters_init[SES_PROSPECTOR_FILTER_KEY]
+        st.rerun()
 
     selected_prospectors = st.sidebar.multiselect(
         "¿Quién Prospectó?", options=prospector_options,
@@ -246,29 +233,45 @@ def display_campaign_filters(df_options):
         unique_items = df_options[df_options[COL_AVATAR] != "N/D_Interno"][COL_AVATAR].dropna().unique()
         for item in sorted(list(unique_items)):
             if item != ALL_AVATARS_STRING: avatar_options.append(item)
-    
-    current_selection_avatar = st.session_state.get(SES_AVATAR_FILTER_KEY, default_filters_init[SES_AVATAR_FILTER_KEY])
-    if not isinstance(current_selection_avatar, list): current_selection_avatar = list(current_selection_avatar) if isinstance(current_selection_avatar, (tuple,set)) else [current_selection_avatar]
         
-    validated_selection_avatar = [a for a in current_selection_avatar if a in avatar_options]
-    if not validated_selection_avatar or len(validated_selection_avatar) != len(current_selection_avatar):
-        new_default = default_filters_init[SES_AVATAR_FILTER_KEY] if not validated_selection_avatar else validated_selection_avatar
-        st.session_state[SES_AVATAR_FILTER_KEY] = new_default
-        # st.rerun()
+    current_avatar_selection_from_state = st.session_state[SES_AVATAR_FILTER_KEY]
+    avatar_selection_is_valid = True
+    if not isinstance(current_avatar_selection_from_state, list):
+        avatar_selection_is_valid = False
+    else:
+        for item in current_avatar_selection_from_state:
+            if item not in avatar_options:
+                avatar_selection_is_valid = False
+                break
+    if not avatar_selection_is_valid:
+        st.session_state[SES_AVATAR_FILTER_KEY] = default_filters_init[SES_AVATAR_FILTER_KEY]
+        st.rerun()
 
     selected_avatars = st.sidebar.multiselect(
         "Avatar", options=avatar_options,
         key=SES_AVATAR_FILTER_KEY
     )
     
+    # --- Filtro de Fecha (uses FechaFiltroManual for min/max) ---
+    min_date, max_date = None, None
+    if "FechaFiltroManual" in df_options.columns and pd.api.types.is_datetime64_any_dtype(df_options["FechaFiltroManual"]):
+        valid_dates = df_options["FechaFiltroManual"].dropna()
+        if not valid_dates.empty:
+            min_date = valid_dates.min().date()
+            max_date = valid_dates.max().date()
+    date_col1, date_col2 = st.sidebar.columns(2)
+    
+    start_date = date_col1.date_input("Fecha Desde", min_value=min_date, max_value=max_date, format="DD/MM/YYYY", key=SES_START_DATE_KEY)
+    end_date = date_col2.date_input("Fecha Hasta", min_value=min_date, max_value=max_date, format="DD/MM/YYYY", key=SES_END_DATE_KEY)
+
     st.sidebar.markdown("---")
-    if st.sidebar.button("🧹 Limpiar Filtros", use_container_width=True, key=f"{SES_CAMPAIGN_FILTER_KEY}_clear_button_final_v2"): # Changed key to avoid conflict if old one is cached
+    if st.sidebar.button("🧹 Limpiar Filtros", use_container_width=True, key=f"{SES_CAMPAIGN_FILTER_KEY}_clear_button_final_v3"): # Changed key again just in case
         st.session_state[SES_CAMPAIGN_FILTER_KEY] = default_filters_init[SES_CAMPAIGN_FILTER_KEY]
         st.session_state[SES_START_DATE_KEY] = default_filters_init[SES_START_DATE_KEY]
         st.session_state[SES_END_DATE_KEY] = default_filters_init[SES_END_DATE_KEY]
         st.session_state[SES_PROSPECTOR_FILTER_KEY] = default_filters_init[SES_PROSPECTOR_FILTER_KEY]
         st.session_state[SES_AVATAR_FILTER_KEY] = default_filters_init[SES_AVATAR_FILTER_KEY]
-        st.rerun()
+        st.rerun() # Essential for changes to reflect
 
     # Return values directly from session_state, as widgets are bound to these keys.
     return (
@@ -280,7 +283,7 @@ def display_campaign_filters(df_options):
     )
 
 # --- Aplicar Filtros (excluding date filter) ---
-def apply_common_filters(df, campaigns, prospectors, avatars): # Renamed and removed date filters
+def apply_common_filters(df, campaigns, prospectors, avatars): 
     if df.empty: return df
     df_filtered = df.copy()
 
@@ -305,11 +308,8 @@ def apply_manual_date_filter(df, start_date, end_date):
         s_date = pd.to_datetime(start_date).date() if start_date else None
         e_date = pd.to_datetime(end_date).date() if end_date else None
         
-        # Ensure Series is timezone-naive before .dt.date if it's timezone-aware
-        if df_date_filtered["FechaFiltroManual"].dt.tz is not None:
-            date_series_for_filter = df_date_filtered["FechaFiltroManual"].dt.tz_localize(None).dt.date
-        else:
-            date_series_for_filter = df_date_filtered["FechaFiltroManual"].dt.date
+        date_series_for_filter = df_date_filtered["FechaFiltroManual"].dt.tz_localize(None) if df_date_filtered["FechaFiltroManual"].dt.tz is not None else df_date_filtered["FechaFiltroManual"]
+        date_series_for_filter = date_series_for_filter.dt.date
 
         if s_date and e_date:
             df_date_filtered = df_date_filtered[(date_series_for_filter >= s_date) & (date_series_for_filter <= e_date)]
@@ -339,24 +339,22 @@ def display_campaign_potential(df_valid_campaigns):
         st.dataframe(potential_counts.style.format({'Total Prospectos en Campaña': "{:,}"}), use_container_width=True)
     st.markdown("---")
 
-def display_manual_prospecting_analysis(df_common_filtered, start_date, end_date): # Added date params
+def display_manual_prospecting_analysis(df_common_filtered, start_date, end_date):
     st.subheader("Análisis de Prospección Manual")
     st.caption("Basado en campañas y filtros seleccionados. El filtro de fecha se aplica a 'Fecha de Invite'. Muestra prospectos asignados, cuántos fueron contactados manualmente y su progreso en el embudo.")
 
-    # Apply date filter for this specific section
     df_manual_filtered = apply_manual_date_filter(df_common_filtered, start_date, end_date)
 
     if df_manual_filtered.empty:
         st.info("No hay datos para analizar la prospección manual con los filtros actuales (incluyendo el rango de fechas).")
         return
 
-    total_in_current_filter = len(df_manual_filtered) # This is after date filter
+    total_in_current_filter = len(df_manual_filtered) 
     
     if COL_FECHA_INVITE not in df_manual_filtered.columns:
         st.warning(f"Columna '{COL_FECHA_INVITE}' no encontrada. No se puede calcular 'Contactos Manuales Iniciados'.")
         df_contactos_iniciados = pd.DataFrame()
     else:
-        # Contactos iniciados are those with a non-NaT Fecha de Invite *within the filtered dataset*
         df_contactos_iniciados = df_manual_filtered[df_manual_filtered[COL_FECHA_INVITE].notna()].copy()
     
     total_contactos_iniciados_manual = len(df_contactos_iniciados)
@@ -373,15 +371,13 @@ def display_manual_prospecting_analysis(df_common_filtered, start_date, end_date
 
     st.markdown("#### Trazabilidad Detallada: Asignados vs. Contactados y Embudo por Prospectador")
     group_cols_trace = [COL_CAMPAIGN, COL_QUIEN_PROSPECTO]
-    if not all(col in df_manual_filtered.columns for col in group_cols_trace): # Check against df_manual_filtered
+    if not all(col in df_manual_filtered.columns for col in group_cols_trace):
         st.warning(f"Faltan columnas para la trazabilidad: {', '.join(col for col in group_cols_trace if col not in df_manual_filtered)}. No se puede generar la tabla.")
         st.markdown("---")
         return
 
-    # Prospectos asignados uses df_manual_filtered (already date filtered)
     assigned_counts = df_manual_filtered.groupby(group_cols_trace, as_index=False).size().rename(columns={'size': 'Prospectos Asignados'})
     
-    # Contactos iniciados counts and funnel metrics use df_contactos_iniciados
     if df_contactos_iniciados.empty or not all(col in df_contactos_iniciados.columns for col in group_cols_trace) :
          contactos_iniciados_counts = pd.DataFrame(columns=group_cols_trace + ['Contactos Manuales Iniciados'])
          if not assigned_counts.empty:
@@ -406,12 +402,14 @@ def display_manual_prospecting_analysis(df_common_filtered, start_date, end_date
     
     count_cols_fill = ['Contactos Manuales Iniciados', 'Invites_Aceptadas', 'Respuestas_1er_Msj', 'Sesiones_Agendadas']
     for col in count_cols_fill:
-        if col not in trace_df.columns: trace_df[col] = 0
+        if col not in trace_df.columns: trace_df[col] = 0 # Ensure column exists
         trace_df[col] = trace_df[col].fillna(0).astype(int)
+
 
     trace_df['Tasa Inicio Prospección (%)'] = (trace_df['Contactos Manuales Iniciados'].astype(float) / trace_df['Prospectos Asignados'].astype(float) * 100).where(trace_df['Prospectos Asignados'] > 0, 0).fillna(0).round(1)
     base_rates_embudo = trace_df['Contactos Manuales Iniciados'].astype(float)
-    if 'Invites_Aceptadas' in trace_df.columns: # Ensure column exists before calculating rate
+    
+    if 'Invites_Aceptadas' in trace_df.columns: 
         trace_df['Tasa Aceptación vs Contactos (%)'] = (trace_df['Invites_Aceptadas'].astype(float) / base_rates_embudo * 100).where(base_rates_embudo > 0, 0).fillna(0).round(1)
     else: trace_df['Tasa Aceptación vs Contactos (%)'] = 0.0
     
@@ -448,7 +446,6 @@ def display_manual_prospecting_analysis(df_common_filtered, start_date, end_date
         st.info("No hay datos para la tabla de trazabilidad detallada después de filtrar 'N/D_Interno' o no hay prospectadores asignados con actividad para los filtros (incluida fecha) seleccionados.")
 
     st.markdown("#### Embudo de Conversión Agregado (para Contactos Manuales Iniciados)")
-    # These aggregations are from df_contactos_iniciados, which is already filtered by date implicitly
     invites_aceptadas_agg = df_contactos_iniciados[df_contactos_iniciados[COL_INVITE_ACEPTADA] == "si"].shape[0] if COL_INVITE_ACEPTADA in df_contactos_iniciados else 0
     respuestas_1er_msj_agg = df_contactos_iniciados[df_contactos_iniciados[COL_RESPUESTA_1ER_MSJ] == "si"].shape[0] if COL_RESPUESTA_1ER_MSJ in df_contactos_iniciados else 0
     sesiones_agendadas_agg = df_contactos_iniciados[df_contactos_iniciados[COL_SESION_AGENDADA_MANUAL] == "si"].shape[0] if COL_SESION_AGENDADA_MANUAL in df_contactos_iniciados else 0
@@ -461,11 +458,10 @@ def display_manual_prospecting_analysis(df_common_filtered, start_date, end_date
     st.plotly_chart(fig_funnel_manual_agg, use_container_width=True)
     st.markdown("---")
 
-def display_global_manual_prospecting_deep_dive(df_common_filtered, start_date, end_date): # Added date params
+def display_global_manual_prospecting_deep_dive(df_common_filtered, start_date, end_date):
     st.header("Desglose General de Prospección Manual en Campañas Seleccionadas")
     st.caption("Este análisis se basa en la selección actual de campañas y filtros de la barra lateral, incluyendo el filtro de fecha para 'Fecha de Invite'.")
 
-    # Apply date filter for this specific section
     df_manual_filtered = apply_manual_date_filter(df_common_filtered, start_date, end_date)
 
     if df_manual_filtered.empty:
@@ -476,7 +472,6 @@ def display_global_manual_prospecting_deep_dive(df_common_filtered, start_date, 
         st.warning(f"Columna '{COL_FECHA_INVITE}' no encontrada. No se puede generar el desglose detallado.")
         df_contactos_iniciados = pd.DataFrame()
     else:
-        # df_contactos_iniciados is derived from the date-filtered df_manual_filtered
         df_contactos_iniciados = df_manual_filtered[df_manual_filtered[COL_FECHA_INVITE].notna()].copy()
     
     if df_contactos_iniciados.empty:
@@ -489,7 +484,7 @@ def display_global_manual_prospecting_deep_dive(df_common_filtered, start_date, 
     total_respuestas_1er_msj = df_contactos_iniciados[df_contactos_iniciados[COL_RESPUESTA_1ER_MSJ] == "si"].shape[0] if COL_RESPUESTA_1ER_MSJ in df_contactos_iniciados else 0
     total_sesiones_agendadas = df_contactos_iniciados[df_contactos_iniciados[COL_SESION_AGENDADA_MANUAL] == "si"].shape[0] if COL_SESION_AGENDADA_MANUAL in df_contactos_iniciados else 0
     
-    total_asignados_seleccion_date_filtered = len(df_manual_filtered) # Total asignados after date filter
+    total_asignados_seleccion_date_filtered = len(df_manual_filtered) 
     tasa_inicio_general = (total_contactos_iniciados / total_asignados_seleccion_date_filtered * 100) if total_asignados_seleccion_date_filtered > 0 else 0
     tasa_aceptacion_general = (total_invites_aceptadas / total_contactos_iniciados * 100) if total_contactos_iniciados > 0 else 0
     tasa_sesion_global_general = (total_sesiones_agendadas / total_contactos_iniciados * 100) if total_contactos_iniciados > 0 else 0
@@ -503,15 +498,14 @@ def display_global_manual_prospecting_deep_dive(df_common_filtered, start_date, 
     st.markdown("---")
     st.markdown("#### Desglose por Prospectador (sobre Contactos Manuales Iniciados)")
     
-    if COL_QUIEN_PROSPECTO not in df_manual_filtered.columns: # Check against df_manual_filtered
+    if COL_QUIEN_PROSPECTO not in df_manual_filtered.columns: 
         st.warning(f"Columna '{COL_QUIEN_PROSPECTO}' no encontrada. No se puede generar desglose por prospectador.")
     else:
-        # Asignados por prospectador from the date-filtered manual data
         asignados_por_prospectador = df_manual_filtered.groupby(COL_QUIEN_PROSPECTO, as_index=False).size().rename(columns={'size': 'Total Asignados'})
         asignados_por_prospectador = asignados_por_prospectador[asignados_por_prospectador[COL_QUIEN_PROSPECTO] != "N/D_Interno"]
 
         if not df_contactos_iniciados.empty and COL_QUIEN_PROSPECTO in df_contactos_iniciados.columns:
-            desglose_prospectador_agg_spec = {'Contactos Manuales Iniciados': (COL_FECHA_INVITE, 'count')} # COL_FECHA_INVITE is fine as it's just a proxy for count here
+            desglose_prospectador_agg_spec = {'Contactos Manuales Iniciados': (COL_FECHA_INVITE, 'count')} 
             if COL_INVITE_ACEPTADA in df_contactos_iniciados.columns: desglose_prospectador_agg_spec['Invites Aceptadas'] = (COL_INVITE_ACEPTADA, lambda x: (x == "si").sum())
             if COL_RESPUESTA_1ER_MSJ in df_contactos_iniciados.columns: desglose_prospectador_agg_spec['Respuestas 1er Msj'] = (COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum())
             if COL_SESION_AGENDADA_MANUAL in df_contactos_iniciados.columns: desglose_prospectador_agg_spec['Sesiones Agendadas'] = (COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
@@ -521,23 +515,20 @@ def display_global_manual_prospecting_deep_dive(df_common_filtered, start_date, 
             
             if not asignados_por_prospectador.empty:
                  desglose_prospectador_final = pd.merge(asignados_por_prospectador, desglose_prospectador, on=COL_QUIEN_PROSPECTO, how='left')
-            else: # Should not happen if df_contactos_iniciados is not empty and has prospectors
+            else: 
                  desglose_prospectador_final = desglose_prospectador.copy()
                  if 'Total Asignados' not in desglose_prospectador_final.columns:
-                     # This case implies asignados_por_prospectador was empty, but desglose_prospectador was not.
-                     # This would mean contacts were initiated by prospectors who had 0 assigned in the date range, which is odd.
-                     # For safety, add Total Asignados, but it will likely be 0 from the merge logic.
                      desglose_prospectador_final['Total Asignados'] = 0 
             
             cols_to_ensure_numeric = ['Contactos Manuales Iniciados', 'Invites Aceptadas', 'Respuestas 1er Msj', 'Sesiones Agendadas', 'Total Asignados']
             for col in cols_to_ensure_numeric:
-                if col not in desglose_prospectador_final.columns: desglose_prospectador_final[col] = 0
+                if col not in desglose_prospectador_final.columns: desglose_prospectador_final[col] = 0 # Ensure column exists
                 desglose_prospectador_final[col] = pd.to_numeric(desglose_prospectador_final[col], errors='coerce').fillna(0).astype(int)
+
 
             desglose_prospectador_final['Tasa Inicio (%)'] = (desglose_prospectador_final['Contactos Manuales Iniciados'].astype(float) / desglose_prospectador_final['Total Asignados'].astype(float) * 100).where(desglose_prospectador_final['Total Asignados'] > 0, 0).fillna(0).round(1)
             base_embudo_prosp = desglose_prospectador_final['Contactos Manuales Iniciados'].astype(float)
 
-            # Defensive checks for column existence before calculating rates
             if 'Invites Aceptadas' in desglose_prospectador_final.columns:
                 desglose_prospectador_final['Tasa Aceptación (%)'] = (desglose_prospectador_final['Invites Aceptadas'].astype(float) / base_embudo_prosp * 100).where(base_embudo_prosp > 0, 0).fillna(0).round(1)
             else: desglose_prospectador_final['Tasa Aceptación (%)'] = 0.0
@@ -584,7 +575,6 @@ def display_global_manual_prospecting_deep_dive(df_common_filtered, start_date, 
 
     st.markdown("---")
     st.markdown("#### Desglose por Avatar (sobre Contactos Manuales Iniciados)")
-    # df_contactos_iniciados is already date-filtered
     if COL_AVATAR not in df_contactos_iniciados.columns :
         st.warning(f"Columna '{COL_AVATAR}' no encontrada. No se puede generar desglose por avatar.")
     elif not df_contactos_iniciados.empty:
@@ -596,8 +586,8 @@ def display_global_manual_prospecting_deep_dive(df_common_filtered, start_date, 
         desglose_avatar = df_contactos_iniciados.groupby(COL_AVATAR, as_index=False).agg(**desglose_avatar_agg_spec)
         desglose_avatar = desglose_avatar[desglose_avatar[COL_AVATAR] != "N/D_Interno"]
         
-        for col_name in ['Invites Aceptadas', 'Respuestas 1er Msj', 'Sesiones Agendadas']: # Renamed col to col_name
-            if col_name not in desglose_avatar.columns: desglose_avatar[col_name] = 0
+        for col_name in ['Invites Aceptadas', 'Respuestas 1er Msj', 'Sesiones Agendadas']: 
+            if col_name not in desglose_avatar.columns: desglose_avatar[col_name] = 0 # Ensure column exists
             desglose_avatar[col_name] = pd.to_numeric(desglose_avatar[col_name], errors='coerce').fillna(0).astype(int)
 
         base_embudo_avatar = desglose_avatar['Contactos Manuales Iniciados'].astype(float)
@@ -638,12 +628,11 @@ def display_global_manual_prospecting_deep_dive(df_common_filtered, start_date, 
                     st.caption("Gráfico de Tasa Sesión Global por Avatar no disponible (columna de tasa podría faltar).")
         else:
             st.info("No hay datos para el desglose por avatar después del procesamiento.")
-    else: # df_contactos_iniciados is empty
+    else: 
         st.info("No hay contactos manuales iniciados (en rango de fecha) o columna Avatar no disponible para mostrar desglose por avatar.")
 
     st.markdown("---")
     st.markdown("#### Desglose por Campaña (sobre Contactos Manuales Iniciados)")
-    # df_contactos_iniciados is already date-filtered
     campaign_filter_active = st.session_state.get(SES_CAMPAIGN_FILTER_KEY, [ALL_CAMPAIGNS_STRING])
     show_campaign_breakdown = False
     if COL_CAMPAIGN in df_contactos_iniciados.columns and \
@@ -661,8 +650,8 @@ def display_global_manual_prospecting_deep_dive(df_common_filtered, start_date, 
 
         desglose_campana = df_contactos_iniciados.groupby(COL_CAMPAIGN, as_index=False).agg(**desglose_campana_agg_spec)
         
-        for col_name in ['Invites Aceptadas', 'Respuestas 1er Msj', 'Sesiones Agendadas']: # Renamed col
-            if col_name not in desglose_campana.columns: desglose_campana[col_name] = 0
+        for col_name in ['Invites Aceptadas', 'Respuestas 1er Msj', 'Sesiones Agendadas']: 
+            if col_name not in desglose_campana.columns: desglose_campana[col_name] = 0 # Ensure column exists
             desglose_campana[col_name] = pd.to_numeric(desglose_campana[col_name], errors='coerce').fillna(0).astype(int)
 
         base_embudo_camp = desglose_campana['Contactos Manuales Iniciados'].astype(float)
@@ -704,15 +693,15 @@ def display_global_manual_prospecting_deep_dive(df_common_filtered, start_date, 
             st.info("No hay datos para el desglose por campaña después del procesamiento.")
     elif not show_campaign_breakdown:
          st.info("Selecciona '– Todas las Campañas –' (y asegúrate que haya más de una con datos) o múltiples campañas en la barra lateral para ver este desglose comparativo.")
-    else: # df_contactos_iniciados is empty
+    else: 
         st.info("No hay contactos manuales iniciados (en rango de fecha) para mostrar desglose por campaña con la selección actual.")
     st.markdown("---")
 
-def display_email_prospecting_analysis(df_common_filtered): # Removed date_params, as they don't apply here
+def display_email_prospecting_analysis(df_common_filtered): 
     st.subheader("Análisis de Prospección por Email")
     st.caption("Basado en campañas y filtros seleccionados en la barra lateral. El filtro de fecha NO se aplica a esta sección.")
 
-    if df_common_filtered.empty: # This df is filtered by campaign, prospector, avatar only
+    if df_common_filtered.empty: 
         st.info("No hay datos para analizar la prospección por email con los filtros de campaña/prospector/avatar actuales.")
         return
 
@@ -729,11 +718,7 @@ def display_email_prospecting_analysis(df_common_filtered): # Removed date_param
 
     st.metric("Total Contactados por Email en Selección", f"{total_contactados_email_seleccion:,}")
     
-    # Corrected typo: df_contactados_email instead of df_contactos_email
     respuestas_email = df_contactados_email[df_contactados_email[COL_RESPUESTA_EMAIL] == "si"].shape[0] if COL_RESPUESTA_EMAIL in df_contactados_email.columns else 0
-    
-    # Corrected typo: df_contactados_email instead of df_contactos_email
-    # Also ensure checking .columns for clarity, though 'in df' works for columns.
     sesiones_agendadas_email = df_contactados_email[df_contactados_email[COL_SESION_AGENDADA_EMAIL] == "si"].shape[0] if COL_SESION_AGENDADA_EMAIL in df_contactados_email.columns else 0
 
     e_col1, e_col2 = st.columns(2)
@@ -754,29 +739,22 @@ df_base_campaigns_loaded = load_and_prepare_campaign_data()
 if df_base_campaigns_loaded.empty:
     st.error("No se pudieron cargar datos válidos de campañas desde la fuente. La página no puede generar análisis.")
 else:
-    # display_campaign_filters returns all selected filter values from sidebar
     (selected_campaigns, 
      start_date_filter, 
      end_date_filter, 
      selected_prospectors, 
-     selected_avatars) = display_campaign_filters(df_base_campaigns_loaded.copy()) # Pass full df for options
+     selected_avatars) = display_campaign_filters(df_base_campaigns_loaded.copy()) 
 
-    # Apply common filters (campaign, prospector, avatar) - NO date filter here
     df_filtered_common = apply_common_filters(
         df_base_campaigns_loaded.copy(), 
         selected_campaigns, 
         selected_prospectors, 
         selected_avatars
     )
-
-    # Campaign potential uses the base loaded data (or could use df_filtered_common if you want it to react to avatar/prospector filters too)
-    display_campaign_potential(df_base_campaigns_loaded.copy()) 
     
-    # Manual prospecting sections receive the common filtered data AND the date filters to apply internally
+    display_campaign_potential(df_base_campaigns_loaded.copy()) 
     display_manual_prospecting_analysis(df_filtered_common.copy(), start_date_filter, end_date_filter)
     display_global_manual_prospecting_deep_dive(df_filtered_common.copy(), start_date_filter, end_date_filter)
-    
-    # Email prospecting uses only the common filtered data (no date filter applied from sidebar)
     display_email_prospecting_analysis(df_filtered_common.copy())
 
 st.markdown("---")
