@@ -154,34 +154,48 @@ def load_and_prepare_campaign_data():
 def display_campaign_filters(df_options):
     st.sidebar.header("🎯 Filtros de Campaña")
 
+    # Ensure consistent use of the "All" string, e.g., "– Todas –" (with en-dash)
+    all_campaigns_value = ["– Todas –"]
+    all_prospectors_value = ["– Todas –"] # Changed from "– Todos –" if you intended singular agreement with "Prospector"
+                                         # Or keep as "– Todos –" if that's the canonical string you want.
+                                         # The key is *consistency* with the options list.
+                                         # For this example, I'll assume "– Todas –" is universal for simplicity here.
+    all_avatars_value = ["– Todas –"]
+
     default_filters_init = {
-        SES_CAMPAIGN_FILTER_KEY: ["– Todas –"],
+        SES_CAMPAIGN_FILTER_KEY: all_campaigns_value,
         SES_START_DATE_KEY: None,
         SES_END_DATE_KEY: None,
-        SES_PROSPECTOR_FILTER_KEY: ["– Todos –"],
-        SES_AVATAR_FILTER_KEY: ["– Todos –"]
+        SES_PROSPECTOR_FILTER_KEY: all_prospectors_value, # Use the consistent string
+        SES_AVATAR_FILTER_KEY: all_avatars_value          # Use the consistent string
     }
     for key, value in default_filters_init.items():
         if key not in st.session_state:
             st.session_state[key] = value
 
     # --- Campaign Filter ---
-    campaign_options = ["– Todas –"]
+    campaign_options = list(all_campaigns_value) # Start with the "All" value
     if COL_CAMPAIGN in df_options.columns and not df_options[COL_CAMPAIGN].empty:
         campaign_options.extend(sorted(df_options[COL_CAMPAIGN].dropna().unique()))
+    # Ensure no duplicates if "– Todas –" could come from data; typically, it shouldn't.
+    # If necessary, convert to set and back to list to ensure uniqueness while preserving "– Todas –" at the start.
+    # A simpler way if "– Todas –" is special:
+    # unique_data_options = sorted(df_options[COL_CAMPAIGN].dropna().unique())
+    # campaign_options = list(all_campaigns_value) + [opt for opt in unique_data_options if opt != all_campaigns_value[0]]
+
 
     current_campaign_selection_in_state = st.session_state[SES_CAMPAIGN_FILTER_KEY]
     validated_campaign_selection = [c for c in current_campaign_selection_in_state if c in campaign_options]
 
-    if not validated_campaign_selection: # If empty or all items became invalid
+    if not validated_campaign_selection:
         st.session_state[SES_CAMPAIGN_FILTER_KEY] = default_filters_init[SES_CAMPAIGN_FILTER_KEY]
-    elif len(validated_campaign_selection) != len(current_campaign_selection_in_state): # Some items were invalid
+    elif len(validated_campaign_selection) != len(current_campaign_selection_in_state):
         st.session_state[SES_CAMPAIGN_FILTER_KEY] = validated_campaign_selection
 
     selected_campaigns = st.sidebar.multiselect(
         "Seleccionar Campaña(s)",
         options=campaign_options,
-        default=default_filters_init[SES_CAMPAIGN_FILTER_KEY], # Use initial default
+        default=default_filters_init[SES_CAMPAIGN_FILTER_KEY],
         key=SES_CAMPAIGN_FILTER_KEY
     )
 
@@ -194,15 +208,16 @@ def display_campaign_filters(df_options):
             max_date = valid_dates.max().date()
 
     date_col1, date_col2 = st.sidebar.columns(2)
-    # For date_input, using 'value' is the standard way for controlled components
     start_date = date_col1.date_input("Fecha Desde", value=st.session_state[SES_START_DATE_KEY], min_value=min_date, max_value=max_date, format="DD/MM/YYYY", key=SES_START_DATE_KEY)
     end_date = date_col2.date_input("Fecha Hasta", value=st.session_state[SES_END_DATE_KEY], min_value=min_date, max_value=max_date, format="DD/MM/YYYY", key=SES_END_DATE_KEY)
 
-
-    # --- Prospector Filter ---
-    prospector_options = ["– Todas –"]
+    # --- Prospector Filter (Line 215 is the multiselect below) ---
+    prospector_options = list(all_prospectors_value) # Start with the "All" value
     if COL_QUIEN_PROSPECTO in df_options.columns and not df_options[COL_QUIEN_PROSPECTO].empty:
-        prospector_options.extend(sorted(df_options[df_options[COL_QUIEN_PROSPECTO] != "N/D_Interno"][COL_QUIEN_PROSPECTO].dropna().unique()))
+        unique_prospectors = df_options[df_options[COL_QUIEN_PROSPECTO] != "N/D_Interno"][COL_QUIEN_PROSPECTO].dropna().unique()
+        # Add only those not matching the "All" string to avoid duplicates if data contains it
+        prospector_options.extend(sorted([p for p in unique_prospectors if p != all_prospectors_value[0]]))
+
 
     current_prospector_selection_in_state = st.session_state[SES_PROSPECTOR_FILTER_KEY]
     validated_prospector_selection = [p for p in current_prospector_selection_in_state if p in prospector_options]
@@ -212,17 +227,24 @@ def display_campaign_filters(df_options):
     elif len(validated_prospector_selection) != len(current_prospector_selection_in_state):
         st.session_state[SES_PROSPECTOR_FILTER_KEY] = validated_prospector_selection
 
-    selected_prospectors = st.sidebar.multiselect(
+    # For debugging, add these lines just before the failing multiselect:
+    # st.sidebar.write(f"DEBUG: Default for prospector: `{default_filters_init[SES_PROSPECTOR_FILTER_KEY]}`")
+    # st.sidebar.write(f"DEBUG: Prospector options: `{prospector_options}`")
+    # st.sidebar.write(f"DEBUG: Is default in options? `{default_filters_init[SES_PROSPECTOR_FILTER_KEY][0] in prospector_options}`")
+
+    selected_prospectors = st.sidebar.multiselect( # This is approximately line 215
         "¿Quién Prospectó?",
         options=prospector_options,
-        default=default_filters_init[SES_PROSPECTOR_FILTER_KEY], # Use initial default
+        default=default_filters_init[SES_PROSPECTOR_FILTER_KEY],
         key=SES_PROSPECTOR_FILTER_KEY
     )
 
     # --- Avatar Filter ---
-    avatar_options = ["– Todas –"]
+    avatar_options = list(all_avatars_value) # Start with the "All" value
     if COL_AVATAR in df_options.columns and not df_options[COL_AVATAR].empty:
-        avatar_options.extend(sorted(df_options[df_options[COL_AVATAR] != "N/D_Interno"][COL_AVATAR].dropna().unique()))
+        unique_avatars = df_options[df_options[COL_AVATAR] != "N/D_Interno"][COL_AVATAR].dropna().unique()
+        avatar_options.extend(sorted([a for a in unique_avatars if a != all_avatars_value[0]]))
+
 
     current_avatar_selection_in_state = st.session_state[SES_AVATAR_FILTER_KEY]
     validated_avatar_selection = [a for a in current_avatar_selection_in_state if a in avatar_options]
@@ -235,12 +257,13 @@ def display_campaign_filters(df_options):
     selected_avatars = st.sidebar.multiselect(
         "Avatar",
         options=avatar_options,
-        default=default_filters_init[SES_AVATAR_FILTER_KEY], # Use initial default
+        default=default_filters_init[SES_AVATAR_FILTER_KEY],
         key=SES_AVATAR_FILTER_KEY
     )
 
     st.sidebar.markdown("---")
-    if st.sidebar.button("🧹 Limpiar Filtros", use_container_width=True, key=f"{SES_CAMPAIGN_FILTER_KEY}_clear_button_v2"): # Ensure unique key for button
+    # Ensure the button key is unique if you've had issues with it before
+    if st.sidebar.button("🧹 Limpiar Filtros", use_container_width=True, key=f"{SES_CAMPAIGN_FILTER_KEY}_clear_button_v3"):
         st.session_state[SES_CAMPAIGN_FILTER_KEY] = default_filters_init[SES_CAMPAIGN_FILTER_KEY]
         st.session_state[SES_START_DATE_KEY] = default_filters_init[SES_START_DATE_KEY]
         st.session_state[SES_END_DATE_KEY] = default_filters_init[SES_END_DATE_KEY]
@@ -248,6 +271,11 @@ def display_campaign_filters(df_options):
         st.session_state[SES_AVATAR_FILTER_KEY] = default_filters_init[SES_AVATAR_FILTER_KEY]
         st.rerun()
 
+    return st.session_state[SES_CAMPAIGN_FILTER_KEY], \
+           st.session_state[SES_START_DATE_KEY], \
+           st.session_state[SES_END_DATE_KEY], \
+           st.session_state[SES_PROSPECTOR_FILTER_KEY], \
+           st.session_state[SES_AVATAR_FILTER_KEY]
     # The selected_... variables will reflect st.session_state[KEY] due to the key argument
     return st.session_state[SES_CAMPAIGN_FILTER_KEY], \
            st.session_state[SES_START_DATE_KEY], \
