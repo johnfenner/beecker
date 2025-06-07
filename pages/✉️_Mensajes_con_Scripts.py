@@ -12,10 +12,10 @@ if project_root not in sys.path:
 
 from datos.carga_datos import cargar_y_limpiar_datos
 from filtros.aplicar_filtros import aplicar_filtros
+# --- CORRECCIÓN 1: Importar los nombres de variable correctos ---
 from mensajes.mensajes import (
-    plantilla_john_h2r, plantilla_john_p2p,
-    plantilla_john_o2c, plantilla_john_general
-    # ...y cualquier otra plantilla que decidas mantener y usar de ese archivo
+    plantilla_h2r_final, plantilla_p2p_final,
+    plantilla_o2c_final, plantilla_general_final
 )
 from mensajes.mensajes_streamlit import clasificar_por_proceso
 from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar, limpiar_nombre_completo
@@ -228,11 +228,12 @@ if st.session_state.mostrar_tabla_mensajes:
         st.markdown("---")
         st.markdown("### 📬️ Generador de Mensajes")
 
+        # --- CORRECCIÓN 2: Usar las variables correctas en el diccionario ---
         opciones_mensajes = {
-            "H2R": {"Plantilla John H2R": plantilla_john_h2r},
-            "P2P": {"Plantilla John P2P": plantilla_john_p2p},
-            "O2C": {"Plantilla John O2C": plantilla_john_o2c},
-            "General": {"Plantilla John General": plantilla_john_general}
+            "H2R": {"Plantilla John H2R": plantilla_h2r_final},
+            "P2P": {"Plantilla John P2P": plantilla_p2p_final},
+            "O2C": {"Plantilla John O2C": plantilla_o2c_final},
+            "General": {"Plantilla John General": plantilla_general_final}
         }
 
         categorias_con_plantillas_definidas = list(opciones_mensajes.keys())
