@@ -74,7 +74,9 @@ def get_base_data():
     df_base = cargar_y_limpiar_datos()
     col_fecha_ppal = "Fecha Primer Mensaje"
     if col_fecha_ppal in df_base.columns and not pd.api.types.is_datetime64_any_dtype(df_base[col_fecha_ppal]):
-        df_base[col_fecha_ppal] = pd.to_datetime(df_base[col_fecha_ppal], errors='coerce')
+        # --- CORRECCIÓN AQUÍ ---
+        # Se especifica el formato de fecha para asegurar la correcta interpretación.
+        df_base[col_fecha_ppal] = pd.to_datetime(df_base[col_fecha_ppal], format='%d/%m/%Y', errors='coerce')
     if "Fecha de Invite" in df_base.columns and not pd.api.types.is_datetime64_any_dtype(df_base["Fecha de Invite"]):
         df_base["Fecha de Invite"] = pd.to_datetime(df_base["Fecha de Invite"], errors='coerce')
     if "Avatar" in df_base.columns: df_base["Avatar"] = df_base["Avatar"].apply(estandarizar_avatar)
