@@ -16,7 +16,7 @@ try:
     project_root = os.path.abspath(
         os.path.join(os.path.dirname(__file__), os.pardir))
     if project_root not in sys.path:
-        sys.path.insert(0, project_root)
+        sys.sys.path.insert(0, project_root)
 except NameError: # Esto ocurre si __file__ no está definido (ej. en un notebook interactivo)
     project_root = os.getcwd()
     if project_root not in sys.path:
@@ -37,7 +37,7 @@ SHEET_NAME_SESIONES_SURAMERICA = "SesionesSA 2024-2025" # Asegúrate que este no
 
 COLUMNAS_CENTRALES = [
     "Fecha", "Empresa", "País", "Nombre", "Apellido", "Puesto", "SQL", "SQL_Estandarizado",
-    "AE", "LG", "Siguientes Pasos", "Email", "RPA", "LinkedIn",
+    "AE", "LG", "Siguientes Pasos", "Email", "RPA", "LinkedIn", "Proceso",
     "Fuente_Hoja", "Año", "NumSemana", "MesNombre", "AñoMes",
 ]
 SQL_ORDER_OF_IMPORTANCE = ['SQL1', 'SQL2', 'MQL', 'NA', 'SIN CALIFICACIÓN SQL']
@@ -53,12 +53,14 @@ SES_PAIS_FILTER_KEY = f"{FILTER_KEYS_PREFIX}pais"
 SES_YEAR_FILTER_KEY = f"{FILTER_KEYS_PREFIX}year"
 SES_WEEK_FILTER_KEY = f"{FILTER_KEYS_PREFIX}week"
 SES_SQL_FILTER_KEY = f"{FILTER_KEYS_PREFIX}sql_val"
+SES_PROCESO_FILTER_KEY = f"{FILTER_KEYS_PREFIX}proceso"
 
 default_filters_config = {
     SES_START_DATE_KEY: None, SES_END_DATE_KEY: None,
     SES_AE_FILTER_KEY: ["– Todos –"], SES_LG_FILTER_KEY: ["– Todos –"],
     SES_PAIS_FILTER_KEY: ["– Todos –"], SES_YEAR_FILTER_KEY: "– Todos –",
-    SES_WEEK_FILTER_KEY: ["– Todas –"], SES_SQL_FILTER_KEY: ["– Todos –"]
+    SES_WEEK_FILTER_KEY: ["– Todas –"], SES_SQL_FILTER_KEY: ["– Todos –"],
+    SES_PROCESO_FILTER_KEY: ["– Todos –"]
 }
 # Inicializar el estado de sesión si no existe para cada clave
 for key, value in default_filters_config.items():
@@ -147,7 +149,7 @@ def load_sesiones_data():
             headers_p = make_unique_headers(raw_data_principal_list[0])
             df_principal_raw = pd.DataFrame(raw_data_principal_list[1:], columns=headers_p)
             df_proc_p = pd.DataFrame()
-            for col in ["Fecha", "Empresa", "País", "Nombre", "Apellido", "Puesto", "SQL", "AE", "LG", "Siguientes Pasos", "Email", "RPA", "LinkedIn"]:
+            for col in ["Fecha", "Empresa", "País", "Nombre", "Apellido", "Puesto", "SQL", "AE", "LG", "Siguientes Pasos", "Email", "RPA", "LinkedIn", "Proceso"]:
                 df_proc_p[col] = df_principal_raw.get(col)
             df_proc_p["Fuente_Hoja"] = "Principal"
             all_dataframes.append(df_proc_p)
@@ -165,7 +167,7 @@ def load_sesiones_data():
             if not df_suramerica_raw.empty:
                 df_proc_sa = pd.DataFrame()
                 map_cols_sa = {"Fecha": "Fecha", "Empresa": "Empresa", "País": "País", "Siguientes Pasos": "Siguientes Pasos",
-                               "SQL": "SQL", "Correo": "Email", "LinkedIn": "LinkedIn", "LG": "LG", "AE": "AE"}
+                               "SQL": "SQL", "Correo": "Email", "LinkedIn": "LinkedIn", "LG": "LG", "AE": "AE", "Proceso": "Proceso"}
                 for orig_col, new_col in map_cols_sa.items():
                     df_proc_sa[new_col] = df_suramerica_raw.get(orig_col)
                 if "Nombre y Cargo" in df_suramerica_raw.columns:
@@ -211,8 +213,8 @@ def load_sesiones_data():
         "Empresa": "No Especificado", "País": "No Especificado", "Nombre": "No Especificado",
         "Apellido": "No Especificado", "Siguientes Pasos": "No Especificado",
         "Email": "No Especificado", "RPA": "No Aplicable", "LinkedIn": "No Especificado",
-        "Fuente_Hoja": "Desconocida",
-        "SQL": "TEMP_EMPTY_SQL", 
+        "Fuente_Hoja": "Desconocida", "Proceso": "No Especificado",
+        "SQL": "TEMP_EMPTY_SQL",
         "SQL_Estandarizado": "TEMP_EMPTY_SQL"
     }
     generic_empty_na_values_general = ['', 'nan', 'none', 'NaN', 'None', '<NA>', '#N/A', 'N/A', 'na', 'nd', 'n/d', 's/d', 's.d.']
@@ -232,7 +234,7 @@ def load_sesiones_data():
                 current_col_lower = current_col_lower.replace(empty_pattern, default_val.lower(), regex=False)
             df_procesado[col_name] = current_col_lower.str.strip()
             df_procesado.loc[df_procesado[col_name] == '', col_name] = default_val
-            if col_name not in ["SQL_Estandarizado", "Email", "LinkedIn", "RPA", "Fuente_Hoja"]:
+            if col_name not in ["SQL_Estandarizado", "Email", "LinkedIn", "RPA", "Fuente_Hoja", "Proceso"]: # Added "Proceso" here
                  df_procesado[col_name] = df_procesado[col_name].str.title()
                  df_procesado[col_name] = df_procesado[col_name].replace(default_val.title(), default_val, regex=False)
                  df_procesado[col_name] = df_procesado[col_name].replace("No Asignado Ae", "No Asignado AE", regex=False)
@@ -240,20 +242,20 @@ def load_sesiones_data():
 
     if "SQL" not in df_procesado.columns:
         df_procesado["SQL"] = default_values_fill["SQL"]
-    
+
     df_procesado["SQL"] = df_procesado["SQL"].fillna(default_values_fill["SQL"])
     df_procesado["SQL"] = df_procesado["SQL"].astype(str).str.strip().str.upper()
 
     empty_patterns_for_sql = ["", "NAN", "NONE", "<NA>", "N/A", "ND", "N.D", "S/D", "S.D.", "TEMP_EMPTY_SQL", "NO ESPECIFICADO", "NO ASIGNADO SQL"]
-    
+
     df_procesado["SQL_Estandarizado"] = df_procesado["SQL"].copy()
 
     for pattern in empty_patterns_for_sql:
         df_procesado.loc[df_procesado["SQL_Estandarizado"] == pattern.upper(), "SQL_Estandarizado"] = "PLACEHOLDER_FOR_SIN_CALIFICACION"
-    
+
     df_procesado.loc[df_procesado["SQL_Estandarizado"] == "PLACEHOLDER_FOR_SIN_CALIFICACION", "SQL_Estandarizado"] = "SIN CALIFICACIÓN SQL"
 
-    valid_explicit_sql_values = ['SQL1', 'SQL2', 'MQL', 'NA'] 
+    valid_explicit_sql_values = ['SQL1', 'SQL2', 'MQL', 'NA']
 
     mask_others_to_standardize = ~df_procesado["SQL_Estandarizado"].isin(valid_explicit_sql_values + ["SIN CALIFICACIÓN SQL"])
     df_procesado.loc[mask_others_to_standardize, "SQL_Estandarizado"] = "SIN CALIFICACIÓN SQL"
@@ -327,7 +329,7 @@ def sidebar_filters_sesiones(df_options):
         except ValueError:
              unique_weeks_str = sorted(num_semana_series.dropna().astype(str).unique())
              week_options_ses.extend(unique_weeks_str)
-    
+
     current_week_selection_from_state = st.session_state.get(SES_WEEK_FILTER_KEY, ["– Todas –"])
     if not isinstance(current_week_selection_from_state, list): current_week_selection_from_state = ["– Todas –"]
     valid_week_selection_ses = [s for s in current_week_selection_from_state if s in week_options_ses]
@@ -337,10 +339,10 @@ def sidebar_filters_sesiones(df_options):
         else: valid_week_selection_ses = []
     st.session_state[SES_WEEK_FILTER_KEY] = valid_week_selection_ses # Actualizar estado ANTES del widget
     st.sidebar.multiselect("Semanas", options=week_options_ses, key=SES_WEEK_FILTER_KEY) # No default
-    
+
     st.sidebar.markdown("---")
     st.sidebar.subheader("👥 Por Analistas, País y Calificación")
-    
+
     def create_multiselect_options_and_set_state(df_col_series, session_key): # Renombrado para claridad
         options_list = ["– Todos –"]
         if df_col_series is not None and not df_col_series.dropna().empty:
@@ -348,7 +350,7 @@ def sidebar_filters_sesiones(df_options):
             unique_vals_cleaned = [val for val in unique_vals if val and val != 'N/D']
             options_list.extend(sorted(list(set(unique_vals_cleaned))))
             if 'N/D' in unique_vals and 'N/D' not in options_list : options_list.append('N/D')
-        
+
         current_sel_from_state = st.session_state.get(session_key, ["– Todos –"])
         if not isinstance(current_sel_from_state, list): current_sel_from_state = ["– Todos –"]
         valid_sel = [s for s in current_sel_from_state if s in options_list]
@@ -385,15 +387,20 @@ def sidebar_filters_sesiones(df_options):
         else: valid_sql_selection = []
     st.session_state[SES_SQL_FILTER_KEY] = valid_sql_selection # Actualizar estado ANTES del widget
     st.sidebar.multiselect("Calificación SQL", sqls_opts_ordered, key=SES_SQL_FILTER_KEY)
-    
+
+    # New 'Proceso' Filter
+    proceso_options = create_multiselect_options_and_set_state(df_options.get("Proceso"), SES_PROCESO_FILTER_KEY)
+    st.sidebar.multiselect("Proceso", proceso_options, key=SES_PROCESO_FILTER_KEY)
+
+
     st.sidebar.markdown("---")
     st.sidebar.button("🧹 Limpiar Todos los Filtros", on_click=clear_ses_filters_callback, use_container_width=True, key=f"{FILTER_KEYS_PREFIX}btn_clear")
     return (st.session_state.get(SES_START_DATE_KEY), st.session_state.get(SES_END_DATE_KEY), sel_y,
             st.session_state.get(SES_WEEK_FILTER_KEY), st.session_state.get(SES_AE_FILTER_KEY),
             st.session_state.get(SES_LG_FILTER_KEY), st.session_state.get(SES_PAIS_FILTER_KEY),
-            st.session_state.get(SES_SQL_FILTER_KEY))
+            st.session_state.get(SES_SQL_FILTER_KEY), st.session_state.get(SES_PROCESO_FILTER_KEY))
 
-def apply_sesiones_filters(df, start_date, end_date, year_f, week_f_list, ae_f_list, lg_f_list, pais_f_list, sql_f_list):
+def apply_sesiones_filters(df, start_date, end_date, year_f, week_f_list, ae_f_list, lg_f_list, pais_f_list, sql_f_list, proceso_f_list):
     if df is None or df.empty: return DF_FINAL_STRUCTURE_EMPTY.copy()
     df_f = df.copy()
     if "Fecha" in df_f.columns and pd.api.types.is_datetime64_any_dtype(df_f["Fecha"]):
@@ -411,7 +418,7 @@ def apply_sesiones_filters(df, start_date, end_date, year_f, week_f_list, ae_f_l
             selected_weeks_int = [int(w) for w in week_f_list if isinstance(w, str) and w.isdigit()]
             if selected_weeks_int: df_f = df_f[df_f["NumSemana"].astype(int).isin(selected_weeks_int)]
         except (ValueError, TypeError): st.warning("Semanas seleccionadas contienen valores no numéricos o 'NumSemana' no es numérico.")
-    filter_map = {"AE": ae_f_list, "LG": lg_f_list, "País": pais_f_list, "SQL_Estandarizado": sql_f_list}
+    filter_map = {"AE": ae_f_list, "LG": lg_f_list, "País": pais_f_list, "SQL_Estandarizado": sql_f_list, "Proceso": proceso_f_list} # Added Proceso
     for col_name, filter_values in filter_map.items():
         if filter_values and "– Todos –" not in filter_values and col_name in df_f.columns:
             df_f = df_f[df_f[col_name].astype(str).isin([str(val) for val in filter_values])]
@@ -497,7 +504,7 @@ def display_evolucion_sql(df_filtered, time_agg_col, display_label_col_name, cha
 
     summary_time_sql_evol = df_agg_evol.groupby([group_col_for_plot, 'SQL_Estandarizado'], observed=False).size().reset_index(name='Número de Sesiones')
     if summary_time_sql_evol.empty: st.info(f"No hay datos agregados por {x_axis_label.lower()} y SQL."); return
-    
+
     summary_time_sql_evol = summary_time_sql_evol.sort_values(by=[group_col_for_plot])
     sql_category_order_evol = get_sql_category_order(summary_time_sql_evol['SQL_Estandarizado'])
     summary_time_sql_evol['SQL_Estandarizado'] = pd.Categorical(summary_time_sql_evol['SQL_Estandarizado'], categories=sql_category_order_evol, ordered=True)
@@ -512,7 +519,7 @@ def display_evolucion_sql(df_filtered, time_agg_col, display_label_col_name, cha
 def display_tabla_sesiones_detalle(df_filtered):
     st.markdown("### 📝 Tabla Detallada de Sesiones")
     if df_filtered.empty: st.info("No hay sesiones detalladas para mostrar con los filtros aplicados."); return
-    cols_deseadas_detalle_ses = ["Fecha", "LG", "AE", "País", "SQL", "SQL_Estandarizado", "Empresa", "Puesto", "Nombre", "Apellido", "Siguientes Pasos", "RPA", "Fuente_Hoja", "LinkedIn", "Email"]
+    cols_deseadas_detalle_ses = ["Fecha", "LG", "AE", "País", "SQL", "SQL_Estandarizado", "Empresa", "Puesto", "Nombre", "Apellido", "Siguientes Pasos", "RPA", "Proceso", "Fuente_Hoja", "LinkedIn", "Email"] # Added "Proceso" here
     cols_present_detalle_ses = [col for col in cols_deseadas_detalle_ses if col in df_filtered.columns]
     df_view_detalle_ses = df_filtered[cols_present_detalle_ses].copy()
     if "Fecha" in df_view_detalle_ses.columns and pd.api.types.is_datetime64_any_dtype(df_view_detalle_ses["Fecha"]):
@@ -543,8 +550,8 @@ if df_sesiones_base is None or df_sesiones_base.empty:
     st.error("Fallo Crítico: No se pudieron cargar o procesar datos de Sesiones. La página no puede continuar.")
     st.stop()
 
-start_f, end_f, year_f, week_f, ae_f, lg_f, pais_f, sql_f_val = sidebar_filters_sesiones(df_sesiones_base)
-df_sesiones_filtered = apply_sesiones_filters(df_sesiones_base, start_f, end_f, year_f, week_f, ae_f, lg_f, pais_f, sql_f_val)
+start_f, end_f, year_f, week_f, ae_f, lg_f, pais_f, sql_f_val, proceso_f_val = sidebar_filters_sesiones(df_sesiones_base)
+df_sesiones_filtered = apply_sesiones_filters(df_sesiones_base, start_f, end_f, year_f, week_f, ae_f, lg_f, pais_f, sql_f_val, proceso_f_val)
 
 # --- Presentación del Dashboard ---
 display_sesiones_summary_sql(df_sesiones_filtered)
@@ -555,6 +562,15 @@ display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="
 st.markdown("---")
 display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="País", dimension_label="País", top_n=10)
 st.markdown("---")
+# New charts for 'Proceso'
+display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="Proceso", dimension_label="Proceso", top_n=10)
+st.markdown("---")
+display_evolucion_sql(df_sesiones_filtered, 'NumSemana', 'Año-Semana', "Evolución Semanal por Calificación SQL y Proceso", "Semana del Año") # Modify title to include "y Proceso" implicitly
+st.markdown("---")
+display_evolucion_sql(df_sesiones_filtered, 'AñoMes', 'Año-Mes', "Evolución Mensual por Calificación SQL y Proceso", "Mes del Año") # Modify title to include "y Proceso" implicitly
+st.markdown("---")
+
+
 # Las siguientes dos líneas estaban comentadas en tu código original que me pasaste, las mantengo comentadas.
 # display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="Puesto", dimension_label="Cargo (Puesto)", top_n=10)
 # st.markdown("---")
