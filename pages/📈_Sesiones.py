@@ -505,7 +505,12 @@ st.markdown("---")
 display_analisis_por_dimension(df_filtered=df_filtrado, dimension_col="Proceso", dimension_label="Proceso", top_n=10)
 st.markdown("---")
 # Continuar con evolución y detalle
-"display..."
-# Los bloques originales de evolución y detalle se mantienen sin cambios
-#...
-
+st.markdown("---")
+# Evolución semanal de sesiones por calificación SQL
+display_evolucion_sql(df_filtrado, 'NumSemana', 'Periodo', 'Evolución Semanal de Sesiones', 'Semana')
+st.markdown("---")
+# Evolución mensual de sesiones por calificación SQL
+display_evolucion_sql(df_filtrado, 'AñoMes', 'Periodo', 'Evolución Mensual de Sesiones', 'Mes')
+st.markdown("---")
+# Tabla detallada de sesiones
+display_tabla_sesiones_detalle(df_filtrado)
