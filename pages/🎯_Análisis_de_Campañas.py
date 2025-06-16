@@ -32,6 +32,7 @@ COL_CONTACTADOS_EMAIL = "Contactados por Campaña"
 COL_RESPUESTA_EMAIL = "Respuesta Email"
 COL_SESION_AGENDADA_EMAIL = "Sesion Agendada Email"
 COL_FECHA_SESION_EMAIL = "Fecha de Sesion Email"
+COL_PROCESO = "Proceso" # NEW COLUMN CONSTANT
 
 # Claves de Sesión para Filtros
 SES_CAMPAIGN_FILTER_KEY = "campaign_page_campaign_filter_v5"
@@ -39,11 +40,13 @@ SES_START_DATE_KEY = "campaign_page_start_date_v5"
 SES_END_DATE_KEY = "campaign_page_end_date_v5"
 SES_PROSPECTOR_FILTER_KEY = "campaign_page_prospector_filter_v5"
 SES_AVATAR_FILTER_KEY = "campaign_page_avatar_filter_v5"
+SES_PROCESO_FILTER_KEY = "campaign_page_proceso_filter_v1" # NEW SESSION STATE KEY
 
 # Cadenas Canónicas para "Mostrar Todo"
 ALL_CAMPAIGNS_STRING = "– Todas –"
 ALL_PROSPECTORS_STRING = "– Todos –"
 ALL_AVATARS_STRING = "– Todos –"
+ALL_PROCESOS_STRING = "– Todos –" # NEW ALL STRING
 
 # --- Funciones Auxiliares ---
 def clean_text_value(val, default="N/D"):
@@ -136,6 +139,12 @@ def load_and_prepare_campaign_data():
     for col in text_cols_manual:
         if col in df.columns: df[col] = df[col].apply(lambda x: clean_text_value(x, default="N/D_Interno"))
         else: df[col] = "N/D_Interno"
+    
+    # NEW: Process the "Proceso" column
+    if COL_PROCESO in df.columns:
+        df[COL_PROCESO] = df[COL_PROCESO].apply(lambda x: clean_text_value(x, default="N/D_Proceso"))
+    else:
+        df[COL_PROCESO] = "N/D_Proceso" # Default value if column doesn't exist
 
     if COL_AVATAR in df.columns:
         df[COL_AVATAR] = df[COL_AVATAR].astype(str).str.strip().str.title()
@@ -165,7 +174,8 @@ def display_campaign_filters(df_options): # df_options is a copy of df_base_camp
         SES_START_DATE_KEY: None,
         SES_END_DATE_KEY: None,
         SES_PROSPECTOR_FILTER_KEY: [ALL_PROSPECTORS_STRING],
-        SES_AVATAR_FILTER_KEY: [ALL_AVATARS_STRING]
+        SES_AVATAR_FILTER_KEY: [ALL_AVATARS_STRING],
+        SES_PROCESO_FILTER_KEY: [ALL_PROCESOS_STRING] # NEW: Default for Proceso filter
     }
 
     # Initialize session state for all filter keys if they are not already present
@@ -180,7 +190,6 @@ def display_campaign_filters(df_options): # df_options is a copy of df_base_camp
         for item in sorted(list(unique_items)):
             if item != ALL_CAMPAIGNS_STRING: campaign_options.append(item)
     
-    # Validate and potentially correct st.session_state for campaign filter
     current_campaign_selection_from_state = st.session_state[SES_CAMPAIGN_FILTER_KEY]
     campaign_selection_is_valid = True
     if not isinstance(current_campaign_selection_from_state, list): # Ensure it's a list
@@ -195,8 +204,6 @@ def display_campaign_filters(df_options): # df_options is a copy of df_base_camp
         st.session_state[SES_CAMPAIGN_FILTER_KEY] = default_filters_init[SES_CAMPAIGN_FILTER_KEY] # Reset to default
         st.rerun() # Force a rerun with the corrected state
 
-    # Render the campaign multiselect widget
-    # Streamlit uses st.session_state[KEY] as the widget's current value if KEY is provided.
     selected_campaigns = st.sidebar.multiselect(
         "Seleccionar Campaña(s)", options=campaign_options,
         key=SES_CAMPAIGN_FILTER_KEY 
@@ -252,6 +259,31 @@ def display_campaign_filters(df_options): # df_options is a copy of df_base_camp
         key=SES_AVATAR_FILTER_KEY
     )
     
+    # NEW: Filtro de Proceso
+    proceso_options = [ALL_PROCESOS_STRING]
+    if COL_PROCESO in df_options.columns and not df_options[COL_PROCESO].empty:
+        unique_items = df_options[df_options[COL_PROCESO] != "N/D_Proceso"][COL_PROCESO].dropna().unique()
+        for item in sorted(list(unique_items)):
+            if item != ALL_PROCESOS_STRING: proceso_options.append(item)
+        
+    current_proceso_selection_from_state = st.session_state[SES_PROCESO_FILTER_KEY]
+    proceso_selection_is_valid = True
+    if not isinstance(current_proceso_selection_from_state, list):
+        proceso_selection_is_valid = False
+    else:
+        for item in current_proceso_selection_from_state:
+            if item not in proceso_options:
+                proceso_selection_is_valid = False
+                break
+    if not proceso_selection_is_valid:
+        st.session_state[SES_PROCESO_FILTER_KEY] = default_filters_init[SES_PROCESO_FILTER_KEY]
+        st.rerun()
+
+    selected_procesos = st.sidebar.multiselect(
+        "Proceso", options=proceso_options,
+        key=SES_PROCESO_FILTER_KEY
+    )
+
     # --- Filtro de Fecha (uses FechaFiltroManual for min/max) ---
     min_date, max_date = None, None
     if "FechaFiltroManual" in df_options.columns and pd.api.types.is_datetime64_any_dtype(df_options["FechaFiltroManual"]):
@@ -271,6 +303,7 @@ def display_campaign_filters(df_options): # df_options is a copy of df_base_camp
         st.session_state[SES_END_DATE_KEY] = default_filters_init[SES_END_DATE_KEY]
         st.session_state[SES_PROSPECTOR_FILTER_KEY] = default_filters_init[SES_PROSPECTOR_FILTER_KEY]
         st.session_state[SES_AVATAR_FILTER_KEY] = default_filters_init[SES_AVATAR_FILTER_KEY]
+        st.session_state[SES_PROCESO_FILTER_KEY] = default_filters_init[SES_PROCESO_FILTER_KEY] # NEW: Clear Proceso filter
         st.rerun() # Essential for changes to reflect
 
     # Return values directly from session_state, as widgets are bound to these keys.
@@ -279,11 +312,12 @@ def display_campaign_filters(df_options): # df_options is a copy of df_base_camp
         st.session_state[SES_START_DATE_KEY],
         st.session_state[SES_END_DATE_KEY],
         st.session_state[SES_PROSPECTOR_FILTER_KEY],
-        st.session_state[SES_AVATAR_FILTER_KEY]
+        st.session_state[SES_AVATAR_FILTER_KEY],
+        st.session_state[SES_PROCESO_FILTER_KEY] # NEW: Return selected_procesos
     )
 
 # --- Aplicar Filtros (excluding date filter) ---
-def apply_common_filters(df, campaigns, prospectors, avatars): 
+def apply_common_filters(df, campaigns, prospectors, avatars, procesos): # NEW: Add procesos parameter
     if df.empty: return df
     df_filtered = df.copy()
 
@@ -295,6 +329,10 @@ def apply_common_filters(df, campaigns, prospectors, avatars):
         
     if avatars and ALL_AVATARS_STRING not in avatars:
         df_filtered = df_filtered[df_filtered[COL_AVATAR].isin(avatars)]
+    
+    # NEW: Apply Proceso filter
+    if procesos and ALL_PROCESOS_STRING not in procesos:
+        df_filtered = df_filtered[df_filtered[COL_PROCESO].isin(procesos)]
         
     return df_filtered
 
@@ -697,12 +735,80 @@ def display_global_manual_prospecting_deep_dive(df_common_filtered, start_date, 
         st.info("No hay contactos manuales iniciados (en rango de fecha) para mostrar desglose por campaña con la selección actual.")
     st.markdown("---")
 
+    # NEW: Desglose por Proceso (sobre Contactos Manuales Iniciados)
+    st.markdown("#### Desglose por Proceso (sobre Contactos Manuales Iniciados)")
+    proceso_filter_active = st.session_state.get(SES_PROCESO_FILTER_KEY, [ALL_PROCESOS_STRING])
+    show_proceso_breakdown = False
+    if COL_PROCESO in df_contactos_iniciados.columns and \
+       ((ALL_PROCESOS_STRING in proceso_filter_active and df_contactos_iniciados[COL_PROCESO].nunique() > 1) or \
+       (len(proceso_filter_active) > 1 and ALL_PROCESOS_STRING not in proceso_filter_active)):
+        show_proceso_breakdown = True
+
+    if COL_PROCESO not in df_contactos_iniciados.columns:
+        st.warning(f"Columna '{COL_PROCESO}' no encontrada en los datos de contactos. No se puede generar desglose por proceso.")
+    elif not df_contactos_iniciados.empty and show_proceso_breakdown:
+        desglose_proceso_agg_spec = {'Contactos Manuales Iniciados': (COL_FECHA_INVITE, 'count')}
+        if COL_INVITE_ACEPTADA in df_contactos_iniciados.columns: desglose_proceso_agg_spec['Invites Aceptadas'] = (COL_INVITE_ACEPTADA, lambda x: (x == "si").sum())
+        if COL_RESPUESTA_1ER_MSJ in df_contactos_iniciados.columns: desglose_proceso_agg_spec['Respuestas 1er Msj'] = (COL_RESPUESTA_1ER_MSJ, lambda x: (x == "si").sum())
+        if COL_SESION_AGENDADA_MANUAL in df_contactos_iniciados.columns: desglose_proceso_agg_spec['Sesiones Agendadas'] = (COL_SESION_AGENDADA_MANUAL, lambda x: (x == "si").sum())
+
+        desglose_proceso = df_contactos_iniciados.groupby(COL_PROCESO, as_index=False).agg(**desglose_proceso_agg_spec)
+        desglose_proceso = desglose_proceso[desglose_proceso[COL_PROCESO] != "N/D_Proceso"]
+        
+        for col_name in ['Invites Aceptadas', 'Respuestas 1er Msj', 'Sesiones Agendadas']: 
+            if col_name not in desglose_proceso.columns: desglose_proceso[col_name] = 0 # Ensure column exists
+            desglose_proceso[col_name] = pd.to_numeric(desglose_proceso[col_name], errors='coerce').fillna(0).astype(int)
+
+        base_embudo_proceso = desglose_proceso['Contactos Manuales Iniciados'].astype(float)
+        if 'Invites Aceptadas' in desglose_proceso.columns:
+            desglose_proceso['Tasa Aceptación (%)'] = (desglose_proceso['Invites Aceptadas'].astype(float) / base_embudo_proceso * 100).where(base_embudo_proceso > 0, 0).fillna(0).round(1)
+        else: desglose_proceso['Tasa Aceptación (%)'] = 0.0
+
+        if 'Respuestas 1er Msj' in desglose_proceso.columns and 'Invites Aceptadas' in desglose_proceso.columns:
+            desglose_proceso['Tasa Respuesta (%)'] = (desglose_proceso['Respuestas 1er Msj'].astype(float) / desglose_proceso['Invites Aceptadas'].astype(float) * 100).where(desglose_proceso['Invites Aceptadas'] > 0, 0).fillna(0).round(1)
+        else: desglose_proceso['Tasa Respuesta (%)'] = 0.0
+        
+        if 'Sesiones Agendadas' in desglose_proceso.columns:
+            desglose_proceso['Tasa Sesión Global (%)'] = (desglose_proceso['Sesiones Agendadas'].astype(float) / base_embudo_proceso * 100).where(base_embudo_proceso > 0, 0).fillna(0).round(1)
+        else: desglose_proceso['Tasa Sesión Global (%)'] = 0.0
+        
+        if not desglose_proceso.empty:
+            st.dataframe(desglose_proceso.style.format(
+                {col_name: "{:,}" for col_name in ['Contactos Manuales Iniciados', 'Invites Aceptadas', 'Respuestas 1er Msj', 'Sesiones Agendadas'] if col_name in desglose_proceso.columns} |
+                {tasa_col: "{:.1f}%" for tasa_col in ['Tasa Aceptación (%)', 'Tasa Respuesta (%)', 'Tasa Sesión Global (%)'] if tasa_col in desglose_proceso.columns}
+            ), use_container_width=True)
+
+            p_chart1, p_chart2 = st.columns(2)
+            with p_chart1:
+                fig_contactos_proceso = px.bar(desglose_proceso.sort_values(by='Contactos Manuales Iniciados', ascending=False),
+                    x=COL_PROCESO, y='Contactos Manuales Iniciados', color=COL_PROCESO,
+                    title='Contactos Manuales Iniciados por Proceso', text_auto=True)
+                st.plotly_chart(fig_contactos_proceso, use_container_width=True)
+            with p_chart2:
+                df_for_chart_p2 = desglose_proceso[desglose_proceso['Contactos Manuales Iniciados']>0].copy()
+                if not df_for_chart_p2.empty and 'Tasa Sesión Global (%)' in df_for_chart_p2.columns:
+                    fig_sesion_proceso = px.bar(df_for_chart_p2.sort_values(by='Tasa Sesión Global (%)', ascending=False),
+                        x=COL_PROCESO, y='Tasa Sesión Global (%)', color=COL_PROCESO,
+                        title='Tasa Sesión Global por Proceso', text='Tasa Sesión Global (%)')
+                    fig_sesion_proceso.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+                    fig_sesion_proceso.update_layout(yaxis_range=[0,max(105, df_for_chart_p2['Tasa Sesión Global (%)'].max() + 5 if not df_for_chart_p2['Tasa Sesión Global (%)'].empty else 105)])
+                    st.plotly_chart(fig_sesion_proceso, use_container_width=True)
+                elif not df_for_chart_p2.empty:
+                    st.caption("Gráfico de Tasa Sesión Global por Proceso no disponible (columna de tasa podría faltar).")
+        else:
+            st.info("No hay datos para el desglose por proceso después del procesamiento.")
+    elif not show_proceso_breakdown:
+         st.info("Selecciona '– Todos los Procesos –' (y asegúrate que haya más de uno con datos) o múltiples procesos en la barra lateral para ver este desglose comparativo.")
+    else: 
+        st.info("No hay contactos manuales iniciados (en rango de fecha) para mostrar desglose por proceso con la selección actual.")
+    st.markdown("---")
+
 def display_email_prospecting_analysis(df_common_filtered): 
     st.subheader("Análisis de Prospección por Email")
     st.caption("Basado en campañas y filtros seleccionados en la barra lateral. El filtro de fecha NO se aplica a esta sección.")
 
     if df_common_filtered.empty: 
-        st.info("No hay datos para analizar la prospección por email con los filtros de campaña/prospector/avatar actuales.")
+        st.info("No hay datos para analizar la prospección por email con los filtros de campaña/prospector/avatar/proceso actuales.") # Updated caption
         return
 
     if COL_CONTACTADOS_EMAIL not in df_common_filtered.columns:
@@ -713,7 +819,7 @@ def display_email_prospecting_analysis(df_common_filtered):
     total_contactados_email_seleccion = len(df_contactados_email)
 
     if total_contactados_email_seleccion == 0:
-        st.info("No se encontraron contactos por email (Contactados por Campaña = 'si') para la selección actual de campaña/prospector/avatar.")
+        st.info("No se encontraron contactos por email (Contactados por Campaña = 'si') para la selección actual de campaña/prospector/avatar/proceso.") # Updated caption
         return
 
     st.metric("Total Contactados por Email en Selección", f"{total_contactados_email_seleccion:,}")
@@ -733,6 +839,70 @@ def display_email_prospecting_analysis(df_common_filtered):
     st.plotly_chart(fig_funnel_email, use_container_width=True)
     st.markdown("---")
 
+    # NEW: Desglose por Proceso (Email Prospecting)
+    st.markdown("#### Desglose por Proceso (Prospección por Email)")
+    proceso_filter_active = st.session_state.get(SES_PROCESO_FILTER_KEY, [ALL_PROCESOS_STRING])
+    show_proceso_email_breakdown = False
+    if COL_PROCESO in df_contactados_email.columns and \
+       ((ALL_PROCESOS_STRING in proceso_filter_active and df_contactados_email[COL_PROCESO].nunique() > 1) or \
+       (len(proceso_filter_active) > 1 and ALL_PROCESOS_STRING not in proceso_filter_active)):
+        show_proceso_email_breakdown = True
+
+    if COL_PROCESO not in df_contactados_email.columns:
+        st.warning(f"Columna '{COL_PROCESO}' no encontrada en los datos de contactos por email. No se puede generar desglose por proceso.")
+    elif not df_contactados_email.empty and show_proceso_email_breakdown:
+        desglose_proceso_email_agg_spec = {'Total Contactados por Email': (COL_CONTACTADOS_EMAIL, 'count')}
+        if COL_RESPUESTA_EMAIL in df_contactados_email.columns: desglose_proceso_email_agg_spec['Respuestas Email'] = (COL_RESPUESTA_EMAIL, lambda x: (x == "si").sum())
+        if COL_SESION_AGENDADA_EMAIL in df_contactados_email.columns: desglose_proceso_email_agg_spec['Sesiones Agendadas por Email'] = (COL_SESION_AGENDADA_EMAIL, lambda x: (x == "si").sum())
+
+        desglose_proceso_email = df_contactados_email.groupby(COL_PROCESO, as_index=False).agg(**desglose_proceso_email_agg_spec)
+        desglose_proceso_email = desglose_proceso_email[desglose_proceso_email[COL_PROCESO] != "N/D_Proceso"]
+        
+        for col_name in ['Respuestas Email', 'Sesiones Agendadas por Email']: 
+            if col_name not in desglose_proceso_email.columns: desglose_proceso_email[col_name] = 0 # Ensure column exists
+            desglose_proceso_email[col_name] = pd.to_numeric(desglose_proceso_email[col_name], errors='coerce').fillna(0).astype(int)
+
+        base_email_proceso = desglose_proceso_email['Total Contactados por Email'].astype(float)
+        
+        if 'Respuestas Email' in desglose_proceso_email.columns:
+            desglose_proceso_email['Tasa Respuesta Email (%)'] = (desglose_proceso_email['Respuestas Email'].astype(float) / base_email_proceso * 100).where(base_email_proceso > 0, 0).fillna(0).round(1)
+        else: desglose_proceso_email['Tasa Respuesta Email (%)'] = 0.0
+
+        if 'Sesiones Agendadas por Email' in desglose_proceso_email.columns:
+            desglose_proceso_email['Tasa Sesión Email Global (%)'] = (desglose_proceso_email['Sesiones Agendadas por Email'].astype(float) / base_email_proceso * 100).where(base_email_proceso > 0, 0).fillna(0).round(1)
+        else: desglose_proceso_email['Tasa Sesión Email Global (%)'] = 0.0
+        
+        if not desglose_proceso_email.empty:
+            st.dataframe(desglose_proceso_email.style.format(
+                {col_name: "{:,}" for col_name in ['Total Contactados por Email', 'Respuestas Email', 'Sesiones Agendadas por Email'] if col_name in desglose_proceso_email.columns} |
+                {tasa_col: "{:.1f}%" for tasa_col in ['Tasa Respuesta Email (%)', 'Tasa Sesión Email Global (%)'] if tasa_col in desglose_proceso_email.columns}
+            ), use_container_width=True)
+
+            e_chart1, e_chart2 = st.columns(2)
+            with e_chart1:
+                fig_contactos_email_proceso = px.bar(desglose_proceso_email.sort_values(by='Total Contactados por Email', ascending=False),
+                    x=COL_PROCESO, y='Total Contactados por Email', color=COL_PROCESO,
+                    title='Contactos por Email por Proceso', text_auto=True)
+                st.plotly_chart(fig_contactos_email_proceso, use_container_width=True)
+            with e_chart2:
+                df_for_chart_e2 = desglose_proceso_email[desglose_proceso_email['Total Contactados por Email']>0].copy()
+                if not df_for_chart_e2.empty and 'Tasa Sesión Email Global (%)' in df_for_chart_e2.columns:
+                    fig_sesion_email_proceso = px.bar(df_for_chart_e2.sort_values(by='Tasa Sesión Email Global (%)', ascending=False),
+                        x=COL_PROCESO, y='Tasa Sesión Email Global (%)', color=COL_PROCESO,
+                        title='Tasa Sesión Global por Proceso (Email)', text='Tasa Sesión Email Global (%)')
+                    fig_sesion_email_proceso.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+                    fig_sesion_email_proceso.update_layout(yaxis_range=[0,max(105, df_for_chart_e2['Tasa Sesión Email Global (%)'].max() + 5 if not df_for_chart_e2['Tasa Sesión Email Global (%)'].empty else 105)])
+                    st.plotly_chart(fig_sesion_email_proceso, use_container_width=True)
+                elif not df_for_chart_e2.empty:
+                    st.caption("Gráfico de Tasa Sesión Global por Proceso (Email) no disponible (columna de tasa podría faltar).")
+        else:
+            st.info("No hay datos para el desglose por proceso en prospección por email después del procesamiento.")
+    elif not show_proceso_email_breakdown:
+         st.info("Selecciona '– Todos los Procesos –' (y asegúrate que haya más de uno con datos) o múltiples procesos en la barra lateral para ver este desglose comparativo en prospección por email.")
+    else: 
+        st.info("No hay contactos por email (en rango de fecha) para mostrar desglose por proceso con la selección actual.")
+    st.markdown("---")
+
 # --- Lógica Principal de la Página ---
 df_base_campaigns_loaded = load_and_prepare_campaign_data()
 
@@ -743,13 +913,15 @@ else:
      start_date_filter, 
      end_date_filter, 
      selected_prospectors, 
-     selected_avatars) = display_campaign_filters(df_base_campaigns_loaded.copy()) 
+     selected_avatars,
+     selected_procesos) = display_campaign_filters(df_base_campaigns_loaded.copy()) # NEW: Get selected_procesos
 
     df_filtered_common = apply_common_filters(
         df_base_campaigns_loaded.copy(), 
         selected_campaigns, 
         selected_prospectors, 
-        selected_avatars
+        selected_avatars,
+        selected_procesos # NEW: Pass selected_procesos to common filter
     )
     
     display_campaign_potential(df_base_campaigns_loaded.copy()) 
