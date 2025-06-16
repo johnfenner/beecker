@@ -2,13 +2,14 @@
 import streamlit as st
 import pandas as pd
 import gspread
+# from oauth2client.service_account import ServiceAccountCredentials # Comentado, gspread >= 5 usa dict
 import datetime
 import plotly.express as px
 import os
 import sys
 import io
 import re
-from collections import OrderedDict  # Para eliminar duplicados manteniendo orden
+from collections import OrderedDict # Para eliminar duplicados manteniendo orden
 
 # --- Configuración Inicial del Proyecto y Título de la Página ---
 try:
@@ -16,7 +17,7 @@ try:
         os.path.join(os.path.dirname(__file__), os.pardir))
     if project_root not in sys.path:
         sys.path.insert(0, project_root)
-except NameError:
+except NameError: # Esto ocurre si __file__ no está definido (ej. en un notebook interactivo)
     project_root = os.getcwd()
     if project_root not in sys.path:
         sys.path.insert(0, project_root)
@@ -24,7 +25,7 @@ except NameError:
 st.set_page_config(layout="wide", page_title="Análisis de Sesiones y SQL")
 st.title("📊 Análisis de Sesiones y Calificaciones SQL")
 st.markdown(
-    "Métricas basadas en columnas principales: LG, AE, País, Proceso, Calificación SQL, Puesto, Empresa."
+    "Métricas basadas en columnas principales: LG, AE, País, Calificación SQL, Puesto, Empresa."
 )
 
 # --- Constantes ---
@@ -32,37 +33,35 @@ SHEET_URL_SESIONES_PRINCIPAL_DEFAULT = "https://docs.google.com/spreadsheets/d/1
 SHEET_NAME_SESIONES_PRINCIPAL = "Sesiones 2024-2025"
 
 SHEET_URL_SESIONES_SURAMERICA_DEFAULT = "https://docs.google.com/spreadsheets/d/1MoTUg0sZ76168k4VNajzyrxAa5hUHdWNtGNu9t0Nqnc/edit?gid=278542854#gid=278542854"
-SHEET_NAME_SESIONES_SURAMERICA = "SesionesSA 2024-2025"
+SHEET_NAME_SESIONES_SURAMERICA = "SesionesSA 2024-2025" # Asegúrate que este nombre sea EXACTO
 
-# Incluir 'Proceso' en la estructura final
 COLUMNAS_CENTRALES = [
     "Fecha", "Empresa", "País", "Nombre", "Apellido", "Puesto", "SQL", "SQL_Estandarizado",
-    "AE", "LG", "Proceso", "Siguientes Pasos", "Email", "RPA", "LinkedIn",
-    "Fuente_Hoja", "Año", "NumSemana", "MesNombre", "AñoMes",
+    "AE", "LG", "Siguientes Pasos", "Email", "RPA", "LinkedIn",
+    "Fuente_Hoja", "Año", "NumSemana", "MesNombre", "AñoMes", "Proceso"
 ]
 SQL_ORDER_OF_IMPORTANCE = ['SQL1', 'SQL2', 'MQL', 'NA', 'SIN CALIFICACIÓN SQL']
 DF_FINAL_STRUCTURE_EMPTY = pd.DataFrame(columns=COLUMNAS_CENTRALES)
 
 # --- Gestión de Estado de Sesión para Filtros ---
-FILTER_KEYS_PREFIX = "sesiones_sql_lg_pais_proceso_page_v1_"
+FILTER_KEYS_PREFIX = "sesiones_sql_lg_pais_page_v6_" # Incrementar versión por cambio en manejo de default
 SES_START_DATE_KEY = f"{FILTER_KEYS_PREFIX}start_date"
 SES_END_DATE_KEY = f"{FILTER_KEYS_PREFIX}end_date"
 SES_AE_FILTER_KEY = f"{FILTER_KEYS_PREFIX}ae"
 SES_LG_FILTER_KEY = f"{FILTER_KEYS_PREFIX}lg"
 SES_PAIS_FILTER_KEY = f"{FILTER_KEYS_PREFIX}pais"
-SES_PROCESO_FILTER_KEY = f"{FILTER_KEYS_PREFIX}proceso"
 SES_YEAR_FILTER_KEY = f"{FILTER_KEYS_PREFIX}year"
 SES_WEEK_FILTER_KEY = f"{FILTER_KEYS_PREFIX}week"
 SES_SQL_FILTER_KEY = f"{FILTER_KEYS_PREFIX}sql_val"
+SES_PROCESO_FILTER_KEY = f"{FILTER_KEYS_PREFIX}proceso"
 
 default_filters_config = {
     SES_START_DATE_KEY: None, SES_END_DATE_KEY: None,
     SES_AE_FILTER_KEY: ["– Todos –"], SES_LG_FILTER_KEY: ["– Todos –"],
-    SES_PAIS_FILTER_KEY: ["– Todos –"], SES_PROCESO_FILTER_KEY: ["– Todos –"],
-    SES_YEAR_FILTER_KEY: "– Todos –",
-    SES_WEEK_FILTER_KEY: ["– Todas –"], SES_SQL_FILTER_KEY: ["– Todos –"]
+    SES_PAIS_FILTER_KEY: ["– Todos –"], SES_YEAR_FILTER_KEY: "– Todos –",
+    SES_WEEK_FILTER_KEY: ["– Todas –"], SES_SQL_FILTER_KEY: ["– Todos –"], SES_PROCESO_FILTER_KEY: ["– Todos –"]
 }
-# Inicializar el estado de sesión
+# Inicializar el estado de sesión si no existe para cada clave
 for key, value in default_filters_config.items():
     if key not in st.session_state:
         st.session_state[key] = value
@@ -118,8 +117,8 @@ def separar_nombre_cargo_suramerica(nombre_cargo_str):
             temp_nombre_simple, temp_apellido_simple = name_parts[0], name_parts[1]
             temp_cargo_implicito_parts = name_parts[2:]
             if len(temp_cargo_implicito_parts) >= 1:
-                temp_cargo_str = " ".join(temp_cargo_implicito_parts)
-                if len(temp_cargo_str) > 3 :
+                 temp_cargo_str = " ".join(temp_cargo_implicito_parts)
+                 if len(temp_cargo_str) > 3 :
                     nombre, apellido, puesto = temp_nombre_simple, temp_apellido_simple, temp_cargo_str
     if pd.isna(nombre) and pd.notna(nombre_completo_str) and nombre_completo_str: nombre = nombre_completo_str
     return (str(nombre).strip() if pd.notna(nombre) else pd.NA,
@@ -141,7 +140,7 @@ def load_sesiones_data():
     all_dataframes = []
     processing_warnings = []
 
-    try:  # Hoja Principal
+    try: # Hoja Principal
         workbook_principal = client.open_by_url(SHEET_URL_SESIONES_PRINCIPAL_DEFAULT)
         sheet_principal = workbook_principal.worksheet(SHEET_NAME_SESIONES_PRINCIPAL)
         raw_data_principal_list = sheet_principal.get_all_values()
@@ -149,17 +148,15 @@ def load_sesiones_data():
             headers_p = make_unique_headers(raw_data_principal_list[0])
             df_principal_raw = pd.DataFrame(raw_data_principal_list[1:], columns=headers_p)
             df_proc_p = pd.DataFrame()
-            for col in ["Fecha", "Empresa", "País", "Nombre", "Apellido", "Puesto", "SQL",
-                        "AE", "LG", "Proceso", "Siguientes Pasos", "Email", "RPA", "LinkedIn"]:
+            for col in ["Fecha", "Empresa", "País", "Nombre", "Apellido", "Puesto", "SQL", "AE", "LG", "Siguientes Pasos", "Email", "RPA", "LinkedIn", "Proceso"]:
                 df_proc_p[col] = df_principal_raw.get(col)
             df_proc_p["Fuente_Hoja"] = "Principal"
             all_dataframes.append(df_proc_p)
-        else:
-            processing_warnings.append(f"Hoja Principal ('{SHEET_NAME_SESIONES_PRINCIPAL}') vacía o sin encabezados.")
+        else: processing_warnings.append(f"Hoja Principal ('{SHEET_NAME_SESIONES_PRINCIPAL}') vacía o sin encabezados.")
     except Exception as e:
         processing_warnings.append(f"ADVERTENCIA al cargar Hoja Principal. Error: {e}")
 
-    try:  # Hoja Suramérica
+    try: # Hoja Suramérica
         workbook_suramerica = client.open_by_url(SHEET_URL_SESIONES_SURAMERICA_DEFAULT)
         sheet_suramerica = workbook_suramerica.worksheet(SHEET_NAME_SESIONES_SURAMERICA)
         raw_data_suramerica_list = sheet_suramerica.get_all_values()
@@ -168,10 +165,8 @@ def load_sesiones_data():
             df_suramerica_raw = pd.DataFrame(raw_data_suramerica_list[1:], columns=headers_sa)
             if not df_suramerica_raw.empty:
                 df_proc_sa = pd.DataFrame()
-                map_cols_sa = {"Fecha": "Fecha", "Empresa": "Empresa", "País": "País",
-                               "Siguientes Pasos": "Siguientes Pasos",
-                               "SQL": "SQL", "Correo": "Email", "LinkedIn": "LinkedIn",
-                               "LG": "LG", "AE": "AE"}
+                map_cols_sa = {"Fecha": "Fecha", "Empresa": "Empresa", "País": "País", "Siguientes Pasos": "Siguientes Pasos",
+                               "SQL": "SQL", "Correo": "Email", "LinkedIn": "LinkedIn", "LG": "LG", "AE": "AE", "Proceso": "Proceso"}
                 for orig_col, new_col in map_cols_sa.items():
                     df_proc_sa[new_col] = df_suramerica_raw.get(orig_col)
                 if "Nombre y Cargo" in df_suramerica_raw.columns:
@@ -179,20 +174,15 @@ def load_sesiones_data():
                     df_proc_sa["Nombre"] = n_c_split.apply(lambda x: x[0])
                     df_proc_sa["Apellido"] = n_c_split.apply(lambda x: x[1])
                     df_proc_sa["Puesto"] = n_c_split.apply(lambda x: x[2])
-                else:
-                    df_proc_sa["Nombre"], df_proc_sa["Apellido"], df_proc_sa["Puesto"] = pd.NA, pd.NA, "No Especificado"
-                # Mapear Proceso si existe
-                if "Proceso" in df_suramerica_raw.columns:
-                    df_proc_sa["Proceso"] = df_suramerica_raw.get("Proceso")
+                else: df_proc_sa["Nombre"], df_proc_sa["Apellido"], df_proc_sa["Puesto"] = pd.NA, pd.NA, "No Especificado"
+                df_proc_sa["Fuente_Hoja"] = "Suramérica"
                 all_dataframes.append(df_proc_sa)
-        else:
-            processing_warnings.append(f"Hoja Suramérica ('{SHEET_NAME_SESIONES_SURAMERICA}') vacía o sin encabezados.")
+        else: processing_warnings.append(f"Hoja Suramérica ('{SHEET_NAME_SESIONES_SURAMERICA}') vacía o sin encabezados.")
     except Exception as e:
         processing_warnings.append(f"ADVERTENCIA al cargar Hoja Suramérica. Error: {e}")
 
     if processing_warnings:
-        for warning_msg in processing_warnings:
-            st.warning(warning_msg)
+        for warning_msg in processing_warnings: st.warning(warning_msg)
     if not all_dataframes:
         st.error("No se pudieron cargar datos de ninguna fuente.")
         return DF_FINAL_STRUCTURE_EMPTY.copy()
@@ -215,8 +205,7 @@ def load_sesiones_data():
         df_procesado['AñoMes'] = df_procesado['Fecha'].dt.strftime('%Y-%m')
     except Exception as e_time:
         st.error(f"Error creando columnas de tiempo: {e_time}")
-        for col_t in ['Año', 'NumSemana', 'MesNombre', 'AñoMes']:
-            df_procesado[col_t] = pd.NA
+        for col_t in ['Año', 'NumSemana', 'MesNombre', 'AñoMes']: df_procesado[col_t] = pd.NA
 
     default_values_fill = {
         "AE": "No Asignado AE", "LG": "No Asignado LG", "Puesto": "No Especificado",
@@ -224,14 +213,14 @@ def load_sesiones_data():
         "Apellido": "No Especificado", "Siguientes Pasos": "No Especificado",
         "Email": "No Especificado", "RPA": "No Aplicable", "LinkedIn": "No Especificado",
         "Fuente_Hoja": "Desconocida",
-        "SQL": "TEMP_EMPTY_SQL",
-        "SQL_Estandarizado": "TEMP_EMPTY_SQL"
+        "SQL": "TEMP_EMPTY_SQL", 
+        "SQL_Estandarizado": "TEMP_EMPTY_SQL",
+        "Proceso": "No Especificado"
     }
     generic_empty_na_values_general = ['', 'nan', 'none', 'NaN', 'None', '<NA>', '#N/A', 'N/A', 'na', 'nd', 'n/d', 's/d', 's.d.']
 
     for col_name in COLUMNAS_CENTRALES:
-        if col_name in ['Fecha', 'Año', 'NumSemana', 'MesNombre', 'AñoMes']:
-            continue
+        if col_name in ['Fecha', 'Año', 'NumSemana', 'MesNombre', 'AñoMes']: continue
         default_val = default_values_fill.get(col_name, "No Especificado")
         if col_name not in df_procesado.columns:
             df_procesado[col_name] = default_val
@@ -246,72 +235,63 @@ def load_sesiones_data():
             df_procesado[col_name] = current_col_lower.str.strip()
             df_procesado.loc[df_procesado[col_name] == '', col_name] = default_val
             if col_name not in ["SQL_Estandarizado", "Email", "LinkedIn", "RPA", "Fuente_Hoja"]:
-                df_procesado[col_name] = df_procesado[col_name].str.title()
-                df_procesado[col_name] = df_procesado[col_name].replace(default_val.title(), default_val, regex=False)
-                if col_name == "AE":
-                    df_procesado[col_name] = df_procesado[col_name].replace("No Asignado Ae", "No Asignado AE", regex=False)
-                if col_name == "LG":
-                    df_procesado[col_name] = df_procesado[col_name].replace("No Asignado Lg", "No Asignado LG", regex=False)
+                 df_procesado[col_name] = df_procesado[col_name].str.title()
+                 df_procesado[col_name] = df_procesado[col_name].replace(default_val.title(), default_val, regex=False)
+                 df_procesado[col_name] = df_procesado[col_name].replace("No Asignado Ae", "No Asignado AE", regex=False)
+                 df_procesado[col_name] = df_procesado[col_name].replace("No Asignado Lg", "No Asignado LG", regex=False)
 
-    # Asegurar al menos columna SQL
     if "SQL" not in df_procesado.columns:
         df_procesado["SQL"] = default_values_fill["SQL"]
-    df_procesado["SQL"] = df_procesado["SQL"].fillna(default_values_fill["SQL"])\n    df_procesado["SQL"] = df_procesado["SQL"].astype(str).str.strip().str.upper()
+    
+    df_procesado["SQL"] = df_procesado["SQL"].fillna(default_values_fill["SQL"])
+    df_procesado["SQL"] = df_procesado["SQL"].astype(str).str.strip().str.upper()
 
     empty_patterns_for_sql = ["", "NAN", "NONE", "<NA>", "N/A", "ND", "N.D", "S/D", "S.D.", "TEMP_EMPTY_SQL", "NO ESPECIFICADO", "NO ASIGNADO SQL"]
+    
     df_procesado["SQL_Estandarizado"] = df_procesado["SQL"].copy()
+
     for pattern in empty_patterns_for_sql:
         df_procesado.loc[df_procesado["SQL_Estandarizado"] == pattern.upper(), "SQL_Estandarizado"] = "PLACEHOLDER_FOR_SIN_CALIFICACION"
+    
     df_procesado.loc[df_procesado["SQL_Estandarizado"] == "PLACEHOLDER_FOR_SIN_CALIFICACION", "SQL_Estandarizado"] = "SIN CALIFICACIÓN SQL"
-    valid_explicit_sql_values = ['SQL1', 'SQL2', 'MQL', 'NA']
+
+    valid_explicit_sql_values = ['SQL1', 'SQL2', 'MQL', 'NA'] 
+
     mask_others_to_standardize = ~df_procesado["SQL_Estandarizado"].isin(valid_explicit_sql_values + ["SIN CALIFICACIÓN SQL"])
     df_procesado.loc[mask_others_to_standardize, "SQL_Estandarizado"] = "SIN CALIFICACIÓN SQL"
 
-    # Reconstruir estructura final
     df_final_structure = pd.DataFrame()
     for col in COLUMNAS_CENTRALES:
         if col in df_procesado.columns:
             df_final_structure[col] = df_procesado[col]
         else:
-            dtype_map = {'Año': 'Int64', 'NumSemana': 'Int64', 'Fecha': 'datetime64[ns]'}
-            df_final_structure[col] = pd.Series(dtype=dtype_map.get(col, 'object'))
-    # Ajustar tipos finales
+            if col in ['Año', 'NumSemana']: df_final_structure[col] = pd.Series(dtype='Int64')
+            elif col == 'Fecha': df_final_structure[col] = pd.Series(dtype='datetime64[ns]')
+            else: df_final_structure[col] = pd.Series(dtype='object')
     try:
-        if 'Fecha' in df_final_structure.columns:
-            df_final_structure['Fecha'] = pd.to_datetime(df_final_structure['Fecha'], errors='coerce')
-        if 'Año' in df_final_structure.columns:
-            df_final_structure['Año'] = pd.to_numeric(df_final_structure['Año'], errors='coerce').astype('Int64')
-        if 'NumSemana' in df_final_structure.columns:
-            df_final_structure['NumSemana'] = pd.to_numeric(df_final_structure['NumSemana'], errors='coerce').astype('Int64')
-    except Exception as e_type_final:
-        st.warning(f"ADVERTENCIA al ajustar tipos finales: {e_type_final}")
+        if 'Fecha' in df_final_structure.columns: df_final_structure['Fecha'] = pd.to_datetime(df_final_structure['Fecha'], errors='coerce')
+        if 'Año' in df_final_structure.columns: df_final_structure['Año'] = pd.to_numeric(df_final_structure['Año'], errors='coerce').astype('Int64')
+        if 'NumSemana' in df_final_structure.columns: df_final_structure['NumSemana'] = pd.to_numeric(df_final_structure['NumSemana'], errors='coerce').astype('Int64')
+    except Exception as e_type_final: st.warning(f"ADVERTENCIA al ajustar tipos finales: {e_type_final}")
     return df_final_structure.reset_index(drop=True)
 
-
 def clear_ses_filters_callback():
-    for key, value in default_filters_config.items():
-        st.session_state[key] = value
+    for key, value in default_filters_config.items(): st.session_state[key] = value
     st.toast("Filtros reiniciados ✅", icon="🧹")
-
 
 def sidebar_filters_sesiones(df_options):
     st.sidebar.header("🔍 Filtros de Sesiones")
     st.sidebar.markdown("---")
-    # Fechas
     min_d, max_d = (None, None)
     if "Fecha" in df_options.columns and pd.api.types.is_datetime64_any_dtype(df_options["Fecha"]) and not df_options["Fecha"].dropna().empty:
         min_d_series, max_d_series = df_options["Fecha"].dropna().min(), df_options["Fecha"].dropna().max()
-        if pd.notna(min_d_series) and pd.notna(max_d_series):
-            min_d, max_d = min_d_series.date(), max_d_series.date()
+        if pd.notna(min_d_series) and pd.notna(max_d_series): min_d, max_d = min_d_series.date(), max_d_series.date()
     c1, c2 = st.sidebar.columns(2)
-    start_date_val_state = st.session_state.get(SES_START_DATE_KEY)
-    end_date_val_state = st.session_state.get(SES_END_DATE_KEY)
+    start_date_val_state, end_date_val_state = st.session_state.get(SES_START_DATE_KEY), st.session_state.get(SES_END_DATE_KEY)
     start_date_for_input = start_date_val_state.date() if isinstance(start_date_val_state, datetime.datetime) else (start_date_val_state if isinstance(start_date_val_state, datetime.date) else None)
     end_date_for_input = end_date_val_state.date() if isinstance(end_date_val_state, datetime.datetime) else (end_date_val_state if isinstance(end_date_val_state, datetime.date) else None)
     c1.date_input("Desde", value=start_date_for_input, min_value=min_d, max_value=max_d, format="DD/MM/YYYY", key=SES_START_DATE_KEY)
     c2.date_input("Hasta", value=end_date_for_input, min_value=min_d, max_value=max_d, format="DD/MM/YYYY", key=SES_END_DATE_KEY)
-
-    # Año y Semana
     st.sidebar.markdown("---")
     st.sidebar.subheader("📅 Por Año y Semana")
     year_options_ses = ["– Todos –"]
@@ -322,197 +302,278 @@ def sidebar_filters_sesiones(df_options):
         except ValueError:
             unique_years_str = sorted(df_options["Año"].dropna().astype(str).unique(), reverse=True)
             year_options_ses.extend(unique_years_str)
-    current_year_selection_ses = str(st.session_state.get(SES_YEAR_FILTER_KEY, "– Todos –"))
-    if current_year_selection_ses not in year_options_ses:
+    current_year_selection_ses = str(st.session_state.get(SES_YEAR_FILTER_KEY, "– Todos –")) # Obtener del estado
+    if current_year_selection_ses not in year_options_ses: # Validar
         current_year_selection_ses = "– Todos –"
-        st.session_state[SES_YEAR_FILTER_KEY] = current_year_selection_ses
-    selected_year_index_ses = year_options_ses.index(current_year_selection_ses)
-    selected_year_str_ses = st.sidebar.selectbox("Año", options=year_options_ses, index=selected_year_index_ses, key=SES_YEAR_FILTER_KEY)
+        st.session_state[SES_YEAR_FILTER_KEY] = current_year_selection_ses # Actualizar estado si cambió
+    selected_year_index_ses = 0 # Calcular índice después de validar
+    try: selected_year_index_ses = year_options_ses.index(current_year_selection_ses)
+    except ValueError: # Fallback si algo sale mal
+        if year_options_ses: current_year_selection_ses = year_options_ses[0]; selected_year_index_ses = 0
+        else: year_options_ses = ["(No hay años)"]; current_year_selection_ses = year_options_ses[0]; selected_year_index_ses = 0
+        st.session_state[SES_YEAR_FILTER_KEY] = current_year_selection_ses # Asegurar estado actualizado
+
+    selected_year_str_ses = st.sidebar.selectbox("Año", options=year_options_ses, index=selected_year_index_ses, key=SES_YEAR_FILTER_KEY) # No se usa default
     sel_y = None
     if selected_year_str_ses != "– Todos –":
-        try:
-            sel_y = int(selected_year_str_ses)
-        except ValueError:
-            sel_y = None
+        try: sel_y = int(selected_year_str_ses)
+        except ValueError: sel_y = None
+
     week_options_ses = ["– Todas –"]
     df_for_week_ses = df_options[df_options["Año"] == sel_y] if sel_y is not None and "Año" in df_options.columns else df_options
-    if df_for_week_ses.get("NumSemana") is not None and not df_for_week_ses["NumSemana"].dropna().empty:
+    num_semana_series = df_for_week_ses.get("NumSemana")
+    if num_semana_series is not None and not num_semana_series.dropna().empty:
         try:
-            unique_weeks_for_year = sorted(df_for_week_ses["NumSemana"].dropna().astype(int).unique())
+            unique_weeks_for_year = sorted(num_semana_series.dropna().astype(int).unique())
             week_options_ses.extend([str(w) for w in unique_weeks_for_year])
         except ValueError:
-            unique_weeks_str = sorted(df_for_week_ses["NumSemana"].dropna().astype(str).unique())
-            week_options_ses.extend(unique_weeks_str)
-    current_week_selection = st.session_state.get(SES_WEEK_FILTER_KEY, ["– Todas –"])
-    st.sidebar.multiselect("Semanas", options=week_options_ses, default=current_week_selection, key=SES_WEEK_FILTER_KEY)
-
-    # Filtros de dimensiones
+             unique_weeks_str = sorted(num_semana_series.dropna().astype(str).unique())
+             week_options_ses.extend(unique_weeks_str)
+    
+    current_week_selection_from_state = st.session_state.get(SES_WEEK_FILTER_KEY, ["– Todas –"])
+    if not isinstance(current_week_selection_from_state, list): current_week_selection_from_state = ["– Todas –"]
+    valid_week_selection_ses = [s for s in current_week_selection_from_state if s in week_options_ses]
+    if not valid_week_selection_ses:
+        if "– Todas –" in week_options_ses: valid_week_selection_ses = ["– Todas –"]
+        elif week_options_ses and week_options_ses[0] != "– Todas –": valid_week_selection_ses = [] # O [week_options_ses[0]]
+        else: valid_week_selection_ses = []
+    st.session_state[SES_WEEK_FILTER_KEY] = valid_week_selection_ses # Actualizar estado ANTES del widget
+    st.sidebar.multiselect("Semanas", options=week_options_ses, key=SES_WEEK_FILTER_KEY) # No default
+    
     st.sidebar.markdown("---")
-    st.sidebar.subheader("👥 Por Analistas, País, Proceso y Calificación")
-
-    def create_multiselect_options_and_set_state(df_col_series, session_key):
+    st.sidebar.subheader("👥 Por Analistas, País y Calificación")
+    
+    def create_multiselect_options_and_set_state(df_col_series, session_key): # Renombrado para claridad
         options_list = ["– Todos –"]
         if df_col_series is not None and not df_col_series.dropna().empty:
             unique_vals = df_col_series.astype(str).str.strip().replace('', 'N/D', regex=False).unique()
-            cleaned = [val for val in unique_vals if val and val != 'N/D']
-            options_list.extend(sorted(list(set(cleaned))))
-        current_sel = st.session_state.get(session_key, ["– Todos –"])
+            unique_vals_cleaned = [val for val in unique_vals if val and val != 'N/D']
+            options_list.extend(sorted(list(set(unique_vals_cleaned))))
+            if 'N/D' in unique_vals and 'N/D' not in options_list : options_list.append('N/D')
+        
+        current_sel_from_state = st.session_state.get(session_key, ["– Todos –"])
+        if not isinstance(current_sel_from_state, list): current_sel_from_state = ["– Todos –"]
+        valid_sel = [s for s in current_sel_from_state if s in options_list]
+        if not valid_sel:
+            if "– Todos –" in options_list: valid_sel = ["– Todos –"]
+            elif options_list and options_list[0] != "– Todos –" : valid_sel = []
+            else: valid_sel = []
+        st.session_state[session_key] = valid_sel # Actualizar estado ANTES del widget
         return options_list
 
-    lgs_opts = create_multiselect_options_and_set_state(df_options.get("LG"), SES_LG_FILTER_KEY)
-    st.sidebar.multiselect("Analista LG", options=lgs_opts, default=st.session_state[SES_LG_FILTER_KEY], key=SES_LG_FILTER_KEY)
+    lgs_options = create_multiselect_options_and_set_state(df_options.get("LG"), SES_LG_FILTER_KEY)
+    st.sidebar.multiselect("Analista LG", lgs_options, key=SES_LG_FILTER_KEY)
 
-    ae_opts = create_multiselect_options_and_set_state(df_options.get("AE"), SES_AE_FILTER_KEY)
-    st.sidebar.multiselect("Account Executive (AE)", options=ae_opts, default=st.session_state[SES_AE_FILTER_KEY], key=SES_AE_FILTER_KEY)
+    ae_options = create_multiselect_options_and_set_state(df_options.get("AE"), SES_AE_FILTER_KEY)
+    st.sidebar.multiselect("Account Executive (AE)", ae_options, key=SES_AE_FILTER_KEY)
 
-    pais_opts = create_multiselect_options_and_set_state(df_options.get("País"), SES_PAIS_FILTER_KEY)
-    st.sidebar.multiselect("País", options=pais_opts, default=st.session_state[SES_PAIS_FILTER_KEY], key=SES_PAIS_FILTER_KEY)
+    paises_opts = create_multiselect_options_and_set_state(df_options.get("País"), SES_PAIS_FILTER_KEY)
+    st.sidebar.multiselect("País", paises_opts, key=SES_PAIS_FILTER_KEY)
+
+    sql_series_for_options = df_options.get("SQL_Estandarizado")
+    sqls_opts_ordered = ["– Todos –"]
+    if sql_series_for_options is not None and not sql_series_for_options.dropna().empty:
+        sqls_unique_vals = sql_series_for_options.astype(str).dropna().unique()
+        sqls_opts_ordered.extend([s for s in SQL_ORDER_OF_IMPORTANCE if s in sqls_unique_vals])
+        others_sqls = sorted([s for s in sqls_unique_vals if s not in SQL_ORDER_OF_IMPORTANCE and s != "– Todos –"])
+        sqls_opts_ordered.extend(others_sqls)
+        sqls_opts_ordered = list(OrderedDict.fromkeys(sqls_opts_ordered))
+    current_sql_selection_from_state = st.session_state.get(SES_SQL_FILTER_KEY, ["– Todos –"])
+    if not isinstance(current_sql_selection_from_state, list): current_sql_selection_from_state = ["– Todos –"]
+    valid_sql_selection = [s for s in current_sql_selection_from_state if s in sqls_opts_ordered]
+    if not valid_sql_selection:
+        if "– Todos –" in sqls_opts_ordered: valid_sql_selection = ["– Todos –"]
+        elif sqls_opts_ordered and sqls_opts_ordered[0] != "– Todos –": valid_sql_selection = []
+        else: valid_sql_selection = []
+    st.session_state[SES_SQL_FILTER_KEY] = valid_sql_selection # Actualizar estado ANTES del widget
+    st.sidebar.multiselect("Calificación SQL", sqls_opts_ordered, key=SES_SQL_FILTER_KEY)
 
     proceso_opts = create_multiselect_options_and_set_state(df_options.get("Proceso"), SES_PROCESO_FILTER_KEY)
-    st.sidebar.multiselect("Proceso", options=proceso_opts, default=st.session_state[SES_PROCESO_FILTER_KEY], key=SES_PROCESO_FILTER_KEY)
-
-    sql_series = df_options.get("SQL_Estandarizado")
-    sql_opts = ["– Todos –"] + [s for s in SQL_ORDER_OF_IMPORTANCE if s in sql_series.unique()] + sorted([s for s in sql_series.unique() if s not in SQL_ORDER_OF_IMPORTANCE])
-    st.sidebar.multiselect("Calificación SQL", options=sql_opts, default=st.session_state[SES_SQL_FILTER_KEY], key=SES_SQL_FILTER_KEY)
-
+    st.sidebar.multiselect("Proceso", proceso_opts, key=SES_PROCESO_FILTER_KEY)
+    
     st.sidebar.markdown("---")
-    st.sidebar.button("🧹 Limpiar Todos los Filtros", on_click=clear_ses_filters_callback)
+    st.sidebar.button("🧹 Limpiar Todos los Filtros", on_click=clear_ses_filters_callback, use_container_width=True, key=f"{FILTER_KEYS_PREFIX}btn_clear")
+    return (st.session_state.get(SES_START_DATE_KEY), st.session_state.get(SES_END_DATE_KEY), sel_y,
+            st.session_state.get(SES_WEEK_FILTER_KEY), st.session_state.get(SES_AE_FILTER_KEY),
+            st.session_state.get(SES_LG_FILTER_KEY), st.session_state.get(SES_PAIS_FILTER_KEY),
+            st.session_state.get(SES_SQL_FILTER_KEY),
+            st.session_state.get(SES_PROCESO_FILTER_KEY))
 
-    return (
-        st.session_state[SES_START_DATE_KEY], st.session_state[SES_END_DATE_KEY], sel_y,
-        st.session_state[SES_WEEK_FILTER_KEY], st.session_state[SES_AE_FILTER_KEY],
-        st.session_state[SES_LG_FILTER_KEY], st.session_state[SES_PAIS_FILTER_KEY],
-        st.session_state[SES_PROCESO_FILTER_KEY], st.session_state[SES_SQL_FILTER_KEY]
-    )
-
-
-def apply_sesiones_filters(df, start_date, end_date, year_f, week_f_list,
-                           ae_f_list, lg_f_list, pais_f_list, proceso_f_list, sql_f_list):
+def apply_sesiones_filters(df, start_date, end_date, year_f, week_f_list, ae_f_list, lg_f_list, pais_f_list, sql_f_list, proceso_f_list):
     if df is None or df.empty: return DF_FINAL_STRUCTURE_EMPTY.copy()
     df_f = df.copy()
-    # Filtro de fechas
-    if "Fecha" in df_f.columns:
-        if start_date: df_f = df_f[df_f["Fecha"] >= pd.to_datetime(start_date)]
-        if end_date: df_f = df_f[df_f["Fecha"] <= pd.to_datetime(end_date)]
-    # Año
+    if "Fecha" in df_f.columns and pd.api.types.is_datetime64_any_dtype(df_f["Fecha"]):
+        start_dt = pd.to_datetime(start_date, errors='coerce').normalize() if start_date else None
+        end_dt = pd.to_datetime(end_date, errors='coerce').normalize() if end_date else None
+        fecha_series_norm = df_f["Fecha"].dt.normalize()
+        if start_dt and end_dt: df_f = df_f[(fecha_series_norm >= start_dt) & (fecha_series_norm <= end_dt)]
+        elif start_dt: df_f = df_f[fecha_series_norm >= start_dt]
+        elif end_dt: df_f = df_f[fecha_series_norm <= end_dt]
     if year_f is not None and "Año" in df_f.columns:
-        df_f = df_f[df_f["Año"] == year_f]
-    # Semanas
+        try: df_f = df_f[df_f["Año"].astype(int) == year_f]
+        except (ValueError, TypeError): st.warning("No se pudo aplicar filtro de año por tipo incompatible.")
     if week_f_list and "– Todas –" not in week_f_list and "NumSemana" in df_f.columns:
-        selected_weeks = [int(w) for w in week_f_list if w.isdigit()]
-        df_f = df_f[df_f["NumSemana"].isin(selected_weeks)]
-    # Filtros de dimensión
-    filter_map = {
-        "AE": ae_f_list,
-        "LG": lg_f_list,
-        "País": pais_f_list,
-        "Proceso": proceso_f_list,
-        "SQL_Estandarizado": sql_f_list
-    }
-    for col, vals in filter_map.items():
-        if vals and "– Todos –" not in vals:
-            df_f = df_f[df_f[col].isin(vals)]
+        try:
+            selected_weeks_int = [int(w) for w in week_f_list if isinstance(w, str) and w.isdigit()]
+            if selected_weeks_int: df_f = df_f[df_f["NumSemana"].astype(int).isin(selected_weeks_int)]
+        except (ValueError, TypeError): st.warning("Semanas seleccionadas contienen valores no numéricos o 'NumSemana' no es numérico.")
+    filter_map = {"AE": ae_f_list, "LG": lg_f_list, "País": pais_f_list, "SQL_Estandarizado": sql_f_list, "Proceso": proceso_f_list}
+    for col_name, filter_values in filter_map.items():
+        if filter_values and "– Todos –" not in filter_values and col_name in df_f.columns:
+            df_f = df_f[df_f[col_name].astype(str).isin([str(val) for val in filter_values])]
     return df_f
 
-
-def get_sql_category_order(vals):
-    present = list(vals.astype(str).unique())
-    return [s for s in SQL_ORDER_OF_IMPORTANCE if s in present] + sorted([s for s in present if s not in SQL_ORDER_OF_IMPORTANCE])
-
+def get_sql_category_order(df_column_or_list):
+    present_sqls_series = pd.Series(df_column_or_list).astype(str).dropna().unique()
+    ordered_present_sqls = [s for s in SQL_ORDER_OF_IMPORTANCE if s in present_sqls_series]
+    other_sqls = sorted([s for s in present_sqls_series if s not in SQL_ORDER_OF_IMPORTANCE])
+    return ordered_present_sqls + other_sqls
 
 def display_sesiones_summary_sql(df_filtered):
     st.markdown("### 📌 Resumen Principal de Sesiones")
-    total = len(df_filtered)
-    st.metric("Total Sesiones (filtradas)", f"{total:,}")
+    if df_filtered.empty: st.info("No hay sesiones para resumen con los filtros aplicados."); return
+    total_sesiones = len(df_filtered); st.metric("Total Sesiones (filtradas)", f"{total_sesiones:,}")
     if 'SQL_Estandarizado' in df_filtered.columns:
         st.markdown("#### Distribución por Calificación SQL")
-        counts = df_filtered['SQL_Estandarizado'].value_counts().reset_index()
-        counts.columns = ['Calificación SQL', 'Número de Sesiones']
-        order = get_sql_category_order(counts['Calificación SQL'])
-        counts['Calificación SQL'] = pd.Categorical(counts['Calificación SQL'], categories=order, ordered=True)
-        counts = counts.sort_values('Calificación SQL')
-        fig = px.bar(counts, x='Calificación SQL', y='Número de Sesiones', text_auto=True, color='Calificación SQL')
-        fig.update_xaxes(categoryorder='array', categoryarray=order)
-        st.plotly_chart(fig, use_container_width=True)
-        st.dataframe(counts.set_index('Calificación SQL'), use_container_width=True)
-
+        sql_counts = df_filtered['SQL_Estandarizado'].value_counts().reset_index()
+        sql_counts.columns = ['Calificación SQL', 'Número de Sesiones']
+        category_order_sql_summary = get_sql_category_order(sql_counts['Calificación SQL'])
+        sql_counts['Calificación SQL'] = pd.Categorical(sql_counts['Calificación SQL'], categories=category_order_sql_summary, ordered=True)
+        sql_counts = sql_counts.sort_values('Calificación SQL').reset_index(drop=True)
+        if not sql_counts.empty:
+            fig_sql_summary = px.bar(sql_counts, x='Calificación SQL', y='Número de Sesiones', title='Sesiones por Calificación SQL', text_auto=True, color='Calificación SQL')
+            fig_sql_summary.update_xaxes(categoryorder='array', categoryarray=category_order_sql_summary)
+            st.plotly_chart(fig_sql_summary, use_container_width=True)
+            st.dataframe(sql_counts.set_index('Calificación SQL').style.format({"Número de Sesiones": "{:,}"}), use_container_width=True)
+        else: st.info("No hay datos de calificación SQL para mostrar.")
+    else: st.warning("Columna 'SQL_Estandarizado' no encontrada para el resumen.")
 
 def display_analisis_por_dimension(df_filtered, dimension_col, dimension_label, top_n=10):
     st.markdown(f"### 📊 Análisis por {dimension_label} y Calificación SQL (Top {top_n})")
-    if df_filtered.empty or dimension_col not in df_filtered.columns:
-        st.info(f"No hay datos para {dimension_label}"); return
-    series = df_filtered[dimension_col].astype(str)
-    top_vals = series.value_counts().nlargest(top_n).index.tolist()
-    df_top = df_filtered[df_filtered[dimension_col].isin(top_vals)]
-    summary = df_top.groupby([dimension_col, 'SQL_Estandarizado']).size().reset_index(name='Cantidad')
-    order = get_sql_category_order(summary['SQL_Estandarizado'])
-    summary['SQL_Estandarizado'] = pd.Categorical(summary['SQL_Estandarizado'], categories=order, ordered=True)
-    summary = summary.sort_values([dimension_col, 'SQL_Estandarizado'])
-    fig = px.bar(summary, x=dimension_col, y='Cantidad', color='SQL_Estandarizado', barmode='stack', title=f'Distribución de SQL por {dimension_label}')
-    fig.update_layout(xaxis={'categoryorder':'array','categoryarray':top_vals}, xaxis_tickangle=-45)
-    st.plotly_chart(fig, use_container_width=True)
-    pivot = summary.pivot_table(index=dimension_col, columns='SQL_Estandarizado', values='Cantidad', fill_value=0)
-    pivot['Total'] = pivot.sum(axis=1)
-    st.dataframe(pivot, use_container_width=True)
+    if df_filtered.empty or dimension_col not in df_filtered.columns or 'SQL_Estandarizado' not in df_filtered.columns:
+        st.info(f"Datos insuficientes para análisis por {dimension_label}."); return
+    df_filtered_copy = df_filtered.copy()
+    df_filtered_copy[dimension_col] = df_filtered_copy[dimension_col].astype(str)
+    dim_totals = df_filtered_copy[dimension_col].value_counts().nlargest(top_n)
+    top_n_dims_list = dim_totals.index.tolist()
+    df_top_n = df_filtered_copy[df_filtered_copy[dimension_col].isin(top_n_dims_list)]
+    if df_top_n.empty: st.info(f"No hay datos para el Top {top_n} de {dimension_label}."); return
+    summary_dim_sql = df_top_n.groupby([dimension_col, 'SQL_Estandarizado'], observed=False).size().reset_index(name='Cantidad_SQL')
+    if summary_dim_sql.empty: st.info(f"No hay datos agregados por {dimension_label} y SQL para el Top {top_n}."); return
+    sql_category_order_dim_analysis = get_sql_category_order(summary_dim_sql['SQL_Estandarizado'])
+    summary_dim_sql['SQL_Estandarizado'] = pd.Categorical(summary_dim_sql['SQL_Estandarizado'], categories=sql_category_order_dim_analysis, ordered=True)
+    summary_dim_sql[dimension_col] = pd.Categorical(summary_dim_sql[dimension_col], categories=top_n_dims_list, ordered=True)
+    summary_dim_sql = summary_dim_sql.sort_values(by=[dimension_col, 'SQL_Estandarizado'])
+    fig_dim_analysis = px.bar(summary_dim_sql, x=dimension_col, y='Cantidad_SQL', color='SQL_Estandarizado', title=f'Distribución de SQL por {dimension_label} (Top {top_n})', barmode='stack', color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig_dim_analysis.update_layout(xaxis_tickangle=-45, yaxis_title="Número de Sesiones", xaxis={'categoryorder':'array', 'categoryarray':top_n_dims_list}, legend_title_text='Calificación SQL')
+    st.plotly_chart(fig_dim_analysis, use_container_width=True)
+    try:
+        pivot_table_dim = summary_dim_sql.pivot_table(index=dimension_col, columns='SQL_Estandarizado', values='Cantidad_SQL', fill_value=0, observed=False)
+        pivot_table_dim = pivot_table_dim.reindex(columns=sql_category_order_dim_analysis, fill_value=0).reindex(index=top_n_dims_list, fill_value=0)
+        pivot_table_dim['Total_Sesiones_Dim'] = pivot_table_dim.sum(axis=1)
+        format_dict_dim = {col: "{:,.0f}" for col in pivot_table_dim.columns}
+        st.dataframe(pivot_table_dim.style.format(format_dict_dim), use_container_width=True)
+    except Exception as e_pivot: st.warning(f"No se pudo generar la tabla pivot para {dimension_label}: {e_pivot}")
 
-
-def display_evolucion_sql(df_filtered, time_col, label_col,
-                          chart_title, xaxis_label):
+def display_evolucion_sql(df_filtered, time_agg_col, display_label_col_name, chart_title, x_axis_label):
     st.markdown(f"### 📈 {chart_title}")
-    if df_filtered.empty or time_col not in df_filtered.columns:
-        st.info("Datos insuficientes para evolución"); return
-    df = df_filtered.copy()
-    if time_col == 'NumSemana':
-        df[label_col] = df['Año'].astype(str) + '-S' + df['NumSemana'].astype(str).str.zfill(2)
-    else:
-        df[label_col] = df[time_col]
-    summary = df.groupby([label_col,'SQL_Estandarizado']).size().reset_index(name='Sesiones')
-    order = get_sql_category_order(summary['SQL_Estandarizado'])
-    summary['SQL_Estandarizado'] = pd.Categorical(summary['SQL_Estandarizado'], categories=order, ordered=True)
-    fig = px.line(summary, x=label_col, y='Sesiones', color='SQL_Estandarizado', markers=True, title=chart_title)
-    fig.update_xaxes(type='category', title=xaxis_label)
-    st.plotly_chart(fig, use_container_width=True)
+    required_cols = ['SQL_Estandarizado', time_agg_col]
+    if time_agg_col == 'NumSemana' and ('Año' not in df_filtered.columns or 'NumSemana' not in df_filtered.columns) :
+        st.info(f"Datos insuficientes. Se requieren 'Año' y 'NumSemana'."); return
+    if df_filtered.empty or not all(col in df_filtered.columns for col in required_cols):
+        st.info(f"Datos insuficientes. Columnas requeridas: {required_cols}"); return
 
+    df_agg_evol = df_filtered.copy()
+    group_col_for_plot = time_agg_col
+
+    if time_agg_col == 'NumSemana':
+        try:
+            df_agg_evol.dropna(subset=['Año', 'NumSemana'], inplace=True)
+            df_agg_evol['Año'] = df_agg_evol['Año'].astype(int)
+            df_agg_evol['NumSemana'] = df_agg_evol['NumSemana'].astype(int)
+            df_agg_evol[display_label_col_name] = df_agg_evol['Año'].astype(str) + '-S' + df_agg_evol['NumSemana'].astype(str).str.zfill(2)
+            group_col_for_plot = display_label_col_name
+        except (ValueError, TypeError) as e: st.warning(f"Problema con 'Año'/'NumSemana': {e}"); return
+    elif time_agg_col == 'AñoMes':
+        df_agg_evol[display_label_col_name] = df_agg_evol[time_agg_col]
+        group_col_for_plot = display_label_col_name
+
+    df_agg_evol.dropna(subset=[group_col_for_plot, 'SQL_Estandarizado'], inplace=True)
+    if df_agg_evol.empty: st.info(f"No hay datos válidos para '{group_col_for_plot}' y 'SQL_Estandarizado'."); return
+
+    summary_time_sql_evol = df_agg_evol.groupby([group_col_for_plot, 'SQL_Estandarizado'], observed=False).size().reset_index(name='Número de Sesiones')
+    if summary_time_sql_evol.empty: st.info(f"No hay datos agregados por {x_axis_label.lower()} y SQL."); return
+    
+    summary_time_sql_evol = summary_time_sql_evol.sort_values(by=[group_col_for_plot])
+    sql_category_order_evol = get_sql_category_order(summary_time_sql_evol['SQL_Estandarizado'])
+    summary_time_sql_evol['SQL_Estandarizado'] = pd.Categorical(summary_time_sql_evol['SQL_Estandarizado'], categories=sql_category_order_evol, ordered=True)
+    summary_time_sql_evol = summary_time_sql_evol.sort_values(by=[group_col_for_plot, 'SQL_Estandarizado'])
+    try:
+        fig_evol_sql = px.line(summary_time_sql_evol, x=group_col_for_plot, y='Número de Sesiones', color='SQL_Estandarizado', title=f"Evolución por SQL ({x_axis_label})", markers=True)
+        fig_evol_sql.update_xaxes(type='category', title_text=x_axis_label)
+        fig_evol_sql.update_layout(yaxis_title="Número de Sesiones", legend_title_text='Calificación SQL')
+        st.plotly_chart(fig_evol_sql, use_container_width=True)
+    except Exception as e_evol_sql: st.warning(f"No se pudo generar gráfico de evolución para {x_axis_label}: {e_evol_sql}")
 
 def display_tabla_sesiones_detalle(df_filtered):
     st.markdown("### 📝 Tabla Detallada de Sesiones")
-    if df_filtered.empty:
-        st.info("No hay sesiones detalladas"); return
-    cols = [col for col in ["Fecha","LG","AE","País","Proceso","SQL","SQL_Estandarizado","Empresa","Puesto","Nombre","Apellido","Siguientes Pasos","RPA","Fuente_Hoja","LinkedIn","Email"] if col in df_filtered.columns]
-    df_view = df_filtered[cols].copy()
-    df_view['Fecha'] = pd.to_datetime(df_view['Fecha'], errors='coerce').dt.strftime('%d/%m/%Y')
-    st.dataframe(df_view, height=400, use_container_width=True, hide_index=True)
-    buffer = io.BytesIO()
-    df_export = df_view.copy()
-    df_export.to_excel(buffer, index=False)
-    st.download_button("⬇️ Descargar Detalle (Excel)", data=buffer.getvalue(), file_name="detalle_sesiones_sql.xlsx")
+    if df_filtered.empty: st.info("No hay sesiones detalladas para mostrar con los filtros aplicados."); return
+    cols_deseadas_detalle_ses = ["Fecha", "LG", "AE", "País", "SQL", "SQL_Estandarizado", "Empresa", "Puesto", "Nombre", "Apellido", "Siguientes Pasos", "RPA", "Fuente_Hoja", "LinkedIn", "Email", "Proceso"]
+    cols_present_detalle_ses = [col for col in cols_deseadas_detalle_ses if col in df_filtered.columns]
+    df_view_detalle_ses = df_filtered[cols_present_detalle_ses].copy()
+    if "Fecha" in df_view_detalle_ses.columns and pd.api.types.is_datetime64_any_dtype(df_view_detalle_ses["Fecha"]):
+         try:
+            df_view_detalle_ses["Fecha"] = pd.to_datetime(df_view_detalle_ses["Fecha"], errors='coerce').dt.strftime('%d/%m/%Y')
+            df_view_detalle_ses["Fecha"] = df_view_detalle_ses["Fecha"].fillna("Fecha Inválida")
+         except AttributeError: pass
+    st.dataframe(df_view_detalle_ses, height=400, use_container_width=True, hide_index=True)
+    if not df_view_detalle_ses.empty:
+        output = io.BytesIO()
+        try:
+            df_excel = df_view_detalle_ses.copy()
+            if "Fecha" in df_excel.columns and df_excel["Fecha"].dtype == 'object':
+                df_excel["Fecha"] = pd.to_datetime(df_excel["Fecha"], format='%d/%m/%Y', errors='coerce')
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                df_excel.to_excel(writer, index=False, sheet_name='Detalle_Sesiones')
+            st.download_button(label="⬇️ Descargar Detalle (Excel)", data=output.getvalue(), file_name="detalle_sesiones_sql.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key=f"{FILTER_KEYS_PREFIX}btn_download_detalle")
+        except Exception as e_excel: st.error(f"Error al generar archivo Excel: {e_excel}")
 
-# --- Flujo Principal ---
-df_base = load_sesiones_data()
-start_f, end_f, year_f, week_f, ae_f, lg_f, pais_f, proceso_f, sql_f = sidebar_filters_sesiones(df_base)
-df_filtrado = apply_sesiones_filters(df_base, start_f, end_f, year_f, week_f, ae_f, lg_f, pais_f, proceso_f, sql_f)
+# --- Flujo Principal de la Página ---
+try:
+    df_sesiones_base = load_sesiones_data()
+except Exception as e:
+    st.error(f"Error crítico al cargar datos iniciales: {e}")
+    st.stop()
 
-# Presentar dashboard existente
-display_sesiones_summary_sql(df_filtrado)
-st.markdown("---")
-display_analisis_por_dimension(df_filtered=df_filtrado, dimension_col="LG", dimension_label="Analista LG", top_n=15)
-st.markdown("---")
-display_analisis_por_dimension(df_filtered=df_filtrado, dimension_col="AE", dimension_label="Account Executive", top_n=15)
-st.markdown("---")
-display_analisis_por_dimension(df_filtered=df_filtrado, dimension_col="País", dimension_label="País", top_n=10)
-# Nuevo análisis por Proceso
-st.markdown("---")
-display_analisis_por_dimension(df_filtered=df_filtrado, dimension_col="Proceso", dimension_label="Proceso", top_n=10)
-st.markdown("---")
-# Continuar con evolución y detalle
-st.markdown("---")
-# Evolución semanal de sesiones por calificación SQL
-display_evolucion_sql(df_filtrado, 'NumSemana', 'Periodo', 'Evolución Semanal de Sesiones', 'Semana')
-st.markdown("---")
-# Evolución mensual de sesiones por calificación SQL
-display_evolucion_sql(df_filtrado, 'AñoMes', 'Periodo', 'Evolución Mensual de Sesiones', 'Mes')
-st.markdown("---")
-# Tabla detallada de sesiones
-display_tabla_sesiones_detalle(df_filtrado)
+if df_sesiones_base is None or df_sesiones_base.empty:
+    st.error("Fallo Crítico: No se pudieron cargar o procesar datos de Sesiones. La página no puede continuar.")
+    st.stop()
 
-# --- FIN DEL SCRIPT ---
+start_f, end_f, year_f, week_f, ae_f, lg_f, pais_f, sql_f_val, proceso_f = sidebar_filters_sesiones(df_sesiones_base)
+df_sesiones_filtered = apply_sesiones_filters(df_sesiones_base, start_f, end_f, year_f, week_f, ae_f, lg_f, pais_f, sql_f_val, proceso_f)
+
+# --- Presentación del Dashboard ---
+display_sesiones_summary_sql(df_sesiones_filtered)
+st.markdown("---")
+display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="LG", dimension_label="Analista LG", top_n=15)
+st.markdown("---")
+display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="AE", dimension_label="Account Executive", top_n=15)
+st.markdown("---")
+display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="País", dimension_label="País", top_n=10)
+st.markdown("---")
+display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="Proceso", dimension_label="Proceso", top_n=10)
+st.markdown("---")
+# Las siguientes dos líneas estaban comentadas en tu código original que me pasaste, las mantengo comentadas.
+# display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="Puesto", dimension_label="Cargo (Puesto)", top_n=10)
+# st.markdown("---")
+# display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="Empresa", dimension_label="Empresa", top_n=10)
+# st.markdown("---")
+
+display_evolucion_sql(df_sesiones_filtered, 'NumSemana', 'Año-Semana', "Evolución Semanal por Calificación SQL", "Semana del Año")
+st.markdown("---")
+display_evolucion_sql(df_sesiones_filtered, 'AñoMes', 'Año-Mes', "Evolución Mensual por Calificación SQL", "Mes del Año")
+st.markdown("---")
+display_tabla_sesiones_detalle(df_sesiones_filtered)
+
+st.markdown("---")
+st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")
