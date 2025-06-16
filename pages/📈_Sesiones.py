@@ -514,3 +514,5 @@ display_evolucion_sql(df_filtrado, 'AñoMes', 'Periodo', 'Evolución Mensual de 
 st.markdown("---")
 # Tabla detallada de sesiones
 display_tabla_sesiones_detalle(df_filtrado)
+
+# --- FIN DEL SCRIPT ---
