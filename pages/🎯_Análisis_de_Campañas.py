@@ -264,7 +264,22 @@ def display_campaign_filters(df_options): # df_options is a copy of df_base_camp
     
     start_date = date_col1.date_input("Fecha Desde", min_value=min_date, max_value=max_date, format="DD/MM/YYYY", key=SES_START_DATE_KEY)
     end_date = date_col2.date_input("Fecha Hasta", min_value=min_date, max_value=max_date, format="DD/MM/YYYY", key=SES_END_DATE_KEY)
+# 1. Define una función que haga la limpieza del estado
+    def clear_all_filters():
+        st.session_state[SES_CAMPAIGN_FILTER_KEY] = default_filters_init[SES_CAMPAIGN_FILTER_KEY]
+        st.session_state[SES_START_DATE_KEY] = default_filters_init[SES_START_DATE_KEY]
+        st.session_state[SES_END_DATE_KEY] = default_filters_init[SES_END_DATE_KEY]
+        st.session_state[SES_PROSPECTOR_FILTER_KEY] = default_filters_init[SES_PROSPECTOR_FILTER_KEY]
+        st.session_state[SES_AVATAR_FILTER_KEY] = default_filters_init[SES_AVATAR_FILTER_KEY]
 
+    # 2. Usa la función en el parámetro 'on_click' del botón.
+    #    Ya no necesitas el 'if' ni el 'st.rerun()'.
+    st.sidebar.button(
+        "🧹 Limpiar Filtros", 
+        on_click=clear_all_filters, 
+        use_container_width=True,
+        key="clear_filters_button" # Puedes usar una clave simple aquí
+    )
     st.sidebar.markdown("---")
     if st.sidebar.button("🧹 Limpiar Filtros", use_container_width=True, key=f"{SES_CAMPAIGN_FILTER_KEY}_clear_button_final_v3"): # Changed key again just in case
         st.session_state[SES_CAMPAIGN_FILTER_KEY] = default_filters_init[SES_CAMPAIGN_FILTER_KEY]
