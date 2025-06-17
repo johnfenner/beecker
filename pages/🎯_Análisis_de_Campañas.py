@@ -4,6 +4,7 @@ import pandas as pd
 import gspread
 import datetime
 import plotly.express as px
+import plotly.graph_objects as go 
 from collections import Counter
 
 # --- Configuración de Página ---
@@ -807,10 +808,11 @@ def load_email_stats_from_new_sheet():
     
     return df_h2r_isa, df_p2p_elsa
 
+
 def display_new_email_stats_analysis(df, campaign_name, column_mapping):
     """
-    Recibe un DataFrame FILTRADO, calcula métricas avanzadas (incluyendo tasas) 
-    y muestra una vista mejorada con un desglose por categoría.
+    Recibe un DataFrame FILTRADO, calcula métricas avanzadas (incluyendo tasas)
+    y muestra una vista mejorada con un Diagrama de Flujo (Sankey).
     """
     if df.empty:
         st.info(f"No hay datos para mostrar con los filtros seleccionados para la campaña '{campaign_name}'.")
@@ -842,7 +844,6 @@ def display_new_email_stats_analysis(df, campaign_name, column_mapping):
     # --- ✨ CÁLCULO DE MÉTRICAS AVANZADAS (TASAS) ---
     open_rate = (total_opened / total_sent * 100) if total_sent > 0 else 0
     response_rate_vs_open = (total_responses / total_opened * 100) if total_opened > 0 else 0
-    session_rate_vs_response = (total_sessions / total_responses * 100) if total_responses > 0 else 0
     global_conversion_rate = (total_sessions / total_sent * 100) if total_sent > 0 else 0
     
     # --- 🎨 VISTA MEJORADA DE MÉTRICAS ---
@@ -855,25 +856,44 @@ def display_new_email_stats_analysis(df, campaign_name, column_mapping):
     
     st.divider()
 
-    # --- 📊 GRÁFICO DE EMBUDO Y DESGLOSE POR CATEGORÍA ---
-    chart_col, data_col = st.columns([2, 1]) # El gráfico ocupa el doble de espacio que la tabla
+    # --- 📊 GRÁFICO DE FLUJO (SANKEY) Y DESGLOSE POR CATEGORÍA ---
+    chart_col, data_col = st.columns([2, 1])
 
     with chart_col:
-        st.markdown("##### Embudo de Conversión")
+        st.markdown("##### Flujo de Conversión de la Campaña")
         if total_sent > 0:
-            funnel_data = pd.DataFrame({
-                "Etapa": ["Enviados", "Aperturas", "Respuestas", "Sesiones Agendadas"],
-                "Cantidad": [total_sent, total_opened, total_responses, total_sessions]
-            })
-            fig = px.funnel(funnel_data, x='Cantidad', y='Etapa')
-            fig.update_layout(margin=dict(l=0, r=0, t=20, b=0), height=350)
+            # --- Definición del Diagrama de Flujo (Sankey) ---
+            labels = ["Enviados", "Abiertos", "Respondieron", "Agendaron", "No Abrieron", "No Respondieron", "No Agendaron"]
+            colors = ["#4B8BBE", "#30B88A", "#F2C84A", "#E57A44", "#B0B0B0", "#B0B0B0", "#B0B0B0"]
+
+            fig = go.Figure(data=[go.Sankey(
+                node=dict(
+                    pad=15,
+                    thickness=20,
+                    line=dict(color="black", width=0.5),
+                    label=labels,
+                    color=colors
+                ),
+                link=dict(
+                    source=[0, 0, 1, 1, 2, 2],  # Índices de 'labels' de origen
+                    target=[1, 4, 2, 5, 3, 6],  # Índices de 'labels' de destino
+                    value=[
+                        total_opened,
+                        max(0, total_sent - total_opened),
+                        total_responses,
+                        max(0, total_opened - total_responses),
+                        total_sessions,
+                        max(0, total_responses - total_sessions)
+                    ]
+                )
+            )])
+            fig.update_layout(margin=dict(l=0, r=0, t=30, b=0), height=350, font_size=10)
             st.plotly_chart(fig, use_container_width=True)
         else:
-            st.info("No hay datos de 'Enviados' para generar el embudo.")
+            st.info("No hay datos de 'Enviados' para generar el gráfico de flujo.")
 
     with data_col:
         st.markdown("##### Desglose por Categoría")
-        # Agrupar por la primera columna (ej. "Email 1") y sumar las métricas
         summary_df = df.groupby(first_col_name)[[col_sent, col_open, col_responses, col_session]].sum().reset_index()
         st.dataframe(
             summary_df, 
