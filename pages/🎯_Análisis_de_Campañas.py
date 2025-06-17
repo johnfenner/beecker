@@ -5,10 +5,7 @@ import gspread
 import datetime
 import plotly.express as px
 from collections import Counter
-st.subheader("🕵️‍♂️ DIAGNÓSTICO DE SECRETS EN VIVO 🕵️‍♂️")
-st.write("El siguiente diccionario es TODO lo que la app está leyendo desde st.secrets:")
-st.json(st.secrets.to_dict())
-st.write("---")
+
 # --- Configuración de Página ---
 st.set_page_config(page_title="Análisis de Campañas", layout="wide")
 st.title("📢 Análisis de Campañas")
