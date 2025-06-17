@@ -29,7 +29,7 @@ COL_QUIEN_PROSPECTO = "¿Quién Prospecto?"
 COL_AVATAR = "Avatar"
 COL_FECHA_SESION_MANUAL = "Fecha Sesion"
 COL_CONTACTADOS_EMAIL = "Contactados por Campaña"
-COL_RESPUESTA_EMAIL = "Respuesta Email"
+COL_RESPUESTA_EMAIL = "Respuesta Email" # <--- ESTA ES LA LÍNEA QUE PROBABLEMENTE FALTABA
 COL_SESION_AGENDADA_EMAIL = "Sesion Agendada Email"
 COL_FECHA_SESION_EMAIL = "Fecha de Sesion Email"
 
@@ -44,7 +44,6 @@ SES_AVATAR_FILTER_KEY = "campaign_page_avatar_filter_v5"
 ALL_CAMPAIGNS_STRING = "– Todas –"
 ALL_PROSPECTORS_STRING = "– Todos –"
 ALL_AVATARS_STRING = "– Todos –"
-
 # --- Funciones Auxiliares ---
 def clean_text_value(val, default="N/D"):
     if pd.isna(val) or str(val).strip() == "": return default
