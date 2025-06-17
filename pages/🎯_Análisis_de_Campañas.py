@@ -280,14 +280,6 @@ def display_campaign_filters(df_options): # df_options is a copy of df_base_camp
         use_container_width=True,
         key="clear_filters_button" # Puedes usar una clave simple aquí
     )
-    st.sidebar.markdown("---")
-    if st.sidebar.button("🧹 Limpiar Filtros", use_container_width=True, key=f"{SES_CAMPAIGN_FILTER_KEY}_clear_button_final_v3"): # Changed key again just in case
-        st.session_state[SES_CAMPAIGN_FILTER_KEY] = default_filters_init[SES_CAMPAIGN_FILTER_KEY]
-        st.session_state[SES_START_DATE_KEY] = default_filters_init[SES_START_DATE_KEY]
-        st.session_state[SES_END_DATE_KEY] = default_filters_init[SES_END_DATE_KEY]
-        st.session_state[SES_PROSPECTOR_FILTER_KEY] = default_filters_init[SES_PROSPECTOR_FILTER_KEY]
-        st.session_state[SES_AVATAR_FILTER_KEY] = default_filters_init[SES_AVATAR_FILTER_KEY]
-        st.rerun() # Essential for changes to reflect
 
     # Return values directly from session_state, as widgets are bound to these keys.
     return (
