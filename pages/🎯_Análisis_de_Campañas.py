@@ -156,6 +156,123 @@ def load_and_prepare_campaign_data():
     
     return df
 
+@st.cache_data(ttl=600)
+def load_email_campaign_stats():
+    """
+    Carga y procesa las estadísticas de campañas de correo desde una hoja específica.
+    """
+    try:
+        # Reutiliza las mismas credenciales que ya usas
+        creds_dict = st.secrets["gcp_service_account"]
+        client = gspread.service_account_from_dict(creds_dict)
+    except Exception as e:
+        st.error(f"Error al cargar credenciales para las estadísticas de email: {e}")
+        return None, None
+
+    try:
+        # IMPORTANTE: Debes añadir esta nueva URL a tus secrets de Streamlit
+        # Ejemplo en secrets.toml: email_stats_sheet_url = "URL_DE_TU_NUEVA_HOJA"
+        sheet_url = st.secrets.get("email_stats_sheet_url")
+        if not sheet_url:
+            st.warning("La URL para la hoja de estadísticas de email ('email_stats_sheet_url') no está en tus secrets. No se puede cargar esta sección.")
+            return None, None
+            
+        workbook = client.open_by_url(sheet_url)
+        sheet = workbook.sheet1 # Asumimos que está en la primera hoja
+        all_data = sheet.get_all_values()
+        
+        # Convertir a DataFrame para facilitar la manipulación
+        df = pd.DataFrame(all_data)
+
+        # Encontrar los inicios de las tablas
+        tabla1_start_row = -1
+        tabla2_start_row = -1
+        for i, row in enumerate(df[0]): # Busca en la primera columna (A)
+            if row == "Tabla_1":
+                tabla1_start_row = i
+            elif row == "Tabla_2":
+                tabla2_start_row = i
+
+        if tabla1_start_row == -1:
+            st.warning("No se encontró 'Tabla_1' en la hoja de estadísticas de email.")
+            return None, None
+
+        # Procesar Tabla 1 (H2R - ISA)
+        end_t1 = tabla2_start_row if tabla2_start_row != -1 else len(df)
+        df_t1_raw = df.iloc[tabla1_start_row:end_t1].reset_index(drop=True)
+        header_t1 = df_t1_raw.iloc[1] # La fila 1 contiene los headers
+        df_t1 = df_t1_raw[2:].copy() # Los datos empiezan desde la fila 2
+        df_t1.columns = header_t1
+        df_t1 = df_t1[df_t1.iloc[:, 0] != ''] # Eliminar filas vacías
+        df_t1 = df_t1.loc[:, df_t1.columns.notna() & (df_t1.columns != '')] # Eliminar columnas vacías
+
+        # Procesar Tabla 2 (P2P - ELSA) si existe
+        df_t2 = None
+        if tabla2_start_row != -1:
+            df_t2_raw = df.iloc[tabla2_start_row:].reset_index(drop=True)
+            header_t2 = df_t2_raw.iloc[1]
+            df_t2 = df_t2_raw[2:].copy()
+            df_t2.columns = header_t2
+            df_t2 = df_t2[df_t2.iloc[:, 0] != '']
+            df_t2 = df_t2.loc[:, df_t2.columns.notna() & (df_t2.columns != '')]
+
+        return df_t1, df_t2
+
+    except Exception as e:
+        st.error(f"Error al leer o procesar la hoja de estadísticas de email: {e}")
+        return None, None
+
+def display_email_stats_analysis(df_tabla, campaign_name):
+    """
+    Muestra el análisis para una tabla de estadísticas de campaña de email.
+    """
+    if df_tabla is None or df_tabla.empty:
+        st.info(f"No hay datos para mostrar de la campaña {campaign_name}.")
+        return
+
+    st.markdown(f"#### Análisis de Campaña: {campaign_name}")
+
+    # Limpiar y convertir a números. Columnas a procesar:
+    cols_to_numeric = ['Sent', 'Open Number', 'Responses', 'Sesion']
+    for col in cols_to_numeric:
+        if col in df_tabla.columns:
+            # Reemplazar celdas vacías por 0 y quitar caracteres no numéricos
+            df_tabla[col] = df_tabla[col].str.replace(r'[^0-9]', '', regex=True).replace('', '0')
+            df_tabla[col] = pd.to_numeric(df_tabla[col], errors='coerce').fillna(0)
+        else:
+            # Si una columna no existe, la creamos con ceros para evitar errores
+            df_tabla[col] = 0
+
+    # Calcular totales
+    total_sent = df_tabla['Sent'].sum()
+    total_opens = df_tabla['Open Number'].sum()
+    total_responses = df_tabla['Responses'].sum()
+    total_sessions = df_tabla['Sesion'].sum()
+
+    # Calcular tasas
+    open_rate = (total_opens / total_sent * 100) if total_sent > 0 else 0
+    response_rate_vs_opens = (total_responses / total_opens * 100) if total_opens > 0 else 0
+    session_rate_vs_responses = (total_sessions / total_responses * 100) if total_responses > 0 else 0
+
+    # Mostrar métricas clave en columnas
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Enviados 📤", f"{total_sent:,.0f}")
+    col2.metric("Total Aperturas 📬", f"{total_opens:,.0f}", f"{open_rate:.1f}% Tasa Apertura")
+    col3.metric("Total Respuestas 💬", f"{total_responses:,.0f}", f"{response_rate_vs_opens:.1f}% vs Aperturas")
+    col4.metric("Total Sesiones 🗓️", f"{total_sessions:,.0f}", f"{session_rate_vs_responses:.1f}% vs Respuestas")
+
+    # Gráfico de embudo
+    funnel_df = pd.DataFrame({
+        "Etapa": ["Enviados", "Aperturas", "Respuestas", "Sesiones"],
+        "Cantidad": [total_sent, total_opens, total_responses, total_sessions]
+    })
+    fig_funnel = px.funnel(funnel_df, x='Cantidad', y='Etapa', title=f"Embudo de Conversión - {campaign_name}")
+    st.plotly_chart(fig_funnel, use_container_width=True)
+
+    # Mostrar la tabla de datos
+    with st.expander("Ver datos detallados de la tabla"):
+        st.dataframe(df_tabla, use_container_width=True)
+
 # --- Filtros de Barra Lateral ---
 def display_campaign_filters(df_options): # df_options is a copy of df_base_campaigns_loaded
     st.sidebar.header("🎯 Filtros de Campaña")
@@ -718,8 +835,8 @@ def display_email_prospecting_analysis(df_common_filtered):
 
     st.metric("Total Contactados por Email en Selección", f"{total_contactados_email_seleccion:,}")
     
-    respuestas_email = df_contactados_email[df_contactados_email[COL_RESPUESTA_EMAIL] == "si"].shape[0] if COL_RESPUESTA_EMAIL in df_contactados_email.columns else 0
-    sesiones_agendadas_email = df_contactados_email[df_contactados_email[COL_SESION_AGENDADA_EMAIL] == "si"].shape[0] if COL_SESION_AGENDADA_EMAIL in df_contactados_email.columns else 0
+    respuestas_email = df_contactados_email[df_contactos_email[COL_RESPUESTA_EMAIL] == "si"].shape[0] if COL_RESPUESTA_EMAIL in df_contactos_email.columns else 0
+    sesiones_agendadas_email = df_contactos_email[df_contactos_email[COL_SESION_AGENDADA_EMAIL] == "si"].shape[0] if COL_SESION_AGENDADA_EMAIL in df_contactos_email.columns else 0
 
     e_col1, e_col2 = st.columns(2)
     e_col1.metric("Respuestas Email", f"{respuestas_email:,}")
@@ -756,6 +873,21 @@ else:
     display_manual_prospecting_analysis(df_filtered_common.copy(), start_date_filter, end_date_filter)
     display_global_manual_prospecting_deep_dive(df_filtered_common.copy(), start_date_filter, end_date_filter)
     display_email_prospecting_analysis(df_filtered_common.copy())
+
+# --- INICIO DE LA NUEVA SECCIÓN DE ANÁLISIS DE CORREO MASIVO ---
+st.markdown("---")
+with st.expander("📊 Análisis de Rendimiento de Campañas de Correo (Nueva Hoja)"):
+    # Cargar los datos de las nuevas tablas
+    df_h2r_isa, df_p2p_elsa = load_email_campaign_stats()
+
+    if df_h2r_isa is not None:
+        display_email_stats_analysis(df_h2r_isa, "H2R - ISA")
+        st.markdown("---")
+
+    if df_p2p_elsa is not None:
+        display_email_stats_analysis(df_p2p_elsa, "P2P - ELSA")
+        
+# --- FIN DE LA NUEVA SECCIÓN ---
 
 st.markdown("---")
 st.info("Esta página de análisis de campañas ha sido desarrollada por Johnsito ✨")
