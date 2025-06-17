@@ -741,7 +741,7 @@ def display_email_prospecting_analysis(df_common_filtered):
 def load_email_stats_from_new_sheet():
     """
     Se conecta a Google Sheets y extrae datos de dos tablas con una estructura específica.
-    Esta versión está corregida para manejar la estructura de la imagen.
+    Esta versión está corregida para ignorar las filas de subtotales.
     """
     try:
         creds_dict = st.secrets["gcp_service_account"]
@@ -765,7 +765,7 @@ def load_email_stats_from_new_sheet():
     def parse_specific_table(all_data, header_identifier):
         """
         Busca una fila que contenga el 'header_identifier' en su primera celda,
-        la usa como la fila de encabezados y lee los datos subsiguientes.
+        la usa como la fila de encabezados y lee los datos subsiguientes, ignorando subtotales.
         """
         header_row_index = -1
         for i, row in enumerate(all_data):
@@ -774,23 +774,24 @@ def load_email_stats_from_new_sheet():
                 break
         
         if header_row_index == -1:
-            return pd.DataFrame() # No se encontró la tabla
+            return pd.DataFrame()
 
         headers = [h.strip() for h in all_data[header_row_index]]
         
         table_data = []
-        # La data comienza en la fila siguiente a los encabezados
         for i in range(header_row_index + 1, len(all_data)):
             row = all_data[i]
-            # Detenerse si la fila está vacía o si encontramos el inicio de otra tabla conocida
-            if not row or not any(str(cell).strip() for cell in row) or (len(row) > 0 and row[0].strip() in ["H2R - ISA", "P2P - ELSA"] and i > header_row_index):
-                 # La condición de parada es compleja para evitar leer datos de otra tabla
-                 if i > header_row_index and (len(row) > 0 and row[0].strip() in ["P2P - ELSA"]): # Parar si encontramos la siguiente tabla
-                     break
-                 if not any(str(cell).strip() for cell in row): # Parar si la fila está completamente vacía
-                     break
+            
+            if not row or (len(row) > 0 and row[0].strip() in ["H2R - ISA", "P2P - ELSA"] and i > header_row_index):
+                break
+            
+            # ===== INICIO DE LA MODIFICACIÓN CLAVE =====
+            # Se ignora cualquier fila que no comience con "Email" en la primera celda.
+            # Esto filtra eficazmente los subtotales y otras filas de resumen.
+            if not str(row[0]).strip().lower().startswith("email"):
+                continue # Saltar esta fila y pasar a la siguiente
+            # ===== FIN DE LA MODIFICACIÓN CLAVE =====
 
-            # Asegurar que la fila tenga el mismo número de columnas que los encabezados
             if len(row) < len(headers):
                 row.extend([''] * (len(headers) - len(row)))
             table_data.append(row[:len(headers)])
