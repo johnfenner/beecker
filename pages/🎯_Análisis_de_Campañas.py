@@ -740,10 +740,9 @@ def display_email_prospecting_analysis(df_common_filtered):
 @st.cache_data(ttl=600)
 def load_email_stats_from_new_sheet():
     """
-    Se conecta a una nueva hoja de Google Sheets usando una clave de secrets
-    distinta y extrae los datos de dos tablas específicas.
+    Se conecta a Google Sheets y extrae datos de dos tablas con una estructura específica.
+    Esta versión está corregida para manejar la estructura de la imagen.
     """
-    # 1. Conexión a Google Sheets
     try:
         creds_dict = st.secrets["gcp_service_account"]
         client = gspread.service_account_from_dict(creds_dict)
@@ -754,98 +753,90 @@ def load_email_stats_from_new_sheet():
         st.error(f"Error al cargar credenciales de Google Sheets para la nueva hoja: {e}")
         return pd.DataFrame(), pd.DataFrame()
 
-    # 2. Abrir la nueva hoja usando la nueva clave de secrets
     try:
-        if "email_stats_sheet_url" not in st.secrets:
-            st.error("Error de Configuración (Secrets): Falta la clave 'email_stats_sheet_url' en tus secretos de Streamlit.")
-            return pd.DataFrame(), pd.DataFrame()
-            
         sheet_url = st.secrets["email_stats_sheet_url"]
         workbook = client.open_by_url(sheet_url)
         sheet = workbook.sheet1
         all_data = sheet.get_all_values()
-        if not all_data:
-            st.warning("La nueva hoja de Google Sheets para estadísticas de email está vacía.")
-            return pd.DataFrame(), pd.DataFrame()
-    except gspread.exceptions.SpreadsheetNotFound:
-        st.error(f"Error: Nueva hoja no encontrada en la URL definida en secrets ('email_stats_sheet_url').")
-        return pd.DataFrame(), pd.DataFrame()
     except Exception as e:
         st.error(f"Error al leer la nueva hoja de cálculo: {e}")
         return pd.DataFrame(), pd.DataFrame()
 
-    # 3. Parsear los datos para encontrar "Tabla_1" y "Tabla_2"
-    table1_data = []
-    table2_data = []
-    headers = []
-    in_table_1 = False
-    in_table_2 = False
-
-    # Identificadores basados en la imagen proporcionada
-    table_1_start_id = "Table_1" 
-    table_2_start_id = "Table_2" # Asumiendo un nombre genérico para la segunda tabla
-    p2p_elsa_id = "P2P - ELSA" # Identificador real de la segunda tabla en la imagen
-
-    for i, row in enumerate(all_data):
-        if not row: continue # Saltar filas vacías
-
-        # Detectar inicio de Tabla 1
-        if row[0].strip() == table_1_start_id:
-            headers = [h.strip() for h in all_data[i+1]]
-            in_table_1 = True
-            in_table_2 = False
-            continue
-
-        # Detectar inicio de Tabla 2
-        if row[0].strip() == table_2_start_id or row[0].strip() == p2p_elsa_id:
-            headers = [h.strip() for h in all_data[i+1]]
-            in_table_1 = False
-            in_table_2 = True
-            continue
+    def parse_specific_table(all_data, header_identifier):
+        """
+        Busca una fila que contenga el 'header_identifier' en su primera celda,
+        la usa como la fila de encabezados y lee los datos subsiguientes.
+        """
+        header_row_index = -1
+        for i, row in enumerate(all_data):
+            if row and row[0].strip() == header_identifier:
+                header_row_index = i
+                break
         
-        # Dejar de leer una tabla si encontramos una fila completamente vacía
-        if not any(row):
-            in_table_1 = False
-            # No desactivamos in_table_2 para que pueda leer hasta el final
-            continue
+        if header_row_index == -1:
+            return pd.DataFrame() # No se encontró la tabla
 
-        if in_table_1 and row[0].strip() != "":
-            table1_data.append(row)
+        headers = [h.strip() for h in all_data[header_row_index]]
         
-        if in_table_2 and row[0].strip() != "":
-            table2_data.append(row)
-            
-    df1 = pd.DataFrame(table1_data, columns=headers) if table1_data and headers else pd.DataFrame()
-    df2 = pd.DataFrame(table2_data, columns=headers) if table2_data and headers else pd.DataFrame()
+        table_data = []
+        # La data comienza en la fila siguiente a los encabezados
+        for i in range(header_row_index + 1, len(all_data)):
+            row = all_data[i]
+            # Detenerse si la fila está vacía o si encontramos el inicio de otra tabla conocida
+            if not row or not any(str(cell).strip() for cell in row) or (len(row) > 0 and row[0].strip() in ["H2R - ISA", "P2P - ELSA"] and i > header_row_index):
+                 # La condición de parada es compleja para evitar leer datos de otra tabla
+                 if i > header_row_index and (len(row) > 0 and row[0].strip() in ["P2P - ELSA"]): # Parar si encontramos la siguiente tabla
+                     break
+                 if not any(str(cell).strip() for cell in row): # Parar si la fila está completamente vacía
+                     break
+
+            # Asegurar que la fila tenga el mismo número de columnas que los encabezados
+            if len(row) < len(headers):
+                row.extend([''] * (len(headers) - len(row)))
+            table_data.append(row[:len(headers)])
+
+        if not table_data:
+            return pd.DataFrame(columns=headers)
+
+        return pd.DataFrame(table_data, columns=headers)
+
+    # Llama a la función de parseo para cada tabla usando su identificador de encabezado único
+    df_h2r_isa = parse_specific_table(all_data, "H2R - ISA")
+    df_p2p_elsa = parse_specific_table(all_data, "P2P - ELSA")
     
-    return df1, df2
+    return df_h2r_isa, df_p2p_elsa
 
-def display_new_email_stats_analysis(df, campaign_name):
+def display_new_email_stats_analysis(df, campaign_name, column_mapping):
     """
-    Recibe un DataFrame de la nueva hoja, calcula métricas y muestra un embudo.
+    Recibe un DataFrame, calcula métricas usando un mapeo de columnas y muestra un embudo.
     """
     if df.empty:
-        st.warning(f"No se encontraron datos para la campaña '{campaign_name}'.")
+        st.warning(f"No se cargaron datos para la campaña '{campaign_name}'.")
         return
 
     st.subheader(f"Análisis: {campaign_name}")
 
-    # Columnas a procesar
-    stat_cols = ["Sent", "Open Number", "Responses", "Sesion"]
+    # Extraer nombres de columna del mapeo
+    col_sent = column_mapping.get("sent")
+    col_open = column_mapping.get("open")
+    col_responses = column_mapping.get("responses")
+    col_session = column_mapping.get("session")
     
-    # Limpieza de datos: convertir a numérico y rellenar NAs
-    for col in stat_cols:
+    stat_cols_to_check = [col for col in [col_sent, col_open, col_responses, col_session] if col]
+
+    # Limpieza de datos
+    for col in stat_cols_to_check:
         if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+            df[col] = pd.to_numeric(df[col].astype(str).str.replace('*', '', regex=False), errors='coerce').fillna(0)
         else:
             st.warning(f"Falta la columna '{col}' en los datos de '{campaign_name}'. Se asumirá como 0.")
             df[col] = 0
-
+    
     # Calcular totales
-    total_sent = int(df["Sent"].sum())
-    total_opened = int(df["Open Number"].sum())
-    total_responses = int(df["Responses"].sum())
-    total_sessions = int(df["Sesion"].sum())
+    total_sent = int(df[col_sent].sum()) if col_sent in df.columns else 0
+    total_opened = int(df[col_open].sum()) if col_open in df.columns else 0
+    total_responses = int(df[col_responses].sum()) if col_responses in df.columns else 0
+    total_sessions = int(df[col_session].sum()) if col_session in df.columns else 0
 
     # Mostrar Métricas
     m_col1, m_col2, m_col3, m_col4 = st.columns(4)
@@ -860,12 +851,7 @@ def display_new_email_stats_analysis(df, campaign_name):
             "Etapa": ["Enviados", "Aperturas", "Respuestas", "Sesiones Agendadas"],
             "Cantidad": [total_sent, total_opened, total_responses, total_sessions]
         })
-        fig = px.funnel(
-            funnel_data, 
-            x='Cantidad', 
-            y='Etapa', 
-            title=f"Embudo de Conversión: {campaign_name}"
-        )
+        fig = px.funnel(funnel_data, x='Cantidad', y='Etapa', title=f"Embudo de Conversión: {campaign_name}")
         st.plotly_chart(fig, use_container_width=True)
     st.markdown("---")
 
@@ -905,13 +891,30 @@ st.markdown("---")
 with st.expander("📊 Análisis de Números por Correo (Hoja Independiente)", expanded=True):
     df_h2r_isa, df_p2p_elsa = load_email_stats_from_new_sheet()
     
+    # Mapeo de columnas para la tabla H2R - ISA (basado en tu imagen)
+    mapping_h2r = {
+        "sent": "Sent",
+        "open": "Open Number",
+        "responses": "Responses",
+        "session": "Sesion"
+    }
+    
+    # Mapeo de columnas para la tabla P2P - ELSA (AJUSTA ESTOS NOMBRES si son diferentes)
+    # Por ejemplo, si en la hoja usan español, podría ser: "Enviados", "Aperturas", etc.
+    mapping_p2p = {
+        "sent": "Sent",        # O "Enviados", o como se llame la columna
+        "open": "Open Number", # O "Aperturas", etc.
+        "responses": "Responses",
+        "session": "Sesion"
+    }
+
     if not df_h2r_isa.empty:
-        display_new_email_stats_analysis(df_h2r_isa, "Campaña H2R - ISA")
+        display_new_email_stats_analysis(df_h2r_isa.copy(), "Campaña H2R - ISA", mapping_h2r)
     else:
         st.info("No se cargaron datos para la campaña 'H2R - ISA' desde la nueva hoja.")
 
     if not df_p2p_elsa.empty:
-        display_new_email_stats_analysis(df_p2p_elsa, "Campaña P2P - ELSA")
+        display_new_email_stats_analysis(df_p2p_elsa.copy(), "Campaña P2P - ELSA", mapping_p2p)
     else:
         st.info("No se cargaron datos para la campaña 'P2P - ELSA' desde la nueva hoja.")
 
