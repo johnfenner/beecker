@@ -5,8 +5,7 @@ import gspread
 import datetime
 import plotly.express as px
 from collections import Counter
-# AÑADE ESTA LÍNEA AQUÍ PARA DEPURAR
-st.json(st.secrets.to_dict())
+
 # --- Configuración de Página ---
 st.set_page_config(page_title="Análisis de Campañas", layout="wide")
 st.title("📢 Análisis de Campañas")
