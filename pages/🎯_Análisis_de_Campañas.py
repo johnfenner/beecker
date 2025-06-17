@@ -924,7 +924,7 @@ else:
         selected_avatars
     )
     
-    display_campaign_potential(df_base_campaigns_loaded.copy()) 
+    display_campaign_potential(df_filtered_common.copy()) 
     display_manual_prospecting_analysis(df_filtered_common.copy(), start_date_filter, end_date_filter)
     display_global_manual_prospecting_deep_dive(df_filtered_common.copy(), start_date_filter, end_date_filter)
     
