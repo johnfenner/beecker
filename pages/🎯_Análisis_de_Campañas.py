@@ -809,16 +809,19 @@ def load_email_stats_from_new_sheet():
     return df_h2r_isa, df_p2p_elsa
 
 
+# No necesitas cambiar los imports, pero asegúrate de tener plotly.express como px
+# import plotly.express as px
+
 def display_new_email_stats_analysis(df, campaign_name, column_mapping):
     """
-    Recibe un DataFrame FILTRADO, calcula métricas avanzadas (incluyendo tasas)
-    y muestra una vista mejorada con un Diagrama de Flujo (Sankey).
+    Recibe un DataFrame FILTRADO, calcula métricas avanzadas y muestra
+    un mini-dashboard con gráficos de barras de volumen y eficiencia.
     """
     if df.empty:
         st.info(f"No hay datos para mostrar con los filtros seleccionados para la campaña '{campaign_name}'.")
         return
 
-    # Extraer nombres de columna del mapeo
+    # --- CÁLCULOS (sin cambios) ---
     first_col_name = df.columns[0]
     col_sent = column_mapping.get("sent")
     col_open = column_mapping.get("open")
@@ -827,26 +830,23 @@ def display_new_email_stats_analysis(df, campaign_name, column_mapping):
     
     stat_cols_to_check = [col for col in [col_sent, col_open, col_responses, col_session] if col]
 
-    # Limpieza de datos
     for col in stat_cols_to_check:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col].astype(str).str.replace('*', '', regex=False), errors='coerce').fillna(0)
         else:
-            st.warning(f"Falta la columna '{col}' en los datos de '{campaign_name}'. Se asumirá como 0.")
             df[col] = 0
     
-    # Calcular totales
-    total_sent = int(df[col_sent].sum()) if col_sent in df.columns else 0
-    total_opened = int(df[col_open].sum()) if col_open in df.columns else 0
-    total_responses = int(df[col_responses].sum()) if col_responses in df.columns else 0
-    total_sessions = int(df[col_session].sum()) if col_session in df.columns else 0
+    total_sent = int(df[col_sent].sum())
+    total_opened = int(df[col_open].sum())
+    total_responses = int(df[col_responses].sum())
+    total_sessions = int(df[col_session].sum())
 
-    # --- ✨ CÁLCULO DE MÉTRICAS AVANZADAS (TASAS) ---
     open_rate = (total_opened / total_sent * 100) if total_sent > 0 else 0
     response_rate_vs_open = (total_responses / total_opened * 100) if total_opened > 0 else 0
+    session_rate_vs_response = (total_sessions / total_responses * 100) if total_responses > 0 else 0
     global_conversion_rate = (total_sessions / total_sent * 100) if total_sent > 0 else 0
     
-    # --- 🎨 VISTA MEJORADA DE MÉTRICAS ---
+    # --- VISTA DE MÉTRICAS (sin cambios) ---
     st.markdown("##### Métricas Clave de Rendimiento")
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("📧 Enviados", f"{total_sent:,}")
@@ -856,41 +856,31 @@ def display_new_email_stats_analysis(df, campaign_name, column_mapping):
     
     st.divider()
 
-    # --- 📊 GRÁFICO DE FLUJO (SANKEY) Y DESGLOSE POR CATEGORÍA ---
+    # --- ✨ NUEVO MINI-DASHBOARD DE GRÁFICOS ---
     chart_col, data_col = st.columns([2, 1])
 
     with chart_col:
-        st.markdown("##### Flujo de Conversión de la Campaña")
-        if total_sent > 0:
-            # --- Definición del Diagrama de Flujo (Sankey) ---
-            labels = ["Enviados", "Abiertos", "Respondieron", "Agendaron", "No Abrieron", "No Respondieron", "No Agendaron"]
-            colors = ["#4B8BBE", "#30B88A", "#F2C84A", "#E57A44", "#B0B0B0", "#B0B0B0", "#B0B0B0"]
+        st.markdown("##### Análisis Gráfico del Embudo")
 
-            fig = go.Figure(data=[go.Sankey(
-                node=dict(
-                    pad=15,
-                    thickness=20,
-                    line=dict(color="black", width=0.5),
-                    label=labels,
-                    color=colors
-                ),
-                link=dict(
-                    source=[0, 0, 1, 1, 2, 2],  # Índices de 'labels' de origen
-                    target=[1, 4, 2, 5, 3, 6],  # Índices de 'labels' de destino
-                    value=[
-                        total_opened,
-                        max(0, total_sent - total_opened),
-                        total_responses,
-                        max(0, total_opened - total_responses),
-                        total_sessions,
-                        max(0, total_responses - total_sessions)
-                    ]
-                )
-            )])
-            fig.update_layout(margin=dict(l=0, r=0, t=30, b=0), height=350, font_size=10)
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("No hay datos de 'Enviados' para generar el gráfico de flujo.")
+        # --- Gráfico 1: Volumen Absoluto ---
+        volume_data = pd.DataFrame({
+            "Etapa": ["Enviados", "Abiertos", "Respondieron", "Sesiones"],
+            "Cantidad": [total_sent, total_opened, total_responses, total_sessions]
+        })
+        fig_vol = px.bar(volume_data, x="Etapa", y="Cantidad", text_auto=True, title="Volumen por Etapa del Embudo")
+        fig_vol.update_traces(textposition='outside', marker_color='#4B8BBE')
+        fig_vol.update_layout(height=300, margin=dict(t=30, b=10, l=0, r=0))
+        st.plotly_chart(fig_vol, use_container_width=True)
+
+        # --- Gráfico 2: Tasas de Eficiencia ---
+        rate_data = pd.DataFrame({
+            'Etapa': ['Tasa de Apertura', 'Tasa de Respuesta<br>(de Abiertos)', 'Tasa de Sesión<br>(de Respuestas)'],
+            'Tasa (%)': [open_rate, response_rate_vs_open, session_rate_vs_response]
+        })
+        fig_rates = px.bar(rate_data, x='Etapa', y='Tasa (%)', text_auto='.1f', title="Eficiencia de Conversión por Etapa")
+        fig_rates.update_traces(texttemplate='%{y:.1f}%', textposition='outside', marker_color='#30B88A')
+        fig_rates.update_layout(height=300, yaxis_range=[0,105], margin=dict(t=30, b=10, l=0, r=0), yaxis_ticksuffix="%")
+        st.plotly_chart(fig_rates, use_container_width=True)
 
     with data_col:
         st.markdown("##### Desglose por Categoría")
@@ -899,7 +889,7 @@ def display_new_email_stats_analysis(df, campaign_name, column_mapping):
             summary_df, 
             use_container_width=True, 
             hide_index=True,
-            height=350
+            height=620 # Ajustar altura para alinear con los dos gráficos
         )
     st.markdown("---")
 
@@ -998,11 +988,6 @@ with st.container(border=True):
             st.info("No se cargaron datos para la campaña 'P2P - ELSA'.")
 
 # --- FIN DE LA NUEVA SECCIÓN DE ANÁLISIS MEJORADA ---
-
-
-# Mantén tu firma al final
-st.markdown("---")
-st.info("Esta página de análisis de campañas ha sido desarrollada por Johnsito ✨")
 
 st.markdown("---")
 st.info("Esta página de análisis de campañas ha sido desarrollada por Johnsito ✨")
