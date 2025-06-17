@@ -809,15 +809,15 @@ def load_email_stats_from_new_sheet():
 
 def display_new_email_stats_analysis(df, campaign_name, column_mapping):
     """
-    Recibe un DataFrame, calcula métricas usando un mapeo de columnas y muestra un embudo.
+    Recibe un DataFrame FILTRADO, calcula métricas avanzadas (incluyendo tasas) 
+    y muestra una vista mejorada con un desglose por categoría.
     """
     if df.empty:
-        st.warning(f"No se cargaron datos para la campaña '{campaign_name}'.")
+        st.info(f"No hay datos para mostrar con los filtros seleccionados para la campaña '{campaign_name}'.")
         return
 
-    st.subheader(f"Análisis: {campaign_name}")
-
     # Extraer nombres de columna del mapeo
+    first_col_name = df.columns[0]
     col_sent = column_mapping.get("sent")
     col_open = column_mapping.get("open")
     col_responses = column_mapping.get("responses")
@@ -839,21 +839,48 @@ def display_new_email_stats_analysis(df, campaign_name, column_mapping):
     total_responses = int(df[col_responses].sum()) if col_responses in df.columns else 0
     total_sessions = int(df[col_session].sum()) if col_session in df.columns else 0
 
-    # Mostrar Métricas
-    m_col1, m_col2, m_col3, m_col4 = st.columns(4)
-    m_col1.metric("Emails Enviados", f"{total_sent:,}")
-    m_col2.metric("Aperturas", f"{total_opened:,}")
-    m_col3.metric("Respuestas", f"{total_responses:,}")
-    m_col4.metric("Sesiones Agendadas", f"{total_sessions:,}")
+    # --- ✨ CÁLCULO DE MÉTRICAS AVANZADAS (TASAS) ---
+    open_rate = (total_opened / total_sent * 100) if total_sent > 0 else 0
+    response_rate_vs_open = (total_responses / total_opened * 100) if total_opened > 0 else 0
+    session_rate_vs_response = (total_sessions / total_responses * 100) if total_responses > 0 else 0
+    global_conversion_rate = (total_sessions / total_sent * 100) if total_sent > 0 else 0
+    
+    # --- 🎨 VISTA MEJORADA DE MÉTRICAS ---
+    st.markdown("##### Métricas Clave de Rendimiento")
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("📧 Enviados", f"{total_sent:,}")
+    col2.metric("👀 Aperturas", f"{total_opened:,}", f"{open_rate:.1f}% Tasa")
+    col3.metric("💬 Respuestas", f"{total_responses:,}", f"{response_rate_vs_open:.1f}% de Aperturas")
+    col4.metric("🗓️ Sesiones Agendadas", f"{total_sessions:,}", f"{global_conversion_rate:.2f}% Tasa Global")
+    
+    st.divider()
 
-    # Crear y mostrar Embudo de Conversión
-    if total_sent > 0:
-        funnel_data = pd.DataFrame({
-            "Etapa": ["Enviados", "Aperturas", "Respuestas", "Sesiones Agendadas"],
-            "Cantidad": [total_sent, total_opened, total_responses, total_sessions]
-        })
-        fig = px.funnel(funnel_data, x='Cantidad', y='Etapa', title=f"Embudo de Conversión: {campaign_name}")
-        st.plotly_chart(fig, use_container_width=True)
+    # --- 📊 GRÁFICO DE EMBUDO Y DESGLOSE POR CATEGORÍA ---
+    chart_col, data_col = st.columns([2, 1]) # El gráfico ocupa el doble de espacio que la tabla
+
+    with chart_col:
+        st.markdown("##### Embudo de Conversión")
+        if total_sent > 0:
+            funnel_data = pd.DataFrame({
+                "Etapa": ["Enviados", "Aperturas", "Respuestas", "Sesiones Agendadas"],
+                "Cantidad": [total_sent, total_opened, total_responses, total_sessions]
+            })
+            fig = px.funnel(funnel_data, x='Cantidad', y='Etapa')
+            fig.update_layout(margin=dict(l=0, r=0, t=20, b=0), height=350)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No hay datos de 'Enviados' para generar el embudo.")
+
+    with data_col:
+        st.markdown("##### Desglose por Categoría")
+        # Agrupar por la primera columna (ej. "Email 1") y sumar las métricas
+        summary_df = df.groupby(first_col_name)[[col_sent, col_open, col_responses, col_session]].sum().reset_index()
+        st.dataframe(
+            summary_df, 
+            use_container_width=True, 
+            hide_index=True,
+            height=350
+        )
     st.markdown("---")
 
 # ===============================================================
@@ -887,38 +914,75 @@ else:
     # ❗️ PASO 1: La siguiente línea ha sido comentada para desactivar la sección que causaba error.
     # display_email_prospecting_analysis(df_filtered_common.copy())
 
-# --- Sección Adicional con el Nuevo Análisis Independiente ---
-st.markdown("---")
-with st.expander("📊 Análisis de Números por Correo (Hoja Independiente)", expanded=True):
+# --- INICIO DE LA NUEVA SECCIÓN DE ANÁLISIS MEJORADA ---
+
+st.header("📈 Análisis Avanzado de Campañas por Email", divider="rainbow")
+
+with st.container(border=True):
+    # Cargar los datos una sola vez
     df_h2r_isa, df_p2p_elsa = load_email_stats_from_new_sheet()
-    
+
     # Mapeo de columnas para la tabla H2R - ISA (basado en tu imagen)
-    mapping_h2r = {
-        "sent": "Sent",
-        "open": "Open Number",
-        "responses": "Responses",
-        "session": "Sesion"
-    }
+    mapping_h2r = { "sent": "Sent", "open": "Open Number", "responses": "Responses", "session": "Sesion" }
     
     # Mapeo de columnas para la tabla P2P - ELSA (AJUSTA ESTOS NOMBRES si son diferentes)
-    # Por ejemplo, si en la hoja usan español, podría ser: "Enviados", "Aperturas", etc.
-    mapping_p2p = {
-        "sent": "Sent",        # O "Enviados", o como se llame la columna
-        "open": "Open Number", # O "Aperturas", etc.
-        "responses": "Responses",
-        "session": "Sesion"
-    }
+    mapping_p2p = { "sent": "Sent", "open": "Open Number", "responses": "Responses", "session": "Sesion" }
 
-    if not df_h2r_isa.empty:
-        display_new_email_stats_analysis(df_h2r_isa.copy(), "Campaña H2R - ISA", mapping_h2r)
-    else:
-        st.info("No se cargaron datos para la campaña 'H2R - ISA' desde la nueva hoja.")
+    # Crear pestañas para cada campaña
+    tab1, tab2 = st.tabs(["📊 Campaña H2R - ISA", "📊 Campaña P2P - ELSA"])
 
-    if not df_p2p_elsa.empty:
-        display_new_email_stats_analysis(df_p2p_elsa.copy(), "Campaña P2P - ELSA", mapping_p2p)
-    else:
-        st.info("No se cargaron datos para la campaña 'P2P - ELSA' desde la nueva hoja.")
+    with tab1:
+        st.subheader("Análisis de Rendimiento: H2R - ISA")
+        if not df_h2r_isa.empty:
+            try:
+                # Filtro independiente por categoría de Email
+                email_categories_h2r = df_h2r_isa.iloc[:, 0].unique().tolist()
+                selected_categories_h2r = st.multiselect(
+                    "Filtrar por categoría de Email:",
+                    options=email_categories_h2r,
+                    default=email_categories_h2r,
+                    key="filter_h2r_isa" # Clave única para este filtro
+                )
+                
+                # Filtrar el DataFrame basado en la selección
+                df_h2r_filtered = df_h2r_isa[df_h2r_isa.iloc[:, 0].isin(selected_categories_h2r)]
+                
+                # Llamar a la función de análisis con el DataFrame filtrado
+                display_new_email_stats_analysis(df_h2r_filtered.copy(), "H2R - ISA", mapping_h2r)
+            except Exception as e:
+                st.error(f"Ocurrió un error al procesar la campaña H2R - ISA: {e}")
+        else:
+            st.info("No se cargaron datos para la campaña 'H2R - ISA'.")
 
+    with tab2:
+        st.subheader("Análisis de Rendimiento: P2P - ELSA")
+        if not df_p2p_elsa.empty:
+            try:
+                # Filtro independiente por categoría de Email
+                email_categories_p2p = df_p2p_elsa.iloc[:, 0].unique().tolist()
+                selected_categories_p2p = st.multiselect(
+                    "Filtrar por categoría de Email:",
+                    options=email_categories_p2p,
+                    default=email_categories_p2p,
+                    key="filter_p2p_elsa" # Clave única para este filtro
+                )
+
+                # Filtrar el DataFrame basado en la selección
+                df_p2p_filtered = df_p2p_elsa[df_p2p_elsa.iloc[:, 0].isin(selected_categories_p2p)]
+
+                # Llamar a la función de análisis con el DataFrame filtrado
+                display_new_email_stats_analysis(df_p2p_filtered.copy(), "P2P - ELSA", mapping_p2p)
+            except Exception as e:
+                st.error(f"Ocurrió un error al procesar la campaña P2P - ELSA: {e}")
+        else:
+            st.info("No se cargaron datos para la campaña 'P2P - ELSA'.")
+
+# --- FIN DE LA NUEVA SECCIÓN DE ANÁLISIS MEJORADA ---
+
+
+# Mantén tu firma al final
+st.markdown("---")
+st.info("Esta página de análisis de campañas ha sido desarrollada por Johnsito ✨")
 
 st.markdown("---")
 st.info("Esta página de análisis de campañas ha sido desarrollada por Johnsito ✨")
