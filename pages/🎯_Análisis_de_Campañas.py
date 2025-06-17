@@ -933,7 +933,7 @@ else:
 
 # --- INICIO DE LA NUEVA SECCIÓN DE ANÁLISIS MEJORADA ---
 
-st.header("📈 Análisis Avanzado de Campañas por Email", divider="rainbow")
+st.header("📈 Análisis de Hoja Independiente - Campañas por Email (Numeros por correo campaña)", divider="rainbow")
 
 with st.container(border=True):
     # Cargar los datos una sola vez
