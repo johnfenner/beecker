@@ -4,7 +4,7 @@ import streamlit as st
 import pandas as pd
 import sys
 import os
-import shutil  # 👈 IMPORTANTE: esto es lo que te faltaba
+import shutil
 
 # Copiar secrets.toml en Render si es necesario
 if os.environ.get("RENDER") == "true":
@@ -21,8 +21,9 @@ project_root = os.path.abspath(os.path.dirname(__file__))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# --- IMPORTS MODULARES ---
-from datos.carga_datos import cargar_y_limpiar_datos, cargar_y_procesar_datos
+# --- IMPORTS MODULARES (AHORA CON LA NUEVA FUNCIÓN PARA EVELYN) ---
+# Se añade la nueva función para cargar los datos de Evelyn
+from datos.carga_datos import cargar_y_limpiar_datos, cargar_y_procesar_datos, cargar_y_limpiar_datos_evelyn
 from filtros.filtros_sidebar import mostrar_filtros_sidebar
 from filtros.aplicar_filtros import aplicar_filtros
 from componentes.tabla_prospectos import mostrar_tabla_filtrada
@@ -33,13 +34,12 @@ from componentes.top_industrias_paises import mostrar_analisis_dimension_agendam
 from componentes.analisis_procesos import mostrar_analisis_procesos_con_prospectador
 from componentes.analisis_avatars import mostrar_analisis_por_avatar
 from componentes.oportunidades_calientes import mostrar_oportunidades_calientes
-
 from utils.limpieza import limpiar_valor_kpi
 
 # --- CONFIGURACIÓN GENERAL ---
 st.set_page_config(page_title="Dashboard", 
                    layout="wide")
-st.title("📈 Dashboard — Master DataBase")  # Texto original del título
+st.title("📈 Dashboard — Master DataBase")
 
 # --- INYECTAR CSS PARA AJUSTAR ANCHO DEL SIDEBAR ---
 st.markdown(
@@ -67,7 +67,7 @@ st.markdown(
 
 # --- CUSTOM SIDEBAR CONTENT ---
 SIDEBAR_IMAGE_PATH = os.path.join(project_root,
-                                  "logo.jpeg")  # Verifica esta ruta
+                                  "logo.jpeg")
 try:
     st.sidebar.image(SIDEBAR_IMAGE_PATH, width=150)
 except FileNotFoundError:
@@ -80,28 +80,34 @@ except Exception as e:
 st.sidebar.markdown("""
 **Plataforma de Análisis de Prospección**:
 Explora métricas clave y gestiona tus leads.
-""")  # Texto original de la sidebar
+""")
 
 
-# --- CARGA Y FILTRADO BASE ---
+# --- ✨ NUEVA LÓGICA DE CARGA DE DATOS ✨ ---
+# Se crea una función para cachear la carga de todos los datos juntos
 @st.cache_data
-def get_processed_data():
-    df_base_loaded = cargar_y_limpiar_datos()
-    if df_base_loaded is None or df_base_loaded.empty:
-        return pd.DataFrame()
-    df_processed_loaded = cargar_y_procesar_datos(df_base_loaded.copy())
-    return df_processed_loaded
+def get_all_processed_data():
+    # 1. Cargar y procesar datos principales con tus funciones originales
+    df_principal = cargar_y_limpiar_datos()
+    df_principal_procesado = cargar_y_procesar_datos(df_principal.copy()) if not df_principal.empty else pd.DataFrame()
+    
+    # 2. Cargar y procesar datos de Evelyn con la nueva función
+    df_evelyn = cargar_y_limpiar_datos_evelyn()
+    df_evelyn_procesado = cargar_y_procesar_datos(df_evelyn.copy()) if not df_evelyn.empty else pd.DataFrame()
+    
+    # 3. Unir ambos dataframes para análisis global
+    df_consolidado = pd.concat([df_principal_procesado, df_evelyn_procesado], ignore_index=True)
+    return df_consolidado
 
-
-df_global = get_processed_data()
+df_global = get_all_processed_data()
 
 if df_global.empty:
     st.error(
-        "No se pudieron cargar los datos base o están vacíos. El dashboard no puede continuar."
+        "No se pudieron cargar datos base o están vacíos. El dashboard no puede continuar."
     )
     st.stop()
 
-# --- CÁLCULO DE MÉTRICAS BASE (ANTES DE FILTROS DE SIDEBAR) ---
+# --- CÁLCULO DE MÉTRICAS BASE (sobre el dataframe global) ---
 total_base = len(df_global)
 base_inv_acept = 0
 if "¿Invite Aceptada?" in df_global.columns:
@@ -133,23 +139,20 @@ base_kpis_counts = {
     "sesiones": base_sesiones
 }
 
-# --- FILTROS SIDEBAR ---
+# --- FILTROS SIDEBAR (se aplican al dataframe global) ---
 (filtro_fuente_lista, filtro_proceso, filtro_pais, filtro_industria,
  filtro_avatar, filtro_prospectador, filtro_invite_aceptada_simple,
  filtro_sesion_agendada, fecha_ini, fecha_fin,
  busqueda_texto) = mostrar_filtros_sidebar(df_global.copy())
 
-# --- APLICACIÓN DE FILTROS (de la barra lateral) ---
+# --- APLICACIÓN DE FILTROS (sobre el dataframe global) ---
 df_filtrado_sidebar = aplicar_filtros(
     df_global.copy(), filtro_fuente_lista, filtro_proceso, filtro_pais,
     filtro_industria, filtro_avatar, filtro_prospectador,
     filtro_invite_aceptada_simple, filtro_sesion_agendada, fecha_ini,
     fecha_fin)
 
-# --- DataFrame para KPIs y Análisis (df_kpis) ---
-df_kpis = df_filtrado_sidebar.copy()
-
-# --- DataFrame para la Tabla Detallada (df_tabla_detalle) ---
+# --- DataFrame para la Tabla Detallada (que ahora se dividirá) ---
 df_tabla_detalle = df_filtrado_sidebar.copy()
 if busqueda_texto:
     busq_term = busqueda_texto.lower().strip()
@@ -172,94 +175,81 @@ if busqueda_texto:
             df_tabla_detalle.drop(columns=["_NombreCompleto_temp_search"],
                                   inplace=True)
         elif nombre_col_presente:
-            mask |= df_tabla_detalle["Nombre"].astype(
-                str).str.lower().str.contains(busq_term, na=False)
+            mask |= df_tabla_detalle["Nombre"].astype(str).str.lower().str.contains(busq_term, na=False)
         elif apellido_col_presente:
-            mask |= df_tabla_detalle["Apellido"].astype(
-                str).str.lower().str.contains(busq_term, na=False)
+            mask |= df_tabla_detalle["Apellido"].astype(str).str.lower().str.contains(busq_term, na=False)
 
         for col in columnas_busqueda_texto_config:
             if col in df_tabla_detalle.columns:
-                mask |= df_tabla_detalle[col].astype(
-                    str).str.lower().str.contains(busq_term, na=False)
+                mask |= df_tabla_detalle[col].astype(str).str.lower().str.contains(busq_term, na=False)
 
         df_tabla_detalle = df_tabla_detalle[mask]
 
-# --- ORDEN DE LOS COMPONENTES EN EL DASHBOARD ---
 
-# 1. OPORTUNIDADES CLAVE PARA AGENDAR
-# mostrar_oportunidades_calientes(df_kpis)
+# --- ✨ ORDEN DE LOS COMPONENTES EN EL DASHBOARD (TU ESTRUCTURA ORIGINAL CON LA MODIFICACIÓN) ---
 
-st.header("🔍 Detalle y Rendimiento General")  # Título de sección enfocado
-# 2. TABLA DE PROSPECTOS (Resultado de filtros sidebar + búsqueda de texto)
-mostrar_tabla_filtrada(df_tabla_detalle)
+st.header("🔍 Detalle y Rendimiento General")
 
-# 3. INDICADORES CLAVE DE RENDIMIENTO (KPIs)
+# ✨ AQUÍ ESTÁ LA LÓGICA DE TABLAS SEPARADAS QUE PEDISTE ✨
+df_tabla_principal = df_tabla_detalle[df_tabla_detalle['¿Quién Prospecto?'] != 'Evelyn']
+df_tabla_evelyn = df_tabla_detalle[df_tabla_detalle['¿Quién Prospecto?'] == 'Evelyn']
+
+tab1, tab2 = st.tabs([f"Prospectos Generales ({len(df_tabla_principal)})", f"Prospectos Evelyn ({len(df_tabla_evelyn)})"])
+with tab1:
+    mostrar_tabla_filtrada(df_tabla_principal)
+with tab2:
+    mostrar_tabla_filtrada(df_tabla_evelyn)
+
+
+# --- EL RESTO DE TUS COMPONENTES USAN EL DATAFRAME FILTRADO GLOBAL ---
+df_kpis = df_filtrado_sidebar.copy()
+
+# 1. OPORTUNIDADES CLAVE PARA AGENDAR (INTACTO, COMO LO TENÍAS)
+mostrar_oportunidades_calientes(df_kpis)
+
+# 2. INDICADORES CLAVE DE RENDIMIENTO (KPIs)
 (filtered_total, filtered_primeros_mensajes_enviados_count, filtered_inv_acept,
  filtered_resp_primer, filtered_sesiones,
  _) = mostrar_kpis(df_kpis, base_kpis_counts, limpiar_valor_kpi)
 
-# 4. EMBUDO DE CONVERSIÓN
+# 3. EMBUDO DE CONVERSIÓN
 mostrar_embudo(filtered_total, filtered_inv_acept, filtered_resp_primer,
                filtered_sesiones, filtered_primeros_mensajes_enviados_count,
                base_kpis_counts["total_base"], base_kpis_counts["inv_acept"],
                base_kpis_counts["primeros_mensajes_enviados_count"],
                base_kpis_counts["resp_primer"], base_kpis_counts["sesiones"])
 
-st.header("💡 ¿Dónde Enfocar tus Esfuerzos de Prospección?"
-          )  # Título de sección enfocado
-# 5. ANÁLISIS DE DIMENSIONES
-# Industrias: Solo Gráfico Top 10
+st.header("💡 ¿Dónde Enfocar tus Esfuerzos de Prospección?")
+
+# 4. ANÁLISIS DE DIMENSIONES
 if "Industria" in df_kpis.columns:
-    mostrar_analisis_dimension_agendamiento_flexible(
-        df_kpis,
-        "Industria",
-        "Industrias",
-        top_n_grafico=10,
-        mostrar_tabla_completa=False)
+    mostrar_analisis_dimension_agendamiento_flexible(df_kpis, "Industria", "Industrias", top_n_grafico=10, mostrar_tabla_completa=False)
 else:
     st.caption("Columna 'Industria' no encontrada para análisis.")
 
-# Países: Gráfico Top 10 + Tabla Completa Paginada
 if "Pais" in df_kpis.columns:
-    mostrar_analisis_dimension_agendamiento_flexible(
-        df_kpis,
-        "Pais",
-        "Países",
-        top_n_grafico=10,
-        mostrar_tabla_completa=True)
+    mostrar_analisis_dimension_agendamiento_flexible(df_kpis, "Pais", "Países", top_n_grafico=10, mostrar_tabla_completa=True)
 else:
     st.caption("Columna 'Pais' no encontrada para análisis.")
 
-# Puestos: Solo Gráfico Top 10
 if "Puesto" in df_kpis.columns:
-    mostrar_analisis_dimension_agendamiento_flexible(
-        df_kpis,
-        "Puesto",
-        "Puestos",
-        top_n_grafico=10,
-        mostrar_tabla_completa=False)
+    mostrar_analisis_dimension_agendamiento_flexible(df_kpis, "Puesto", "Puestos", top_n_grafico=10, mostrar_tabla_completa=False)
 else:
     st.caption("Columna 'Puesto' no encontrada para análisis.")
 
-# 6. ANÁLISIS DE PROCESOS (NUEVO)
+# 5. ANÁLISIS DE PROCESOS
 if "Proceso" in df_kpis.columns:
-    mostrar_analisis_procesos_con_prospectador(df_kpis,
-                                               top_n_grafico_proceso=10,
-                                               mostrar_tabla_proceso=True)
+    mostrar_analisis_procesos_con_prospectador(df_kpis, top_n_grafico_proceso=10, mostrar_tabla_proceso=True)
 else:
     st.caption("Columna 'Proceso' no encontrada para análisis de procesos.")
 
-# 7. ANÁLISIS DE RENDIMIENTO POR AVATAR (Enfoque Agendamiento)
+# 6. ANÁLISIS DE RENDIMIENTO POR AVATAR
 mostrar_analisis_por_avatar(df_kpis)
 
-# 8. RESUMEN EJECUTIVO
-mostrar_resumen_ejecutivo(df_kpis, limpiar_valor_kpi, base_kpis_counts,
-                          filtered_sesiones)
+# 7. RESUMEN EJECUTIVO
+mostrar_resumen_ejecutivo(df_kpis, limpiar_valor_kpi, base_kpis_counts, filtered_sesiones)
 
 # --- PIE DE PÁGINA ---
 st.markdown("---")
-st.info(
-    "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊 '."
-)  # Texto original del pie de página
+st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊 '.")
 
