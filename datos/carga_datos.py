@@ -7,14 +7,14 @@ from utils.limpieza import calcular_dias_respuesta
 
 def cargar_y_limpiar_datos():
     """
-    Esta es la función principal que unifica los datos de ambas hojas.
+    Función principal que carga y unifica datos de la hoja del equipo y de Evelyn.
     Mantenemos el nombre original por compatibilidad con el dashboard.
     """
     try:
         creds_dict = st.secrets["gcp_service_account"]
         client = gspread.service_account_from_dict(creds_dict)
     except KeyError:
-        st.error("Error de Configuración (Secrets): Falta la sección [gcp_service_account]...")
+        st.error("Error de Configuración (Secrets): Falta [gcp_service_account].")
         st.stop()
     except Exception as e:
         st.error(f"Error al cargar las credenciales de Google Sheets: {e}")
@@ -43,7 +43,7 @@ def cargar_y_limpiar_datos():
         if raw_data:
             headers = make_unique(raw_data[0])
             df_main = pd.DataFrame(raw_data[1:], columns=headers)
-            df_main['Fuente_Analista'] = 'Equipo Principal' # Etiquetamos los datos
+            df_main['Fuente_Analista'] = 'Equipo Principal'
             dataframes.append(df_main)
     except Exception as e:
         st.warning(f"No se pudo cargar la hoja principal. Error: {e}")
@@ -56,12 +56,11 @@ def cargar_y_limpiar_datos():
         if raw_data_evelyn:
             headers_evelyn = make_unique(raw_data_evelyn[0])
             df_evelyn = pd.DataFrame(raw_data_evelyn[1:], columns=headers_evelyn)
-            df_evelyn['Fuente_Analista'] = 'Evelyn' # Etiquetamos los datos
-            # Asignar a Evelyn como la prospectadora si la columna no existe o está vacía
-            if '¿Quién Prospecto?' not in df_evelyn.columns:
+            df_evelyn['Fuente_Analista'] = 'Evelyn'
+            if '¿Quién Prospecto?' not in df_evelyn.columns or df_evelyn['¿Quién Prospecto?'].isnull().all():
                  df_evelyn['¿Quién Prospecto?'] = 'Evelyn'
             else:
-                 df_evelyn['¿Quién Prospecto?'] = df_evelyn['¿Quién Prospecto?'].fillna('Evelyn')
+                 df_evelyn['¿Quién Prospecto?'].fillna('Evelyn', inplace=True)
             dataframes.append(df_evelyn)
     except Exception as e:
         st.warning(f"No se pudo cargar la hoja de Evelyn. Error: {e}")
@@ -70,13 +69,11 @@ def cargar_y_limpiar_datos():
         st.error("No se pudieron cargar datos de ninguna fuente. El dashboard no puede continuar.")
         st.stop()
     
-    # Unificar los dataframes
     df_unificado = pd.concat(dataframes, ignore_index=True, sort=False)
 
-    # Limpieza estándar que ya tenías
     nombre_columna_fecha_invite = "Fecha de Invite"
     if nombre_columna_fecha_invite not in df_unificado.columns:
-        st.error(f"¡ERROR! La columna '{nombre_columna_fecha_invite}' es esencial y no se encontró.")
+        st.error(f"¡ERROR CRÍTICO! La columna '{nombre_columna_fecha_invite}' es esencial y no se encontró.")
         st.stop()
 
     df_base = df_unificado[df_unificado[nombre_columna_fecha_invite].astype(str).str.strip() != ""].copy()
