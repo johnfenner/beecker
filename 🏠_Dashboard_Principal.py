@@ -22,7 +22,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # --- IMPORTS MODULARES ---
-from datos.carga_datos import cargar_y_limpiar_datos, cargar_y_procesar_datos
+from datos.carga_datos import cargar_y_unificar_sheets
 from filtros.filtros_sidebar import mostrar_filtros_sidebar
 from filtros.aplicar_filtros import aplicar_filtros
 from componentes.tabla_prospectos import mostrar_tabla_filtrada
@@ -86,11 +86,12 @@ Explora métricas clave y gestiona tus leads.
 # --- CARGA Y FILTRADO BASE ---
 @st.cache_data
 def get_processed_data():
-    df_base_loaded = cargar_y_limpiar_datos()
-    if df_base_loaded is None or df_base_loaded.empty:
+    df_processed_loaded = cargar_y_unificar_sheets()
+    if df_processed_loaded is None or df_processed_loaded.empty:
         return pd.DataFrame()
-    df_processed_loaded = cargar_y_procesar_datos(df_base_loaded.copy())
-    return df_processed_loaded
+    # La función cargar_y_procesar_datos ahora es un passthrough, pero la mantenemos por si acaso
+    df_final = cargar_y_procesar_datos(df_processed_loaded.copy())
+    return df_final
 
 
 df_global = get_processed_data()
@@ -190,9 +191,35 @@ if busqueda_texto:
 # 1. OPORTUNIDADES CLAVE PARA AGENDAR
 # mostrar_oportunidades_calientes(df_kpis)
 
-st.header("🔍 Detalle y Rendimiento General")  # Título de sección enfocado
-# 2. TABLA DE PROSPECTOS (Resultado de filtros sidebar + búsqueda de texto)
-mostrar_tabla_filtrada(df_tabla_detalle)
+# ... (código de aplicación de filtros y búsqueda por texto para obtener df_tabla_detalle)
+
+st.header("🔍 Detalle de Prospectos Filtrados")
+
+# --- INICIO DE LA MODIFICACIÓN PARA TABLAS SEPARADAS ---
+
+# Dividir el DataFrame usando la columna 'Fuente_Analista' que creamos
+df_evelyn = df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Evelyn']
+df_equipo_principal = df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Equipo Principal']
+
+# Pestañas para una navegación limpia
+tab_evelyn, tab_principal = st.tabs(["Prospectos de Evelyn", "Prospectos del Equipo Principal"])
+
+with tab_evelyn:
+    st.subheader(f"Prospectos de Evelyn")
+    if not df_evelyn.empty:
+        mostrar_tabla_filtrada(df_evelyn)
+    else:
+        st.info("No hay prospectos para mostrar para 'Evelyn' con los filtros actuales.")
+
+with tab_principal:
+    st.subheader("Prospectos del Equipo Principal")
+    if not df_equipo_principal.empty:
+        mostrar_tabla_filtrada(df_equipo_principal)
+    else:
+        st.info("No hay prospectos para mostrar para el Equipo Principal con los filtros actuales.")
+
+# --- FIN DE LA MODIFICACIÓN ---
+
 
 # 3. INDICADORES CLAVE DE RENDIMIENTO (KPIs)
 (filtered_total, filtered_primeros_mensajes_enviados_count, filtered_inv_acept,
