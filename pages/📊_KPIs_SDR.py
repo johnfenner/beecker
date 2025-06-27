@@ -8,9 +8,9 @@ import locale
 import numpy as np
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
-st.set_page_config(page_title="KPIs de Prospección", layout="wide")
-st.title("🚀 Dashboard de Prospección - Evelyn")
-st.markdown("Análisis de rendimiento del proceso unificado de prospección y sus canales.")
+st.set_page_config(page_title="Dashboard de KPIs", layout="wide")
+st.title("📊 Dashboard de KPIs")
+st.markdown("Análisis de métricas y tasas de conversión siguiendo el proceso de prospección.")
 
 # --- CONFIGURACIÓN REGIONAL PARA FECHAS EN ESPAÑOL ---
 try:
@@ -119,116 +119,72 @@ if not df_sdr_raw.empty:
          st.warning("No hay datos para las semanas específicas seleccionadas.")
     else:
         # --- CÁLCULOS GLOBALES PARA EL PERÍODO SELECCIONADO ---
-        total_empresas = int(df_filtered['Empresas agregadas'].sum())
-        meta_empresas = int(df_filtered['Meta empresas'].sum())
-        total_conexiones_enviadas = int(df_filtered['Conexiones enviadas'].sum())
-        total_conexiones_aceptadas = int(df_filtered['Conexiones aceptadas'].sum())
-        total_wa_enviados = int(df_filtered['Whatsapps Enviados'].sum())
+        total_conex_enviadas = int(df_filtered['Conexiones enviadas'].sum())
+        total_conex_aceptadas = int(df_filtered['Conexiones aceptadas'].sum())
         total_wa_respondidos = int(df_filtered['Whatsapps Respondidos'].sum())
-        total_llamadas = int(df_filtered['Llamadas realizadas'].sum())
         total_sesiones = int(df_filtered['Sesiones logradas'].sum())
-        meta_sesiones = int(df_filtered['Meta sesiones'].sum())
         
-        # --- CÁLCULO DE TASAS DE CONVERSIÓN ---
-        cumplimiento_empresas = (total_empresas / meta_empresas * 100) if meta_empresas > 0 else 0
-        cumplimiento_sesiones = (total_sesiones / meta_sesiones * 100) if meta_sesiones > 0 else 0
-        acceptance_rate = (total_conexiones_aceptadas / total_conexiones_enviadas * 100) if total_conexiones_enviadas > 0 else 0
-        response_rate_wa = (total_wa_respondidos / total_wa_enviados * 100) if total_wa_enviados > 0 else 0
+        # --- CÁLCULO DE TASAS DE CONVERSIÓN DEL EMBUDO ---
+        tasa_aceptacion = (total_conex_aceptadas / total_conex_enviadas * 100) if total_conex_enviadas > 0 else 0
+        tasa_respuesta = (total_wa_respondidos / total_conex_aceptadas * 100) if total_conex_aceptadas > 0 else 0
+        tasa_agendamiento = (total_sesiones / total_wa_respondidos * 100) if total_wa_respondidos > 0 else 0
+        tasa_global = (total_sesiones / total_conex_enviadas * 100) if total_conex_enviadas > 0 else 0
 
-        # --- SECCIÓN 1: METAS Y RESULTADOS CLAVE ---
-        st.subheader("🎯 Metas Principales y Resultados Clave")
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("<h6>Meta de Sesiones</h6>", unsafe_allow_html=True)
-            fig = go.Figure(go.Indicator(
-                mode = "gauge+number", value = total_sesiones,
-                title = {'text': f"Logro vs Meta ({meta_sesiones})"},
-                gauge = {'axis': {'range': [None, max(meta_sesiones, total_sesiones, 1) * 1.2]}, 'bar': {'color': "#008A1E"},
-                         'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': meta_sesiones}}))
-            fig.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
-            st.plotly_chart(fig, use_container_width=True)
-            st.metric("Tasa de Cumplimiento (Sesiones)", f"{cumplimiento_sesiones:.1f}%")
+        # --- SECCIÓN 1: RESUMEN DE KPIS (DISEÑO SOLICITADO) ---
+        st.subheader("📈 Resumen de KPIs Totales (Período Filtrado)")
+        
+        # Fila 1: Métricas Absolutas
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Total Conexiones Enviadas", f"{total_conex_enviadas:,}")
+        col2.metric("Total Conexiones Aceptadas", f"{total_conex_aceptadas:,}")
+        col3.metric("Total Respuestas (WA)", f"{total_wa_respondidos:,}")
+        col4.metric("Total Sesiones Logradas", f"{total_sesiones:,}")
+        
+        st.write("") # Espacio vertical
 
-        with col2:
-            st.markdown("<h6>Meta de Empresas</h6>", unsafe_allow_html=True)
-            fig = go.Figure(go.Indicator(
-                mode = "gauge+number", value = total_empresas,
-                title = {'text': f"Logro vs Meta ({meta_empresas})"},
-                gauge = {'axis': {'range': [None, max(meta_empresas, total_empresas, 1) * 1.2]}, 'bar': {'color': "#36719F"},
-                         'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': meta_empresas}}))
-            fig.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
-            st.plotly_chart(fig, use_container_width=True)
-            st.metric("Tasa de Cumplimiento (Empresas)", f"{cumplimiento_empresas:.1f}%")
+        # Fila 2: Tasas de Conversión
+        st.subheader("Tasas de Conversión")
+        kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+        kpi1.metric("Tasa Aceptación / Envío", f"{tasa_aceptacion:.1f}%", help="Calculado como: (Conexiones Aceptadas / Conexiones Enviadas)")
+        kpi2.metric("Tasa Respuesta / Aceptación", f"{tasa_respuesta:.1f}%", help="Calculado como: (Respuestas WA / Conexiones Aceptadas)")
+        kpi3.metric("Tasa Sesión / Respuesta", f"{tasa_agendamiento:.1f}%", help="Calculado como: (Sesiones Logradas / Respuestas WA)")
+        kpi4.metric("Tasa Sesión / Envío (Global)", f"{tasa_global:.1f}%", help="Calculado como: (Sesiones Logradas / Conexiones Enviadas)")
+
         st.markdown("---")
 
-        # --- SECCIÓN 2: EMBUDO DE CONVERSIÓN GENERAL ---
-        st.subheader("🚀 Embudo de Conversión del Proceso")
-        st.markdown("Una vista completa del viaje desde el primer contacto hasta la sesión.")
+        # --- SECCIÓN 2: VISUALIZACIÓN DEL EMBUDO ---
+        st.subheader("🚀 Visualización del Embudo de Prospección")
         
-        fig = go.Figure(go.Funnel(
-            name = 'Conversión',
-            y = ["Conexiones Enviadas", "Conexiones Aceptadas", "Sesiones Logradas"],
-            x = [total_conexiones_enviadas, total_conexiones_aceptadas, total_sesiones],
-            textinfo = "value+percent initial+percent previous"
+        fig_funnel = go.Figure(go.Funnel(
+            y = ["Conexiones Enviadas", "Conexiones Aceptadas", "Respuestas de WA", "Sesiones Logradas"],
+            x = [total_conex_enviadas, total_conex_aceptadas, total_wa_respondidos, total_sesiones],
+            textinfo = "value+percent initial"
         ))
-        fig.update_layout(margin=dict(l=50, r=50, t=30, b=10))
-        st.plotly_chart(fig, use_container_width=True)
-        st.markdown("---")
-
-        # --- SECCIÓN 3: ANÁLISIS POR CANAL DE PROSPECCIÓN ---
-        st.subheader("📊 Análisis por Canal de Prospección")
-        st.markdown("Rendimiento detallado de cada método utilizado en la prospección.")
-
-        col1, col2 = st.columns(2)
-        with col1:
-             with st.container(border=True):
-                st.markdown("<h6>Canal: LinkedIn</h6>", unsafe_allow_html=True)
-                fig = go.Figure(go.Funnel(
-                    y = ["Enviadas", "Aceptadas"], 
-                    x = [total_conexiones_enviadas, total_conexiones_aceptadas],
-                    textinfo = "value+percent initial"))
-                fig.update_layout(height=250, margin=dict(l=50, r=50, t=30, b=10))
-                st.plotly_chart(fig, use_container_width=True)
-                st.metric("Tasa de Aceptación", f"{acceptance_rate:.1f}%", help="Calculado como: (Aceptadas / Enviadas) * 100")
-        
-        with col2:
-            with st.container(border=True):
-                st.markdown("<h6>Canal: WhatsApp</h6>", unsafe_allow_html=True)
-                fig = go.Figure(go.Funnel(
-                    y = ["Enviados", "Respondidos"], 
-                    x = [total_wa_enviados, total_wa_respondidos],
-                    textinfo = "value+percent initial", marker={"color": ["#6A8D73", "#8AAF7A"]}))
-                fig.update_layout(height=250, margin=dict(l=50, r=50, t=30, b=10))
-                st.plotly_chart(fig, use_container_width=True)
-                st.metric("Tasa de Respuesta (WA)", f"{response_rate_wa:.1f}%", help="Calculado como: (Respondidos / Enviados) * 100")
-
-        st.markdown("<h6>Otras Actividades de Prospección</h6>", unsafe_allow_html=True)
-        col3, col4 = st.columns(2)
-        col3.metric("📞 Llamadas Realizadas", f"{total_llamadas:,}")
-        col4.metric("🏢 Contactos Agregados", f"{int(df_filtered['Contactos agregados'].sum()):,}")
+        fig_funnel.update_layout(margin=dict(l=50, r=50, t=30, b=10))
+        st.plotly_chart(fig_funnel, use_container_width=True)
         st.markdown("---")
         
-        # --- SECCIÓN 4: EVOLUCIÓN SEMANAL ---
-        st.subheader("📈 Evolución Semanal")
+        # --- SECCIÓN 3: EVOLUCIÓN SEMANAL ---
+        st.subheader("🗓️ Evolución Semanal")
         
         df_chart = df_filtered.groupby('FechaSemana', as_index=False).sum(numeric_only=True)
         df_chart['SemanaLabel'] = df_chart['FechaSemana'].dt.strftime("Semana del %d/%b")
         df_chart = df_chart.sort_values('FechaSemana')
 
-        st.markdown("<h6>Volumen de Esfuerzo (Actividades Realizadas)</h6>", unsafe_allow_html=True)
-        fig_esfuerzo = go.Figure()
-        fig_esfuerzo.add_trace(go.Bar(x=df_chart['SemanaLabel'], y=df_chart['Conexiones enviadas'], name='Conexiones Enviadas'))
-        fig_esfuerzo.add_trace(go.Bar(x=df_chart['SemanaLabel'], y=df_chart['Whatsapps Enviados'], name='Whatsapps Enviados'))
-        fig_esfuerzo.add_trace(go.Bar(x=df_chart['SemanaLabel'], y=df_chart['Llamadas realizadas'], name='Llamadas Realizadas'))
-        fig_esfuerzo.update_layout(barmode='stack', xaxis_title="Semana", yaxis_title="Cantidad de Actividades", legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
-        st.plotly_chart(fig_esfuerzo, use_container_width=True)
+        st.markdown("<h6>Volumen de Actividades por Semana</h6>", unsafe_allow_html=True)
+        fig_actividades = go.Figure()
+        fig_actividades.add_trace(go.Bar(x=df_chart['SemanaLabel'], y=df_chart['Conexiones enviadas'], name='Conexiones Enviadas'))
+        fig_actividades.add_trace(go.Bar(x=df_chart['SemanaLabel'], y=df_chart['Llamadas realizadas'], name='Llamadas Realizadas'))
+        fig_actividades.add_trace(go.Bar(x=df_chart['SemanaLabel'], y=df_chart['Whatsapps Enviados'], name='Whatsapps Enviados'))
+        fig_actividades.update_layout(barmode='group', xaxis_title="Semana", yaxis_title="Cantidad", legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+        st.plotly_chart(fig_actividades, use_container_width=True)
 
-        st.markdown("<h6>Resultados Obtenidos</h6>", unsafe_allow_html=True)
+        st.markdown("<h6>Resultados Clave por Semana</h6>", unsafe_allow_html=True)
         fig_resultados = go.Figure()
         fig_resultados.add_trace(go.Scatter(x=df_chart['SemanaLabel'], y=df_chart['Conexiones aceptadas'], mode='lines+markers', name='Conexiones Aceptadas'))
         fig_resultados.add_trace(go.Scatter(x=df_chart['SemanaLabel'], y=df_chart['Whatsapps Respondidos'], mode='lines+markers', name='Whatsapps Respondidos'))
         fig_resultados.add_trace(go.Scatter(x=df_chart['SemanaLabel'], y=df_chart['Sesiones logradas'], mode='lines+markers', name='Sesiones Logradas', line=dict(color='green', width=4)))
-        fig_resultados.update_layout(xaxis_title="Semana", yaxis_title="Cantidad de Resultados", legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+        fig_resultados.update_layout(xaxis_title="Semana", yaxis_title="Cantidad", legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
         st.plotly_chart(fig_resultados, use_container_width=True)
 
         # --- TABLA DE DATOS ORIGINALES ---
