@@ -15,6 +15,7 @@ st.markdown("Análisis de rendimiento basado en actividades de prospección y ge
 try:
     locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
 except locale.Error:
+    # Esta advertencia es normal en algunos sistemas. No afecta la funcionalidad.
     st.warning("El 'locale' en español no está disponible en el sistema. Los meses podrían aparecer en inglés.")
     pass
 
@@ -42,22 +43,15 @@ def load_sdr_data():
         st.warning("La hoja de cálculo parece estar vacía.")
         return pd.DataFrame()
 
-    # --- MANEJO DE LA COLUMNA 'Semana' ---
     if 'Semana' not in df.columns:
         st.error("Error crítico: La columna 'Semana' no se encontró en la hoja de cálculo.")
         return pd.DataFrame()
 
-    # Convertir la columna 'Semana' a formato de fecha
     df['FechaSemana'] = pd.to_datetime(df['Semana'], format='%d/%m/%Y', errors='coerce')
-    df.dropna(subset=['FechaSemana'], inplace=True) # Eliminar filas donde la fecha es inválida
-
-    # Crear una etiqueta de texto amigable y ordenable para la semana
+    df.dropna(subset=['FechaSemana'], inplace=True)
     df['SemanaLabel'] = df['FechaSemana'].dt.strftime("Semana del %d/%b/%Y")
-    
-    # Ordenar el DataFrame por fecha para asegurar que los gráficos y filtros se muestren cronológicamente
     df = df.sort_values(by='FechaSemana', ascending=False)
 
-    # --- LIMPIEZA DE COLUMNAS NUMÉRICAS ---
     numeric_cols = [
         'Empresas agregadas', 'Meta empresas', 'Contactos agregados', 'Conexiones enviadas', 
         'Conexiones aceptadas', 'Mensajes de seguimiento enviados', 'Números telefónicos encontrados', 
@@ -71,7 +65,6 @@ def load_sdr_data():
             st.warning(f"Advertencia: La columna '{col}' no se encontró. Se asumirá como 0.")
             df[col] = 0
 
-    # --- CÁLCULOS INTERNOS ---
     df['Acceptance Rate'] = (df['Conexiones aceptadas'] / df['Conexiones enviadas'] * 100).where(df['Conexiones enviadas'] > 0, 0)
     df['Response Rate'] = (df['Whatsapps Respondidos'] / df['Whatsapps Enviados'] * 100).where(df['Whatsapps Enviados'] > 0, 0)
     df['% Cumplimiento empresas'] = (df['Empresas agregadas'] / df['Meta empresas'] * 100).where(df['Meta empresas'] > 0, 0)
@@ -86,7 +79,6 @@ def display_filters(df):
         st.sidebar.warning("No hay datos de 'Semana' para filtrar.")
         return []
     
-    # Las semanas ya vienen ordenadas porque ordenamos el DataFrame
     semanas_labels = df['SemanaLabel'].unique().tolist()
     
     selected_semanas = st.sidebar.multiselect(
@@ -136,22 +128,22 @@ def display_goal_tracking(df):
     with col1:
         st.markdown("<h5>Meta de Empresas</h5>", unsafe_allow_html=True)
         fig = go.Figure(go.Indicator(
-            mode = "gauge+number+delta", value = total_empresas,
-            title = {'text': "Empresas Agregadas"}, delta = {'reference': meta_empresas},
+            mode = "gauge+number", value = total_empresas,
+            title = {'text': f"Logro vs Meta ({meta_empresas})"},
             gauge = {'axis': {'range': [None, meta_empresas * 1.2]}, 'bar': {'color': "#36719F"},
                      'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': meta_empresas}}))
-        fig.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
+        fig.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
         st.plotly_chart(fig, use_container_width=True)
         st.metric("Cumplimiento", f"{cumplimiento_empresas:.1f}%")
 
     with col2:
         st.markdown("<h5>Meta de Sesiones</h5>", unsafe_allow_html=True)
         fig = go.Figure(go.Indicator(
-            mode = "gauge+number+delta", value = total_sesiones,
-            title = {'text': "Sesiones Logradas"}, delta = {'reference': meta_sesiones},
+            mode = "gauge+number", value = total_sesiones,
+            title = {'text': f"Logro vs Meta ({meta_sesiones})"},
             gauge = {'axis': {'range': [None, meta_sesiones * 1.2]}, 'bar': {'color': "#36719F"},
                      'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': meta_sesiones}}))
-        fig.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
+        fig.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
         st.plotly_chart(fig, use_container_width=True)
         st.metric("Cumplimiento", f"{cumplimiento_sesiones:.1f}%")
 
@@ -185,7 +177,20 @@ def display_activity_analysis(df):
     st.markdown("---")
     
     st.markdown("<h5>Evolución Semanal de Actividades</h5>", unsafe_allow_html=True)
-    df_chart = df.groupby('SemanaLabel', as_index=False).sum()
+    
+    # --- INICIO DE LA CORRECCIÓN ---
+    # Se especifican las columnas numéricas que se deben sumar para evitar el error.
+    numeric_cols_to_sum = [
+        'Empresas agregadas', 'Contactos agregados', 'Conexiones enviadas', 
+        'Llamadas realizadas', 'Conexiones aceptadas', 'Whatsapps Respondidos', 
+        'Sesiones logradas'
+    ]
+    # Se asegura que solo las columnas que existen en el df se usen para la suma
+    existing_numeric_cols = [col for col in numeric_cols_to_sum if col in df.columns]
+    
+    df_chart = df.groupby('SemanaLabel', as_index=False)[existing_numeric_cols].sum()
+    # --- FIN DE LA CORRECCIÓN ---
+
     fig = go.Figure()
     fig.add_trace(go.Bar(x=df_chart['SemanaLabel'], y=df_chart['Empresas agregadas'], name='Empresas Agregadas'))
     fig.add_trace(go.Bar(x=df_chart['SemanaLabel'], y=df_chart['Contactos agregados'], name='Contactos Agregados'))
@@ -201,7 +206,6 @@ def display_activity_analysis(df):
     fig_line.add_trace(go.Scatter(x=df_chart['SemanaLabel'], y=df_chart['Sesiones logradas'], mode='lines+markers', name='Sesiones Logradas', line=dict(color='green', width=3)))
     fig_line.update_layout(title_text='Resultados Clave por Semana', xaxis_title="Semana")
     st.plotly_chart(fig_line, use_container_width=True)
-
 
 # --- FLUJO PRINCIPAL DE LA PÁGINA ---
 df_sdr_raw = load_sdr_data()
@@ -224,7 +228,8 @@ if not df_sdr_raw.empty:
     
     with st.expander("Ver datos detallados del período seleccionado"):
         # Mostramos las columnas originales, no las calculadas, para mantener la vista limpia
-        st.dataframe(df_filtered.drop(columns=['FechaSemana', 'SemanaLabel']))
+        display_cols = [col for col in df_filtered.columns if col not in ['FechaSemana', 'SemanaLabel']]
+        st.dataframe(df_filtered[display_cols])
 
 else:
     st.error("No se pudieron cargar los datos para el dashboard.")
