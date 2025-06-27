@@ -5,29 +5,39 @@ import pandas as pd
 import gspread
 import plotly.graph_objects as go
 import locale
+import re # Importamos la librería para expresiones regulares
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="KPIs del SDR", layout="wide")
 st.title("🚀 Dashboard de KPIs para SDR - Evelyn")
 st.markdown("Análisis de rendimiento basado en actividades de prospección y generación de sesiones.")
 
-# Configurar el locale en español para los nombres de los meses
 try:
     locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
 except locale.Error:
     st.info("El 'locale' en español no está disponible en el sistema. Los meses podrían aparecer en inglés.")
-    pass
 
-# --- FUNCIÓN DE CARGA Y LIMPIEZA DE DATOS ---
+# --- FUNCIÓN DE CARGA Y LIMPIEZA DE DATOS (VERSIÓN ROBUSTA) ---
 @st.cache_data(ttl=600)
 def load_sdr_data():
+    """
+    Carga los datos desde la hoja de KPIs del SDR con un método más robusto,
+    limpia y procesa las columnas para asegurar que los datos sean numéricos.
+    """
     try:
         creds_dict = st.secrets["gcp_service_account"]
         sheet_url = st.secrets["new_page_sheet_url"]
         client = gspread.service_account_from_dict(creds_dict)
         sheet = client.open_by_url(sheet_url).sheet1
-        data = sheet.get_all_records()
-        df = pd.DataFrame(data)
+        # Usamos get_all_values() que es más estable que get_all_records()
+        values = sheet.get_all_values()
+        if not values or len(values) < 2:
+            st.warning("La hoja de cálculo parece estar vacía o no tiene datos.")
+            return pd.DataFrame()
+        
+        headers = values[0]
+        df = pd.DataFrame(values[1:], columns=headers)
+
     except KeyError:
         st.error("Error de Configuración: Asegúrate de añadir 'new_page_sheet_url' a tus secretos (secrets.toml).")
         return pd.DataFrame()
@@ -35,16 +45,16 @@ def load_sdr_data():
         st.error(f"No se pudo cargar la hoja de Google Sheets. Error: {e}")
         return pd.DataFrame()
 
-    if df.empty:
-        st.warning("La hoja de cálculo parece estar vacía.")
-        return pd.DataFrame()
-
-    if 'Semana' not in df.columns or df['Semana'].iloc[0] == '':
-        st.error("Error crítico: La columna 'Semana' no se encontró o está vacía.")
+    if 'Semana' not in df.columns or df['Semana'].eq('').all():
+        st.error("Error crítico: La columna 'Semana' no se encontró o está completamente vacía.")
         return pd.DataFrame()
 
     df['FechaSemana'] = pd.to_datetime(df['Semana'], format='%d/%m/%Y', errors='coerce')
     df.dropna(subset=['FechaSemana'], inplace=True)
+    if df.empty:
+        st.error("No se encontraron fechas válidas en la columna 'Semana'. Verifica el formato (dd/mm/yyyy).")
+        return pd.DataFrame()
+        
     df['SemanaLabel'] = df['FechaSemana'].dt.strftime("Semana del %d/%b/%Y")
     df = df.sort_values(by='FechaSemana', ascending=False)
 
@@ -54,13 +64,20 @@ def load_sdr_data():
         'Whatsapps Enviados', 'Whatsapps Respondidos', 'Llamadas realizadas', 'Sesiones logradas', 'Meta sesiones'
     ]
     
+    # --- BUCLE DE LIMPIEZA NUMÉRICA MEJORADO ---
     for col in numeric_cols:
         if col in df.columns:
+            # 1. Convierte a string y elimina todo lo que no sea un dígito o un punto decimal.
+            df[col] = df[col].astype(str).apply(lambda x: re.sub(r'[^\d.]', '', x))
+            # 2. Reemplaza strings vacíos que puedan quedar con '0'.
+            df[col] = df[col].replace('', '0')
+            # 3. Convierte a numérico, los errores se volverán NaN, y luego se rellenan con 0.
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
         else:
             st.warning(f"Advertencia: La columna '{col}' no se encontró. Se asumirá como 0.")
             df[col] = 0
 
+    # Los cálculos de tasas se mantienen igual, ahora con datos limpios
     df['Acceptance Rate'] = (df['Conexiones aceptadas'] / df['Conexiones enviadas'] * 100).where(df['Conexiones enviadas'] > 0, 0)
     df['Response Rate'] = (df['Whatsapps Respondidos'] / df['Whatsapps Enviados'] * 100).where(df['Whatsapps Enviados'] > 0, 0)
     df['% Cumplimiento empresas'] = (df['Empresas agregadas'] / df['Meta empresas'] * 100).where(df['Meta empresas'] > 0, 0)
@@ -84,7 +101,7 @@ def display_filters(df):
     )
     return selected_semanas
 
-# --- COMPONENTES DE VISUALIZACIÓN ---
+# --- COMPONENTES DE VISUALIZACIÓN (Sin cambios, solo se corrigen las keys) ---
 
 def display_summary_kpis(df):
     st.subheader("Resumen General del Período Seleccionado")
@@ -121,40 +138,24 @@ def display_goal_tracking(df):
     
     with col1:
         st.markdown("<h5>Meta de Empresas</h5>", unsafe_allow_html=True)
-        fig_empresas = go.Figure(go.Indicator(
-            mode = "gauge+number+delta",
-            value = total_empresas,
-            number = {'valueformat': ',.0f'},
-            title = {'text': "Empresas Agregadas"},
-            delta = {'reference': meta_empresas, 'increasing': {'color': "green"}},
-            gauge = {
-                'axis': {'range': [None, meta_empresas * 1.2]},
-                'bar': {'color': "#36719F"},
-                'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': meta_empresas}
-            }
-        ))
-        fig_empresas.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
-        # --- CORRECCIÓN AQUÍ ---
-        st.plotly_chart(fig_empresas, use_container_width=True, key="gauge_empresas")
+        fig = go.Figure(go.Indicator(
+            mode = "gauge+number+delta", value = total_empresas,
+            title = {'text': "Empresas Agregadas"}, delta = {'reference': meta_empresas},
+            gauge = {'axis': {'range': [None, max(meta_empresas, total_empresas) * 1.2]}, 'bar': {'color': "#36719F"},
+                     'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': meta_empresas}}))
+        fig.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
+        st.plotly_chart(fig, use_container_width=True, key="gauge_empresas_sdr")
         st.metric("Cumplimiento", f"{cumplimiento_empresas:.1f}%")
 
     with col2:
         st.markdown("<h5>Meta de Sesiones</h5>", unsafe_allow_html=True)
-        fig_sesiones = go.Figure(go.Indicator(
-            mode = "gauge+number+delta",
-            value = total_sesiones,
-            number = {'valueformat': ',.0f'},
-            title = {'text': "Sesiones Logradas"},
-            delta = {'reference': meta_sesiones, 'increasing': {'color': "green"}},
-            gauge = {
-                'axis': {'range': [None, meta_sesiones * 1.2]},
-                'bar': {'color': "#36719F"},
-                'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': meta_sesiones}
-            }
-        ))
-        fig_sesiones.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
-        # --- CORRECCIÓN AQUÍ ---
-        st.plotly_chart(fig_sesiones, use_container_width=True, key="gauge_sesiones")
+        fig = go.Figure(go.Indicator(
+            mode = "gauge+number+delta", value = total_sesiones,
+            title = {'text': "Sesiones Logradas"}, delta = {'reference': meta_sesiones},
+            gauge = {'axis': {'range': [None, max(meta_sesiones, total_sesiones) * 1.2]}, 'bar': {'color': "#36719F"},
+                     'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': meta_sesiones}}))
+        fig.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
+        st.plotly_chart(fig, use_container_width=True, key="gauge_sesiones_sdr")
         st.metric("Cumplimiento", f"{cumplimiento_sesiones:.1f}%")
 
 def display_activity_analysis(df):
@@ -166,21 +167,19 @@ def display_activity_analysis(df):
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("<h6>Embudo de Conexiones</h6>", unsafe_allow_html=True)
-        fig_funnel1 = go.Figure(go.Funnel(
-            y=["Enviadas", "Aceptadas"],
-            x=[df['Conexiones enviadas'].sum(), df['Conexiones aceptadas'].sum()],
+        fig = go.Figure(go.Funnel(
+            y=["Enviadas", "Aceptadas"], x=[df['Conexiones enviadas'].sum(), df['Conexiones aceptadas'].sum()],
             textinfo="value+percent initial"))
-        fig_funnel1.update_layout(height=300, margin=dict(l=50, r=50, t=30, b=10))
-        st.plotly_chart(fig_funnel1, use_container_width=True, key="funnel_conexiones")
+        fig.update_layout(height=300, margin=dict(l=50, r=50, t=30, b=10))
+        st.plotly_chart(fig, use_container_width=True, key="funnel_conexiones_sdr")
         
     with col2:
         st.markdown("<h6>Embudo de WhatsApp</h6>", unsafe_allow_html=True)
-        fig_funnel2 = go.Figure(go.Funnel(
-            y=["Enviados", "Respondidos"],
-            x=[df['Whatsapps Enviados'].sum(), df['Whatsapps Respondidos'].sum()],
+        fig = go.Figure(go.Funnel(
+            y=["Enviados", "Respondidos"], x=[df['Whatsapps Enviados'].sum(), df['Whatsapps Respondidos'].sum()],
             textinfo="value+percent initial", marker={"color": ["#6A8D73", "#8AAF7A"]}))
-        fig_funnel2.update_layout(height=300, margin=dict(l=50, r=50, t=30, b=10))
-        st.plotly_chart(fig_funnel2, use_container_width=True, key="funnel_whatsapp")
+        fig.update_layout(height=300, margin=dict(l=50, r=50, t=30, b=10))
+        st.plotly_chart(fig, use_container_width=True, key="funnel_whatsapp_sdr")
         
     st.markdown("---")
     
@@ -193,21 +192,21 @@ def display_activity_analysis(df):
     existing_numeric_cols = [col for col in numeric_cols_to_sum if col in df.columns]
     df_chart = df.groupby('SemanaLabel', as_index=False, sort=False)[existing_numeric_cols].sum()
     
-    fig_bar = go.Figure()
-    fig_bar.add_trace(go.Bar(x=df_chart['SemanaLabel'], y=df_chart.get('Empresas agregadas', pd.Series(0)), name='Empresas Agregadas'))
-    fig_bar.add_trace(go.Bar(x=df_chart['SemanaLabel'], y=df_chart.get('Contactos agregados', pd.Series(0)), name='Contactos Agregados'))
-    fig_bar.add_trace(go.Bar(x=df_chart['SemanaLabel'], y=df_chart.get('Conexiones enviadas', pd.Series(0)), name='Conexiones Enviadas'))
-    fig_bar.add_trace(go.Bar(x=df_chart['SemanaLabel'], y=df_chart.get('Llamadas realizadas', pd.Series(0)), name='Llamadas Realizadas'))
-    fig_bar.update_layout(barmode='group', title_text='Volumen de Actividades por Semana', xaxis_title="Semana")
-    st.plotly_chart(fig_bar, use_container_width=True, key="bar_actividades")
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=df_chart['SemanaLabel'], y=df_chart.get('Empresas agregadas', pd.Series(0)), name='Empresas Agregadas'))
+    fig.add_trace(go.Bar(x=df_chart['SemanaLabel'], y=df_chart.get('Contactos agregados', pd.Series(0)), name='Contactos Agregados'))
+    fig.add_trace(go.Bar(x=df_chart['SemanaLabel'], y=df_chart.get('Conexiones enviadas', pd.Series(0)), name='Conexiones Enviadas'))
+    fig.add_trace(go.Bar(x=df_chart['SemanaLabel'], y=df_chart.get('Llamadas realizadas', pd.Series(0)), name='Llamadas Realizadas'))
+    fig.update_layout(barmode='group', title_text='Volumen de Actividades por Semana', xaxis_title="Semana", legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+    st.plotly_chart(fig, use_container_width=True, key="bar_actividades_sdr")
 
     st.markdown("<h5>Evolución Semanal de Resultados Clave</h5>", unsafe_allow_html=True)
-    fig_line = go.Figure()
-    fig_line.add_trace(go.Scatter(x=df_chart['SemanaLabel'], y=df_chart.get('Conexiones aceptadas', pd.Series(0)), mode='lines+markers', name='Conexiones Aceptadas'))
-    fig_line.add_trace(go.Scatter(x=df_chart['SemanaLabel'], y=df_chart.get('Whatsapps Respondidos', pd.Series(0)), mode='lines+markers', name='Whatsapps Respondidos'))
-    fig_line.add_trace(go.Scatter(x=df_chart['SemanaLabel'], y=df_chart.get('Sesiones logradas', pd.Series(0)), mode='lines+markers', name='Sesiones Logradas', line=dict(color='green', width=3)))
-    fig_line.update_layout(title_text='Resultados Clave por Semana', xaxis_title="Semana")
-    st.plotly_chart(fig_line, use_container_width=True, key="line_resultados")
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=df_chart['SemanaLabel'], y=df_chart.get('Conexiones aceptadas', pd.Series(0)), mode='lines+markers', name='Conexiones Aceptadas'))
+    fig.add_trace(go.Scatter(x=df_chart['SemanaLabel'], y=df_chart.get('Whatsapps Respondidos', pd.Series(0)), mode='lines+markers', name='Whatsapps Respondidos'))
+    fig.add_trace(go.Scatter(x=df_chart['SemanaLabel'], y=df_chart.get('Sesiones logradas', pd.Series(0)), mode='lines+markers', name='Sesiones Logradas', line=dict(color='green', width=3)))
+    fig.update_layout(title_text='Resultados Clave por Semana', xaxis_title="Semana", legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+    st.plotly_chart(fig, use_container_width=True, key="line_resultados_sdr")
 
 # --- FLUJO PRINCIPAL DE LA PÁGINA ---
 df_sdr_raw = load_sdr_data()
@@ -216,7 +215,7 @@ if not df_sdr_raw.empty:
     selected_weeks_labels = display_filters(df_sdr_raw)
     
     if not selected_weeks_labels:
-        st.warning("Por favor, selecciona al menos una semana en la barra lateral para ver los datos.")
+        st.info("👈 Por favor, selecciona al menos una semana en la barra lateral para ver los datos.")
     else:
         df_filtered = df_sdr_raw[df_sdr_raw['SemanaLabel'].isin(selected_weeks_labels)].copy()
         
