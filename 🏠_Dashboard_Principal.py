@@ -22,7 +22,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # --- IMPORTS MODULARES ---
-from datos.carga_datos import cargar_y_unificar_sheets, cargar_y_procesar_datos
+from datos.carga_datos import cargar_y_limpiar_datos, cargar_y_procesar_datos
 from filtros.filtros_sidebar import mostrar_filtros_sidebar
 from filtros.aplicar_filtros import aplicar_filtros
 from componentes.tabla_prospectos import mostrar_tabla_filtrada
@@ -41,39 +41,22 @@ st.set_page_config(page_title="Dashboard",
                    layout="wide")
 st.title("📈 Dashboard — Master DataBase")
 
-# --- INYECTAR CSS PARA AJUSTAR ANCHO DEL SIDEBAR ---
+# --- INYECTAR CSS ---
 st.markdown(
     """
     <style>
-    section[data-testid="stSidebar"] {
-        width: 380px !important;
-    }
-    section[data-testid="stSidebar"] .stSidebarContent {
-        padding-top: 20px;
-        padding-left: 20px;
-        padding-right: 20px;
-    }
-    .highlight-rate { /* Si usas esta clase en kpis.py */
-        font-size: 1.1em;
-        font-weight: bold;
-        color: #28a745;
-        display: block;
-        margin-top: 5px;
-    }
+    section[data-testid="stSidebar"] { width: 380px !important; }
+    section[data-testid="stSidebar"] .stSidebarContent { padding-top: 20px; padding-left: 20px; padding-right: 20px; }
+    .highlight-rate { font-size: 1.1em; font-weight: bold; color: #28a745; display: block; margin-top: 5px; }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# --- CUSTOM SIDEBAR CONTENT ---
-SIDEBAR_IMAGE_PATH = os.path.join(project_root,
-                                  "logo.jpeg")
+# --- SIDEBAR CONTENT ---
+SIDEBAR_IMAGE_PATH = os.path.join(project_root, "logo.jpeg")
 try:
     st.sidebar.image(SIDEBAR_IMAGE_PATH, width=150)
-except FileNotFoundError:
-    st.sidebar.warning(
-        "⚠️ Logo no encontrado. Verifica la ruta en `🏠_Dashboard_Principal.py`."
-    )
 except Exception as e:
     st.sidebar.warning(f"⚠️ Error al cargar el logo: {e}")
 
@@ -82,22 +65,20 @@ st.sidebar.markdown("""
 Explora métricas clave y gestiona tus leads.
 """)
 
-# --- CARGA Y FILTRADO BASE ---
+# --- CARGA DE DATOS ---
 @st.cache_data
 def get_processed_data():
-    df_processed_loaded = cargar_y_unificar_sheets()
-    if df_processed_loaded is None or df_processed_loaded.empty:
+    df_base_loaded = cargar_y_limpiar_datos()
+    if df_base_loaded is None or df_base_loaded.empty:
         return pd.DataFrame()
-    df_final = cargar_y_procesar_datos(df_processed_loaded.copy())
-    return df_final
+    df_processed_loaded = cargar_y_procesar_datos(df_base_loaded.copy())
+    return df_processed_loaded
 
 
 df_global = get_processed_data()
 
 if df_global.empty:
-    st.error(
-        "No se pudieron cargar los datos base o están vacíos. El dashboard no puede continuar."
-    )
+    st.error("No se pudieron cargar los datos. El dashboard no puede continuar.")
     st.stop()
 
 # --- CÁLCULO DE MÉTRICAS BASE ---
@@ -113,60 +94,48 @@ base_kpis_counts = {
     "resp_primer": base_resp_primer, "sesiones": base_sesiones
 }
 
-# --- FILTROS SIDEBAR ---
+# --- FILTROS Y PROCESAMIENTO ---
 (filtro_fuente_lista, filtro_proceso, filtro_pais, filtro_industria,
  filtro_avatar, filtro_prospectador, filtro_invite_aceptada_simple,
  filtro_sesion_agendada, fecha_ini, fecha_fin,
  busqueda_texto) = mostrar_filtros_sidebar(df_global.copy())
 
-# --- APLICACIÓN DE FILTROS ---
 df_filtrado_sidebar = aplicar_filtros(
     df_global.copy(), filtro_fuente_lista, filtro_proceso, filtro_pais,
     filtro_industria, filtro_avatar, filtro_prospectador,
     filtro_invite_aceptada_simple, filtro_sesion_agendada, fecha_ini,
     fecha_fin)
 
-# --- DataFrame para KPIs y Análisis ---
 df_kpis = df_filtrado_sidebar.copy()
 
-# --- DataFrame para la Tabla Detallada ---
 df_tabla_detalle = df_filtrado_sidebar.copy()
 if busqueda_texto:
     busq_term = busqueda_texto.lower().strip()
     if busq_term:
         mask = pd.Series([False] * len(df_tabla_detalle), index=df_tabla_detalle.index)
-        columnas_busqueda_texto_config = ["Empresa", "Puesto"]
-        nombre_col_presente = "Nombre" in df_tabla_detalle.columns
-        apellido_col_presente = "Apellido" in df_tabla_detalle.columns
-        if nombre_col_presente and apellido_col_presente:
-            df_tabla_detalle["_NombreCompleto_temp_search"] = (df_tabla_detalle["Nombre"].fillna('').astype(str) + ' ' + df_tabla_detalle["Apellido"].fillna('').astype(str)).str.lower()
-            mask |= df_tabla_detalle["_NombreCompleto_temp_search"].str.contains(busq_term, na=False)
-            df_tabla_detalle.drop(columns=["_NombreCompleto_temp_search"], inplace=True)
-        elif nombre_col_presente:
-            mask |= df_tabla_detalle["Nombre"].astype(str).str.lower().str.contains(busq_term, na=False)
-        elif apellido_col_presente:
-            mask |= df_tabla_detalle["Apellido"].astype(str).str.lower().str.contains(busq_term, na=False)
+        columnas_busqueda_texto_config = ["Empresa", "Puesto", "Nombre", "Apellido"]
         for col in columnas_busqueda_texto_config:
             if col in df_tabla_detalle.columns:
-                mask |= df_tabla_detalle[col].astype(str).str.lower().str.contains(busq_term, na=False)
+                 mask |= df_tabla_detalle[col].astype(str).str.lower().str.contains(busq_term, na=False)
         df_tabla_detalle = df_tabla_detalle[mask]
 
-# --- ORDEN DE LOS COMPONENTES EN EL DASHBOARD ---
+# --- RENDERIZADO DEL DASHBOARD ---
 
-# Pestañas para las tablas
-tab_evelyn, tab_principal = st.tabs(["Prospectos de Evelyn", "Prospectos del Equipo Principal"])
+# 1. Tablas Visuales Separadas
+st.header("📊 Detalle de Prospectos")
+st.markdown("---")
 
-with tab_evelyn:
-    df_evelyn = df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Evelyn']
-    # La función `mostrar_tabla_filtrada` ahora imprime su propio encabezado
-    mostrar_tabla_filtrada(df_evelyn, key_suffix="evelyn")
+st.subheader(f"Prospectos de Evelyn ({len(df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Evelyn'])})")
+mostrar_tabla_filtrada(df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Evelyn'], key_suffix="evelyn")
 
-with tab_principal:
-    df_equipo_principal = df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Equipo Principal']
-    # La función `mostrar_tabla_filtrada` ahora imprime su propio encabezado
-    mostrar_tabla_filtrada(df_equipo_principal, key_suffix="principal")
+st.markdown("---")
 
-# El resto de los componentes usan el DataFrame unificado `df_kpis`
+st.subheader(f"Prospectos del Equipo Principal ({len(df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Equipo Principal'])})")
+mostrar_tabla_filtrada(df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Equipo Principal'], key_suffix="principal")
+
+st.markdown("<br><br>", unsafe_allow_html=True) # Espacio para separar visualmente
+
+# 2. El resto de tu dashboard, que funciona con datos unificados (df_kpis)
 (filtered_total, filtered_primeros_mensajes_enviados_count, filtered_inv_acept,
  filtered_resp_primer, filtered_sesiones,
  _) = mostrar_kpis(df_kpis, base_kpis_counts, limpiar_valor_kpi)
