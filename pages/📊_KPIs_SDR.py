@@ -6,16 +6,21 @@ import gspread
 import plotly.graph_objects as go
 import locale
 import re
+import numpy as np
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="KPIs del SDR", layout="wide")
 st.title("🚀 Dashboard de KPIs para SDR - Evelyn")
 st.markdown("Análisis de rendimiento basado en actividades de prospección y generación de sesiones.")
 
+# --- CORRECCIÓN: Se elimina el mensaje de advertencia para el usuario ---
 try:
+    # Intenta configurar el idioma a español para los meses en los gráficos.
     locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
 except locale.Error:
-    st.info("Aviso: El 'locale' en español no está disponible en el sistema. Los meses podrían aparecer en inglés.")
+    # Si el servidor no tiene el paquete de idioma español, simplemente continúa.
+    # No se muestra ningún mensaje al usuario.
+    pass
 
 # --- FUNCIÓN DE LIMPIEZA NUMÉRICA ---
 def clean_numeric(value):
@@ -28,7 +33,7 @@ def clean_numeric(value):
     except (ValueError, TypeError):
         return 0
 
-# --- FUNCIÓN DE CARGA DE DATOS (VERSIÓN FINAL) ---
+# --- FUNCIÓN DE CARGA DE DATOS ---
 @st.cache_data(ttl=300)
 def load_sdr_data():
     try:
@@ -40,16 +45,16 @@ def load_sdr_data():
         
         if not values or len(values) < 2:
             st.warning("La hoja de cálculo parece estar vacía o no tiene datos con encabezados.")
-            return pd.DataFrame()
+            return pd.DataFrame(), []
         
         headers = values[0]
+        original_column_names = headers[:]
         df = pd.DataFrame(values[1:], columns=headers)
 
     except Exception as e:
         st.error(f"No se pudo cargar la hoja de Google Sheets. Error: {e}")
-        return pd.DataFrame()
+        return pd.DataFrame(), []
 
-    # --- CORRECCIÓN CLAVE: IGNORAR COLUMNAS DE FÓRMULAS DEL SHEET ---
     cols_a_ignorar_del_sheet = [
         '% Cumplimiento empresas', 'Acceptance Rate', 
         '% Cumplimiento sesiones', 'Response Rate'
@@ -60,13 +65,13 @@ def load_sdr_data():
 
     if 'Semana' not in df.columns or df['Semana'].eq('').all():
         st.error("Error crítico: La columna 'Semana' no se encontró o está completamente vacía.")
-        return pd.DataFrame()
+        return pd.DataFrame(), []
 
     df['FechaSemana'] = pd.to_datetime(df['Semana'], format='%d/%m/%Y', errors='coerce')
     df.dropna(subset=['FechaSemana'], inplace=True)
     if df.empty:
         st.error("No se encontraron fechas válidas en la columna 'Semana'. Verifica el formato (dd/mm/yyyy).")
-        return pd.DataFrame()
+        return pd.DataFrame(), []
         
     df['SemanaLabel'] = df['FechaSemana'].dt.strftime("Semana del %d/%b/%Y")
     df = df.sort_values(by='FechaSemana', ascending=False)
@@ -83,15 +88,14 @@ def load_sdr_data():
         else:
             df[col] = 0
 
-    # --- CÁLCULOS INTERNOS (La única fuente de verdad para las tasas) ---
     df['Tasa de Aceptación (%)'] = (df['Conexiones aceptadas'] / df['Conexiones enviadas'] * 100).where(df['Conexiones enviadas'] > 0, 0)
     df['Tasa de Respuesta WA (%)'] = (df['Whatsapps Respondidos'] / df['Whatsapps Enviados'] * 100).where(df['Whatsapps Enviados'] > 0, 0)
     df['Cumplimiento Empresas (%)'] = (df['Empresas agregadas'] / df['Meta empresas'] * 100).where(df['Meta empresas'] > 0, 0)
     df['Cumplimiento Sesiones (%)'] = (df['Sesiones logradas'] / df['Meta sesiones'] * 100).where(df['Meta sesiones'] > 0, 0)
 
-    return df
+    return df, original_column_names
 
-# --- FILTROS Y COMPONENTES VISUALES (Sin cambios mayores) ---
+# --- FILTROS EN LA BARRA LATERAL ---
 def display_filters(df):
     st.sidebar.header("🔍 Filtros")
     if df.empty or 'SemanaLabel' not in df.columns:
@@ -113,6 +117,8 @@ def display_filters(df):
         return [todas_las_semanas_opcion]
     else:
         return selected_semanas
+
+# --- COMPONENTES DE VISUALIZACIÓN ---
 
 def display_summary_kpis(df):
     st.header("📊 Resumen del Período Seleccionado")
@@ -177,10 +183,7 @@ def display_activity_analysis(df):
     st.plotly_chart(fig_line, use_container_width=True, key="line_resultados_sdr_v4")
 
 # --- FLUJO PRINCIPAL DE LA PÁGINA ---
-# Se importa numpy para el selector de columnas numéricas
-import numpy as np 
-
-df_sdr_raw = load_sdr_data()
+df_sdr_raw, original_cols = load_sdr_data()
 
 if not df_sdr_raw.empty:
     selected_weeks_labels = display_filters(df_sdr_raw)
@@ -202,17 +205,20 @@ if not df_sdr_raw.empty:
         with st.expander("Ver tabla de datos detallados (Período Seleccionado)"):
             st.caption("Esta tabla muestra los datos de entrada junto a las tasas calculadas por la aplicación.")
             
-            # Columnas a mostrar en la tabla final para máxima claridad
             final_table_cols = [
                 'Semana', 'Empresas agregadas', 'Meta empresas', 'Cumplimiento Empresas (%)',
                 'Conexiones enviadas', 'Conexiones aceptadas', 'Tasa de Aceptación (%)',
                 'Whatsapps Enviados', 'Whatsapps Respondidos', 'Tasa de Respuesta WA (%)',
                 'Llamadas realizadas', 'Sesiones logradas', 'Meta sesiones', 'Cumplimiento Sesiones (%)'
             ]
-            # Nos aseguramos de que solo mostramos columnas que realmente existen
             final_table_cols_exist = [col for col in final_table_cols if col in df_filtered.columns]
             
             df_to_display = df_filtered[final_table_cols_exist]
+            
+            # Formatear porcentajes para una mejor visualización en la tabla
+            for col in df_to_display.columns:
+                if '%' in col:
+                    df_to_display[col] = df_to_display[col].map('{:.2f}%'.format)
             
             st.dataframe(df_to_display)
 else:
