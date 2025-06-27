@@ -5,7 +5,7 @@ import pandas as pd
 import gspread
 import plotly.graph_objects as go
 import locale
-import re # Importamos la librería para expresiones regulares
+import re
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="KPIs del SDR", layout="wide")
@@ -17,20 +17,39 @@ try:
 except locale.Error:
     st.info("El 'locale' en español no está disponible en el sistema. Los meses podrían aparecer en inglés.")
 
-# --- FUNCIÓN DE CARGA Y LIMPIEZA DE DATOS (VERSIÓN ROBUSTA) ---
+# --- NUEVA FUNCIÓN DE LIMPIEZA NUMÉRICA ---
+def clean_numeric(value):
+    """
+    Función robusta para limpiar y convertir un valor a número.
+    Maneja porcentajes, comas decimales y errores de Excel.
+    """
+    if value is None:
+        return 0
+    s = str(value).strip()
+    if not s or '#DIV/0!' in s or '#N/A' in s:
+        return 0
+    
+    # Limpieza: quitar '%' y reemplazar ',' por '.'
+    s = s.replace('%', '').replace(',', '.')
+    
+    try:
+        return float(s)
+    except (ValueError, TypeError):
+        return 0
+
+# --- FUNCIÓN DE CARGA DE DATOS (VERSIÓN FINAL) ---
 @st.cache_data(ttl=600)
 def load_sdr_data():
     """
-    Carga los datos desde la hoja de KPIs del SDR con un método más robusto,
-    limpia y procesa las columnas para asegurar que los datos sean numéricos.
+    Carga los datos desde la hoja de KPIs del SDR con un método robusto y limpieza avanzada.
     """
     try:
         creds_dict = st.secrets["gcp_service_account"]
         sheet_url = st.secrets["new_page_sheet_url"]
         client = gspread.service_account_from_dict(creds_dict)
         sheet = client.open_by_url(sheet_url).sheet1
-        # Usamos get_all_values() que es más estable que get_all_records()
         values = sheet.get_all_values()
+        
         if not values or len(values) < 2:
             st.warning("La hoja de cálculo parece estar vacía o no tiene datos.")
             return pd.DataFrame()
@@ -38,9 +57,6 @@ def load_sdr_data():
         headers = values[0]
         df = pd.DataFrame(values[1:], columns=headers)
 
-    except KeyError:
-        st.error("Error de Configuración: Asegúrate de añadir 'new_page_sheet_url' a tus secretos (secrets.toml).")
-        return pd.DataFrame()
     except Exception as e:
         st.error(f"No se pudo cargar la hoja de Google Sheets. Error: {e}")
         return pd.DataFrame()
@@ -64,20 +80,15 @@ def load_sdr_data():
         'Whatsapps Enviados', 'Whatsapps Respondidos', 'Llamadas realizadas', 'Sesiones logradas', 'Meta sesiones'
     ]
     
-    # --- BUCLE DE LIMPIEZA NUMÉRICA MEJORADO ---
     for col in numeric_cols:
         if col in df.columns:
-            # 1. Convierte a string y elimina todo lo que no sea un dígito o un punto decimal.
-            df[col] = df[col].astype(str).apply(lambda x: re.sub(r'[^\d.]', '', x))
-            # 2. Reemplaza strings vacíos que puedan quedar con '0'.
-            df[col] = df[col].replace('', '0')
-            # 3. Convierte a numérico, los errores se volverán NaN, y luego se rellenan con 0.
-            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+            # Aplicar la nueva función de limpieza robusta
+            df[col] = df[col].apply(clean_numeric)
         else:
             st.warning(f"Advertencia: La columna '{col}' no se encontró. Se asumirá como 0.")
             df[col] = 0
 
-    # Los cálculos de tasas se mantienen igual, ahora con datos limpios
+    # Los cálculos internos ahora usan los datos limpios
     df['Acceptance Rate'] = (df['Conexiones aceptadas'] / df['Conexiones enviadas'] * 100).where(df['Conexiones enviadas'] > 0, 0)
     df['Response Rate'] = (df['Whatsapps Respondidos'] / df['Whatsapps Enviados'] * 100).where(df['Whatsapps Enviados'] > 0, 0)
     df['% Cumplimiento empresas'] = (df['Empresas agregadas'] / df['Meta empresas'] * 100).where(df['Meta empresas'] > 0, 0)
@@ -101,7 +112,7 @@ def display_filters(df):
     )
     return selected_semanas
 
-# --- COMPONENTES DE VISUALIZACIÓN (Sin cambios, solo se corrigen las keys) ---
+# --- COMPONENTES DE VISUALIZACIÓN ---
 
 def display_summary_kpis(df):
     st.subheader("Resumen General del Período Seleccionado")
@@ -139,22 +150,22 @@ def display_goal_tracking(df):
     with col1:
         st.markdown("<h5>Meta de Empresas</h5>", unsafe_allow_html=True)
         fig = go.Figure(go.Indicator(
-            mode = "gauge+number+delta", value = total_empresas,
-            title = {'text': "Empresas Agregadas"}, delta = {'reference': meta_empresas},
+            mode = "gauge+number", value = total_empresas,
+            title = {'text': f"Logro vs Meta ({meta_empresas})"},
             gauge = {'axis': {'range': [None, max(meta_empresas, total_empresas) * 1.2]}, 'bar': {'color': "#36719F"},
                      'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': meta_empresas}}))
-        fig.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
+        fig.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
         st.plotly_chart(fig, use_container_width=True, key="gauge_empresas_sdr")
         st.metric("Cumplimiento", f"{cumplimiento_empresas:.1f}%")
 
     with col2:
         st.markdown("<h5>Meta de Sesiones</h5>", unsafe_allow_html=True)
         fig = go.Figure(go.Indicator(
-            mode = "gauge+number+delta", value = total_sesiones,
-            title = {'text': "Sesiones Logradas"}, delta = {'reference': meta_sesiones},
+            mode = "gauge+number", value = total_sesiones,
+            title = {'text': f"Logro vs Meta ({meta_sesiones})"},
             gauge = {'axis': {'range': [None, max(meta_sesiones, total_sesiones) * 1.2]}, 'bar': {'color': "#36719F"},
                      'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': meta_sesiones}}))
-        fig.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
+        fig.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
         st.plotly_chart(fig, use_container_width=True, key="gauge_sesiones_sdr")
         st.metric("Cumplimiento", f"{cumplimiento_sesiones:.1f}%")
 
