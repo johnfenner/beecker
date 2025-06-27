@@ -78,7 +78,7 @@ def get_processed_data():
 df_global = get_processed_data()
 
 if df_global.empty:
-    st.error("No se pudieron cargar los datos. El dashboard no puede continuar.")
+    st.error("No se pudieron cargar datos. El dashboard no puede continuar.")
     st.stop()
 
 # --- CÁLCULO DE MÉTRICAS BASE ---
@@ -107,14 +107,14 @@ df_filtrado_sidebar = aplicar_filtros(
     fecha_fin)
 
 df_kpis = df_filtrado_sidebar.copy()
-
 df_tabla_detalle = df_filtrado_sidebar.copy()
+
 if busqueda_texto:
     busq_term = busqueda_texto.lower().strip()
     if busq_term:
         mask = pd.Series([False] * len(df_tabla_detalle), index=df_tabla_detalle.index)
-        columnas_busqueda_texto_config = ["Empresa", "Puesto", "Nombre", "Apellido"]
-        for col in columnas_busqueda_texto_config:
+        columnas_busqueda = ["Empresa", "Puesto", "Nombre", "Apellido"]
+        for col in columnas_busqueda:
             if col in df_tabla_detalle.columns:
                  mask |= df_tabla_detalle[col].astype(str).str.lower().str.contains(busq_term, na=False)
         df_tabla_detalle = df_tabla_detalle[mask]
@@ -122,18 +122,20 @@ if busqueda_texto:
 # --- RENDERIZADO DEL DASHBOARD ---
 
 # 1. Tablas Visuales Separadas
-st.header("📊 Detalle de Prospectos")
+st.header("📊 Detalle de Prospectos Filtrados")
 st.markdown("---")
 
-st.subheader(f"Prospectos de Evelyn ({len(df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Evelyn'])})")
-mostrar_tabla_filtrada(df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Evelyn'], key_suffix="evelyn")
+df_evelyn = df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Evelyn']
+st.subheader(f"Prospectos de Evelyn ({len(df_evelyn)})")
+mostrar_tabla_filtrada(df_evelyn, key_suffix="evelyn")
 
-st.markdown("---")
+st.markdown("<br>", unsafe_allow_html=True)
 
-st.subheader(f"Prospectos del Equipo Principal ({len(df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Equipo Principal'])})")
-mostrar_tabla_filtrada(df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Equipo Principal'], key_suffix="principal")
+df_equipo_principal = df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Equipo Principal']
+st.subheader(f"Prospectos del Equipo Principal ({len(df_equipo_principal)})")
+mostrar_tabla_filtrada(df_equipo_principal, key_suffix="principal")
 
-st.markdown("<br><br>", unsafe_allow_html=True) # Espacio para separar visualmente
+st.markdown("<br><br>", unsafe_allow_html=True)
 
 # 2. El resto de tu dashboard, que funciona con datos unificados (df_kpis)
 (filtered_total, filtered_primeros_mensajes_enviados_count, filtered_inv_acept,
