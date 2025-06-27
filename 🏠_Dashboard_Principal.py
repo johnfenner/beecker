@@ -32,6 +32,8 @@ from componentes.resumen_ejecutivo import mostrar_resumen_ejecutivo
 from componentes.top_industrias_paises import mostrar_analisis_dimension_agendamiento_flexible
 from componentes.analisis_procesos import mostrar_analisis_procesos_con_prospectador
 from componentes.analisis_avatars import mostrar_analisis_por_avatar
+# --- NUEVA LÍNEA ---
+from componentes.analisis_prospectadores import mostrar_analisis_por_prospectador 
 from componentes.oportunidades_calientes import mostrar_oportunidades_calientes
 
 from utils.limpieza import limpiar_valor_kpi
@@ -123,7 +125,6 @@ if busqueda_texto:
 
 # 1. Tablas Visuales Separadas
 st.header("📊 Detalle de Prospectos Filtrados")
-st.markdown("---")
 
 df_evelyn = df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Evelyn']
 st.subheader(f"Prospectos de Evelyn ({len(df_evelyn)})")
@@ -170,6 +171,9 @@ if "Proceso" in df_kpis.columns:
 else:
     st.caption("Columna 'Proceso' no encontrada para análisis de procesos.")
 
+# --- SECCIÓN DE ANÁLISIS DE RENDIMIENTO (MODIFICADA) ---
+# Se añade la llamada a la nueva función justo antes de la de Avatares.
+mostrar_analisis_por_prospectador(df_kpis)
 mostrar_analisis_por_avatar(df_kpis)
 
 mostrar_resumen_ejecutivo(df_kpis, limpiar_valor_kpi, base_kpis_counts, filtered_sesiones)
