@@ -11,7 +11,7 @@ import numpy as np
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="KPIs del SDR", layout="wide")
 st.title("🚀 Dashboard de KPIs para SDR - Evelyn")
-st.markdown("Análisis de rendimiento basado en actividades de prospección y generación de sesiones.")
+st.markdown("Métricas de rendimiento para el proceso de Sales Development Representative.")
 
 try:
     locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
@@ -24,10 +24,8 @@ def clean_numeric(value):
     s = str(value).strip()
     if not s or s.startswith('#'): return 0
     s = s.replace('%', '').replace(',', '.').strip()
-    try:
-        return float(s)
-    except (ValueError, TypeError):
-        return 0
+    try: return float(s)
+    except (ValueError, TypeError): return 0
 
 @st.cache_data(ttl=300)
 def load_sdr_data():
@@ -37,34 +35,22 @@ def load_sdr_data():
         client = gspread.service_account_from_dict(creds_dict)
         sheet = client.open_by_url(sheet_url).sheet1
         values = sheet.get_all_values()
-        
-        if not values or len(values) < 2:
-            st.warning("La hoja de cálculo parece estar vacía o no tiene datos con encabezados.")
-            return pd.DataFrame(), []
-        
+        if not values or len(values) < 2: return pd.DataFrame(), []
         headers = values[0]
         original_column_names = headers[:]
         df = pd.DataFrame(values[1:], columns=headers)
-
     except Exception as e:
         st.error(f"No se pudo cargar la hoja de Google Sheets. Error: {e}")
         return pd.DataFrame(), []
 
     cols_a_ignorar_del_sheet = ['% Cumplimiento empresas', 'Acceptance Rate', '% Cumplimiento sesiones', 'Response Rate']
     for col in cols_a_ignorar_del_sheet:
-        if col in df.columns:
-            df = df.drop(columns=[col])
+        if col in df.columns: df = df.drop(columns=[col])
 
-    if 'Semana' not in df.columns or df['Semana'].eq('').all():
-        st.error("Error crítico: La columna 'Semana' no se encontró o está completamente vacía.")
-        return pd.DataFrame(), []
-
+    if 'Semana' not in df.columns or df['Semana'].eq('').all(): return pd.DataFrame(), []
     df['FechaSemana'] = pd.to_datetime(df['Semana'], format='%d/%m/%Y', errors='coerce')
     df.dropna(subset=['FechaSemana'], inplace=True)
-    if df.empty:
-        st.error("No se encontraron fechas válidas en la columna 'Semana'. Verifica el formato (dd/mm/yyyy).")
-        return pd.DataFrame(), []
-        
+    if df.empty: return pd.DataFrame(), []
     df['SemanaLabel'] = df['FechaSemana'].dt.strftime("Semana del %d/%b/%Y")
     df = df.sort_values(by='FechaSemana', ascending=False)
 
@@ -73,13 +59,9 @@ def load_sdr_data():
         'Conexiones aceptadas', 'Mensajes de seguimiento enviados', 'Números telefónicos encontrados', 
         'Whatsapps Enviados', 'Whatsapps Respondidos', 'Llamadas realizadas', 'Sesiones logradas', 'Meta sesiones'
     ]
-    
     for col in numeric_cols:
-        if col in df.columns:
-            df[col] = df[col].apply(clean_numeric)
-        else:
-            df[col] = 0
-
+        if col in df.columns: df[col] = df[col].apply(clean_numeric)
+        else: df[col] = 0
     return df, original_column_names
 
 # --- FILTROS EN LA BARRA LATERAL ---
@@ -105,7 +87,7 @@ def display_filters(df):
     else:
         return selected_semanas
 
-# --- COMPONENTES VISUALES (Versión que te gustó) ---
+# --- COMPONENTES VISUALES (La versión que te gustó) ---
 
 def display_summary_kpis(df):
     st.subheader("Resumen General del Período Seleccionado")
