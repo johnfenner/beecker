@@ -43,7 +43,6 @@ def load_sdr_data():
             return pd.DataFrame(), []
         
         headers = values[0]
-        # Guardamos los nombres de las columnas originales para la tabla final
         original_column_names = headers[:]
         df = pd.DataFrame(values[1:], columns=headers)
 
@@ -76,7 +75,6 @@ def load_sdr_data():
         else:
             df[col] = 0
 
-    # Cálculos internos usando los datos ya limpios
     df['Tasa de Aceptación (%)'] = (df['Conexiones aceptadas'] / df['Conexiones enviadas'] * 100).where(df['Conexiones enviadas'] > 0, 0)
     df['Tasa de Respuesta WA (%)'] = (df['Whatsapps Respondidos'] / df['Whatsapps Enviados'] * 100).where(df['Whatsapps Enviados'] > 0, 0)
     df['Cumplimiento Empresas (%)'] = (df['Empresas agregadas'] / df['Meta empresas'] * 100).where(df['Meta empresas'] > 0, 0)
@@ -107,7 +105,7 @@ def display_filters(df):
     else:
         return selected_semanas
 
-# --- COMPONENTES DE VISUALIZACIÓN MEJORADOS ---
+# --- COMPONENTES DE VISUALIZACIÓN ---
 
 def display_summary_kpis(df):
     st.header("📊 Resumen del Período Seleccionado")
@@ -115,7 +113,6 @@ def display_summary_kpis(df):
         st.info("No hay datos para el período seleccionado.")
         return
 
-    # Cálculos
     total_empresas = int(df['Empresas agregadas'].sum())
     total_conexiones = int(df['Conexiones enviadas'].sum())
     total_sesiones = int(df['Sesiones logradas'].sum())
@@ -164,7 +161,20 @@ def display_activity_analysis(df):
     st.markdown("<h5>Evolución Semanal de Resultados Clave</h5>", unsafe_allow_html=True)
     st.caption("Muestra el rendimiento de las métricas más importantes a lo largo del tiempo.")
     
-    df_chart = df.groupby('SemanaLabel', as_index=False, sort=False).sum()
+    # --- INICIO DE LA CORRECCIÓN DEFINITIVA ---
+    # 1. Definimos explícitamente las columnas que SÍ se pueden sumar.
+    numeric_cols_to_sum = [
+        'Empresas agregadas', 'Contactos agregados', 'Conexiones enviadas', 
+        'Llamadas realizadas', 'Conexiones aceptadas', 'Whatsapps Respondidos', 
+        'Sesiones logradas'
+    ]
+    # 2. Nos aseguramos de que solo las columnas que realmente existen en el DataFrame se usen.
+    existing_numeric_cols = [col for col in numeric_cols_to_sum if col in df.columns]
+    
+    # 3. Hacemos el groupby SUMANDO ÚNICAMENTE las columnas numéricas.
+    df_chart = df.groupby('SemanaLabel', as_index=False, sort=False)[existing_numeric_cols].sum()
+    # --- FIN DE LA CORRECCIÓN DEFINITIVA ---
+
     df_chart_sorted = df_chart.sort_values(by='SemanaLabel', key=lambda col: pd.to_datetime(col.str.replace("Semana del ", ""), format="%d/%b/%Y"))
 
     fig_line = go.Figure()
