@@ -22,7 +22,8 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # --- IMPORTS MODULARES ---
-from datos.carga_datos import cargar_y_unificar_sheets
+# CORRECCIÓN: Se añade 'cargar_y_procesar_datos' a la importación para resolver el NameError
+from datos.carga_datos import cargar_y_unificar_sheets, cargar_y_procesar_datos
 from filtros.filtros_sidebar import mostrar_filtros_sidebar
 from filtros.aplicar_filtros import aplicar_filtros
 from componentes.tabla_prospectos import mostrar_tabla_filtrada
@@ -289,5 +290,4 @@ st.markdown("---")
 st.info(
     "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊 '."
 )  # Texto original del pie de página
-
 
