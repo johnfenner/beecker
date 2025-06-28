@@ -10,8 +10,8 @@ import numpy as np
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="Dashboard de KPIs", layout="wide")
-st.title("🚀 Dashboard de Prospección de Evelyn")
-st.markdown("Análisis de rendimiento, trazabilidad del embudo y eficacia por canal.")
+st.title("📊 Dashboard de KPIs de Evelyn")
+st.markdown("Análisis de métricas absolutas y tasas de conversión siguiendo el proceso de generación de leads.")
 
 # --- CONFIGURACIÓN REGIONAL ---
 try:
@@ -168,7 +168,7 @@ if not df_sdr_raw.empty:
 
 
         # --- TASAS DE CONVERSIÓN Y EFICACIA ---
-        st.subheader("Tasas de Conversión del Embudo")
+        st.subheader("Tasas de Conversión")
         with st.container(border=True):
             tasa_aceptacion = (total_conex_aceptadas / total_conex_enviadas * 100) if total_conex_enviadas > 0 else 0
             tasa_respuesta_wa = (total_wa_respondidos / total_wa_enviados * 100) if total_wa_enviados > 0 else 0
@@ -177,8 +177,8 @@ if not df_sdr_raw.empty:
 
             tasa1, tasa2, tasa3, tasa4 = st.columns(4)
             tasa1.metric("🔗 Tasa de Aceptación", f"{tasa_aceptacion:.1f}%", help="De cada 100 conexiones que envías, cuántas te aceptan.")
-            tasa2.metric("💬 Tasa de Respuesta WA", f"{tasa_respuesta_wa:.1f}%", help="De cada 100 Whatsapps que envías, cuántos te responden.")
-            tasa3.metric("🎯 Tasa de Agendamiento", f"{tasa_agendamiento:.1f}%", help="De las conversaciones de WA que logras, qué % se convierte en sesión.")
+            tasa2.metric("💬 Tasa de Respuesta Whatsapps", f"{tasa_respuesta_wa:.1f}%", help="De cada 100 Whatsapps que envías, cuántos te responden.")
+            tasa3.metric("🎯 Tasa de Agendamiento Whatsapps", f"{tasa_agendamiento:.1f}%", help="De las conversaciones de WA que logras, qué % se convierte en sesión.")
             tasa4.metric("🏆 Tasa Global", f"{tasa_global:.1f}%", help="De cada 100 conexiones enviadas desde el inicio, cuántas terminan en una sesión.")
 
         st.markdown("---")
