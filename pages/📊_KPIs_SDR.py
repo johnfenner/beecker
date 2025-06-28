@@ -8,7 +8,7 @@ from plotly.subplots import make_subplots
 import locale
 import numpy as np
 
-# --- CONFIGURACIÓN DE LA PÁGINA ---
+# --- CONFIGURACIÓN DE LA PÁGINA --
 st.set_page_config(page_title="Dashboard de KPIs", layout="wide")
 st.title("📊 Dashboard de KPIs de Evelyn")
 st.markdown("Análisis de métricas absolutas y tasas de conversión siguiendo el proceso de generación de leads.")
