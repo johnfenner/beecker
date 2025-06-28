@@ -56,18 +56,15 @@ def load_sdr_data():
     df['FechaSemana'] = pd.to_datetime(df['Semana'], format='%d/%m/%Y', errors='coerce')
     df.dropna(subset=['FechaSemana'], inplace=True)
     
-    # Lista de columnas que contienen los datos numéricos brutos
     numeric_cols = [
         'Empresas agregadas', 'Meta empresas', 'Contactos agregados', 'Conexiones enviadas', 
         'Conexiones aceptadas', 'Mensajes de seguimiento enviados', 'Números telefónicos encontrados', 
         'Whatsapps Enviados', 'Whatsapps Respondidos', 'Llamadas realizadas', 'Sesiones logradas', 'Meta sesiones'
     ]
     for col in numeric_cols:
-        # Se aplica la limpieza solo a las columnas que existen en el sheet
         if col in df.columns:
             df[col] = df[col].apply(clean_numeric)
         else:
-            # Si una columna esperada no existe, se crea con ceros para evitar errores
             df[col] = 0
 
     return df.sort_values(by='FechaSemana', ascending=False), headers
@@ -79,7 +76,6 @@ def display_filters(df):
         st.sidebar.warning("No hay datos para filtrar.")
         return ["– Todas las Semanas –"]
     
-    # Crear la etiqueta de semana aquí para usarla en el filtro
     df['SemanaLabel'] = df['FechaSemana'].dt.strftime("Semana del %d/%b/%Y")
     opciones_filtro = ["– Todas las Semanas –"] + df['SemanaLabel'].unique().tolist()
     
@@ -111,6 +107,11 @@ if not df_sdr_raw.empty:
         total_wa_respondidos = int(df_filtered['Whatsapps Respondidos'].sum())
         total_llamadas = int(df_filtered['Llamadas realizadas'].sum())
         total_sesiones = int(df_filtered['Sesiones logradas'].sum())
+        # <<< CÁLCULOS PARA METAS >>>
+        total_empresas = int(df_filtered['Empresas agregadas'].sum())
+        meta_empresas = int(df_filtered['Meta empresas'].sum())
+        meta_sesiones = int(df_filtered['Meta sesiones'].sum())
+
 
         # --- RESUMEN DE KPIS ---
         st.subheader("Resumen de KPIs (Período Filtrado)")
@@ -127,13 +128,48 @@ if not df_sdr_raw.empty:
             res1.metric("✅ Conexiones Aceptadas", f"{total_conex_aceptadas:,}")
             res2.metric("🗣️ Whatsapps Respondidos", f"{total_wa_respondidos:,}")
             res3.metric("🗓️ Sesiones Logradas", f"{total_sesiones:,}")
+        
+        st.markdown("---") # Separador visual
+
+        # --- SECCIÓN DE METAS (NUEVO) ---
+        st.subheader("🎯 Seguimiento de Metas")
+        with st.container(border=True):
+            cumplimiento_empresas = (total_empresas / meta_empresas * 100) if meta_empresas > 0 else 0
+            cumplimiento_sesiones = (total_sesiones / meta_sesiones * 100) if meta_sesiones > 0 else 0
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("<h6>Meta de Empresas Agregadas</h6>", unsafe_allow_html=True)
+                fig = go.Figure(go.Indicator(
+                    mode="gauge+number",
+                    value=total_empresas,
+                    title={'text': f"Logro: {total_empresas} de {meta_empresas}"},
+                    gauge={'axis': {'range': [None, max(meta_empresas, total_empresas) * 1.2]},
+                           'bar': {'color': "#36719F"},
+                           'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': meta_empresas}}))
+                fig.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
+                st.plotly_chart(fig, use_container_width=True)
+                st.metric(label="Porcentaje de Cumplimiento", value=f"{cumplimiento_empresas:.1f}%")
+
+            with col2:
+                st.markdown("<h6>Meta de Sesiones Logradas</h6>", unsafe_allow_html=True)
+                fig = go.Figure(go.Indicator(
+                    mode="gauge+number",
+                    value=total_sesiones,
+                    title={'text': f"Logro: {total_sesiones} de {meta_sesiones}"},
+                    gauge={'axis': {'range': [None, max(meta_sesiones, total_sesiones) * 1.2]},
+                           'bar': {'color': "green"},
+                           'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': meta_sesiones}}))
+                fig.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
+                st.plotly_chart(fig, use_container_width=True)
+                st.metric(label="Porcentaje de Cumplimiento", value=f"{cumplimiento_sesiones:.1f}%")
 
         st.markdown("---")
+
 
         # --- TASAS DE CONVERSIÓN Y EFICACIA ---
         st.subheader("Tasas de Conversión del Embudo")
         with st.container(border=True):
-            # Cálculos de tasas
             tasa_aceptacion = (total_conex_aceptadas / total_conex_enviadas * 100) if total_conex_enviadas > 0 else 0
             tasa_respuesta_wa = (total_wa_respondidos / total_wa_enviados * 100) if total_wa_enviados > 0 else 0
             tasa_agendamiento = (total_sesiones / total_wa_respondidos * 100) if total_wa_respondidos > 0 else 0
@@ -185,16 +221,13 @@ if not df_sdr_raw.empty:
         # --- TABLA DE DATOS ORIGINALES (CORREGIDA) ---
         st.markdown("---")
         with st.expander("Ver tabla de datos originales del período seleccionado"):
-            # Se definen explícitamente las columnas de datos brutos que se quieren mostrar
             columnas_brutas_a_mostrar = [
                 'Semana', 'Empresas agregadas', 'Meta empresas', 'Contactos agregados', 
                 'Conexiones enviadas', 'Conexiones aceptadas', 'Whatsapps Enviados', 
                 'Whatsapps Respondidos', 'Llamadas realizadas', 'Sesiones logradas', 'Meta sesiones'
             ]
-            # Se filtran solo las columnas que realmente existen en el DataFrame para evitar errores
             columnas_finales = [col for col in columnas_brutas_a_mostrar if col in df_filtered.columns]
             
-            # Se muestra el DataFrame con las columnas limpias y seleccionadas
             st.dataframe(df_filtered[columnas_finales], hide_index=True)
 else:
     st.error("No se pudieron cargar o procesar los datos para el dashboard.")
