@@ -56,13 +56,19 @@ def load_sdr_data():
     df['FechaSemana'] = pd.to_datetime(df['Semana'], format='%d/%m/%Y', errors='coerce')
     df.dropna(subset=['FechaSemana'], inplace=True)
     
+    # Lista de columnas que contienen los datos numéricos brutos
     numeric_cols = [
         'Empresas agregadas', 'Meta empresas', 'Contactos agregados', 'Conexiones enviadas', 
         'Conexiones aceptadas', 'Mensajes de seguimiento enviados', 'Números telefónicos encontrados', 
         'Whatsapps Enviados', 'Whatsapps Respondidos', 'Llamadas realizadas', 'Sesiones logradas', 'Meta sesiones'
     ]
     for col in numeric_cols:
-        df[col] = df[col].apply(clean_numeric) if col in df.columns else 0
+        # Se aplica la limpieza solo a las columnas que existen en el sheet
+        if col in df.columns:
+            df[col] = df[col].apply(clean_numeric)
+        else:
+            # Si una columna esperada no existe, se crea con ceros para evitar errores
+            df[col] = 0
 
     return df.sort_values(by='FechaSemana', ascending=False), headers
 
@@ -73,6 +79,7 @@ def display_filters(df):
         st.sidebar.warning("No hay datos para filtrar.")
         return ["– Todas las Semanas –"]
     
+    # Crear la etiqueta de semana aquí para usarla en el filtro
     df['SemanaLabel'] = df['FechaSemana'].dt.strftime("Semana del %d/%b/%Y")
     opciones_filtro = ["– Todas las Semanas –"] + df['SemanaLabel'].unique().tolist()
     
@@ -109,7 +116,7 @@ if not df_sdr_raw.empty:
         st.subheader("Resumen de KPIs (Período Filtrado)")
         
         with st.container(border=True):
-            st.markdown("##### Actividades Cuantificadas (Tu Esfuerzo)")
+            st.markdown("#####  cuantitativo de actividades (Tu Esfuerzo)")
             act1, act2, act3 = st.columns(3)
             act1.metric("🔗 Conexiones Enviadas (LI)", f"{total_conex_enviadas:,}")
             act2.metric("💬 Whatsapps Enviados", f"{total_wa_enviados:,}")
@@ -124,20 +131,19 @@ if not df_sdr_raw.empty:
         st.markdown("---")
 
         # --- TASAS DE CONVERSIÓN Y EFICACIA ---
-        st.subheader("Tasas de Conversión y Eficacia del Embudo")
+        st.subheader("Tasas de Conversión del Embudo")
         with st.container(border=True):
-            tasa1, tasa2 = st.columns(2)
+            # Cálculos de tasas
             tasa_aceptacion = (total_conex_aceptadas / total_conex_enviadas * 100) if total_conex_enviadas > 0 else 0
             tasa_respuesta_wa = (total_wa_respondidos / total_wa_enviados * 100) if total_wa_enviados > 0 else 0
-            tasa1.metric("📈 Tasa de Aceptación (LinkedIn)", f"{tasa_aceptacion:.1f}%", help="De cada 100 conexiones que envías, cuántas te aceptan.")
-            tasa2.metric("📈 Tasa de Respuesta (WhatsApp)", f"{tasa_respuesta_wa:.1f}%", help="De cada 100 Whatsapps que envías, cuántos te responden.")
+            tasa_agendamiento = (total_sesiones / total_wa_respondidos * 100) if total_wa_respondidos > 0 else 0
+            tasa_global = (total_sesiones / total_conex_enviadas * 100) if total_conex_enviadas > 0 else 0
 
-            st.markdown("##### Eficacia por Canal para Generar Sesiones")
-            eficacia1, eficacia2 = st.columns(2)
-            eficacia_wa = (total_sesiones / total_wa_respondidos * 100) if total_wa_respondidos > 0 else 0
-            eficacia_llamadas = (total_sesiones / total_llamadas * 100) if total_llamadas > 0 else 0
-            eficacia1.metric("🎯 Sesiones por cada 100 Respuestas de WA", f"{eficacia_wa:.1f}", help="Mide qué tan bueno eres convirtiendo una conversación de WA en una sesión.")
-            eficacia2.metric("🎯 Sesiones por cada 100 Llamadas", f"{eficacia_llamadas:.1f}", help="Mide la efectividad de tus llamadas para agendar una sesión.")
+            tasa1, tasa2, tasa3, tasa4 = st.columns(4)
+            tasa1.metric("🔗 Tasa de Aceptación", f"{tasa_aceptacion:.1f}%", help="De cada 100 conexiones que envías, cuántas te aceptan.")
+            tasa2.metric("💬 Tasa de Respuesta WA", f"{tasa_respuesta_wa:.1f}%", help="De cada 100 Whatsapps que envías, cuántos te responden.")
+            tasa3.metric("🎯 Tasa de Agendamiento", f"{tasa_agendamiento:.1f}%", help="De las conversaciones de WA que logras, qué % se convierte en sesión.")
+            tasa4.metric("🏆 Tasa Global", f"{tasa_global:.1f}%", help="De cada 100 conexiones enviadas desde el inicio, cuántas terminan en una sesión.")
 
         st.markdown("---")
         
@@ -148,17 +154,14 @@ if not df_sdr_raw.empty:
         df_chart['SemanaLabel'] = df_chart['FechaSemana'].dt.strftime("Semana del %d/%b")
         df_chart = df_chart.sort_values('FechaSemana')
         
-        # Gráfico 1: Esfuerzo (Barras) vs. Resultados (Línea)
         with st.container(border=True):
             st.markdown("##### Esfuerzo vs. Resultados por Semana")
             fig1 = make_subplots(specs=[[{"secondary_y": True}]])
             
-            # Barras de Esfuerzo
             fig1.add_trace(go.Bar(name='Conexiones Enviadas', x=df_chart['SemanaLabel'], y=df_chart['Conexiones enviadas'], marker_color='#36719F'), secondary_y=False)
             fig1.add_trace(go.Bar(name='Whatsapps Enviados', x=df_chart['SemanaLabel'], y=df_chart['Whatsapps Enviados'], marker_color='#6A8D73'), secondary_y=False)
             fig1.add_trace(go.Bar(name='Llamadas Realizadas', x=df_chart['SemanaLabel'], y=df_chart['Llamadas realizadas'], marker_color='#B4A05B'), secondary_y=False)
             
-            # Línea de Resultado Principal
             fig1.add_trace(go.Scatter(name='Sesiones Logradas', x=df_chart['SemanaLabel'], y=df_chart['Sesiones logradas'], mode='lines+markers', line=dict(color='green', width=4)), secondary_y=True)
             
             fig1.update_layout(barmode='stack', title_text="¿Cuánto trabajo se necesitó para generar sesiones?", legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
@@ -166,7 +169,6 @@ if not df_sdr_raw.empty:
             fig1.update_yaxes(title_text="Sesiones Logradas (Resultado)", secondary_y=True, range=[0, max(1, df_chart['Sesiones logradas'].max() * 2)])
             st.plotly_chart(fig1, use_container_width=True)
 
-        # Gráfico 2: Evolución de la Eficacia del Embudo (%)
         with st.container(border=True):
             st.markdown("##### Eficacia del Embudo Semanal (%)")
             df_chart['TasaAceptacion'] = (df_chart['Conexiones aceptadas'] / df_chart['Conexiones enviadas'] * 100).fillna(0)
@@ -180,10 +182,19 @@ if not df_sdr_raw.empty:
             fig2.update_yaxes(title_text="Tasa de Conversión (%)", range=[0, max(10, df_chart['TasaAceptacion'].max(), df_chart['TasaRespuestaWA'].max()) * 1.2])
             st.plotly_chart(fig2, use_container_width=True)
 
-        # --- TABLA DE DATOS ---
+        # --- TABLA DE DATOS ORIGINALES (CORREGIDA) ---
         st.markdown("---")
         with st.expander("Ver tabla de datos originales del período seleccionado"):
-            cols_a_mostrar = [col for col in original_cols if col in df_filtered.columns]
-            st.dataframe(df_filtered[cols_a_mostrar], hide_index=True)
+            # Se definen explícitamente las columnas de datos brutos que se quieren mostrar
+            columnas_brutas_a_mostrar = [
+                'Semana', 'Empresas agregadas', 'Meta empresas', 'Contactos agregados', 
+                'Conexiones enviadas', 'Conexiones aceptadas', 'Whatsapps Enviados', 
+                'Whatsapps Respondidos', 'Llamadas realizadas', 'Sesiones logradas', 'Meta sesiones'
+            ]
+            # Se filtran solo las columnas que realmente existen en el DataFrame para evitar errores
+            columnas_finales = [col for col in columnas_brutas_a_mostrar if col in df_filtered.columns]
+            
+            # Se muestra el DataFrame con las columnas limpias y seleccionadas
+            st.dataframe(df_filtered[columnas_finales], hide_index=True)
 else:
     st.error("No se pudieron cargar o procesar los datos para el dashboard.")
