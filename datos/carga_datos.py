@@ -48,22 +48,22 @@ def cargar_y_limpiar_datos():
     except Exception as e:
         st.warning(f"No se pudo cargar la hoja principal. Error: {e}")
 
-    # 2. Cargar Hoja de Evelyn
-    try:
-        sheet_url_evelyn = "https://docs.google.com/spreadsheets/d/1eV-wLbzbVRa68Kb-H8UvIvN7VEo5B5ONCOaIQ66mT9Y/edit?gid=0#gid=0"
-        sheet_evelyn = client.open_by_url(sheet_url_evelyn).sheet1
-        raw_data_evelyn = sheet_evelyn.get_all_values()
-        if raw_data_evelyn:
-            headers_evelyn = make_unique(raw_data_evelyn[0])
-            df_evelyn = pd.DataFrame(raw_data_evelyn[1:], columns=headers_evelyn)
-            df_evelyn['Fuente_Analista'] = 'Evelyn'
-            if '¿Quién Prospecto?' not in df_evelyn.columns or df_evelyn['¿Quién Prospecto?'].isnull().all():
-                 df_evelyn['¿Quién Prospecto?'] = 'Evelyn'
-            else:
-                 df_evelyn['¿Quién Prospecto?'].fillna('Evelyn', inplace=True)
-            dataframes.append(df_evelyn)
-    except Exception as e:
-        st.warning(f"No se pudo cargar la hoja de Evelyn. Error: {e}")
+    # 2. Cargar Hoja de Evelyn (SECCIÓN COMENTADA)
+    # try:
+    #     sheet_url_evelyn = "https://docs.google.com/spreadsheets/d/1eV-wLbzbVRa68Kb-H8UvIvN7VEo5B5ONCOaIQ66mT9Y/edit?gid=0#gid=0"
+    #     sheet_evelyn = client.open_by_url(sheet_url_evelyn).sheet1
+    #     raw_data_evelyn = sheet_evelyn.get_all_values()
+    #     if raw_data_evelyn:
+    #         headers_evelyn = make_unique(raw_data_evelyn[0])
+    #         df_evelyn = pd.DataFrame(raw_data_evelyn[1:], columns=headers_evelyn)
+    #         df_evelyn['Fuente_Analista'] = 'Evelyn'
+    #         if '¿Quién Prospecto?' not in df_evelyn.columns or df_evelyn['¿Quién Prospecto?'].isnull().all():
+    #              df_evelyn['¿Quién Prospecto?'] = 'Evelyn'
+    #         else:
+    #              df_evelyn['¿Quién Prospecto?'].fillna('Evelyn', inplace=True)
+    #         dataframes.append(df_evelyn)
+    # except Exception as e:
+    #     st.warning(f"No se pudo cargar la hoja de Evelyn. Error: {e}")
 
     if not dataframes:
         st.error("No se pudieron cargar datos de ninguna fuente. El dashboard no puede continuar.")
