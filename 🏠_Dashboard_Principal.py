@@ -126,11 +126,12 @@ if busqueda_texto:
 # 1. Tablas Visuales Separadas
 st.header("📊 Detalle de Prospectos Filtrados")
 
-df_evelyn = df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Evelyn']
-st.subheader(f"Prospectos de Evelyn ({len(df_evelyn)})")
-mostrar_tabla_filtrada(df_evelyn, key_suffix="evelyn")
+# SECCIÓN DE EVELYN COMENTADA
+# df_evelyn = df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Evelyn']
+# st.subheader(f"Prospectos de Evelyn ({len(df_evelyn)})")
+# mostrar_tabla_filtrada(df_evelyn, key_suffix="evelyn")
 
-st.markdown("<br>", unsafe_allow_html=True)
+# st.markdown("<br>", unsafe_allow_html=True)
 
 df_equipo_principal = df_tabla_detalle[df_tabla_detalle['Fuente_Analista'] == 'Equipo Principal']
 st.subheader(f"Prospectos del Equipo Principal ({len(df_equipo_principal)})")
