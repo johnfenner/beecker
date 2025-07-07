@@ -107,36 +107,36 @@ plantillas_john = {
 # ===== SET DE PLANTILLAS "KAREN CH" ============================================
 # ===============================================================================
 
-plantilla_general_karen = """Hola #Lead, un gusto saludarte, Espero que te encuentres excelente el día de hoy.
+plantilla_general_karen = """Hola #Lead, un gusto saludarte.
 
 Soy María Rivera, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Inteligent Process Automation, desarrollamos agentes digitales de IA para optimizar procesos clave en las organizaciones, en los procesos de Hire to Retire (H2R), Order to Cash (O2C) y Procure-to-Pay (P2P).
 
 Me gustaría mostrarte cómo nuestras soluciones pueden mejorar la eficiencia en áreas de #Empresa, tales como:
 
-Procurement: Validación automática de facturas con órdenes de compra, detección de discrepancias en montos y autorizaciones, análisis de rendimiento de proveedores, y optimización del ciclo Procure-to-Pay (P2P).
-Finanzas y Contabilidad: Automatización de conciliaciones bancarias, procesamiento de facturas y seguimiento de pagos, todo respaldado por inteligencia artificial avanzada.
-Recursos Humanos: Gestión automatizada de nóminas, selección de personal mediante IA y manejo eficiente de beneficios para empleados.
-Atención al Cliente: Implementación de agentes virtuales inteligentes que mejoran la experiencia del cliente y reducen tiempos de respuesta.
-Cadena de Suministro: Optimización de inventarios, automatización de pedidos y gestión de la logística con mayor precisión y control.
+- Procurement: Validación automática de facturas con órdenes de compra, detección de discrepancias en montos y autorizaciones, análisis de rendimiento de proveedores, y optimización del ciclo Procure-to-Pay (P2P).
+- Finanzas y Contabilidad: Automatización de conciliaciones bancarias, procesamiento de facturas y seguimiento de pagos, todo respaldado por inteligencia artificial avanzada.
+- Recursos Humanos: Gestión automatizada de nóminas, selección de personal mediante IA y manejo eficiente de beneficios para empleados.
+- Atención al Cliente: Implementación de agentes virtuales inteligentes que mejoran la experiencia del cliente y reducen tiempos de respuesta.
+- Cadena de Suministro: Optimización de inventarios, automatización de pedidos y gestión de la logística con mayor precisión y control.
 
 Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso, también tenemos soluciones que se pueden adecuar a las necesidades que tengas en tu área.
 
 Me gustaría tener una corta sesión contigo para platicar algunos casos de uso y éxito que hemos tenido con clientes de la misma industria. ¿Te parece si nos reunimos 30 minutos esta o la próxima semana?
 """
 
-plantilla_h2r_karen = """¡Hola #Lead, un gusto saludarte!
+plantilla_h2r_karen = """Hola #Lead, un gusto saludarte.
 
 Soy María Rivera, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en #Empresa.
 
 Nos centramos en nuestros agentes digitales de IA diseñados para los procesos Hire to Retire (H2R) entre otros para diferentes áreas.
 
-Fer: Agente de Publicación de Vacantes
-Lucas: Agente de Reclutamiento
-Isa: Agente de Onboarding
-Ben: Agente de Desempeño del empleado
-Lily: Agente de Remuneración y Prestaciones
-Lisa: Agente de Gestión de viáticos
-Cleo: Agente de Jubilación.
+- Fer: Agente de Publicación de Vacantes
+- Lucas: Agente de Reclutamiento
+- Isa: Agente de Onboarding
+- Ben: Agente de Desempeño del empleado
+- Lily: Agente de Remuneración y Prestaciones
+- Lisa: Agente de Gestión de viáticos
+- Cleo: Agente de Jubilación.
 
 Estos agentes reducen significativamente errores y tiempos de operación, también podemos integrar diferentes automatizaciones que se adecuan a tus necesidades.
 
@@ -149,11 +149,11 @@ Soy María Rivera, Gerente de Transformación Digital en https://beecker.ai/agen
 
 Nos centramos principalmente en nuestros agentes digitales de IA diseñados para el proceso Procure-to-Pay (P2P) entre otros para diferentes áreas.
 
-Jessica: Agente de Selección de proveedores.
-Elsa: Agente de alta de proveedores.
-Olivia: Agente de procesamiento de órdenes de compra.
-Daniel: Agente de procesamiento de facturas.
-David: Agente de procesamiento de órdenes de pago.
+- Jessica: Agente de Selección de proveedores.
+- Elsa: Agente de alta de proveedores.
+- Olivia: Agente de procesamiento de órdenes de compra.
+- Daniel: Agente de procesamiento de facturas.
+- David: Agente de procesamiento de órdenes de pago.
 
 Estos agentes automatizan todo el ciclo de compras, desde la selección de proveedor hasta el pago, asegurando el cumplimiento de políticas empresariales en cada transacción y reduciendo significativamente errores y tiempos de operation.
 
@@ -166,16 +166,16 @@ Soy María Rivera, Gerente de Transformación Digital en https://beecker.ai/agen
 
 Nos centramos principalmente en agentes digitales de IA diseñados para los procesos Order to Cash (O2C) entre otros para diferentes áreas.
 
-Adrian: Agente de alta de clientes
-Nico: Agente de Procesamiento de pedidos
-Diana: Agente de Planificación de entregas
-James: Agente de Planificación del transporte
-Julia: Agente de Logística de salida
-Ryan: Agente de Gestión de devoluciones
-Mia: Agente de Gestión del crédito
-Alice: Agente de Gestión de existencias en Inventario
-Nina: Agente de Cuentas por cobrar
-Aaron: Agente de facturación.
+- Adrian: Agente de alta de clientes
+- Nico: Agente de Procesamiento de pedidos
+- Diana: Agente de Planificación de entregas
+- James: Agente de Planificación del transporte
+- Julia: Agente de Logística de salida
+- Ryan: Agente de Gestión de devoluciones
+- Mia: Agente de Gestión del crédito
+- Alice: Agente de Gestión de existencias en Inventario
+- Nina: Agente de Cuentas por cobrar
+- Aaron: Agente de facturación.
 
 Estos agentes optimizan cada etapa del proceso, garantizando la satisfacción del cliente, reduciendo significativamente errores, mejorando los tiempos de operación y ofreciendo una trazabilidad completa.
 
@@ -188,10 +188,10 @@ Soy María Rivera, Gerente de Transformación Digital en https://beecker.ai/agen
 
 Ayudamos a equipos como el tuyo a:
 
-Automatizar la gestión de tickets y solicitudes.
-Ejecutar rutinas de mantenimiento y monitoreo sin intervención.
-Reducir tiempos de respuesta en soporte técnico.
-Facilitar la integración entre sistemas legacy y nuevos entornos.
+- Automatizar la gestión de tickets y solicitudes.
+- Ejecutar rutinas de mantenimiento y monitoreo sin intervención.
+- Reducir tiempos de respuesta en soporte técnico.
+- Facilitar la integración entre sistemas legacy y nuevos entornos.
 
 Me gustaría tener una corta sesión contigo para compartirte casos de éxito y explorar cómo estas soluciones pueden apoyar tu estrategia tecnológica.
 
