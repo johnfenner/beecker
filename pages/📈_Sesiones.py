@@ -213,7 +213,7 @@ def load_sesiones_data():
         "Apellido": "No Especificado", "Siguientes Pasos": "No Especificado",
         "Email": "No Especificado", "RPA": "No Aplicable", "LinkedIn": "No Especificado",
         "Fuente_Hoja": "Desconocida",
-        "SQL": "TEMP_EMPTY_SQL", 
+        "SQL": "TEMP_EMPTY_SQL",
         "SQL_Estandarizado": "TEMP_EMPTY_SQL",
         "Proceso": "No Especificado"
     }
@@ -242,20 +242,20 @@ def load_sesiones_data():
 
     if "SQL" not in df_procesado.columns:
         df_procesado["SQL"] = default_values_fill["SQL"]
-    
+
     df_procesado["SQL"] = df_procesado["SQL"].fillna(default_values_fill["SQL"])
     df_procesado["SQL"] = df_procesado["SQL"].astype(str).str.strip().str.upper()
 
     empty_patterns_for_sql = ["", "NAN", "NONE", "<NA>", "N/A", "ND", "N.D", "S/D", "S.D.", "TEMP_EMPTY_SQL", "NO ESPECIFICADO", "NO ASIGNADO SQL"]
-    
+
     df_procesado["SQL_Estandarizado"] = df_procesado["SQL"].copy()
 
     for pattern in empty_patterns_for_sql:
         df_procesado.loc[df_procesado["SQL_Estandarizado"] == pattern.upper(), "SQL_Estandarizado"] = "PLACEHOLDER_FOR_SIN_CALIFICACION"
-    
+
     df_procesado.loc[df_procesado["SQL_Estandarizado"] == "PLACEHOLDER_FOR_SIN_CALIFICACION", "SQL_Estandarizado"] = "SIN CALIFICACIÓN SQL"
 
-    valid_explicit_sql_values = ['SQL1', 'SQL2', 'MQL', 'NA'] 
+    valid_explicit_sql_values = ['SQL1', 'SQL2', 'MQL', 'NA']
 
     mask_others_to_standardize = ~df_procesado["SQL_Estandarizado"].isin(valid_explicit_sql_values + ["SIN CALIFICACIÓN SQL"])
     df_procesado.loc[mask_others_to_standardize, "SQL_Estandarizado"] = "SIN CALIFICACIÓN SQL"
@@ -329,7 +329,7 @@ def sidebar_filters_sesiones(df_options):
         except ValueError:
              unique_weeks_str = sorted(num_semana_series.dropna().astype(str).unique())
              week_options_ses.extend(unique_weeks_str)
-    
+
     current_week_selection_from_state = st.session_state.get(SES_WEEK_FILTER_KEY, ["– Todas –"])
     if not isinstance(current_week_selection_from_state, list): current_week_selection_from_state = ["– Todas –"]
     valid_week_selection_ses = [s for s in current_week_selection_from_state if s in week_options_ses]
@@ -339,10 +339,10 @@ def sidebar_filters_sesiones(df_options):
         else: valid_week_selection_ses = []
     st.session_state[SES_WEEK_FILTER_KEY] = valid_week_selection_ses # Actualizar estado ANTES del widget
     st.sidebar.multiselect("Semanas", options=week_options_ses, key=SES_WEEK_FILTER_KEY) # No default
-    
+
     st.sidebar.markdown("---")
     st.sidebar.subheader("👥 Por Analistas, País y Calificación")
-    
+
     def create_multiselect_options_and_set_state(df_col_series, session_key): # Renombrado para claridad
         options_list = ["– Todos –"]
         if df_col_series is not None and not df_col_series.dropna().empty:
@@ -350,7 +350,7 @@ def sidebar_filters_sesiones(df_options):
             unique_vals_cleaned = [val for val in unique_vals if val and val != 'N/D']
             options_list.extend(sorted(list(set(unique_vals_cleaned))))
             if 'N/D' in unique_vals and 'N/D' not in options_list : options_list.append('N/D')
-        
+
         current_sel_from_state = st.session_state.get(session_key, ["– Todos –"])
         if not isinstance(current_sel_from_state, list): current_sel_from_state = ["– Todos –"]
         valid_sel = [s for s in current_sel_from_state if s in options_list]
@@ -390,7 +390,7 @@ def sidebar_filters_sesiones(df_options):
 
     proceso_opts = create_multiselect_options_and_set_state(df_options.get("Proceso"), SES_PROCESO_FILTER_KEY)
     st.sidebar.multiselect("Proceso", proceso_opts, key=SES_PROCESO_FILTER_KEY)
-    
+
     st.sidebar.markdown("---")
     st.sidebar.button("🧹 Limpiar Todos los Filtros", on_click=clear_ses_filters_callback, use_container_width=True, key=f"{FILTER_KEYS_PREFIX}btn_clear")
     return (st.session_state.get(SES_START_DATE_KEY), st.session_state.get(SES_END_DATE_KEY), sel_y,
@@ -446,7 +446,53 @@ def display_sesiones_summary_sql(df_filtered):
             st.plotly_chart(fig_sql_summary, use_container_width=True)
             st.dataframe(sql_counts.set_index('Calificación SQL').style.format({"Número de Sesiones": "{:,}"}), use_container_width=True)
         else: st.info("No hay datos de calificación SQL para mostrar.")
+
+        # --- NUEVA SECCIÓN: ANÁLISIS DE SESIONES TOMADAS (SQL1, SQL2, MQL) ---
+        st.markdown("---") # Separador visual
+        st.markdown("#### Distribución por Calificación SQL (Solo Sesiones Tomadas)")
+
+        # 1. Filtrar solo las sesiones que cuentan como "tomadas"
+        sesiones_tomadas_df = df_filtered[df_filtered['SQL_Estandarizado'].isin(['SQL1', 'SQL2', 'MQL'])].copy()
+
+        if not sesiones_tomadas_df.empty:
+            # 2. Calcular el nuevo total y las cuentas por categoría
+            total_sesiones_tomadas = len(sesiones_tomadas_df)
+            st.metric("Total Sesiones Tomadas (SQL1, SQL2, MQL)", f"{total_sesiones_tomadas:,}")
+
+            sql_counts_tomadas = sesiones_tomadas_df['SQL_Estandarizado'].value_counts().reset_index()
+            sql_counts_tomadas.columns = ['Calificación SQL', 'Número de Sesiones']
+
+            # 3. Calcular porcentajes basados en el nuevo total
+            sql_counts_tomadas['Porcentaje (%)'] = (sql_counts_tomadas['Número de Sesiones'] / total_sesiones_tomadas * 100).round(1)
+
+            # 4. Ordenar para consistencia visual
+            category_order_tomadas = get_sql_category_order(sql_counts_tomadas['Calificación SQL'])
+            sql_counts_tomadas['Calificación SQL'] = pd.Categorical(sql_counts_tomadas['Calificación SQL'], categories=category_order_tomadas, ordered=True)
+            sql_counts_tomadas = sql_counts_tomadas.sort_values('Calificación SQL').reset_index(drop=True)
+
+            # 5. Crear el nuevo gráfico
+            fig_sql_tomadas = px.bar(sql_counts_tomadas,
+                                     x='Calificación SQL',
+                                     y='Número de Sesiones',
+                                     title='Distribución de Sesiones Tomadas',
+                                     text='Número de Sesiones',
+                                     color='Calificación SQL')
+            fig_sql_tomadas.update_xaxes(categoryorder='array', categoryarray=category_order_tomadas)
+            st.plotly_chart(fig_sql_tomadas, use_container_width=True)
+
+            # 6. Mostrar la nueva tabla con porcentajes
+            st.dataframe(
+                sql_counts_tomadas.set_index('Calificación SQL').style.format({
+                    "Número de Sesiones": "{:,}",
+                    "Porcentaje (%)": "{:.1f}%"
+                }),
+                use_container_width=True
+            )
+        else:
+            st.info("No hay sesiones calificadas como SQL1, SQL2 o MQL en el período filtrado.")
+
     else: st.warning("Columna 'SQL_Estandarizado' no encontrada para el resumen.")
+
 
 def display_analisis_por_dimension(df_filtered, dimension_col, dimension_label, top_n=10):
     st.markdown(f"### 📊 Análisis por {dimension_label} y Calificación SQL (Top {top_n})")
@@ -503,7 +549,7 @@ def display_evolucion_sql(df_filtered, time_agg_col, display_label_col_name, cha
 
     summary_time_sql_evol = df_agg_evol.groupby([group_col_for_plot, 'SQL_Estandarizado'], observed=False).size().reset_index(name='Número de Sesiones')
     if summary_time_sql_evol.empty: st.info(f"No hay datos agregados por {x_axis_label.lower()} y SQL."); return
-    
+
     summary_time_sql_evol = summary_time_sql_evol.sort_values(by=[group_col_for_plot])
     sql_category_order_evol = get_sql_category_order(summary_time_sql_evol['SQL_Estandarizado'])
     summary_time_sql_evol['SQL_Estandarizado'] = pd.Categorical(summary_time_sql_evol['SQL_Estandarizado'], categories=sql_category_order_evol, ordered=True)
