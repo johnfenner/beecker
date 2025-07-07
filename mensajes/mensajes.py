@@ -65,6 +65,7 @@ Más que hablar de funciones, nos centramos en los resultados que buscamos:
 El propósito es simplemente conversar y evaluar juntos si esta tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Si te parece interesante, ¿buscamos un espacio para conversarlo brevemente?
 """
 
+# Plantilla de TI añadida al set de John
 plantilla_ti_john = """Hola {nombre},
 
 Soy {avatar} de Beecker. Como partners Platinum de UiPath, nuestro foco es aplicar Intelligent Process Automation para que los equipos de TI en empresas como {empresa} puedan escalar su eficiencia.
@@ -78,6 +79,7 @@ Entendemos que equipos como el tuyo a menudo buscan:
 En Beecker (https://beecker.ai/agentic-ai/) hemos desarrollado soluciones específicas para estos desafíos. Me gustaría tener una corta sesión contigo para compartirte casos de éxito y explorar cómo podemos apoyar tu estrategia tecnológica. ¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
+# Plantilla de Aduanas añadida al set de John
 plantilla_aduanas_john = """Hola {nombre},
 
 Soy {avatar} de Beecker. Nos especializamos en Intelligent Process Automation y me gustaría mostrarte cómo podemos transformar la eficiencia de {empresa} en el proceso aduanal.
@@ -93,14 +95,13 @@ Este agente no solo optimiza la operación, sino que también detecta inconsiste
 """
 
 plantillas_john = {
-    "H2R": {"Plantilla John H2R": plantilla_h2r_john},
-    "P2P": {"Plantilla John P2P": plantilla_p2p_john},
-    "O2C": {"Plantilla John O2C": plantilla_o2c_john},
-    "General": {"Plantilla John General": plantilla_general_john},
-    "TI": {"Plantilla John TI": plantilla_ti_john},
-    "Aduanas": {"Plantilla John Aduanas": plantilla_aduanas_john}
+    "Plantilla John H2R": plantilla_h2r_john,
+    "Plantilla John P2P": plantilla_p2p_john,
+    "Plantilla John O2C": plantilla_o2c_john,
+    "Plantilla John General": plantilla_general_john,
+    "Plantilla John TI (Alternativa)": plantilla_ti_john,
+    "Plantilla John Aduanas (Alternativa)": plantilla_aduanas_john,
 }
-
 
 # ===============================================================================
 # ===== SET DE PLANTILLAS "KAREN CH" ============================================
@@ -208,12 +209,11 @@ Este agente no sólo extrae y clasifica datos correctamente desde documentos, si
 Me encantaría coordinar una breve sesión contigo, para compartirte una Demo. ¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
-
 plantillas_karen = {
-    "H2R": {"Plantilla Karen H2R": plantilla_h2r_karen},
-    "P2P": {"Plantilla Karen P2P": plantilla_p2p_karen},
-    "O2C": {"Plantilla Karen O2C": plantilla_o2c_karen},
-    "General": {"Plantilla Karen General": plantilla_general_karen},
-    "TI": {"Plantilla Karen TI": plantilla_ti_karen},
-    "Aduanas": {"Plantilla Karen Aduanas": plantilla_aduanas_karen}
+    "Plantilla Karen H2R": plantilla_h2r_karen,
+    "Plantilla Karen P2P": plantilla_p2p_karen,
+    "Plantilla Karen O2C": plantilla_o2c_karen,
+    "Plantilla Karen General": plantilla_general_karen,
+    "Plantilla Karen TI (Alternativa)": plantilla_ti_karen,
+    "Plantilla Karen Aduanas (Alternativa)": plantilla_aduanas_karen,
 }
