@@ -59,8 +59,6 @@ def reset_mensaje_filtros_state():
         "fecha_ini": None, "fecha_fin": None, "busqueda": ""
     }
     st.session_state.mostrar_tabla_mensajes = False
-    if 'mensaje_categoria_sel_v3' in st.session_state: del st.session_state['mensaje_categoria_sel_v3']
-    if 'mensaje_plantilla_sel_v3' in st.session_state: del st.session_state['mensaje_plantilla_sel_v3']
     st.toast("Filtros de mensajes reiniciados ✅")
 
 st.title("💌 Generador de Mensajes Personalizados")
@@ -138,10 +136,10 @@ with st.expander("Ver/Ocultar Filtros Adicionales"):
 st.session_state.mensaje_filtros["busqueda"] = st.text_input("🔎 Buscar en Nombre, Apellido, Empresa, Puesto", value=st.session_state.mensaje_filtros.get("busqueda", ""), placeholder="Ingrese término y presione Enter", key="ti_busqueda_msg_page_v3")
 col_btn1, col_btn2 = st.columns(2)
 with col_btn1:
-    if st.button("📬 Cargar y Filtrar Prospectos para Mensaje", key="btn_cargar_filtrar_msg_page_v3"):
+    if st.button("📬 Generar Vista de Mensajes", key="btn_cargar_filtrar_msg_page_v3"):
         st.session_state.mostrar_tabla_mensajes = True
 with col_btn2:
-    st.button("🧹 Limpiar Filtros de Mensajes", on_click=reset_mensaje_filtros_state, key="btn_limpiar_filtros_msg_page_v3")
+    st.button("🧹 Limpiar Filtros", on_click=reset_mensaje_filtros_state, key="btn_limpiar_filtros_msg_page_v3")
 
 if st.session_state.mostrar_tabla_mensajes:
     st.markdown("---")
@@ -189,173 +187,77 @@ if st.session_state.mostrar_tabla_mensajes:
     df_mensajes_final_display = df_mensajes_filtrado_temp.copy()
 
     if df_mensajes_final_display.empty:
-        st.warning("No se encontraron prospectos que cumplan todos los criterios.")
+        st.warning("No se encontraron prospectos que cumplan todos los criterios de búsqueda y filtros.")
     else:
         linkedin_col_nombre = "LinkedIn"
-        columna_fecha_a_mostrar = "Fecha Primer Mensaje"
-        columnas_necesarias_para_display = ["Nombre", "Apellido", "Empresa", "Puesto", "Proceso", "Avatar", columna_fecha_a_mostrar, "¿Quién Prospecto?", linkedin_col_nombre, "Sesion Agendada?"]
-        for col_exist in columnas_necesarias_para_display:
-            if col_exist not in df_mensajes_final_display.columns: df_mensajes_final_display[col_exist] = pd.NA
         
         if "Proceso" not in df_mensajes_final_display.columns:
-            df_mensajes_final_display["Proceso"] = "Desconocido" 
-            st.warning("La columna 'Proceso' no se encontró. Se usará 'Desconocido' para derivar 'Categoría'.")
+            df_mensajes_final_display["Proceso"] = "Desconocido"
         df_mensajes_final_display["Categoría"] = df_mensajes_final_display["Proceso"].apply(clasificar_por_proceso)
-        df_mensajes_final_display["Nombre_Completo_Display"] = df_mensajes_final_display.apply(lambda row: limpiar_nombre_completo(row.get("Nombre"), row.get("Apellido")), axis=1)
-
-        st.markdown("### 📋 Prospectos Encontrados para Mensajes")
-
-        num_prospectos_filtrados = len(df_mensajes_final_display)
-        if num_prospectos_filtrados == 1:
-            st.info(f"ℹ️ Se encontró **{num_prospectos_filtrados} prospecto** que cumple con los filtros aplicados.")
-        else:
-            st.info(f"ℹ️ Se encontraron **{num_prospectos_filtrados} prospectos** que cumplen con los filtros aplicados.")
-            
-        columnas_para_tabla_display = ["Nombre_Completo_Display", "Empresa", "Puesto", "Categoría", "Avatar", columna_fecha_a_mostrar, "¿Quién Prospecto?", "Sesion Agendada?", linkedin_col_nombre]
-        cols_realmente_en_df_para_tabla = [col for col in columnas_para_tabla_display if col in df_mensajes_final_display.columns]
-        df_tabla_a_mostrar = df_mensajes_final_display[cols_realmente_en_df_para_tabla].copy()
-        if columna_fecha_a_mostrar in df_tabla_a_mostrar.columns:
-            if not pd.api.types.is_datetime64_any_dtype(df_tabla_a_mostrar[columna_fecha_a_mostrar]): df_tabla_a_mostrar[columna_fecha_a_mostrar] = pd.to_datetime(df_tabla_a_mostrar[columna_fecha_a_mostrar], errors='coerce')
-            if pd.api.types.is_datetime64_any_dtype(df_tabla_a_mostrar[columna_fecha_a_mostrar]): df_tabla_a_mostrar[columna_fecha_a_mostrar] = df_tabla_a_mostrar[columna_fecha_a_mostrar].dt.strftime('%d/%m/%Y')
-            else: df_tabla_a_mostrar[columna_fecha_a_mostrar] = "Fecha Inválida"
         
-        st.markdown("---")
-        st.markdown("### 📬️ Generador de Mensajes")
-
-        st.markdown("#### **Paso 1: Elige el Set de Plantillas**")
+        st.markdown("### 📬️ Vista de Mensajes Automáticos")
+        st.markdown("#### **Paso 1: Elige el Estilo del Mensaje**")
         set_plantillas_seleccionado = st.radio(
-            "Selecciona el estilo del mensaje:",
+            "Selecciona el estilo:",
             ("Mensajes John", "Mensajes Karen CH"),
             key="set_plantillas_selector",
             horizontal=True
         )
-
+        
         opciones_mensajes_base = plantillas_john if set_plantillas_seleccionado == "Mensajes John" else plantillas_karen
         
-        st.markdown("#### **Paso 2: Configura la Plantilla Específica**")
+        num_prospectos = len(df_mensajes_final_display)
+        st.info(f"Se encontraron **{num_prospectos}** prospectos. A continuación se muestran los mensajes generados para cada uno.")
         
-        categorias_disponibles_ui = ["– Todas las Categorías –"] + sorted(list(set(df_mensajes_final_display["Categoría"].unique())))
-        
-        col_sel_cat, col_sel_plantilla = st.columns(2)
-        with col_sel_cat:
-            categoria_sel_widget = st.selectbox(
-                "1. Filtra por Categoría del Prospecto:",
-                categorias_disponibles_ui,
-                key="mensaje_categoria_sel_v3"
-            )
-        
-        df_para_generar = df_mensajes_final_display.copy()
-        if categoria_sel_widget != "– Todas las Categorías –":
-            df_para_generar = df_para_generar[df_para_generar["Categoría"] == categoria_sel_widget]
+        def generar_mensaje_para_fila(row, plantilla_str):
+            nombre_prospecto = str(row.get("Nombre", "")).split()[0] if pd.notna(row.get("Nombre")) and str(row.get("Nombre")).strip() else "[Nombre]"
+            avatar_prospectador = str(row.get("Avatar", "Tu Nombre"))
+            empresa_prospecto = str(row.get("Empresa", "[Empresa]"))
+            
+            mensaje = plantilla_str
+            mensaje = mensaje.replace("{nombre}", nombre_prospecto).replace("{empresa}", empresa_prospecto).replace("{avatar}", avatar_prospectador)
+            mensaje = mensaje.replace("#Lead", nombre_prospecto).replace("#Empresa", empresa_prospecto)
+            return mensaje
 
-        # Determinar qué plantillas ofrecer basado en la categoría seleccionada
-        plantillas_a_ofrecer = {}
-        if not df_para_generar.empty:
-            if categoria_sel_widget == "General":
-                plantillas_a_ofrecer.update(opciones_mensajes_base.get("Plantilla John General", {}))
-                plantillas_a_ofrecer.update(opciones_mensajes_base.get("Plantilla Karen General", {}))
-                plantillas_a_ofrecer.update(opciones_mensajes_base.get("Plantilla John TI (Alternativa)", {}))
-                plantillas_a_ofrecer.update(opciones_mensajes_base.get("Plantilla Karen TI (Alternativa)", {}))
-            elif categoria_sel_widget == "P2P":
-                plantillas_a_ofrecer.update(opciones_mensajes_base.get("Plantilla John P2P", {}))
-                plantillas_a_ofrecer.update(opciones_mensajes_base.get("Plantilla Karen P2P", {}))
-                plantillas_a_ofrecer.update(opciones_mensajes_base.get("Plantilla John Aduanas (Alternativa)", {}))
-                plantillas_a_ofrecer.update(opciones_mensajes_base.get("Plantilla Karen Aduanas (Alternativa)", {}))
-            elif categoria_sel_widget != "– Todas las Categorías –":
-                # Para H2R, O2C, etc.
-                plantillas_a_ofrecer.update(opciones_mensajes_base.get(f"Plantilla John {categoria_sel_widget}", {}))
-                plantillas_a_ofrecer.update(opciones_mensajes_base.get(f"Plantilla Karen {categoria_sel_widget}", {}))
-            else: # "Todas las Categorías"
-                plantillas_a_ofrecer = opciones_mensajes_base.copy()
+        for index, row in df_mensajes_final_display.iterrows():
+            st.markdown("---")
+            
+            categoria_prospecto = row["Categoría"]
+            nombre_completo = limpiar_nombre_completo(row.get("Nombre"), row.get("Apellido")).title()
+            puesto = row.get("Puesto", "N/A")
+            empresa = row.get("Empresa", "N/A")
+            
+            info_col, link_col = st.columns([4, 1])
+            with info_col:
+                st.markdown(f"**{nombre_completo}** | {puesto} en **{empresa}** | `Categoría: {categoria_prospecto}`")
 
+            if linkedin_col_nombre in row and pd.notna(row[linkedin_col_nombre]) and str(row[linkedin_col_nombre]).startswith("http"):
+                 with link_col:
+                    st.link_button("🔗 Perfil LinkedIn", row[linkedin_col_nombre])
 
-        nombres_plantillas_para_widget = sorted(list(plantillas_a_ofrecer.keys()))
-        
-        nombre_plantilla_sel, plantilla_str_seleccionada = None, None
-        with col_sel_plantilla:
-            if nombres_plantillas_para_widget:
-                nombre_plantilla_sel = st.selectbox(
-                    "2. Escoge una Plantilla:", 
-                    nombres_plantillas_para_widget,
-                    key="mensaje_plantilla_sel_v3"
-                )
-                plantilla_str_seleccionada = opciones_mensajes_base.get(nombre_plantilla_sel)
-            else:
-                st.warning("No hay plantillas disponibles para la categoría seleccionada.")
-
-        if plantilla_str_seleccionada:
-            if df_para_generar.empty:
-                st.info(f"No hay prospectos que coincidan con la categoría '{categoria_sel_widget}' y los filtros generales.")
-            else:
-                def generar_mensaje_para_fila(row, plantilla_str):
-                    nombre_prospecto = str(row.get("Nombre", "")).split()[0] if pd.notna(row.get("Nombre")) and str(row.get("Nombre")).strip() else "[Nombre]"
-                    avatar_prospectador = str(row.get("Avatar", "Tu Nombre"))
-                    empresa_prospecto = str(row.get("Empresa", "[Empresa]"))
-                    
-                    mensaje = plantilla_str
-                    mensaje = mensaje.replace("{nombre}", nombre_prospecto).replace("{empresa}", empresa_prospecto).replace("{avatar}", avatar_prospectador)
-                    mensaje = mensaje.replace("#Lead", nombre_prospecto).replace("#Empresa", empresa_prospecto)
-                    return mensaje
-
-                df_para_generar["Mensaje_Personalizado"] = df_para_generar.apply(
-                    lambda row: generar_mensaje_para_fila(row, plantilla_str_seleccionada),
-                    axis=1
-                )
-
-                st.markdown("### 📟 Vista Previa y Descarga de Mensajes")
-                cols_generador_display = ["Nombre_Completo_Display", "Empresa", "Puesto", "Categoría", "Avatar", "Sesion Agendada?", linkedin_col_nombre, "Mensaje_Personalizado"]
-                cols_reales_generador = [col for col in cols_generador_display if col in df_para_generar.columns]
-                st.dataframe(df_para_generar[cols_reales_generador], use_container_width=True, height=300)
-
-                @st.cache_data
-                def convert_df_to_csv_final(df_conv):
-                    cols_desc = ["Nombre_Completo_Display", "Empresa", "Puesto", "Categoría", "Sesion Agendada?", linkedin_col_nombre, "Mensaje_Personalizado"]
-                    cols_ex_desc = [col for col in cols_desc if col in df_conv.columns]
-                    if not cols_ex_desc: return None
-                    return df_conv[cols_ex_desc].fillna('').to_csv(index=False).encode('utf-8')
-
-                csv_data = convert_df_to_csv_final(df_para_generar)
-                nombre_archivo_cat = categoria_sel_widget.replace(" ", "_").lower() if categoria_sel_widget != "– Todas las Categorías –" else "todas_categorias"
-                if csv_data is not None and nombre_plantilla_sel is not None:
-                    st.download_button("⬇️ Descargar Mensajes (CSV)", csv_data, file_name=f'mensajes_{nombre_archivo_cat}_{nombre_plantilla_sel.replace(" ", "_").lower()}.csv', mime='text/csv', key="btn_dl_csv_msg_final_v3")
-
-if 'df_para_generar' in locals() and not df_para_generar.empty and 'Mensaje_Personalizado' in df_para_generar.columns:
-    st.markdown("---")
-    st.markdown("### ✨ Vista Profesional de los Mensajes Personalizados")
-    for i, row in df_para_generar.iterrows():
-        nombre_display = str(row.get("Nombre_Completo_Display", "[Nombre]")).title()
-        empresa_display = row.get("Empresa", "")
-        puesto_display = row.get("Puesto", "")
-        categoria_row_display = row.get("Categoría", "N/A")
-        linkedin_url_display = row.get(linkedin_col_nombre, "")
-        mensaje_display_original = row.get("Mensaje_Personalizado", "")
-        
-        mensaje_display_ajustado = mensaje_display_original.replace(":\n\n", ":\n").replace(":\n", ":\n\n")
-
-        linkedin_html_str = ""
-        if linkedin_url_display and isinstance(linkedin_url_display, str) and linkedin_url_display.strip():
-            if linkedin_url_display.startswith("http://") or linkedin_url_display.startswith("https://"):
-                link_text_display = "Abrir Perfil"
-                try:
-                    path_parts_display = [part for part in linkedin_url_display.split('/') if part]
-                    if path_parts_display: link_text_display = path_parts_display[-1]
-                except: pass
-                linkedin_html_str = f"🔗 *LinkedIn:* <a href='{linkedin_url_display}' target='_blank'>{link_text_display}</a>"
-            else:
-                linkedin_html_str = f"🔗 *LinkedIn:* {linkedin_url_display} (No es una URL válida)"
-        
-        info_header = f"""
-**{nombre_display}{f" - {empresa_display}" if empresa_display else ""}**<br>
-🧑‍💼 *Puesto:* {puesto_display if puesto_display else "No especificado"}<br>
-🗂️ *Categoría:* {categoria_row_display if categoria_row_display else "No especificada"}
-"""
-        if linkedin_html_str:
-            info_header += f"<br>{linkedin_html_str}"
-
-        st.markdown("---")
-        st.markdown(info_header, unsafe_allow_html=True)
-        st.markdown("📩 *Mensaje:*")
-        st.code(mensaje_display_ajustado, language=None)
+            # ---- Lógica para Mensaje Principal ----
+            key_plantilla_principal = f"Plantilla {set_plantillas_seleccionado.split(' ')[1]} {categoria_prospecto}"
+            plantilla_principal_str = opciones_mensajes_base.get(key_plantilla_principal)
+            
+            if plantilla_principal_str:
+                mensaje_principal = generar_mensaje_para_fila(row, plantilla_principal_str)
+                st.markdown("**Mensaje Principal Sugerido:**")
+                st.code(mensaje_principal, language=None)
+            
+            # ---- Lógica para Mensaje Alternativo ----
+            key_plantilla_alternativa = None
+            if categoria_prospecto == "General":
+                key_plantilla_alternativa = f"Plantilla {set_plantillas_seleccionado.split(' ')[1]} TI (Alternativa)"
+            elif categoria_prospecto == "P2P":
+                key_plantilla_alternativa = f"Plantilla {set_plantillas_seleccionado.split(' ')[1]} Aduanas (Alternativa)"
+            
+            if key_plantilla_alternativa:
+                plantilla_alternativa_str = opciones_mensajes_base.get(key_plantilla_alternativa)
+                if plantilla_alternativa_str:
+                    mensaje_alternativo = generar_mensaje_para_fila(row, plantilla_alternativa_str)
+                    expander_title = f"Ver Mensaje Alternativo para '{'TI' if categoria_prospecto == 'General' else 'Aduanas'}'"
+                    with st.expander(expander_title):
+                        st.code(mensaje_alternativo, language=None)
 
 st.markdown("---")
 st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")
