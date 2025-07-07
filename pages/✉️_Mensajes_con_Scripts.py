@@ -228,21 +228,27 @@ if st.session_state.mostrar_tabla_mensajes:
             
             return mensaje
 
-        for index, row in df_mensajes_final_display.iterrows():
-            st.markdown("---")
-            
-            categoria_prospecto = row["Categoría"]
-            nombre_completo = limpiar_nombre_completo(row.get("Nombre"), row.get("Apellido")).title()
-            puesto = row.get("Puesto", "N/A")
-            empresa = row.get("Empresa", "N/A")
-            
-            info_col, link_col = st.columns([4, 1])
-            with info_col:
-                st.markdown(f"**{nombre_completo}** | {puesto} en **{empresa}** | `Categoría: {categoria_prospecto}`")
+        # En el archivo: pages/✉️_Mensajes_con_Scripts.py ...
 
-            if linkedin_col_nombre in row and pd.notna(row[linkedin_col_nombre]) and str(row[linkedin_col_nombre]).startswith("http"):
-                 with link_col:
-                    st.link_button("🔗 Perfil LinkedIn", row[linkedin_col_nombre], key=f"link_{index}")
+for index, row in df_mensajes_final_display.iterrows():
+    st.markdown("---")
+    
+    categoria_prospecto = row["Categoría"]
+    nombre_completo = limpiar_nombre_completo(row.get("Nombre"), row.get("Apellido")).title()
+    puesto = row.get("Puesto", "N/A")
+    empresa = row.get("Empresa", "N/A")
+    
+    info_col, link_col = st.columns([4, 1])
+    with info_col:
+        st.markdown(f"**{nombre_completo}** | {puesto} en **{empresa}** | `Categoría: {categoria_prospecto}`")
+
+    if linkedin_col_nombre in row and pd.notna(row[linkedin_col_nombre]) and str(row[linkedin_col_nombre]).startswith("http"):
+         with link_col:
+            # --- CORRECCIÓN APLICADA AQUÍ ---
+            # Usamos el 'index' del DataFrame, que es un identificador único y estable para la fila.
+            unique_key = f"link_{index}"
+            st.link_button("🔗 Perfil LinkedIn", row[linkedin_col_nombre], key=unique_key)
+
 
             # ---- Lógica para Mensaje Principal ----
             key_plantilla_principal = f"Plantilla {nombre_set} {categoria_prospecto}"
@@ -255,7 +261,7 @@ if st.session_state.mostrar_tabla_mensajes:
             else:
                 st.warning(f"No se encontró una plantilla principal para la categoría '{categoria_prospecto}' en el set de '{nombre_set}'.")
 
-            # ---- Lógica para Mensaje Alternativo ----
+            # ---- Lógica para Mensaje Alternativo ---
             key_plantilla_alternativa = None
             nombre_alternativa = ""
             if categoria_prospecto == "General":
