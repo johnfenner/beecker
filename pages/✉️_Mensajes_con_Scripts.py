@@ -228,7 +228,9 @@ if st.session_state.mostrar_tabla_mensajes:
             
             return mensaje
 
-        # En el archivo: pages/✉️_Mensajes_con_Scripts.py ...
+# En el archivo: pages/✉️_Mensajes_con_Scripts.py
+
+# ... (código anterior)
 
 for index, row in df_mensajes_final_display.iterrows():
     st.markdown("---")
@@ -248,6 +250,8 @@ for index, row in df_mensajes_final_display.iterrows():
             # Usamos el 'index' del DataFrame, que es un identificador único y estable para la fila.
             unique_key = f"link_{index}"
             st.link_button("🔗 Perfil LinkedIn", row[linkedin_col_nombre], key=unique_key)
+
+# ... (resto del código)
 
 
             # ---- Lógica para Mensaje Principal ----
