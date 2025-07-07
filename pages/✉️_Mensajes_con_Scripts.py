@@ -1,3 +1,5 @@
+# Archivo: pages/✉️_Mensajes_con_Scripts.py
+
 import streamlit as st
 import pandas as pd
 import sys
@@ -12,7 +14,6 @@ if project_root not in sys.path:
 
 from datos.carga_datos import cargar_y_limpiar_datos
 from filtros.aplicar_filtros import aplicar_filtros
-# --- Se importan los DOS sets de plantillas ---
 from mensajes.mensajes import plantillas_john, plantillas_karen
 from mensajes.mensajes_streamlit import clasificar_por_proceso
 from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar, limpiar_nombre_completo
@@ -29,7 +30,7 @@ def aplicar_filtros_mensajes(
 
     if fuente_lista and "– Todos –" not in fuente_lista:
         df_filtrado = df_filtrado[df_filtrado["Fuente de la Lista"].isin(fuente_lista)]
-    if proceso and "– Todos –" not in proceso: # Filtro sobre la columna "Proceso" original
+    if proceso and "– Todos –" not in proceso:
         df_filtrado = df_filtrado[df_filtrado["Proceso"].isin(proceso)]
     if pais and "– Todos –" not in pais:
         df_filtrado = df_filtrado[df_filtrado["Pais"].isin(pais)]
@@ -53,7 +54,7 @@ def aplicar_filtros_mensajes(
 
 def reset_mensaje_filtros_state():
     st.session_state.mensaje_filtros = {
-        "invite_aceptada": "si", "fuente_lista": ["– Todos –"], "proceso": ["– Todos –"], # Filtro por "Proceso" original
+        "invite_aceptada": "si", "fuente_lista": ["– Todos –"], "proceso": ["– Todos –"],
         "avatar": ["– Todos –"], "pais": ["– Todos –"], "industria": ["– Todos –"],
         "prospectador": ["– Todos –"], "sesion_agendada": "– Todos –",
         "fecha_ini": None, "fecha_fin": None, "busqueda": ""
@@ -90,6 +91,7 @@ st.session_state.mensaje_filtros["invite_aceptada"] = "si"
 
 st.write("**2. Filtros Adicionales (Opcional):**")
 with st.expander("Ver/Ocultar Filtros Adicionales"):
+    # ... (toda la lógica de filtros permanece igual)
     col1_filtros, col2_filtros = st.columns(2)
     with col1_filtros:
         opciones_fuente = ["– Todos –"] + (sorted(df["Fuente de la Lista"].dropna().astype(str).unique().tolist()) if "Fuente de la Lista" in df.columns and not df["Fuente de la Lista"].empty else [])
@@ -133,6 +135,7 @@ with st.expander("Ver/Ocultar Filtros Adicionales"):
         with col_f2_filt:
             st.session_state.mensaje_filtros["fecha_fin"] = st.date_input("Hasta (Fecha Primer Mensaje)", value=st.session_state.mensaje_filtros.get("fecha_fin", None), format='DD/MM/YYYY', key="di_fecha_fin_msg_page_v3", min_value=fecha_min_data_val, max_value=fecha_max_data_val)
 
+
 st.session_state.mensaje_filtros["busqueda"] = st.text_input("🔎 Buscar en Nombre, Apellido, Empresa, Puesto", value=st.session_state.mensaje_filtros.get("busqueda", ""), placeholder="Ingrese término y presione Enter", key="ti_busqueda_msg_page_v3")
 col_btn1, col_btn2 = st.columns(2)
 with col_btn1:
@@ -141,19 +144,16 @@ with col_btn1:
 with col_btn2:
     st.button("🧹 Limpiar Filtros", on_click=reset_mensaje_filtros_state, key="btn_limpiar_filtros_msg_page_v3")
 
-# --- Bloque principal de lógica de visualización ---
 if st.session_state.mostrar_tabla_mensajes:
     st.markdown("---")
     
-    # --- Inicia el filtrado ---
     df_mensajes_filtrado_temp = df.copy()
     if "¿Invite Aceptada?" in df_mensajes_filtrado_temp.columns:
         df_mensajes_filtrado_temp = df_mensajes_filtrado_temp[df_mensajes_filtrado_temp["¿Invite Aceptada?"].apply(limpiar_valor_kpi).astype(str).str.lower() == str(st.session_state.mensaje_filtros["invite_aceptada"]).lower()]
     else:
         st.warning("Columna '¿Invite Aceptada?' no encontrada.")
-        df_mensajes_filtrado_temp = pd.DataFrame() # Devuelve un DF vacío si falta la columna
+        df_mensajes_filtrado_temp = pd.DataFrame()
 
-    # Aplica el resto de filtros solo si el DF no está ya vacío
     if not df_mensajes_filtrado_temp.empty:
         filtro_sesion_para_aplicar = st.session_state.mensaje_filtros.get("sesion_agendada", "– Todos –")
         if isinstance(filtro_sesion_para_aplicar, str):
@@ -174,32 +174,25 @@ if st.session_state.mostrar_tabla_mensajes:
             st.session_state.mensaje_filtros.get("fecha_fin", None), 
             "Fecha Primer Mensaje"
         )
-        
         busqueda_term_final = st.session_state.mensaje_filtros.get("busqueda", "").lower().strip()
         if busqueda_term_final and not df_mensajes_filtrado_temp.empty:
             mask_busqueda = pd.Series([False] * len(df_mensajes_filtrado_temp), index=df_mensajes_filtrado_temp.index)
             columnas_para_busqueda_texto = ["Empresa", "Puesto"]
             for col_busc in columnas_para_busqueda_texto:
                 if col_busc in df_mensajes_filtrado_temp.columns: mask_busqueda |= df_mensajes_filtrado_temp[col_busc].astype(str).str.lower().str.contains(busqueda_term_final, na=False)
-            
             nombre_col_df, apellido_col_df = "Nombre", "Apellido"
             if nombre_col_df in df_mensajes_filtrado_temp.columns and apellido_col_df in df_mensajes_filtrado_temp.columns:
                 nombre_completo_busq = (df_mensajes_filtrado_temp[nombre_col_df].fillna('') + ' ' + df_mensajes_filtrado_temp[apellido_col_df].fillna('')).str.lower()
                 mask_busqueda |= nombre_completo_busq.str.contains(busqueda_term_final, na=False)
-            elif nombre_col_df in df_mensajes_filtrado_temp.columns: 
-                mask_busqueda |= df_mensajes_filtrado_temp[nombre_col_df].astype(str).str.lower().str.contains(busqueda_term_final, na=False)
-            elif apellido_col_df in df_mensajes_filtrado_temp.columns: 
-                mask_busqueda |= df_mensajes_filtrado_temp[apellido_col_df].astype(str).str.lower().str.contains(busqueda_term_final, na=False)
-            
+            elif nombre_col_df in df_mensajes_filtrado_temp.columns: mask_busqueda |= df_mensajes_filtrado_temp[nombre_col_df].astype(str).str.lower().str.contains(busqueda_term_final, na=False)
+            elif apellido_col_df in df_mensajes_filtrado_temp.columns: mask_busqueda |= df_mensajes_filtrado_temp[apellido_col_df].astype(str).str.lower().str.contains(busqueda_term_final, na=False)
             df_mensajes_filtrado_temp = df_mensajes_filtrado_temp[mask_busqueda]
 
-    # --- Fin del filtrado, ahora se procede a mostrar ---
     df_mensajes_final_display = df_mensajes_filtrado_temp.copy()
-    
+
     if df_mensajes_final_display.empty:
         st.warning("No se encontraron prospectos que cumplan todos los criterios de búsqueda y filtros.")
     else:
-        # Toda la lógica de visualización (que antes estaba en el else) va aquí
         linkedin_col_nombre = "LinkedIn"
         
         if "Proceso" not in df_mensajes_final_display.columns:
@@ -239,7 +232,6 @@ if st.session_state.mostrar_tabla_mensajes:
             
             return mensaje
 
-        # --- EL BUCLE PARA MOSTRAR MENSAJES ---
         for index, row in df_mensajes_final_display.iterrows():
             st.markdown("---")
             
@@ -254,8 +246,10 @@ if st.session_state.mostrar_tabla_mensajes:
 
             if linkedin_col_nombre in row and pd.notna(row[linkedin_col_nombre]) and str(row[linkedin_col_nombre]).startswith("http"):
                  with link_col:
-                    unique_key = f"link_{index}" # Clave única y estable
-                    st.link_button("🔗 Perfil LinkedIn", row[linkedin_col_nombre], key=unique_key)
+                    # --- SOLUCIÓN DEFINITIVA APLICADA AQUÍ ---
+                    # Reemplazamos el st.link_button por st.markdown para crear un enlace de texto.
+                    # Esto es mucho más estable y evita el TypeError.
+                    st.markdown(f"[🔗 Perfil LinkedIn]({row[linkedin_col_nombre]})")
 
             # ---- Lógica para Mensaje Principal ----
             key_plantilla_principal = f"Plantilla {nombre_set} {categoria_prospecto}"
