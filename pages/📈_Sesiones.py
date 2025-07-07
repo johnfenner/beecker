@@ -330,7 +330,7 @@ def sidebar_filters_sesiones(df_options):
              unique_weeks_str = sorted(num_semana_series.dropna().astype(str).unique())
              week_options_ses.extend(unique_weeks_str)
 
-    current_week_selection_from_state = st.session_state.get(SES_WEEK_FILTER_KEY, ["– Todas –"])
+    current_week_selection_from_state = st.session_state.get(SES_WEEK_FILTER_KEY, ["– Todos –"])
     if not isinstance(current_week_selection_from_state, list): current_week_selection_from_state = ["– Todas –"]
     valid_week_selection_ses = [s for s in current_week_selection_from_state if s in week_options_ses]
     if not valid_week_selection_ses:
@@ -447,30 +447,24 @@ def display_sesiones_summary_sql(df_filtered):
             st.dataframe(sql_counts.set_index('Calificación SQL').style.format({"Número de Sesiones": "{:,}"}), use_container_width=True)
         else: st.info("No hay datos de calificación SQL para mostrar.")
 
-        # --- NUEVA SECCIÓN: ANÁLISIS DE SESIONES TOMADAS (SQL1, SQL2, MQL) ---
-        st.markdown("---") # Separador visual
+        st.markdown("---")
         st.markdown("#### Distribución por Calificación SQL (Solo Sesiones Tomadas)")
 
-        # 1. Filtrar solo las sesiones que cuentan como "tomadas"
         sesiones_tomadas_df = df_filtered[df_filtered['SQL_Estandarizado'].isin(['SQL1', 'SQL2', 'MQL'])].copy()
 
         if not sesiones_tomadas_df.empty:
-            # 2. Calcular el nuevo total y las cuentas por categoría
             total_sesiones_tomadas = len(sesiones_tomadas_df)
             st.metric("Total Sesiones Tomadas (SQL1, SQL2, MQL)", f"{total_sesiones_tomadas:,}")
 
             sql_counts_tomadas = sesiones_tomadas_df['SQL_Estandarizado'].value_counts().reset_index()
             sql_counts_tomadas.columns = ['Calificación SQL', 'Número de Sesiones']
 
-            # 3. Calcular porcentajes basados en el nuevo total
             sql_counts_tomadas['Porcentaje (%)'] = (sql_counts_tomadas['Número de Sesiones'] / total_sesiones_tomadas * 100).round(1)
 
-            # 4. Ordenar para consistencia visual
             category_order_tomadas = get_sql_category_order(sql_counts_tomadas['Calificación SQL'])
             sql_counts_tomadas['Calificación SQL'] = pd.Categorical(sql_counts_tomadas['Calificación SQL'], categories=category_order_tomadas, ordered=True)
             sql_counts_tomadas = sql_counts_tomadas.sort_values('Calificación SQL').reset_index(drop=True)
 
-            # 5. Crear el nuevo gráfico
             fig_sql_tomadas = px.bar(sql_counts_tomadas,
                                      x='Calificación SQL',
                                      y='Número de Sesiones',
@@ -480,7 +474,6 @@ def display_sesiones_summary_sql(df_filtered):
             fig_sql_tomadas.update_xaxes(categoryorder='array', categoryarray=category_order_tomadas)
             st.plotly_chart(fig_sql_tomadas, use_container_width=True)
 
-            # 6. Mostrar la nueva tabla con porcentajes
             st.dataframe(
                 sql_counts_tomadas.set_index('Calificación SQL').style.format({
                     "Número de Sesiones": "{:,}",
@@ -488,6 +481,34 @@ def display_sesiones_summary_sql(df_filtered):
                 }),
                 use_container_width=True
             )
+
+            # --- GRÁFICO ADICIONAL DE EVOLUCIÓN DE PORCENTAJES ---
+            st.markdown("##### Evolución de la Composición de Sesiones Tomadas (Mensual)")
+            if 'AñoMes' in sesiones_tomadas_df.columns and not sesiones_tomadas_df['AñoMes'].dropna().empty:
+                # Agrupar por mes y calificación para obtener el conteo
+                evolucion_df = sesiones_tomadas_df.groupby(['AñoMes', 'SQL_Estandarizado']).size().reset_index(name='Cantidad')
+
+                # Crear el gráfico de barras apiladas 100%
+                fig_evolucion_pct = px.bar(evolucion_df,
+                                           x='AñoMes',
+                                           y='Cantidad',
+                                           color='SQL_Estandarizado',
+                                           title='Composición Porcentual de Sesiones Tomadas por Mes',
+                                           labels={'Cantidad': 'Porcentaje de Sesiones'},
+                                           category_orders={"SQL_Estandarizado": category_order_tomadas},
+                                           barmode='stack')
+
+                # Normalizar las barras para que sumen 100%
+                fig_evolucion_pct.update_layout(barnorm='percent',
+                                                yaxis_title="Porcentaje de Sesiones (%)",
+                                                xaxis_title="Mes",
+                                                legend_title="Calificación SQL")
+
+                st.plotly_chart(fig_evolucion_pct, use_container_width=True)
+            else:
+                st.info("No hay suficientes datos temporales ('AñoMes') para mostrar la evolución de la composición.")
+            # --- FIN DEL GRÁFICO ADICIONAL ---
+
         else:
             st.info("No hay sesiones calificadas como SQL1, SQL2 o MQL en el período filtrado.")
 
