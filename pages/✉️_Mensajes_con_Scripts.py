@@ -204,19 +204,42 @@ if st.session_state.mostrar_tabla_mensajes:
             horizontal=True
         )
         
-        opciones_mensajes_base = plantillas_john if set_plantillas_seleccionado == "Mensajes John" else plantillas_karen
-        
+        # Lógica para seleccionar el diccionario de plantillas correcto
+        opciones_mensajes_base = {}
+        nombre_set = ""
+        if set_plantillas_seleccionado == "Mensajes John":
+            opciones_mensajes_base = plantillas_john
+            nombre_set = "John"
+        else: # "Mensajes Karen CH"
+            opciones_mensajes_base = plantillas_karen
+            nombre_set = "Karen"
+
         num_prospectos = len(df_mensajes_final_display)
         st.info(f"Se encontraron **{num_prospectos}** prospectos. A continuación se muestran los mensajes generados para cada uno.")
         
+        # --- FUNCIÓN GENERADORA DE MENSAJES RESTAURADA Y CORREGIDA ---
         def generar_mensaje_para_fila(row, plantilla_str):
+            # Extrae el primer nombre del prospecto
             nombre_prospecto = str(row.get("Nombre", "")).split()[0] if pd.notna(row.get("Nombre")) and str(row.get("Nombre")).strip() else "[Nombre]"
+            
+            # Extrae el nombre del avatar (quien prospecta) de la fila
             avatar_prospectador = str(row.get("Avatar", "Tu Nombre"))
+            
+            # Extrae la empresa del prospecto
             empresa_prospecto = str(row.get("Empresa", "[Empresa]"))
             
             mensaje = plantilla_str
-            mensaje = mensaje.replace("{nombre}", nombre_prospecto).replace("{empresa}", empresa_prospecto).replace("{avatar}", avatar_prospectador)
-            mensaje = mensaje.replace("#Lead", nombre_prospecto).replace("#Empresa", empresa_prospecto)
+            
+            # Reemplaza los placeholders para ambos estilos de plantilla
+            mensaje = mensaje.replace("{nombre}", nombre_prospecto)
+            mensaje = mensaje.replace("#Lead", nombre_prospecto)
+            
+            mensaje = mensaje.replace("{empresa}", empresa_prospecto)
+            mensaje = mensaje.replace("#Empresa", empresa_prospecto)
+
+            # Reemplaza el avatar dinámicamente (clave para la personalización de John)
+            mensaje = mensaje.replace("{avatar}", avatar_prospectador)
+            
             return mensaje
 
         for index, row in df_mensajes_final_display.iterrows():
@@ -233,29 +256,34 @@ if st.session_state.mostrar_tabla_mensajes:
 
             if linkedin_col_nombre in row and pd.notna(row[linkedin_col_nombre]) and str(row[linkedin_col_nombre]).startswith("http"):
                  with link_col:
-                    st.link_button("🔗 Perfil LinkedIn", row[linkedin_col_nombre])
+                    st.link_button("🔗 Perfil LinkedIn", row[linkedin_col_nombre], key=f"link_{index}")
 
             # ---- Lógica para Mensaje Principal ----
-            key_plantilla_principal = f"Plantilla {set_plantillas_seleccionado.split(' ')[1]} {categoria_prospecto}"
+            key_plantilla_principal = f"Plantilla {nombre_set} {categoria_prospecto}"
             plantilla_principal_str = opciones_mensajes_base.get(key_plantilla_principal)
             
             if plantilla_principal_str:
                 mensaje_principal = generar_mensaje_para_fila(row, plantilla_principal_str)
                 st.markdown("**Mensaje Principal Sugerido:**")
                 st.code(mensaje_principal, language=None)
-            
+            else:
+                st.warning(f"No se encontró una plantilla principal para la categoría '{categoria_prospecto}' en el set de '{nombre_set}'.")
+
             # ---- Lógica para Mensaje Alternativo ----
             key_plantilla_alternativa = None
+            nombre_alternativa = ""
             if categoria_prospecto == "General":
-                key_plantilla_alternativa = f"Plantilla {set_plantillas_seleccionado.split(' ')[1]} TI (Alternativa)"
+                key_plantilla_alternativa = f"Plantilla {nombre_set} TI (Alternativa)"
+                nombre_alternativa = "TI"
             elif categoria_prospecto == "P2P":
-                key_plantilla_alternativa = f"Plantilla {set_plantillas_seleccionado.split(' ')[1]} Aduanas (Alternativa)"
+                key_plantilla_alternativa = f"Plantilla {nombre_set} Aduanas (Alternativa)"
+                nombre_alternativa = "Aduanas"
             
             if key_plantilla_alternativa:
                 plantilla_alternativa_str = opciones_mensajes_base.get(key_plantilla_alternativa)
                 if plantilla_alternativa_str:
                     mensaje_alternativo = generar_mensaje_para_fila(row, plantilla_alternativa_str)
-                    expander_title = f"Ver Mensaje Alternativo para '{'TI' if categoria_prospecto == 'General' else 'Aduanas'}'"
+                    expander_title = f"Ver Mensaje Alternativo para '{nombre_alternativa}'"
                     with st.expander(expander_title):
                         st.code(mensaje_alternativo, language=None)
 
