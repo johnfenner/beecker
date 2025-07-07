@@ -330,7 +330,7 @@ def sidebar_filters_sesiones(df_options):
              unique_weeks_str = sorted(num_semana_series.dropna().astype(str).unique())
              week_options_ses.extend(unique_weeks_str)
 
-    current_week_selection_from_state = st.session_state.get(SES_WEEK_FILTER_KEY, ["– Todos –"])
+    current_week_selection_from_state = st.session_state.get(SES_WEEK_FILTER_KEY, ["– Todas –"])
     if not isinstance(current_week_selection_from_state, list): current_week_selection_from_state = ["– Todas –"]
     valid_week_selection_ses = [s for s in current_week_selection_from_state if s in week_options_ses]
     if not valid_week_selection_ses:
@@ -482,29 +482,26 @@ def display_sesiones_summary_sql(df_filtered):
                 use_container_width=True
             )
 
-            # --- GRÁFICO ADICIONAL DE EVOLUCIÓN DE PORCENTAJES ---
+            # --- GRÁFICO ADICIONAL DE EVOLUCIÓN DE PORCENTAJES (NUEVA VERSIÓN) ---
             st.markdown("##### Evolución de la Composición de Sesiones Tomadas (Mensual)")
             if 'AñoMes' in sesiones_tomadas_df.columns and not sesiones_tomadas_df['AñoMes'].dropna().empty:
-                # Agrupar por mes y calificación para obtener el conteo
                 evolucion_df = sesiones_tomadas_df.groupby(['AñoMes', 'SQL_Estandarizado']).size().reset_index(name='Cantidad')
 
-                # Crear el gráfico de barras apiladas 100%
-                fig_evolucion_pct = px.bar(evolucion_df,
+                fig_evolucion_area = px.area(evolucion_df,
                                            x='AñoMes',
                                            y='Cantidad',
                                            color='SQL_Estandarizado',
-                                           title='Composición Porcentual de Sesiones Tomadas por Mes',
-                                           labels={'Cantidad': 'Porcentaje de Sesiones'},
+                                           groupnorm='percent', # Normaliza a 100%
+                                           title='Evolución de la Composición de Sesiones Tomadas',
+                                           labels={'Cantidad': 'Composición de Sesiones (%)'},
                                            category_orders={"SQL_Estandarizado": category_order_tomadas},
-                                           barmode='stack')
+                                           markers=True) # Añade marcadores para claridad
 
-                # Normalizar las barras para que sumen 100%
-                fig_evolucion_pct.update_layout(barnorm='percent',
-                                                yaxis_title="Porcentaje de Sesiones (%)",
-                                                xaxis_title="Mes",
-                                                legend_title="Calificación SQL")
-
-                st.plotly_chart(fig_evolucion_pct, use_container_width=True)
+                fig_evolucion_area.update_layout(yaxis_ticksuffix='%',
+                                                 yaxis_title="Composición Porcentual (%)",
+                                                 xaxis_title="Mes",
+                                                 legend_title="Calificación SQL")
+                st.plotly_chart(fig_evolucion_area, use_container_width=True)
             else:
                 st.info("No hay suficientes datos temporales ('AñoMes') para mostrar la evolución de la composición.")
             # --- FIN DEL GRÁFICO ADICIONAL ---
