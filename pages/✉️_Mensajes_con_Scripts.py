@@ -12,11 +12,8 @@ if project_root not in sys.path:
 
 from datos.carga_datos import cargar_y_limpiar_datos
 from filtros.aplicar_filtros import aplicar_filtros
-# --- CORRECCIÓN 1: Importar los nombres de variable correctos ---
-from mensajes.mensajes import (
-    plantilla_h2r_final, plantilla_p2p_final,
-    plantilla_o2c_final, plantilla_general_final
-)
+# --- Se importan los DOS sets de plantillas ---
+from mensajes.mensajes import plantillas_john, plantillas_karen
 from mensajes.mensajes_streamlit import clasificar_por_proceso
 from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar, limpiar_nombre_completo
 
@@ -74,8 +71,6 @@ def get_base_data():
     df_base = cargar_y_limpiar_datos()
     col_fecha_ppal = "Fecha Primer Mensaje"
     if col_fecha_ppal in df_base.columns and not pd.api.types.is_datetime64_any_dtype(df_base[col_fecha_ppal]):
-        # --- CORRECCIÓN AQUÍ ---
-        # Se especifica el formato de fecha para asegurar la correcta interpretación.
         df_base[col_fecha_ppal] = pd.to_datetime(df_base[col_fecha_ppal], format='%d/%m/%Y', errors='coerce')
     if "Fecha de Invite" in df_base.columns and not pd.api.types.is_datetime64_any_dtype(df_base["Fecha de Invite"]):
         df_base["Fecha de Invite"] = pd.to_datetime(df_base["Fecha de Invite"], errors='coerce')
@@ -102,7 +97,6 @@ with st.expander("Ver/Ocultar Filtros Adicionales"):
         opciones_fuente = ["– Todos –"] + (sorted(df["Fuente de la Lista"].dropna().astype(str).unique().tolist()) if "Fuente de la Lista" in df.columns and not df["Fuente de la Lista"].empty else [])
         st.session_state.mensaje_filtros["fuente_lista"] = st.multiselect("Fuente de la Lista", opciones_fuente, default=st.session_state.mensaje_filtros.get("fuente_lista", ["– Todos –"]), key="ms_fuente_lista_msg_page_v3")
         
-        # Filtro para la columna "Proceso" original del DataFrame
         opciones_proceso_col_original = df["Proceso"].dropna().astype(str).unique().tolist() if "Proceso" in df.columns and not df["Proceso"].empty else []
         opciones_proceso_ui_original = ["– Todos –"] + sorted(opciones_proceso_col_original)
         st.session_state.mensaje_filtros["proceso"] = st.multiselect("Proceso (Filtro de Datos)", opciones_proceso_ui_original, default=st.session_state.mensaje_filtros.get("proceso", ["– Todos –"]), key="ms_proceso_col_original_msg_page_v3")
@@ -159,17 +153,16 @@ if st.session_state.mostrar_tabla_mensajes:
         df_mensajes_filtrado_temp = pd.DataFrame()
 
     if not df_mensajes_filtrado_temp.empty:
-        filtro_sesion_para_aplicar = st.session_state.mensaje_filtros.get("sesion_agendada", "– Todos –"); isinstance(filtro_sesion_para_aplicar, str)
+        filtro_sesion_para_aplicar = st.session_state.mensaje_filtros.get("sesion_agendada", "– Todos –")
         if isinstance(filtro_sesion_para_aplicar, str):
             if filtro_sesion_para_aplicar.strip().lower() == "si": filtro_sesion_para_aplicar = "Si"
             elif filtro_sesion_para_aplicar.strip().lower() == "no": filtro_sesion_para_aplicar = "No"
             if filtro_sesion_para_aplicar not in ["Si", "No", "– Todos –"]: filtro_sesion_para_aplicar = "– Todos –"
         
-        # Se usa st.session_state.mensaje_filtros.get("proceso") que es el filtro de la columna "Proceso" original
         df_mensajes_filtrado_temp = aplicar_filtros_mensajes(
             df_mensajes_filtrado_temp, 
             st.session_state.mensaje_filtros.get("fuente_lista", ["– Todos –"]), 
-            st.session_state.mensaje_filtros.get("proceso", ["– Todos –"]), # Este es el filtro de la columna "Proceso"
+            st.session_state.mensaje_filtros.get("proceso", ["– Todos –"]),
             st.session_state.mensaje_filtros.get("pais", ["– Todos –"]), 
             st.session_state.mensaje_filtros.get("industria", ["– Todos –"]), 
             st.session_state.mensaje_filtros.get("avatar", ["– Todos –"]), 
@@ -212,7 +205,6 @@ if st.session_state.mostrar_tabla_mensajes:
 
         st.markdown("### 📋 Prospectos Encontrados para Mensajes")
 
-         # CONTEO:
         num_prospectos_filtrados = len(df_mensajes_final_display)
         if num_prospectos_filtrados == 1:
             st.info(f"ℹ️ Se encontró **{num_prospectos_filtrados} prospecto** que cumple con los filtros aplicados.")
@@ -230,7 +222,6 @@ if st.session_state.mostrar_tabla_mensajes:
         st.markdown("---")
         st.markdown("### 📬️ Generador de Mensajes")
 
-        # --- NUEVA SECCIÓN PARA SELECCIONAR EL SET DE PLANTILLAS ---
         st.markdown("#### **Paso 1: Elige el Set de Plantillas**")
         set_plantillas_seleccionado = st.radio(
             "Selecciona el estilo del mensaje:",
@@ -239,91 +230,82 @@ if st.session_state.mostrar_tabla_mensajes:
             horizontal=True
         )
 
-        opciones_mensajes_base = {}
-        if set_plantillas_seleccionado == "Mensajes John":
-            opciones_mensajes_base = plantillas_john
-        else: # "Mensajes Karen CH"
-            opciones_mensajes_base = plantillas_karen
+        opciones_mensajes_base = plantillas_john if set_plantillas_seleccionado == "Mensajes John" else plantillas_karen
         
-        # --- Lógica de selección de categoría y plantilla (adaptada) ---
         st.markdown("#### **Paso 2: Configura la Plantilla Específica**")
         
-        categorias_disponibles = ["H2R", "P2P", "O2C", "General"]
-        categorias_seleccionables_para_widget_ui = ["– Todas las Categorías –"] + sorted(categorias_disponibles)
+        categorias_disponibles_ui = ["– Todas las Categorías –"] + sorted(list(set(df_mensajes_final_display["Categoría"].unique())))
         
         col_sel_cat, col_sel_plantilla = st.columns(2)
         with col_sel_cat:
             categoria_sel_widget = st.selectbox(
-                "1. Selecciona Categoría de Plantilla:",
-                categorias_seleccionables_para_widget_ui,
+                "1. Filtra por Categoría del Prospecto:",
+                categorias_disponibles_ui,
                 key="mensaje_categoria_sel_v3"
             )
-
-        plantillas_para_categoria_sel_ui = {}
         
-        # Lógica para determinar qué plantillas mostrar en el segundo selectbox
+        df_para_generar = df_mensajes_final_display.copy()
         if categoria_sel_widget != "– Todas las Categorías –":
-            # Cargar plantillas de la categoría específica
-            plantillas_para_categoria_sel_ui = opciones_mensajes_base.get(categoria_sel_widget, {}).copy()
-            
-            # Añadir plantillas alternativas
-            if categoria_sel_widget == "General":
-                plantillas_para_categoria_sel_ui.update(opciones_mensajes_base.get("TI", {}))
-            elif categoria_sel_widget == "P2P":
-                plantillas_para_categoria_sel_ui.update(opciones_mensajes_base.get("Aduanas", {}))
-        else:
-            # Si se eligen "Todas", mostrar las de "General" y "TI" por defecto
-            plantillas_para_categoria_sel_ui = opciones_mensajes_base.get("General", {}).copy()
-            plantillas_para_categoria_sel_ui.update(opciones_mensajes_base.get("TI", {}))
+            df_para_generar = df_para_generar[df_para_generar["Categoría"] == categoria_sel_widget]
 
-        nombres_plantillas_para_categoria_sel_ui = list(plantillas_para_categoria_sel_ui.keys())
+        # Determinar qué plantillas ofrecer basado en la categoría seleccionada
+        plantillas_a_ofrecer = {}
+        if not df_para_generar.empty:
+            if categoria_sel_widget == "General":
+                plantillas_a_ofrecer.update(opciones_mensajes_base.get("Plantilla John General", {}))
+                plantillas_a_ofrecer.update(opciones_mensajes_base.get("Plantilla Karen General", {}))
+                plantillas_a_ofrecer.update(opciones_mensajes_base.get("Plantilla John TI (Alternativa)", {}))
+                plantillas_a_ofrecer.update(opciones_mensajes_base.get("Plantilla Karen TI (Alternativa)", {}))
+            elif categoria_sel_widget == "P2P":
+                plantillas_a_ofrecer.update(opciones_mensajes_base.get("Plantilla John P2P", {}))
+                plantillas_a_ofrecer.update(opciones_mensajes_base.get("Plantilla Karen P2P", {}))
+                plantillas_a_ofrecer.update(opciones_mensajes_base.get("Plantilla John Aduanas (Alternativa)", {}))
+                plantillas_a_ofrecer.update(opciones_mensajes_base.get("Plantilla Karen Aduanas (Alternativa)", {}))
+            elif categoria_sel_widget != "– Todas las Categorías –":
+                # Para H2R, O2C, etc.
+                plantillas_a_ofrecer.update(opciones_mensajes_base.get(f"Plantilla John {categoria_sel_widget}", {}))
+                plantillas_a_ofrecer.update(opciones_mensajes_base.get(f"Plantilla Karen {categoria_sel_widget}", {}))
+            else: # "Todas las Categorías"
+                plantillas_a_ofrecer = opciones_mensajes_base.copy()
+
+
+        nombres_plantillas_para_widget = sorted(list(plantillas_a_ofrecer.keys()))
         
-        nombre_plantilla_sel, plantilla_str_seleccionada_directa_ui = None, None
+        nombre_plantilla_sel, plantilla_str_seleccionada = None, None
         with col_sel_plantilla:
-            if nombres_plantillas_para_categoria_sel_ui:
+            if nombres_plantillas_para_widget:
                 nombre_plantilla_sel = st.selectbox(
-                    "2. Escoge una Plantilla de Mensaje:", 
-                    nombres_plantillas_para_categoria_sel_ui, 
+                    "2. Escoge una Plantilla:", 
+                    nombres_plantillas_para_widget,
                     key="mensaje_plantilla_sel_v3"
                 )
-                plantilla_str_seleccionada_directa_ui = plantillas_para_categoria_sel_ui.get(nombre_plantilla_sel, "")
+                plantilla_str_seleccionada = opciones_mensajes_base.get(nombre_plantilla_sel)
             else:
-                st.warning(f"No hay plantillas definidas para la categoría '{categoria_sel_widget}'.")
+                st.warning("No hay plantillas disponibles para la categoría seleccionada.")
 
-        # --- Lógica de generación de mensajes (con la adaptación para #Lead y #Empresa) ---
-        if plantilla_str_seleccionada_directa_ui:
-            # ... (el resto de la lógica para filtrar el df_vista_previa_msg) ...
-            
-            # --- Dentro de la función generar_mensaje_para_fila ---
-            def generar_mensaje_para_fila(row, plantilla_str):
-                nombre_prospecto = str(row.get("Nombre", "")).split()[0] if pd.notna(row.get("Nombre")) and str(row.get("Nombre")).strip() else "[Nombre]"
-                avatar_prospectador = str(row.get("Avatar", "Tu Nombre"))
-                empresa_prospecto = str(row.get("Empresa", "[Empresa]"))
-                
-                mensaje = plantilla_str
-                
-                # Reemplazos para plantillas "John"
-                mensaje = mensaje.replace("{nombre}", nombre_prospecto)
-                mensaje = mensaje.replace("{empresa}", empresa_prospecto)
-                mensaje = mensaje.replace("{avatar}", avatar_prospectador)
-                
-                # Reemplazos para plantillas "Karen"
-                mensaje = mensaje.replace("#Lead", nombre_prospecto)
-                mensaje = mensaje.replace("#Empresa", empresa_prospecto)
-                
-                return mensaje
+        if plantilla_str_seleccionada:
+            if df_para_generar.empty:
+                st.info(f"No hay prospectos que coincidan con la categoría '{categoria_sel_widget}' y los filtros generales.")
+            else:
+                def generar_mensaje_para_fila(row, plantilla_str):
+                    nombre_prospecto = str(row.get("Nombre", "")).split()[0] if pd.notna(row.get("Nombre")) and str(row.get("Nombre")).strip() else "[Nombre]"
+                    avatar_prospectador = str(row.get("Avatar", "Tu Nombre"))
+                    empresa_prospecto = str(row.get("Empresa", "[Empresa]"))
+                    
+                    mensaje = plantilla_str
+                    mensaje = mensaje.replace("{nombre}", nombre_prospecto).replace("{empresa}", empresa_prospecto).replace("{avatar}", avatar_prospectador)
+                    mensaje = mensaje.replace("#Lead", nombre_prospecto).replace("#Empresa", empresa_prospecto)
+                    return mensaje
 
-            df_vista_previa_msg["Mensaje_Personalizado"] = df_vista_previa_msg.apply(
-                lambda row: generar_mensaje_para_fila(row, plantilla_str_seleccionada_directa_ui),
-                axis=1
-            )
+                df_para_generar["Mensaje_Personalizado"] = df_para_generar.apply(
+                    lambda row: generar_mensaje_para_fila(row, plantilla_str_seleccionada),
+                    axis=1
+                )
 
                 st.markdown("### 📟 Vista Previa y Descarga de Mensajes")
                 cols_generador_display = ["Nombre_Completo_Display", "Empresa", "Puesto", "Categoría", "Avatar", "Sesion Agendada?", linkedin_col_nombre, "Mensaje_Personalizado"]
-                cols_reales_generador = [col for col in cols_generador_display if col in df_vista_previa_msg.columns]
-                if "Categoría" not in df_vista_previa_msg.columns and "Proceso" in df_vista_previa_msg.columns: # Doble check
-                     df_vista_previa_msg["Categoría"] = df_vista_previa_msg["Proceso"].apply(clasificar_por_proceso)
-                st.dataframe(df_vista_previa_msg[cols_reales_generador], use_container_width=True, height=300)
+                cols_reales_generador = [col for col in cols_generador_display if col in df_para_generar.columns]
+                st.dataframe(df_para_generar[cols_reales_generador], use_container_width=True, height=300)
 
                 @st.cache_data
                 def convert_df_to_csv_final(df_conv):
@@ -332,55 +314,23 @@ if st.session_state.mostrar_tabla_mensajes:
                     if not cols_ex_desc: return None
                     return df_conv[cols_ex_desc].fillna('').to_csv(index=False).encode('utf-8')
 
-                csv_data = convert_df_to_csv_final(df_vista_previa_msg)
-                nombre_archivo_cat = categoria_usada_para_plantillas_ui if categoria_sel_widget == opcion_todas_las_categorias and categoria_usada_para_plantillas_ui else categoria_sel_widget
-                if nombre_archivo_cat == opcion_todas_las_categorias: nombre_archivo_cat = "todas_categorias" # Fallback
+                csv_data = convert_df_to_csv_final(df_para_generar)
+                nombre_archivo_cat = categoria_sel_widget.replace(" ", "_").lower() if categoria_sel_widget != "– Todas las Categorías –" else "todas_categorias"
                 if csv_data is not None and nombre_plantilla_sel is not None:
-                    st.download_button("⬇️ Descargar Mensajes (CSV)", csv_data, file_name=f'mensajes_{nombre_archivo_cat.replace(" ", "_").lower()}_{nombre_plantilla_sel.replace(" ", "_").lower()}.csv', mime='text/csv', key="btn_dl_csv_msg_v3")
-        elif nombres_plantillas_para_categoria_sel_ui: # Si hay nombres de plantillas pero ninguna cadena de plantilla (improbable)
-            st.info("Selecciona una plantilla para generar la vista previa.")
+                    st.download_button("⬇️ Descargar Mensajes (CSV)", csv_data, file_name=f'mensajes_{nombre_archivo_cat}_{nombre_plantilla_sel.replace(" ", "_").lower()}.csv', mime='text/csv', key="btn_dl_csv_msg_final_v3")
 
-
-# ... (linkedin_col_nombre debe estar definido antes de este bloque, usualmente al inicio de la sección "else" del if df_mensajes_final_display.empty)
-# Asumimos que linkedin_col_nombre = "LinkedIn"
-
-if 'df_vista_previa_msg' in locals() and not df_vista_previa_msg.empty and 'Mensaje_Personalizado' in df_vista_previa_msg.columns:
+if 'df_para_generar' in locals() and not df_para_generar.empty and 'Mensaje_Personalizado' in df_para_generar.columns:
     st.markdown("---")
-    st.markdown("### ✨ Vista Profesional de los Mensajes Personalizados") # Cambié "Vista de los..." por "Vista Profesional de los..." para consistencia
-    for i, row in df_vista_previa_msg.iterrows():
+    st.markdown("### ✨ Vista Profesional de los Mensajes Personalizados")
+    for i, row in df_para_generar.iterrows():
         nombre_display = str(row.get("Nombre_Completo_Display", "[Nombre]")).title()
         empresa_display = row.get("Empresa", "")
         puesto_display = row.get("Puesto", "")
         categoria_row_display = row.get("Categoría", "N/A")
-        linkedin_url_display = row.get(linkedin_col_nombre, "") # Asegúrate que linkedin_col_nombre esté definido
+        linkedin_url_display = row.get(linkedin_col_nombre, "")
         mensaje_display_original = row.get("Mensaje_Personalizado", "")
-
-        # --- AJUSTE PARA EL SALTO DE LÍNEA ANTES DE LA LISTA ---
-        mensaje_display_ajustado = mensaje_display_original
         
-        # Patrones comunes que preceden a tus listas. Ajusta estos si es necesario.
-        # Buscamos "palabra_clave_seguida_de_dos_puntos_y_un_salto_de_linea_y_luego_un_guion"
-        # y lo reemplazamos por "palabra_clave_seguida_de_dos_puntos_y_DOS_saltos_de_linea_y_luego_un_guion"
-        patrones_a_buscar = [
-            "por ejemplo:\n-", 
-            "en:\n-"
-            # Puedes añadir más patrones si tienes otras introducciones a listas
-        ]
-        
-        for patron in patrones_a_buscar:
-            if patron in mensaje_display_ajustado:
-                # Reemplazar el \n simple por \n\n en el patrón encontrado
-                # El patrón es "texto:\n-", queremos "texto:\n\n-"
-                # Entonces, reemplazamos ":\n-" por ":\n\n-"
-                parte_a_reemplazar = patron.replace("\n-", "", 1) # Queda "por ejemplo:" o "en:"
-                mensaje_display_ajustado = mensaje_display_ajustado.replace(
-                    parte_a_reemplazar + "\n-", 
-                    parte_a_reemplazar + "\n\n-", 
-                    1 # Solo la primera ocurrencia, asumiendo una lista principal
-                )
-                break # Salir del bucle una vez que se hace un ajuste
-
-        # --- FIN DEL AJUSTE ---
+        mensaje_display_ajustado = mensaje_display_original.replace(":\n\n", ":\n").replace(":\n", ":\n\n")
 
         linkedin_html_str = ""
         if linkedin_url_display and isinstance(linkedin_url_display, str) and linkedin_url_display.strip():
@@ -399,13 +349,13 @@ if 'df_vista_previa_msg' in locals() and not df_vista_previa_msg.empty and 'Mens
 🧑‍💼 *Puesto:* {puesto_display if puesto_display else "No especificado"}<br>
 🗂️ *Categoría:* {categoria_row_display if categoria_row_display else "No especificada"}
 """
-        if linkedin_html_str: # Solo añadir la línea de LinkedIn si hay algo que mostrar
+        if linkedin_html_str:
             info_header += f"<br>{linkedin_html_str}"
 
         st.markdown("---")
         st.markdown(info_header, unsafe_allow_html=True)
         st.markdown("📩 *Mensaje:*")
-        st.code(mensaje_display_ajustado, language=None) # Usar la versión ajustada del mensaje
+        st.code(mensaje_display_ajustado, language=None)
 
 st.markdown("---")
 st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")
