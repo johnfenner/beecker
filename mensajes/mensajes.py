@@ -107,9 +107,9 @@ plantillas_john = {
 # ===== SET DE PLANTILLAS "KAREN CH" ============================================
 # ===============================================================================
 
-plantilla_general_karen = """Hola #Lead, un gusto saludarte.
+plantilla_general_karen = """Hola {nombre}, un gusto saludarte.
 
-Soy María Rivera, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Inteligent Process Automation, desarrollamos agentes digitales de IA para optimizar procesos clave en las organizaciones, en los procesos de Hire to Retire (H2R), Order to Cash (O2C) y Procure-to-Pay (P2P).
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Inteligent Process Automation, desarrollamos agentes digitales de IA para optimizar procesos clave en las organizaciones, en los procesos de Hire to Retire (H2R), Order to Cash (O2C) y Procure-to-Pay (P2P).
 
 Me gustaría mostrarte cómo nuestras soluciones pueden mejorar la eficiencia en áreas de #Empresa, tales como:
 
@@ -124,9 +124,9 @@ Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia op
 Me gustaría tener una corta sesión contigo para platicar algunos casos de uso y éxito que hemos tenido con clientes de la misma industria. ¿Te parece si nos reunimos 30 minutos esta o la próxima semana?
 """
 
-plantilla_h2r_karen = """Hola #Lead, un gusto saludarte.
+plantilla_h2r_karen = """Hola {nombre}, un gusto saludarte.
 
-Soy María Rivera, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en #Empresa.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en #Empresa.
 
 Nos centramos en nuestros agentes digitales de IA diseñados para los procesos Hire to Retire (H2R) entre otros para diferentes áreas.
 
@@ -143,9 +143,9 @@ Estos agentes reducen significativamente errores y tiempos de operación, tambi�
 Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido. ¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
-plantilla_p2p_karen = """Hola #Lead, un gusto saludarte.
+plantilla_p2p_karen = """Hola {nombre}, un gusto saludarte.
 
-Soy María Rivera, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en #Empresa.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en #Empresa.
 
 Nos centramos principalmente en nuestros agentes digitales de IA diseñados para el proceso Procure-to-Pay (P2P) entre otros para diferentes áreas.
 
@@ -160,9 +160,9 @@ Estos agentes automatizan todo el ciclo de compras, desde la selección de prove
 Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido con empresas de la misma industria. ¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
-plantilla_o2c_karen = """Hola #Lead, un gusto saludarte.
+plantilla_o2c_karen = """Hola {nombre}, un gusto saludarte.
 
-Soy María Rivera, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en #Empresa.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en #Empresa.
 
 Nos centramos principalmente en agentes digitales de IA diseñados para los procesos Order to Cash (O2C) entre otros para diferentes áreas.
 
@@ -182,9 +182,9 @@ Estos agentes optimizan cada etapa del proceso, garantizando la satisfacción de
 Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido con empresas de la misma industria. ¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
-plantilla_ti_karen = """Hola #Lead, un gusto saludarte.
+plantilla_ti_karen = """Hola {nombre}, un gusto saludarte.
 
-Soy María Rivera, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y, como partners Platinum de UiPath, nuestro foco es aplicar esta tecnología para que los equipos de TI puedan escalar su eficiencia en empresas como #Empresa.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y, como partners Platinum de UiPath, nuestro foco es aplicar esta tecnología para que los equipos de TI puedan escalar su eficiencia en empresas como #Empresa.
 
 Ayudamos a equipos como el tuyo a:
 
@@ -198,9 +198,9 @@ Me gustaría tener una corta sesión contigo para compartirte casos de éxito y 
 ¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
-plantilla_aduanas_karen = """Hola #Lead, un gusto saludar.
+plantilla_aduanas_karen = """Hola {nombre}, un gusto saludar.
 
-Soy María Rivera, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia de #Empresa en el proceso aduanal:
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia de #Empresa en el proceso aduanal:
 
 Nos centramos principalmente en nuestro Agente Digital Pedro de IA que procesan todo el flujo de aduanas en minutos te ayuda a: Extraer y validar archivos y datos desde correo, Clasificar clientes y régimen, Generar reportes automáticos, Asignar costos y validar con cuentas por cobrar, Registrar y procesar facturas en su ERP.
 
