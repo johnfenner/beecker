@@ -219,27 +219,13 @@ if st.session_state.mostrar_tabla_mensajes:
         
         # --- FUNCIÓN GENERADORA DE MENSAJES RESTAURADA Y CORREGIDA ---
         def generar_mensaje_para_fila(row, plantilla_str):
-            # Extrae el primer nombre del prospecto
             nombre_prospecto = str(row.get("Nombre", "")).split()[0] if pd.notna(row.get("Nombre")) and str(row.get("Nombre")).strip() else "[Nombre]"
-            
-            # Extrae el nombre del avatar (quien prospecta) de la fila
             avatar_prospectador = str(row.get("Avatar", "Tu Nombre"))
-            
-            # Extrae la empresa del prospecto
             empresa_prospecto = str(row.get("Empresa", "[Empresa]"))
             
             mensaje = plantilla_str
-            
-            # Reemplaza los placeholders para ambos estilos de plantilla
-            mensaje = mensaje.replace("{nombre}", nombre_prospecto)
-            mensaje = mensaje.replace("#Lead", nombre_prospecto)
-            
-            mensaje = mensaje.replace("{empresa}", empresa_prospecto)
-            mensaje = mensaje.replace("#Empresa", empresa_prospecto)
-
-            # Reemplaza el avatar dinámicamente (clave para la personalización de John)
-            mensaje = mensaje.replace("{avatar}", avatar_prospectador)
-            
+            mensaje = mensaje.replace("{nombre}", nombre_prospecto).replace("{empresa}", empresa_prospecto).replace("{avatar}", avatar_prospectador)
+            mensaje = mensaje.replace("#Lead", nombre_prospecto).replace("#Empresa", empresa_prospecto)
             return mensaje
 
         for index, row in df_mensajes_final_display.iterrows():
@@ -254,6 +240,8 @@ if st.session_state.mostrar_tabla_mensajes:
             with info_col:
                 st.markdown(f"**{nombre_completo}** | {puesto} en **{empresa}** | `Categoría: {categoria_prospecto}`")
 
+            # --- CORRECCIÓN DEL TypeError ---
+            # Se usa el índice del DataFrame como parte de la clave para garantizar unicidad
             if linkedin_col_nombre in row and pd.notna(row[linkedin_col_nombre]) and str(row[linkedin_col_nombre]).startswith("http"):
                  with link_col:
                     st.link_button("🔗 Perfil LinkedIn", row[linkedin_col_nombre], key=f"link_{index}")
