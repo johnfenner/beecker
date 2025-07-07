@@ -482,29 +482,60 @@ def display_sesiones_summary_sql(df_filtered):
                 use_container_width=True
             )
 
-            # --- GRÁFICO ADICIONAL DE EVOLUCIÓN DE PORCENTAJES (NUEVA VERSIÓN) ---
-            st.markdown("##### Evolución de la Composición de Sesiones Tomadas (Mensual)")
+            # --- INICIO DE LA NUEVA SECCIÓN MEJORADA: Gráfico + Tablas de Desglose ---
+            st.markdown("##### Análisis de Tendencia y Composición Mensual de Sesiones Tomadas")
             if 'AñoMes' in sesiones_tomadas_df.columns and not sesiones_tomadas_df['AñoMes'].dropna().empty:
+                # 1. Preparar los datos base
                 evolucion_df = sesiones_tomadas_df.groupby(['AñoMes', 'SQL_Estandarizado']).size().reset_index(name='Cantidad')
+                evolucion_df = evolucion_df.sort_values('AñoMes')
 
-                fig_evolucion_area = px.area(evolucion_df,
-                                           x='AñoMes',
-                                           y='Cantidad',
-                                           color='SQL_Estandarizado',
-                                           groupnorm='percent', # Normaliza a 100%
-                                           title='Evolución de la Composición de Sesiones Tomadas',
-                                           labels={'Cantidad': 'Composición de Sesiones (%)'},
-                                           category_orders={"SQL_Estandarizado": category_order_tomadas},
-                                           markers=True) # Añade marcadores para claridad
+                # 2. Crear un layout de dos columnas
+                col_grafico, col_tablas = st.columns([2, 1])
 
-                fig_evolucion_area.update_layout(yaxis_ticksuffix='%',
-                                                 yaxis_title="Composición Porcentual (%)",
-                                                 xaxis_title="Mes",
-                                                 legend_title="Calificación SQL")
-                st.plotly_chart(fig_evolucion_area, use_container_width=True)
+                with col_grafico:
+                    # Gráfico de líneas con la evolución de los valores absolutos
+                    st.markdown("###### Evolución Absoluta por Mes")
+                    fig_evolucion_lineas = px.line(evolucion_df,
+                                                   x='AñoMes',
+                                                   y='Cantidad',
+                                                   color='SQL_Estandarizado',
+                                                   title='Evolución de Sesiones Tomadas (Absoluto)',
+                                                   labels={'Cantidad': 'Número de Sesiones'},
+                                                   category_orders={"SQL_Estandarizado": category_order_tomadas},
+                                                   markers=True)
+                    fig_evolucion_lineas.update_layout(yaxis_title="Número de Sesiones",
+                                                       xaxis_title="Mes",
+                                                       legend_title="Calificación SQL")
+                    st.plotly_chart(fig_evolucion_lineas, use_container_width=True)
+
+                with col_tablas:
+                    # 3. Preparar y mostrar tablas de desglose
+                    st.markdown("###### Desglose de Datos Mensuales")
+
+                    # Tabla de valores absolutos
+                    tabla_absolutos = evolucion_df.pivot_table(index='AñoMes', columns='SQL_Estandarizado', values='Cantidad').fillna(0).astype(int)
+                    
+                    for cat in ['SQL1', 'SQL2', 'MQL']:
+                        if cat not in tabla_absolutos.columns:
+                            tabla_absolutos[cat] = 0
+                    
+                    if category_order_tomadas:
+                        # Filtrar las columnas de la tabla para que coincidan con las categorías presentes en los datos
+                        tabla_absolutos = tabla_absolutos[[cat for cat in category_order_tomadas if cat in tabla_absolutos.columns]]
+
+
+                    tabla_absolutos['Total Mes'] = tabla_absolutos.sum(axis=1)
+                    st.caption("Valores Absolutos")
+                    st.dataframe(tabla_absolutos, use_container_width=True)
+
+                    # Tabla de porcentajes
+                    tabla_porcentajes = tabla_absolutos.div(tabla_absolutos['Total Mes'], axis=0).drop(columns=['Total Mes']) * 100
+                    st.caption("Composición Porcentual (%)")
+                    st.dataframe(tabla_porcentajes.style.format("{:.1f}%"), use_container_width=True)
+
             else:
-                st.info("No hay suficientes datos temporales ('AñoMes') para mostrar la evolución de la composición.")
-            # --- FIN DEL GRÁFICO ADICIONAL ---
+                st.info("No hay suficientes datos temporales ('AñoMes') para mostrar la evolución.")
+            # --- FIN DE LA NUEVA SECCIÓN MEJORADA ---
 
         else:
             st.info("No hay sesiones calificadas como SQL1, SQL2 o MQL en el período filtrado.")
