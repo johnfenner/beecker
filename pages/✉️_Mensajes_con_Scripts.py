@@ -196,7 +196,7 @@ if st.session_state.mostrar_tabla_mensajes:
         df_mensajes_final_display["Categoría"] = df_mensajes_final_display["Proceso"].apply(clasificar_por_proceso)
         
         st.markdown("### 📬️ Vista de Mensajes Automáticos")
-        st.markdown("#### **Paso 1: Elige el Estilo del Mensaje**")
+        st.markdown("#### **Elige el Estilo del Mensaje**")
         set_plantillas_seleccionado = st.radio(
             "Selecciona el estilo:",
             ("Mensajes John", "Mensajes Karen CH"),
@@ -204,28 +204,28 @@ if st.session_state.mostrar_tabla_mensajes:
             horizontal=True
         )
         
-        # Lógica para seleccionar el diccionario de plantillas correcto
         opciones_mensajes_base = {}
         nombre_set = ""
         if set_plantillas_seleccionado == "Mensajes John":
             opciones_mensajes_base = plantillas_john
             nombre_set = "John"
-        else: # "Mensajes Karen CH"
+        else:
             opciones_mensajes_base = plantillas_karen
             nombre_set = "Karen"
 
         num_prospectos = len(df_mensajes_final_display)
         st.info(f"Se encontraron **{num_prospectos}** prospectos. A continuación se muestran los mensajes generados para cada uno.")
         
-        # --- FUNCIÓN GENERADORA DE MENSAJES RESTAURADA Y CORREGIDA ---
         def generar_mensaje_para_fila(row, plantilla_str):
             nombre_prospecto = str(row.get("Nombre", "")).split()[0] if pd.notna(row.get("Nombre")) and str(row.get("Nombre")).strip() else "[Nombre]"
             avatar_prospectador = str(row.get("Avatar", "Tu Nombre"))
             empresa_prospecto = str(row.get("Empresa", "[Empresa]"))
             
             mensaje = plantilla_str
-            mensaje = mensaje.replace("{nombre}", nombre_prospecto).replace("{empresa}", empresa_prospecto).replace("{avatar}", avatar_prospectador)
-            mensaje = mensaje.replace("#Lead", nombre_prospecto).replace("#Empresa", empresa_prospecto)
+            mensaje = mensaje.replace("{nombre}", nombre_prospecto).replace("#Lead", nombre_prospecto)
+            mensaje = mensaje.replace("{empresa}", empresa_prospecto).replace("#Empresa", empresa_prospecto)
+            mensaje = mensaje.replace("{avatar}", avatar_prospectador)
+            
             return mensaje
 
         for index, row in df_mensajes_final_display.iterrows():
@@ -240,8 +240,6 @@ if st.session_state.mostrar_tabla_mensajes:
             with info_col:
                 st.markdown(f"**{nombre_completo}** | {puesto} en **{empresa}** | `Categoría: {categoria_prospecto}`")
 
-            # --- CORRECCIÓN DEL TypeError ---
-            # Se usa el índice del DataFrame como parte de la clave para garantizar unicidad
             if linkedin_col_nombre in row and pd.notna(row[linkedin_col_nombre]) and str(row[linkedin_col_nombre]).startswith("http"):
                  with link_col:
                     st.link_button("🔗 Perfil LinkedIn", row[linkedin_col_nombre], key=f"link_{index}")
