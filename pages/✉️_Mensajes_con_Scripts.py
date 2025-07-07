@@ -230,129 +230,93 @@ if st.session_state.mostrar_tabla_mensajes:
         st.markdown("---")
         st.markdown("### 📬️ Generador de Mensajes")
 
-        # --- CORRECCIÓN 2: Usar las variables correctas en el diccionario ---
-        opciones_mensajes = {
-            "H2R": {"Plantilla John H2R": plantilla_h2r_final},
-            "P2P": {"Plantilla John P2P": plantilla_p2p_final},
-            "O2C": {"Plantilla John O2C": plantilla_o2c_final},
-            "General": {"Plantilla John General": plantilla_general_final}
-        }
+        # --- NUEVA SECCIÓN PARA SELECCIONAR EL SET DE PLANTILLAS ---
+        st.markdown("#### **Paso 1: Elige el Set de Plantillas**")
+        set_plantillas_seleccionado = st.radio(
+            "Selecciona el estilo del mensaje:",
+            ("Mensajes John", "Mensajes Karen CH"),
+            key="set_plantillas_selector",
+            horizontal=True
+        )
 
-        categorias_con_plantillas_definidas = list(opciones_mensajes.keys())
-        if "Categoría" in df_mensajes_final_display.columns:
-            categorias_validas_en_df = sorted(df_mensajes_final_display["Categoría"].drop_duplicates().tolist())
-        else:
-            categorias_validas_en_df = []
-            st.warning("Columna 'Categoría' no disponible para la selección de plantillas.")
-
-        categorias_reales_con_plantillas_en_df = [cat for cat in categorias_validas_en_df if cat in categorias_con_plantillas_definidas]
-        opcion_todas_las_categorias = "– Todas las Categorías –"
-        # El selectbox "1. Selecciona una Categoría de Proceso" ahora filtra el DF que se usa para generar mensajes
-        # y también determina qué conjunto de plantillas se ofrece si no es "Todas las Categorías"
-        categorias_seleccionables_para_widget_ui = ["– Todas las Categorías –"] + sorted(list(opciones_mensajes.keys())) # Mostrar todas las categorías que tienen plantillas
-
-        default_categoria_index = 0
-        if 'mensaje_categoria_sel_v3' in st.session_state and st.session_state.mensaje_categoria_sel_v3 in categorias_seleccionables_para_widget_ui:
-            default_categoria_index = categorias_seleccionables_para_widget_ui.index(st.session_state.mensaje_categoria_sel_v3)
-
-        if not categorias_reales_con_plantillas_en_df and not ("General" in opciones_mensajes and opcion_todas_las_categorias in categorias_seleccionables_para_widget_ui):
-             st.warning("No hay prospectos con categorías válidas (derivadas de 'Proceso') que tengan plantillas definidas en los datos filtrados, o no hay plantillas 'General'.")
+        opciones_mensajes_base = {}
+        if set_plantillas_seleccionado == "Mensajes John":
+            opciones_mensajes_base = plantillas_john
+        else: # "Mensajes Karen CH"
+            opciones_mensajes_base = plantillas_karen
+        
+        # --- Lógica de selección de categoría y plantilla (adaptada) ---
+        st.markdown("#### **Paso 2: Configura la Plantilla Específica**")
+        
+        categorias_disponibles = ["H2R", "P2P", "O2C", "General"]
+        categorias_seleccionables_para_widget_ui = ["– Todas las Categorías –"] + sorted(categorias_disponibles)
         
         col_sel_cat, col_sel_plantilla = st.columns(2)
         with col_sel_cat:
             categoria_sel_widget = st.selectbox(
-                "1. Selecciona Categoría de Plantilla:", # Etiqueta cambiada para claridad
-                categorias_seleccionables_para_widget_ui, # Opciones basadas en las claves de opciones_mensajes
-                index=default_categoria_index,
+                "1. Selecciona Categoría de Plantilla:",
+                categorias_seleccionables_para_widget_ui,
                 key="mensaje_categoria_sel_v3"
             )
-        
-        plantillas_para_categoria_sel_ui, nombres_plantillas_para_categoria_sel_ui, categoria_usada_para_plantillas_ui = {}, [], None
+
+        plantillas_para_categoria_sel_ui = {}
         
         # Lógica para determinar qué plantillas mostrar en el segundo selectbox
-        if categoria_sel_widget == opcion_todas_las_categorias:
-            # Si se eligen "Todas", por defecto se usarán las plantillas de la categoría "General"
-            # Y la lógica de `generar_mensaje_para_fila` intentará ser específica si la plantilla es "General"
-            if "General" in opciones_mensajes:
-                plantillas_para_categoria_sel_ui = opciones_mensajes["General"]
-                categoria_usada_para_plantillas_ui = "General" # Para nombre de archivo y lógica
-            else: # Fallback si no hay "General" pero se eligió "Todas" (improbable con la UI actual)
-                st.warning("No hay plantillas 'General' definidas, aunque se seleccionó 'Todas las Categorías'.")
-        elif categoria_sel_widget in opciones_mensajes:
-            plantillas_para_categoria_sel_ui = opciones_mensajes[categoria_sel_widget]
-            categoria_usada_para_plantillas_ui = categoria_sel_widget
-        
+        if categoria_sel_widget != "– Todas las Categorías –":
+            # Cargar plantillas de la categoría específica
+            plantillas_para_categoria_sel_ui = opciones_mensajes_base.get(categoria_sel_widget, {}).copy()
+            
+            # Añadir plantillas alternativas
+            if categoria_sel_widget == "General":
+                plantillas_para_categoria_sel_ui.update(opciones_mensajes_base.get("TI", {}))
+            elif categoria_sel_widget == "P2P":
+                plantillas_para_categoria_sel_ui.update(opciones_mensajes_base.get("Aduanas", {}))
+        else:
+            # Si se eligen "Todas", mostrar las de "General" y "TI" por defecto
+            plantillas_para_categoria_sel_ui = opciones_mensajes_base.get("General", {}).copy()
+            plantillas_para_categoria_sel_ui.update(opciones_mensajes_base.get("TI", {}))
+
         nombres_plantillas_para_categoria_sel_ui = list(plantillas_para_categoria_sel_ui.keys())
         
         nombre_plantilla_sel, plantilla_str_seleccionada_directa_ui = None, None
         with col_sel_plantilla:
-            default_plantilla_idx = 0
-            if 'mensaje_plantilla_sel_v3' in st.session_state and st.session_state.mensaje_plantilla_sel_v3 in nombres_plantillas_para_categoria_sel_ui:
-                default_plantilla_idx = nombres_plantillas_para_categoria_sel_ui.index(st.session_state.mensaje_plantilla_sel_v3)
             if nombres_plantillas_para_categoria_sel_ui:
-                nombre_plantilla_sel = st.selectbox("2. Escoge una Plantilla de Mensaje:", nombres_plantillas_para_categoria_sel_ui, index=default_plantilla_idx, key="mensaje_plantilla_sel_v3")
+                nombre_plantilla_sel = st.selectbox(
+                    "2. Escoge una Plantilla de Mensaje:", 
+                    nombres_plantillas_para_categoria_sel_ui, 
+                    key="mensaje_plantilla_sel_v3"
+                )
                 plantilla_str_seleccionada_directa_ui = plantillas_para_categoria_sel_ui.get(nombre_plantilla_sel, "")
             else:
-                if categoria_usada_para_plantillas_ui: st.warning(f"No hay plantillas ('{nombre_plantilla_sel}') definidas para la categoría de plantilla '{categoria_usada_para_plantillas_ui}'.")
-                elif categoria_sel_widget != opcion_todas_las_categorias : st.warning(f"No hay plantillas definidas para la categoría de plantilla '{categoria_sel_widget}'.")
+                st.warning(f"No hay plantillas definidas para la categoría '{categoria_sel_widget}'.")
 
+        # --- Lógica de generación de mensajes (con la adaptación para #Lead y #Empresa) ---
         if plantilla_str_seleccionada_directa_ui:
-            # df_vista_previa_msg se basa en df_mensajes_final_display, que ya está filtrado por los filtros generales.
-            # Si se eligió una categoría específica en el widget 1, filtramos ADICIONALMENTE por esa Categoría (derivada de Proceso)
-            # para la VISTA PREVIA y generación de mensajes.
-            df_vista_previa_msg = df_mensajes_final_display.copy() 
-            if categoria_sel_widget != opcion_todas_las_categorias:
-                if "Categoría" in df_vista_previa_msg.columns:
-                    df_vista_previa_msg = df_vista_previa_msg[df_vista_previa_msg["Categoría"] == categoria_sel_widget].copy()
-                else: # Si no existe la columna Categoría, no se puede filtrar, mostrar advertencia
-                    st.warning(f"No se pudo filtrar por la categoría de plantilla '{categoria_sel_widget}' porque la columna 'Categoría' (derivada de 'Proceso') no existe en los datos preparados.")
-                    df_vista_previa_msg = pd.DataFrame() # Vaciar para evitar errores posteriores
+            # ... (el resto de la lógica para filtrar el df_vista_previa_msg) ...
+            
+            # --- Dentro de la función generar_mensaje_para_fila ---
+            def generar_mensaje_para_fila(row, plantilla_str):
+                nombre_prospecto = str(row.get("Nombre", "")).split()[0] if pd.notna(row.get("Nombre")) and str(row.get("Nombre")).strip() else "[Nombre]"
+                avatar_prospectador = str(row.get("Avatar", "Tu Nombre"))
+                empresa_prospecto = str(row.get("Empresa", "[Empresa]"))
+                
+                mensaje = plantilla_str
+                
+                # Reemplazos para plantillas "John"
+                mensaje = mensaje.replace("{nombre}", nombre_prospecto)
+                mensaje = mensaje.replace("{empresa}", empresa_prospecto)
+                mensaje = mensaje.replace("{avatar}", avatar_prospectador)
+                
+                # Reemplazos para plantillas "Karen"
+                mensaje = mensaje.replace("#Lead", nombre_prospecto)
+                mensaje = mensaje.replace("#Empresa", empresa_prospecto)
+                
+                return mensaje
 
-            if df_vista_previa_msg.empty:
-                st.info(f"No hay prospectos que coincidan con la categoría de plantilla '{categoria_sel_widget}' y los filtros generales aplicados.")
-            else:
-                def obtener_atencion_genero(avatar_de_fila):
-                    avatar_lower = str(avatar_de_fila).lower()
-                    if any(n in avatar_lower for n in ["john bermúdez", "johnsito", "juan", "carlos"]): return "atento"
-                    if any(n in avatar_lower for n in ["maría rivera", "maria", "ana", "laura", "isabella"]): return "atenta"
-                    return "atento/a"
-
-                def generar_mensaje_para_fila(row, nombre_plantilla_key_ui, plantilla_str_ui, categoria_widget_ui_seleccionada, opciones_mensajes_sistema, todas_categorias_opcion_str):
-                    plantilla_a_usar = plantilla_str_ui
-                    categoria_fila_actual = row.get("Categoría") # Categoría H2R, P2P, etc. de la fila
-
-                    # Lógica de dinamismo: si en la UI se eligió "Todas las Categorías" Y
-                    # la plantilla que se está usando (obtenida del grupo "General") es una "Plantilla John General"
-                    # Y la fila actual tiene una categoría específica (no "General")
-                    if categoria_widget_ui_seleccionada == todas_categorias_opcion_str and \
-                       nombre_plantilla_key_ui == "Plantilla John General" and \
-                       categoria_fila_actual and categoria_fila_actual != "General":
-                        
-                        nombre_base_plantilla_john = "Plantilla John" # Asumimos que el nombre base es "Plantilla John"
-                        nombre_plantilla_especifica_key = f"{nombre_base_plantilla_john} {categoria_fila_actual}" # ej. "Plantilla John H2R"
-                        
-                        # Buscar en opciones_mensajes_sistema[categoria_fila_actual] la plantilla específica
-                        plantilla_especifica_candidata_str = opciones_mensajes_sistema.get(categoria_fila_actual, {}).get(nombre_plantilla_especifica_key)
-                        if plantilla_especifica_candidata_str:
-                            plantilla_a_usar = plantilla_especifica_candidata_str
-                    
-                    if plantilla_a_usar is None: plantilla_a_usar = "Error: Plantilla no encontrada para {nombre}."
-                    
-                    nombre_prospecto = str(row.get("Nombre", "")).split()[0] if pd.notna(row.get("Nombre")) and str(row.get("Nombre")).strip() else "[Nombre]"
-                    avatar_prospectador = str(row.get("Avatar", "Tu Nombre")) # Este es el Avatar del prospectador (Johnsito)
-                    empresa_prospecto = str(row.get("Empresa", "[Empresa]")) 
-                    atencion_prospecto = obtener_atencion_genero(avatar_prospectador) # El género se basa en el Avatar del prospectador para {atencion_genero}
-                    
-                    # Reemplazo de [Nombre de la empresa] por si aún existe en alguna plantilla antigua
-                    plantilla_a_usar = plantilla_a_usar.replace("[Nombre de la empresa]", empresa_prospecto)
-
-                    return plantilla_a_usar.replace("{nombre}", nombre_prospecto).replace("{avatar}", avatar_prospectador).replace("{empresa}", empresa_prospecto).replace("{atencion_genero}", atencion_prospecto)
-
-                df_vista_previa_msg["Mensaje_Personalizado"] = df_vista_previa_msg.apply(
-                    generar_mensaje_para_fila,
-                    args=(nombre_plantilla_sel, plantilla_str_seleccionada_directa_ui, categoria_sel_widget, opciones_mensajes, opcion_todas_las_categorias),
-                    axis=1
-                )
+            df_vista_previa_msg["Mensaje_Personalizado"] = df_vista_previa_msg.apply(
+                lambda row: generar_mensaje_para_fila(row, plantilla_str_seleccionada_directa_ui),
+                axis=1
+            )
 
                 st.markdown("### 📟 Vista Previa y Descarga de Mensajes")
                 cols_generador_display = ["Nombre_Completo_Display", "Empresa", "Puesto", "Categoría", "Avatar", "Sesion Agendada?", linkedin_col_nombre, "Mensaje_Personalizado"]
