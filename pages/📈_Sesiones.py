@@ -330,7 +330,7 @@ def sidebar_filters_sesiones(df_options):
              unique_weeks_str = sorted(num_semana_series.dropna().astype(str).unique())
              week_options_ses.extend(unique_weeks_str)
 
-    current_week_selection_from_state = st.session_state.get(SES_WEEK_FILTER_KEY, ["– Todas –"])
+    current_week_selection_from_state = st.session_state.get(SES_WEEK_FILTER_KEY, ["– Todos –"])
     if not isinstance(current_week_selection_from_state, list): current_week_selection_from_state = ["– Todas –"]
     valid_week_selection_ses = [s for s in current_week_selection_from_state if s in week_options_ses]
     if not valid_week_selection_ses:
@@ -509,29 +509,32 @@ def display_sesiones_summary_sql(df_filtered):
                     st.plotly_chart(fig_evolucion_lineas, use_container_width=True)
 
                 with col_tablas:
-                    # 3. Preparar y mostrar tablas de desglose
+                    # 3. Preparar y mostrar tabla combinada
                     st.markdown("###### Desglose de Datos Mensuales")
 
-                    # Tabla de valores absolutos
+                    # Calcular tablas base
                     tabla_absolutos = evolucion_df.pivot_table(index='AñoMes', columns='SQL_Estandarizado', values='Cantidad').fillna(0).astype(int)
-                    
-                    for cat in ['SQL1', 'SQL2', 'MQL']:
+
+                    sql_cols_present_ordered = [cat for cat in category_order_tomadas if cat in tabla_absolutos.columns]
+                    for cat in category_order_tomadas:
                         if cat not in tabla_absolutos.columns:
                             tabla_absolutos[cat] = 0
                     
-                    if category_order_tomadas:
-                        # Filtrar las columnas de la tabla para que coincidan con las categorías presentes en los datos
-                        tabla_absolutos = tabla_absolutos[[cat for cat in category_order_tomadas if cat in tabla_absolutos.columns]]
-
-
+                    tabla_absolutos = tabla_absolutos[sql_cols_present_ordered]
                     tabla_absolutos['Total Mes'] = tabla_absolutos.sum(axis=1)
-                    st.caption("Valores Absolutos")
-                    st.dataframe(tabla_absolutos, use_container_width=True)
 
-                    # Tabla de porcentajes
-                    tabla_porcentajes = tabla_absolutos.div(tabla_absolutos['Total Mes'], axis=0).drop(columns=['Total Mes']) * 100
-                    st.caption("Composición Porcentual (%)")
-                    st.dataframe(tabla_porcentajes.style.format("{:.1f}%"), use_container_width=True)
+                    # Evitar división por cero si un mes no tiene sesiones
+                    tabla_porcentajes = tabla_absolutos[sql_cols_present_ordered].div(tabla_absolutos['Total Mes'], axis=0).fillna(0) * 100
+
+                    # Crear la tabla combinada formateada como strings
+                    tabla_combinada = pd.DataFrame(index=tabla_absolutos.index)
+                    for col in sql_cols_present_ordered:
+                        tabla_combinada[col] = tabla_absolutos[col].astype(str) + " (" + tabla_porcentajes[col].map('{:.1f}%'.format) + ")"
+
+                    tabla_combinada['Total Mes'] = tabla_absolutos['Total Mes']
+
+                    st.caption("Absoluto (% Composición)")
+                    st.dataframe(tabla_combinada, use_container_width=True)
 
             else:
                 st.info("No hay suficientes datos temporales ('AñoMes') para mostrar la evolución.")
