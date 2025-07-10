@@ -145,7 +145,7 @@ Estos agentes reducen significativamente errores y tiempos de operación, tambi�
 Me gustaría invitarte a una breve conversación para evaluar juntos si nuestra tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Durante la sesión, podríamos platicar sobre algunos casos de uso y éxito que hemos tenido con clientes de la misma industria, mostrándote cómo este enfoque ya está funcionando en organizaciones similares; creo firmemente que esto puede ser de gran valor.
 
 Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
-""""
+"""
 
 plantilla_p2p_karen = """Hola {nombre}, un gusto saludarte.
 
@@ -201,7 +201,6 @@ Ayudamos a equipos como el tuyo a:
 
 Me gustaría invitarte a una breve conversación para evaluar juntos si nuestra tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Durante la sesión, podríamos platicar sobre algunos casos de uso y éxito que hemos tenido con clientes de la misma industria, mostrándote cómo este enfoque ya está funcionando en organizaciones similares; creo firmemente que esto puede ser de gran valor.
 
-Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?"
 ¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
@@ -216,7 +215,7 @@ Este agente no sólo extrae y clasifica datos correctamente desde documentos, si
 Me gustaría invitarte a una breve conversación para evaluar juntos si nuestra tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Durante la sesión, podríamos platicar sobre algunos casos de uso y éxito que hemos tenido con clientes de la misma industria, mostrándote cómo este enfoque ya está funcionando en organizaciones similares; creo firmemente que esto puede ser de gran valor.
 
 Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
-""""
+"""
 
 plantillas_karen = {
     "Plantilla Karen H2R": plantilla_h2r_karen,
@@ -244,7 +243,7 @@ Por eso en Beecker (https://beecker.ai/agentic-ai/) diseñamos un ecosistema de 
 
 Esto no es reemplazar personas. Es devolverle al área la capacidad de enfocarse en lo que realmente transforma el negocio: cultura, engagement y retención.
 
-Me encantaría coordinar una breve sesión contigo para mostrarte cómo este enfoque ya está funcionando en organizaciones similares a {empresa}. Estoy convencido de que podrías encontrarle un valor directo desde el primer momento.  
+Me encantaría coordinar una breve sesión contigo para mostrarte cómo este enfoque ya está funcionando en organizaciones similares a {empresa}. Estoy convencido de que podrías encontrarle un valor directo desde el primer momento.  
 ¿Tendrías espacio para una sesión esta semana o la próxima?
 """
 
@@ -260,7 +259,7 @@ En Beecker (https://beecker.ai/agentic-ai/) creamos un ecosistema de Agentes IA 
 
 Con esto, el área recupera visibilidad completa y reduce el riesgo antes de que se vuelva incidente.
 
-Me encantaría coordinar una breve sesión contigo para mostrarte en detalle cómo otras empresas han logrado visibilidad total y prevención de errores sin cambiar sus sistemas actuales.  
+Me encantaría coordinar una breve sesión contigo para mostrarte en detalle cómo otras empresas han logrado visibilidad total y prevención de errores sin cambiar sus sistemas actuales.  
 ¿Tendrías espacio para una sesión esta semana o la próxima?
 """
 
@@ -276,7 +275,7 @@ En Beecker (https://beecker.ai/agentic-ai/) desarrollamos Agentes IA que acelera
 
 Esto permite convertir ventas en efectivo con mayor velocidad y menos fricción interna.
 
-Me encantaría coordinar una breve sesión contigo para mostrarte cómo este sistema ya está ayudando a empresas similares a {empresa} a recuperar días —y liquidez— sin reestructurar todo el proceso.  
+Me encantaría coordinar una breve sesión contigo para mostrarte cómo este sistema ya está ayudando a empresas similares a {empresa} a recuperar días —y liquidez— sin reestructurar todo el proceso.  
 ¿Tendrías espacio para una sesión esta semana o la próxima?
 """
 
@@ -292,7 +291,7 @@ Por eso en Beecker (https://beecker.ai/agentic-ai/) construimos Agentes IA que f
 
 Esto no es solo eficiencia: es hacer que el negocio fluya sin depender de correos, excel o reenvíos.
 
-Me encantaría coordinar una breve sesión contigo para mostrarte cómo este enfoque ya está eliminando fricción entre áreas clave en empresas como {empresa}. Te aseguro que es una perspectiva que vale revisar.  
+Me encantaría coordinar una breve sesión contigo para mostrarte cómo este enfoque ya está eliminando fricción entre áreas clave en empresas como {empresa}. Te aseguro que es una perspectiva que vale revisar.  
 ¿Tendrías espacio para una sesión esta semana o la próxima?
 """
 
@@ -308,7 +307,7 @@ En Beecker (https://beecker.ai/agentic-ai/) implementamos Agentes IA que orquest
 
 Esto no solo reduce tickets: convierte al área en un habilitador directo del negocio.
 
-Me encantaría coordinar una breve sesión contigo para que veas cómo esto ya está funcionando en áreas de TI con retos similares a los tuyos. Estoy seguro de que puede aportar valor desde el día uno.  
+Me encantaría coordinar una breve sesión contigo para que veas cómo esto ya está funcionando en áreas de TI con retos similares a los tuyos. Estoy seguro de que puede aportar valor desde el día uno.  
 ¿Tendrías espacio para una sesión esta semana o la próxima?
 """
 
@@ -324,7 +323,7 @@ Por eso diseñamos a Pedro, nuestro Agente IA para procesos aduanales críticos:
 
 Esto no solo acelera el proceso… te da tranquilidad operativa y cumplimiento constante.
 
-Me encantaría coordinar una breve sesión contigo para mostrarte cómo Pedro ya está resolviendo este problema para otras empresas. Te aseguro que verlo aplicado al caso de {empresa} puede cambiar la perspectiva.  
+Me encantaría coordinar una breve sesión contigo para mostrarte cómo Pedro ya está resolviendo este problema para otras empresas. Te aseguro que verlo aplicado al caso de {empresa} puede cambiar la perspectiva.  
 ¿Tendrías espacio para una sesión esta semana o la próxima?
 """
 
@@ -336,4 +335,3 @@ plantillas_john_mejorado = {
     "Plantilla JohnMejorado TI (Alternativa)": plantilla_ti_john_mejorado,
     "Plantilla JohnMejorado Aduanas (Alternativa)": plantilla_aduanas_john_mejorado,
 }
-
