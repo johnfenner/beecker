@@ -123,7 +123,8 @@ Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia op
 
 Me gustaría invitarte a una breve conversación para evaluar juntos si nuestra tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Durante la sesión, podríamos platicar sobre algunos casos de uso y éxito que hemos tenido con clientes de la misma industria, mostrándote cómo este enfoque ya está funcionando en organizaciones similares; creo firmemente que esto puede ser de gran valor.
 
-Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?""""
+Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
+""""
 
 plantilla_h2r_karen = """Hola {nombre}, un gusto saludarte.
 
@@ -143,7 +144,8 @@ Estos agentes reducen significativamente errores y tiempos de operación, tambi�
 
 Me gustaría invitarte a una breve conversación para evaluar juntos si nuestra tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Durante la sesión, podríamos platicar sobre algunos casos de uso y éxito que hemos tenido con clientes de la misma industria, mostrándote cómo este enfoque ya está funcionando en organizaciones similares; creo firmemente que esto puede ser de gran valor.
 
-Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?""""
+Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
+""""
 
 plantilla_p2p_karen = """Hola {nombre}, un gusto saludarte.
 
@@ -161,7 +163,7 @@ Estos agentes automatizan todo el ciclo de compras, desde la selección de prove
 
 Me gustaría invitarte a una breve conversación para evaluar juntos si nuestra tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Durante la sesión, podríamos platicar sobre algunos casos de uso y éxito que hemos tenido con clientes de la misma industria, mostrándote cómo este enfoque ya está funcionando en organizaciones similares; creo firmemente que esto puede ser de gran valor.
 
-Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?"
+Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
 """
 
 plantilla_o2c_karen = """Hola {nombre}, un gusto saludarte.
@@ -213,7 +215,8 @@ Este agente no sólo extrae y clasifica datos correctamente desde documentos, si
 
 Me gustaría invitarte a una breve conversación para evaluar juntos si nuestra tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Durante la sesión, podríamos platicar sobre algunos casos de uso y éxito que hemos tenido con clientes de la misma industria, mostrándote cómo este enfoque ya está funcionando en organizaciones similares; creo firmemente que esto puede ser de gran valor.
 
-Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?""""
+Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
+""""
 
 plantillas_karen = {
     "Plantilla Karen H2R": plantilla_h2r_karen,
