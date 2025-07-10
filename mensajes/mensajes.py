@@ -244,7 +244,7 @@ Por eso en Beecker (https://beecker.ai/agentic-ai/) diseñamos un ecosistema de 
 Esto no es reemplazar personas. Es devolverle al área la capacidad de enfocarse en lo que realmente transforma el negocio: cultura, engagement y retención.
 
 Me encantaría coordinar una breve sesión contigo para mostrarte cómo este enfoque ya está funcionando en organizaciones similares a {empresa}. Estoy convencido de que podrías encontrarle un valor directo desde el primer momento.  
-¿Tendrías espacio para una sesión esta semana o la próxima?
+Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
 """
 
 plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -260,7 +260,7 @@ En Beecker (https://beecker.ai/agentic-ai/) creamos un ecosistema de Agentes IA 
 Con esto, el área recupera visibilidad completa y reduce el riesgo antes de que se vuelva incidente.
 
 Me encantaría coordinar una breve sesión contigo para mostrarte en detalle cómo otras empresas han logrado visibilidad total y prevención de errores sin cambiar sus sistemas actuales.  
-¿Tendrías espacio para una sesión esta semana o la próxima?
+Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
 """
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -276,7 +276,7 @@ En Beecker (https://beecker.ai/agentic-ai/) desarrollamos Agentes IA que acelera
 Esto permite convertir ventas en efectivo con mayor velocidad y menos fricción interna.
 
 Me encantaría coordinar una breve sesión contigo para mostrarte cómo este sistema ya está ayudando a empresas similares a {empresa} a recuperar días —y liquidez— sin reestructurar todo el proceso.  
-¿Tendrías espacio para una sesión esta semana o la próxima?
+Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
 """
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -292,7 +292,7 @@ Por eso en Beecker (https://beecker.ai/agentic-ai/) construimos Agentes IA que f
 Esto no es solo eficiencia: es hacer que el negocio fluya sin depender de correos, excel o reenvíos.
 
 Me encantaría coordinar una breve sesión contigo para mostrarte cómo este enfoque ya está eliminando fricción entre áreas clave en empresas como {empresa}. Te aseguro que es una perspectiva que vale revisar.  
-¿Tendrías espacio para una sesión esta semana o la próxima?
+Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
 """
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -308,7 +308,7 @@ En Beecker (https://beecker.ai/agentic-ai/) implementamos Agentes IA que orquest
 Esto no solo reduce tickets: convierte al área en un habilitador directo del negocio.
 
 Me encantaría coordinar una breve sesión contigo para que veas cómo esto ya está funcionando en áreas de TI con retos similares a los tuyos. Estoy seguro de que puede aportar valor desde el día uno.  
-¿Tendrías espacio para una sesión esta semana o la próxima?
+Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
 """
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -324,7 +324,7 @@ Por eso diseñamos a Pedro, nuestro Agente IA para procesos aduanales críticos:
 Esto no solo acelera el proceso… te da tranquilidad operativa y cumplimiento constante.
 
 Me encantaría coordinar una breve sesión contigo para mostrarte cómo Pedro ya está resolviendo este problema para otras empresas. Te aseguro que verlo aplicado al caso de {empresa} puede cambiar la perspectiva.  
-¿Tendrías espacio para una sesión esta semana o la próxima?
+Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
 """
 
 plantillas_john_mejorado = {
