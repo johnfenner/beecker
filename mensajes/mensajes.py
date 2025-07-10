@@ -218,87 +218,106 @@ plantillas_karen = {
     "Plantilla Karen Aduanas (Alternativa)": plantilla_aduanas_karen,
 }
 
-# ==============================================================================
-# ===== SET DE PLANTILLAS "JOHN MEJORADO" (NUEVO Y ACTUALIZADO) ================
-# ==============================================================================
+# =======================================================================================
+# ===== SET DE PLANTILLAS "JOHN MEJORADO" (V5 - VERSIÓN FINAL CON ENFOQUE EN PSICOLOGÍA DEL ROL) =====
+# =======================================================================================
 
-plantilla_h2r_john_mejorado = """Hola {nombre},
+plantilla_h2r_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar} de Beecker. Dado tu rol en {empresa}, sé que optimizar el ciclo de vida del empleado es un objetivo clave.
+Soy {avatar}, Digital Transformation Manager en Beecker. En áreas de RRHH como la de {empresa}, solemos ver que el gran freno no es la falta de estrategia… sino el desgaste diario que deja poco espacio para liderar cultura y desarrollo como realmente se quisiera.
 
-En Beecker (https://beecker.ai/agentic-ai/) desarrollamos Agentes IA que se integran a equipos de RRHH para automatizar tareas operativas y permitir un enfoque más estratégico.
+Por eso en Beecker (https://beecker.ai/agentic-ai/) diseñamos un ecosistema de Agentes IA que libera al equipo de esa carga operativa:
 
-Por ejemplo, nuestros agentes cubren el proceso de principio a fin:
-- Reclutamiento: Fer y Lucas se encargan de publicar vacantes y filtrar candidatos.
-- Gestión y Desarrollo: Isa automatiza el onboarding, Ben gestiona las evaluaciones de desempeño y Lily se ocupa de la nómina y prestaciones.
-- Cierre de Ciclo: Cleo maneja los procesos de baja y jubilación de forma ordenada y cumpliendo la normativa.
+- Fer y Lucas filtran candidatos de forma automática.
+- Isa gestiona todo el onboarding, desde contratos hasta herramientas.
+- Ben, Lily y Lisa ejecutan desempeño, nómina y viáticos sin errores ni intervención.
+- Cleo automatiza el offboarding, cumpliendo al detalle la normativa.
 
-Me gustaría mostrarte cómo este enfoque puede dar más ancho de banda a tu equipo para centrarse en la estrategia de talento. ¿Te parecería útil conversar brevemente sobre esto?
+Esto no es reemplazar personas. Es devolverle al área la capacidad de enfocarse en lo que realmente transforma el negocio: cultura, engagement y retención.
+
+Me encantaría coordinar una breve sesión contigo para mostrarte cómo este enfoque ya está funcionando en organizaciones similares a {empresa}. Estoy convencido de que podrías encontrarle un valor directo desde el primer momento.  
+¿Tendrías espacio para una sesión esta semana o la próxima?
 """
 
-plantilla_p2p_john_mejorado = """Hola {nombre},
+plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar} de Beecker. Por tu rol en {empresa}, sé que la eficiencia en el ciclo de compras y la gestión de proveedores son cruciales.
+Soy {avatar}, Digital Transformation Manager en Beecker. En ciclos de compras como el de {empresa}, lo que suele generar más exposición no es el gasto… sino los errores silenciosos que se filtran cuando el proceso es manual y disperso.
 
-En Beecker (https://beecker.ai/agentic-ai/) nos enfocamos en automatizar el proceso Procure-to-Pay con Agentes IA para que los equipos puedan centrarse en tareas de mayor valor.
+En Beecker (https://beecker.ai/agentic-ai/) creamos un ecosistema de Agentes IA que blinda cada etapa del ciclo Procure-to-Pay:
 
-Nuestros agentes cubren puntos críticos del proceso:
-- Gestión de Proveedores: Elsa automatiza el alta y validación, mientras Jessica ayuda a seleccionar los más rentables.
-- Procesamiento y Pagos: Olivia genera las órdenes de compra, Daniel lee y valida las facturas 24/7, y David ejecuta los pagos de forma automática y segura.
-- Control de Inventario: Alice y Tony concilian la información entre sistemas para evitar quiebres de stock y generar alertas.
+- Jessica y Elsa validan proveedores contra políticas internas antes de darlos de alta.
+- Alice, Olivia, Chris y Tony controlan la demanda, PO y recepción con trazabilidad total.
+- Daniel coteja facturas con PO y entrega, y David programa pagos seguros y auditables.
 
-Me gustaría conversar contigo para evaluar cómo podemos atacar los cuellos de botella específicos de tu operación. ¿Buscamos un espacio para una charla corta?
+Con esto, el área recupera visibilidad completa y reduce el riesgo antes de que se vuelva incidente.
+
+Me encantaría coordinar una breve sesión contigo para mostrarte en detalle cómo otras empresas han logrado visibilidad total y prevención de errores sin cambiar sus sistemas actuales.  
+¿Tendrías espacio para una sesión esta semana o la próxima?
 """
 
-plantilla_o2c_john_mejorado = """Hola {nombre},
+plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar} de Beecker. Dado tu rol en {empresa}, entiendo que optimizar el flujo de caja y la eficiencia en el ciclo de ventas es una prioridad.
+Soy {avatar}, Digital Transformation Manager en Beecker. En procesos comerciales como el de {empresa}, muchas veces no es la venta lo que falla… sino los cuellos de botella entre pedido, entrega y cobro que ralentizan el flujo de caja y afectan la experiencia del cliente.
 
-En Beecker (https://beecker.ai/agentic-ai/) fortalecemos el proceso Order-to-Cash con Agentes IA que manejan el trabajo operativo.
+En Beecker (https://beecker.ai/agentic-ai/) desarrollamos Agentes IA que aceleran y conectan todo el ciclo Order-to-Cash:
 
-Nuestros agentes están diseñados para impactar directamente en los resultados:
-- Gestión de Pedidos y Clientes: Adrian automatiza el alta de clientes y Nico procesa los pedidos sin intervención manual.
-- Logística y Entrega: Diana, James y Julia planifican las entregas y optimizan las rutas para reducir costos.
-- Cuentas por Cobrar: Nina gestiona activamente la cobranza, enviando recordatorios y escalando casos para acelerar el flujo de efectivo.
+- Adrian y Nico automatizan el alta de clientes y la gestión de pedidos.
+- Diana, James y Julia optimizan rutas, entregas y devoluciones.
+- Mia, Nina y Alice gestionan crédito, cobranza y stock con precisión anticipada.
 
-El propósito es conversar brevemente para evaluar si esta tecnología puede ser un apoyo real para los objetivos de tu área. ¿Te parece si buscamos un espacio?
+Esto permite convertir ventas en efectivo con mayor velocidad y menos fricción interna.
+
+Me encantaría coordinar una breve sesión contigo para mostrarte cómo este sistema ya está ayudando a empresas similares a {empresa} a recuperar días —y liquidez— sin reestructurar todo el proceso.  
+¿Tendrías espacio para una sesión esta semana o la próxima?
 """
 
-plantilla_general_john_mejorado = """Hola {nombre},
+plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar} de Beecker. Por tu rol en {empresa}, sé que el gran desafío es liberar a los equipos de tareas repetitivas para que puedan enfocarse en la estrategia.
+Soy {avatar}, Digital Transformation Manager en Beecker. Lo que más vemos en organizaciones como {empresa} no son errores dentro de un área… sino fricción entre áreas: procesos que no se conectan, aprobaciones que se duplican o tareas que nadie ve pero todos sienten.
 
-En Beecker (https://beecker.ai/agentic-ai/) hacemos justamente eso: implementamos Agentes IA que actúan como una extensión digital de tus equipos.
+Por eso en Beecker (https://beecker.ai/agentic-ai/) construimos Agentes IA que funcionan como un sistema nervioso digital, integrando procesos entre departamentos:
 
-Nos centramos en los resultados que generamos en procesos clave:
-- Finanzas (P2P): Automatizamos desde el alta de proveedores (Elsa) y la validación de facturas (Daniel) hasta la ejecución de pagos (David).
-- Comercial (O2C): Agilizamos el ciclo desde el procesamiento de pedidos (Nico) y la optimización de rutas (Julia) hasta la gestión de cobranza (Nina).
-- Talento Humano (H2R): Cubrimos todo el ciclo, desde el reclutamiento (Lucas) y onboarding (Isa) hasta la gestión de nómina (Lily).
+- Elsa sincroniza alta de proveedores con inventario y compras.
+- Nico conecta ventas con logística y cobranza.
+- Isa automatiza onboarding y activa accesos en TI desde RRHH.
 
-Me gustaría mostrarte cómo este enfoque puede aportar valor a tu área. ¿Te parece si agendamos una conversación breve?
+Esto no es solo eficiencia: es hacer que el negocio fluya sin depender de correos, excel o reenvíos.
+
+Me encantaría coordinar una breve sesión contigo para mostrarte cómo este enfoque ya está eliminando fricción entre áreas clave en empresas como {empresa}. Te aseguro que es una perspectiva que vale revisar.  
+¿Tendrías espacio para una sesión esta semana o la próxima?
 """
 
-# Las plantillas alternativas no necesitan el mismo nivel de detalle de agentes
-plantilla_ti_john_mejorado = """Hola {nombre},
+plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar} de Beecker. Como partners Platinum de UiPath, nuestro foco es aplicar Intelligent Process Automation para que equipos de TI como el tuyo en {empresa} puedan escalar su eficiencia.
+Soy {avatar}, Digital Transformation Manager en Beecker. En áreas de TI como la de {empresa}, el reto ya no es técnico… es estratégico: liberar al equipo de soporte operativo para enfocarlo en innovación real.
 
-Entendemos que los desafíos en TI a menudo se centran en la integración y la automatización de flujos de trabajo complejos. En Beecker (https://beecker.ai/agentic-ai/) vamos un paso más allá de los scripts tradicionales.
+En Beecker (https://beecker.ai/agentic-ai/) implementamos Agentes IA que orquestan, analizan y documentan:
 
-Nuestros Agentes IA están diseñados para orquestar procesos de forma autónoma entre sistemas legacy y nuevos, gestionar la causa raíz de los tickets de soporte y monitorear la salud de las aplicaciones para tomar acciones correctivas.
+- Monitorean la salud de aplicaciones para prevenir incidentes.
+- Orquestan flujos entre sistemas cloud y legacy sin intervención manual.
+- Detectan patrones de error y actualizan la base de conocimiento automáticamente.
 
-Me gustaría tener una corta sesión contigo para mostrarte casos de uso concretos y explorar cómo podemos apoyar tu estrategia tecnológica. ¿Te parece bien si nos reunimos la próxima semana?
+Esto no solo reduce tickets: convierte al área en un habilitador directo del negocio.
+
+Me encantaría coordinar una breve sesión contigo para que veas cómo esto ya está funcionando en áreas de TI con retos similares a los tuyos. Estoy seguro de que puede aportar valor desde el día uno.  
+¿Tendrías espacio para una sesión esta semana o la próxima?
 """
 
-plantilla_aduanas_john_mejorado = """Hola {nombre},
+plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar} de Beecker. Nos especializamos en Intelligent Process Automation, y al ver tu rol en {empresa}, quería mostrarte cómo podemos transformar la eficiencia del proceso aduanal.
+Soy {avatar}, Digital Transformation Manager en Beecker. En logística internacional como la de {empresa}, un error en pedimentos o clasificación no solo atrasa… puede comprometer legalmente toda la operación.
 
-Nuestro Agente Digital de IA, Pedro, está diseñado para procesar todo el flujo en minutos. Se encarga de extraer y validar datos de cualquier documento, asignar costos, validar contra cuentas por cobrar y detectar inconsistencias antes de registrar las facturas en el ERP.
+Por eso diseñamos a Pedro, nuestro Agente IA para procesos aduanales críticos:
 
-Este agente no solo optimiza la operación, sino que la vuelve más precisa e inteligente. Me encantaría coordinar una breve sesión para mostrarte una demo y cómo podría aplicarse a tus desafíos. ¿Agendamos 30 minutos la próxima semana?
+- Valida datos entre pedimento, factura y orden de compra.
+- Detecta discrepancias en clasificación, peso, valor y costo.
+- Genera un expediente auditable en tiempo real, listo para cualquier revisión.
+
+Esto no solo acelera el proceso… te da tranquilidad operativa y cumplimiento constante.
+
+Me encantaría coordinar una breve sesión contigo para mostrarte cómo Pedro ya está resolviendo este problema para otras empresas. Te aseguro que verlo aplicado al caso de {empresa} puede cambiar la perspectiva.  
+¿Tendrías espacio para una sesión esta semana o la próxima?
 """
-
 
 plantillas_john_mejorado = {
     "Plantilla JohnMejorado H2R": plantilla_h2r_john_mejorado,
@@ -308,3 +327,4 @@ plantillas_john_mejorado = {
     "Plantilla JohnMejorado TI (Alternativa)": plantilla_ti_john_mejorado,
     "Plantilla JohnMejorado Aduanas (Alternativa)": plantilla_aduanas_john_mejorado,
 }
+
