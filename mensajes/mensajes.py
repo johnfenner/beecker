@@ -124,7 +124,7 @@ Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia op
 Me gustaría invitarte a una breve conversación para evaluar juntos si nuestra tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Durante la sesión, podríamos platicar sobre algunos casos de uso y éxito que hemos tenido con clientes de la misma industria, mostrándote cómo este enfoque ya está funcionando en organizaciones similares; creo firmemente que esto puede ser de gran valor.
 
 Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
-""""
+"""
 
 plantilla_h2r_karen = """Hola {nombre}, un gusto saludarte.
 
