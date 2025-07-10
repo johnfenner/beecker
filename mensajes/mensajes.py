@@ -224,7 +224,7 @@ plantillas_karen = {
 
 plantilla_h2r_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en Beecker. En áreas de RRHH como la de {empresa}, solemos ver que el gran freno no es la falta de estrategia… sino el desgaste diario que deja poco espacio para liderar cultura y desarrollo como realmente se quisiera.
+Soy {avatar}, Digital Transformation Manager en Beecker. En procesos de gestión humana como los de {empresa}, lo que más limita el impacto no es la estrategia, sino la carga operativa constante que termina ocupando el tiempo que debería usarse para potenciar el talento.
 
 Por eso en Beecker (https://beecker.ai/agentic-ai/) diseñamos un ecosistema de Agentes IA que libera al equipo de esa carga operativa:
 
@@ -241,7 +241,7 @@ Me encantaría coordinar una breve sesión contigo para mostrarte cómo este enf
 
 plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en Beecker. En ciclos de compras como el de {empresa}, lo que suele generar más exposición no es el gasto… sino los errores silenciosos que se filtran cuando el proceso es manual y disperso.
+Soy {avatar}, Digital Transformation Manager en Beecker. En procesos de abastecimiento, sourcing y pagos como los de {empresa}, lo que suele generar mayor exposición no es el volumen de gasto… sino los errores silenciosos que se filtran entre sistemas, personas y controles desconectados.
 
 En Beecker (https://beecker.ai/agentic-ai/) creamos un ecosistema de Agentes IA que blinda cada etapa del ciclo Procure-to-Pay:
 
@@ -257,7 +257,7 @@ Me encantaría coordinar una breve sesión contigo para mostrarte en detalle có
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en Beecker. En procesos comerciales como el de {empresa}, muchas veces no es la venta lo que falla… sino los cuellos de botella entre pedido, entrega y cobro que ralentizan el flujo de caja y afectan la experiencia del cliente.
+Soy {avatar}, Digital Transformation Manager en Beecker. En procesos como el ciclo Order-to-Cash de {empresa}, lo que suele frenar el resultado no es la demanda… sino los cuellos de botella invisibles entre áreas: pedidos que se atascan, entregas que se retrasan y cobros que se diluyen.
 
 En Beecker (https://beecker.ai/agentic-ai/) desarrollamos Agentes IA que aceleran y conectan todo el ciclo Order-to-Cash:
 
@@ -273,7 +273,7 @@ Me encantaría coordinar una breve sesión contigo para mostrarte cómo este sis
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en Beecker. Lo que más vemos en organizaciones como {empresa} no son errores dentro de un área… sino fricción entre áreas: procesos que no se conectan, aprobaciones que se duplican o tareas que nadie ve pero todos sienten.
+Soy {avatar}, Digital Transformation Manager en Beecker. En organizaciones como {empresa}, los mayores cuellos de botella no siempre están dentro de un área… sino entre ellas. Aprobaciones que no fluyen, datos que se duplican o tareas que quedan sin seguimiento.
 
 Por eso en Beecker (https://beecker.ai/agentic-ai/) construimos Agentes IA que funcionan como un sistema nervioso digital, integrando procesos entre departamentos:
 
@@ -289,7 +289,7 @@ Me encantaría coordinar una breve sesión contigo para mostrarte cómo este enf
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en Beecker. En áreas de TI como la de {empresa}, el reto ya no es técnico… es estratégico: liberar al equipo de soporte operativo para enfocarlo en innovación real.
+Soy {avatar}, Digital Transformation Manager en Beecker. En áreas de TI como la de {empresa}, lo más difícil no suele ser lo técnico… sino liberar al equipo del soporte constante para que pueda enfocarse en iniciativas de mayor impacto.
 
 En Beecker (https://beecker.ai/agentic-ai/) implementamos Agentes IA que orquestan, analizan y documentan:
 
@@ -305,7 +305,7 @@ Me encantaría coordinar una breve sesión contigo para que veas cómo esto ya e
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en Beecker. En logística internacional como la de {empresa}, un error en pedimentos o clasificación no solo atrasa… puede comprometer legalmente toda la operación.
+Soy {avatar}, Digital Transformation Manager en Beecker. En logística internacional como la de {empresa}, un solo error en clasificación, cálculo o validación puede escalar de forma inmediata a un problema legal o financiero.
 
 Por eso diseñamos a Pedro, nuestro Agente IA para procesos aduanales críticos:
 
