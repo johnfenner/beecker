@@ -217,3 +217,94 @@ plantillas_karen = {
     "Plantilla Karen TI (Alternativa)": plantilla_ti_karen,
     "Plantilla Karen Aduanas (Alternativa)": plantilla_aduanas_karen,
 }
+
+# ==============================================================================
+# ===== SET DE PLANTILLAS "JOHN MEJORADO" (NUEVO Y ACTUALIZADO) ================
+# ==============================================================================
+
+plantilla_h2r_john_mejorado = """Hola {nombre},
+
+Soy {avatar} de Beecker. Dado tu rol en {empresa}, sé que optimizar el ciclo de vida del empleado es un objetivo clave.
+
+En Beecker (https://beecker.ai/agentic-ai/) desarrollamos Agentes IA que se integran a equipos de RRHH para automatizar tareas operativas y permitir un enfoque más estratégico.
+
+Por ejemplo, nuestros agentes cubren el proceso de principio a fin:
+- Reclutamiento: Fer y Lucas se encargan de publicar vacantes y filtrar candidatos.
+- Gestión y Desarrollo: Isa automatiza el onboarding, Ben gestiona las evaluaciones de desempeño y Lily se ocupa de la nómina y prestaciones.
+- Cierre de Ciclo: Cleo maneja los procesos de baja y jubilación de forma ordenada y cumpliendo la normativa.
+
+Me gustaría mostrarte cómo este enfoque puede dar más ancho de banda a tu equipo para centrarse en la estrategia de talento. ¿Te parecería útil conversar brevemente sobre esto?
+"""
+
+plantilla_p2p_john_mejorado = """Hola {nombre},
+
+Soy {avatar} de Beecker. Por tu rol en {empresa}, sé que la eficiencia en el ciclo de compras y la gestión de proveedores son cruciales.
+
+En Beecker (https://beecker.ai/agentic-ai/) nos enfocamos en automatizar el proceso Procure-to-Pay con Agentes IA para que los equipos puedan centrarse en tareas de mayor valor.
+
+Nuestros agentes cubren puntos críticos del proceso:
+- Gestión de Proveedores: Elsa automatiza el alta y validación, mientras Jessica ayuda a seleccionar los más rentables.
+- Procesamiento y Pagos: Olivia genera las órdenes de compra, Daniel lee y valida las facturas 24/7, y David ejecuta los pagos de forma automática y segura.
+- Control de Inventario: Alice y Tony concilian la información entre sistemas para evitar quiebres de stock y generar alertas.
+
+Me gustaría conversar contigo para evaluar cómo podemos atacar los cuellos de botella específicos de tu operación. ¿Buscamos un espacio para una charla corta?
+"""
+
+plantilla_o2c_john_mejorado = """Hola {nombre},
+
+Soy {avatar} de Beecker. Dado tu rol en {empresa}, entiendo que optimizar el flujo de caja y la eficiencia en el ciclo de ventas es una prioridad.
+
+En Beecker (https://beecker.ai/agentic-ai/) fortalecemos el proceso Order-to-Cash con Agentes IA que manejan el trabajo operativo.
+
+Nuestros agentes están diseñados para impactar directamente en los resultados:
+- Gestión de Pedidos y Clientes: Adrian automatiza el alta de clientes y Nico procesa los pedidos sin intervención manual.
+- Logística y Entrega: Diana, James y Julia planifican las entregas y optimizan las rutas para reducir costos.
+- Cuentas por Cobrar: Nina gestiona activamente la cobranza, enviando recordatorios y escalando casos para acelerar el flujo de efectivo.
+
+El propósito es conversar brevemente para evaluar si esta tecnología puede ser un apoyo real para los objetivos de tu área. ¿Te parece si buscamos un espacio?
+"""
+
+plantilla_general_john_mejorado = """Hola {nombre},
+
+Soy {avatar} de Beecker. Por tu rol en {empresa}, sé que el gran desafío es liberar a los equipos de tareas repetitivas para que puedan enfocarse en la estrategia.
+
+En Beecker (https://beecker.ai/agentic-ai/) hacemos justamente eso: implementamos Agentes IA que actúan como una extensión digital de tus equipos.
+
+Nos centramos en los resultados que generamos en procesos clave:
+- Finanzas (P2P): Automatizamos desde el alta de proveedores (Elsa) y la validación de facturas (Daniel) hasta la ejecución de pagos (David).
+- Comercial (O2C): Agilizamos el ciclo desde el procesamiento de pedidos (Nico) y la optimización de rutas (Julia) hasta la gestión de cobranza (Nina).
+- Talento Humano (H2R): Cubrimos todo el ciclo, desde el reclutamiento (Lucas) y onboarding (Isa) hasta la gestión de nómina (Lily).
+
+Me gustaría mostrarte cómo este enfoque puede aportar valor a tu área. ¿Te parece si agendamos una conversación breve?
+"""
+
+# Las plantillas alternativas no necesitan el mismo nivel de detalle de agentes
+plantilla_ti_john_mejorado = """Hola {nombre},
+
+Soy {avatar} de Beecker. Como partners Platinum de UiPath, nuestro foco es aplicar Intelligent Process Automation para que equipos de TI como el tuyo en {empresa} puedan escalar su eficiencia.
+
+Entendemos que los desafíos en TI a menudo se centran en la integración y la automatización de flujos de trabajo complejos. En Beecker (https://beecker.ai/agentic-ai/) vamos un paso más allá de los scripts tradicionales.
+
+Nuestros Agentes IA están diseñados para orquestar procesos de forma autónoma entre sistemas legacy y nuevos, gestionar la causa raíz de los tickets de soporte y monitorear la salud de las aplicaciones para tomar acciones correctivas.
+
+Me gustaría tener una corta sesión contigo para mostrarte casos de uso concretos y explorar cómo podemos apoyar tu estrategia tecnológica. ¿Te parece bien si nos reunimos la próxima semana?
+"""
+
+plantilla_aduanas_john_mejorado = """Hola {nombre},
+
+Soy {avatar} de Beecker. Nos especializamos en Intelligent Process Automation, y al ver tu rol en {empresa}, quería mostrarte cómo podemos transformar la eficiencia del proceso aduanal.
+
+Nuestro Agente Digital de IA, Pedro, está diseñado para procesar todo el flujo en minutos. Se encarga de extraer y validar datos de cualquier documento, asignar costos, validar contra cuentas por cobrar y detectar inconsistencias antes de registrar las facturas en el ERP.
+
+Este agente no solo optimiza la operación, sino que la vuelve más precisa e inteligente. Me encantaría coordinar una breve sesión para mostrarte una demo y cómo podría aplicarse a tus desafíos. ¿Agendamos 30 minutos la próxima semana?
+"""
+
+
+plantillas_john_mejorado = {
+    "Plantilla JohnMejorado H2R": plantilla_h2r_john_mejorado,
+    "Plantilla JohnMejorado P2P": plantilla_p2p_john_mejorado,
+    "Plantilla JohnMejorado O2C": plantilla_o2c_john_mejorado,
+    "Plantilla JohnMejorado General": plantilla_general_john_mejorado,
+    "Plantilla JohnMejorado TI (Alternativa)": plantilla_ti_john_mejorado,
+    "Plantilla JohnMejorado Aduanas (Alternativa)": plantilla_aduanas_john_mejorado,
+}
