@@ -14,7 +14,8 @@ if project_root not in sys.path:
 
 from datos.carga_datos import cargar_y_limpiar_datos
 from filtros.aplicar_filtros import aplicar_filtros
-from mensajes.mensajes import plantillas_john, plantillas_karen
+# --- LÍNEA MODIFICADA ---
+from mensajes.mensajes import plantillas_john, plantillas_karen, plantillas_john_mejorado
 from mensajes.mensajes_streamlit import clasificar_por_proceso
 from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar, limpiar_nombre_completo
 
@@ -201,9 +202,10 @@ if st.session_state.mostrar_tabla_mensajes:
         
         st.markdown("### 📬️ Vista de Mensajes Automáticos")
         st.markdown("#### **Elige el Estilo del Mensaje**")
+        # --- BLOQUE MODIFICADO ---
         set_plantillas_seleccionado = st.radio(
             "Selecciona el estilo:",
-            ("Mensajes John", "Mensajes Karen CH"),
+            ("Mensajes John Mejorado", "Mensajes John", "Mensajes Karen CH"), # "John Mejorado" es ahora la primera opción
             key="set_plantillas_selector",
             horizontal=True
         )
@@ -213,9 +215,13 @@ if st.session_state.mostrar_tabla_mensajes:
         if set_plantillas_seleccionado == "Mensajes John":
             opciones_mensajes_base = plantillas_john
             nombre_set = "John"
-        else:
+        elif set_plantillas_seleccionado == "Mensajes Karen CH":
             opciones_mensajes_base = plantillas_karen
             nombre_set = "Karen"
+        else: # Por defecto o si es "Mensajes John Mejorado"
+            opciones_mensajes_base = plantillas_john_mejorado
+            nombre_set = "JohnMejorado"
+        # --- FIN DEL BLOQUE MODIFICADO ---
 
         num_prospectos = len(df_mensajes_final_display)
         st.info(f"Se encontraron **{num_prospectos}** prospectos. A continuación se muestran los mensajes generados para cada uno.")
@@ -246,12 +252,10 @@ if st.session_state.mostrar_tabla_mensajes:
 
             if linkedin_col_nombre in row and pd.notna(row[linkedin_col_nombre]) and str(row[linkedin_col_nombre]).startswith("http"):
                  with link_col:
-                    # --- SOLUCIÓN DEFINITIVA APLICADA AQUÍ ---
-                    # Reemplazamos el st.link_button por st.markdown para crear un enlace de texto.
-                    # Esto es mucho más estable y evita el TypeError.
                     st.markdown(f"[🔗 Perfil LinkedIn]({row[linkedin_col_nombre]})")
 
             # ---- Lógica para Mensaje Principal ----
+            # --- LÍNEA MODIFICADA ---
             key_plantilla_principal = f"Plantilla {nombre_set} {categoria_prospecto}"
             plantilla_principal_str = opciones_mensajes_base.get(key_plantilla_principal)
             
@@ -266,9 +270,11 @@ if st.session_state.mostrar_tabla_mensajes:
             key_plantilla_alternativa = None
             nombre_alternativa = ""
             if categoria_prospecto == "General":
+                # --- LÍNEA MODIFICADA ---
                 key_plantilla_alternativa = f"Plantilla {nombre_set} TI (Alternativa)"
                 nombre_alternativa = "TI"
             elif categoria_prospecto == "P2P":
+                # --- LÍNEA MODIFICADA ---
                 key_plantilla_alternativa = f"Plantilla {nombre_set} Aduanas (Alternativa)"
                 nombre_alternativa = "Aduanas"
             
