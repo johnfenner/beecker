@@ -107,11 +107,11 @@ plantillas_john = {
 # ===== SET DE PLANTILLAS "KAREN CH" ============================================
 # ===============================================================================
 
-plantilla_general_karen = """Hola {nombre}, un gusto saludarte.
+plantilla_general_karen = """Hola {nombre}, un gusto saludarte. Espero que te encuentres excelente el día de hoy.
 
 Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Inteligent Process Automation, desarrollamos agentes digitales de IA para optimizar procesos clave en las organizaciones, en los procesos de Hire to Retire (H2R), Order to Cash (O2C) y Procure-to-Pay (P2P).
 
-Me gustaría mostrarte cómo nuestras soluciones pueden mejorar la eficiencia en áreas de #Empresa, tales como:
+Me gustaría mostrarte cómo nuestras soluciones pueden mejorar la eficiencia en áreas de {empresa}, tales como:
 
 - Procurement: Validación automática de facturas con órdenes de compra, detección de discrepancias en montos y autorizaciones, análisis de rendimiento de proveedores, y optimización del ciclo Procure-to-Pay (P2P).
 - Finanzas y Contabilidad: Automatización de conciliaciones bancarias, procesamiento de facturas y seguimiento de pagos, todo respaldado por inteligencia artificial avanzada.
@@ -121,14 +121,14 @@ Me gustaría mostrarte cómo nuestras soluciones pueden mejorar la eficiencia en
 
 Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso, también tenemos soluciones que se pueden adecuar a las necesidades que tengas en tu área.
 
-Me gustaría invitarte a una breve conversación para evaluar juntos si nuestra tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Durante la sesión, podríamos platicar sobre algunos casos de uso y éxito que hemos tenido con clientes de la misma industria, mostrándote cómo este enfoque ya está funcionando en organizaciones similares; creo firmemente que esto puede ser de gran valor.
+Me gustaría tener una corta sesión contigo para platicar algunos casos de uso y éxito que hemos tenido con clientes de la misma industria.
 
-Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
+¿Te parece si nos reunimos 30 minutos esta o la próxima semana?
 """
 
-plantilla_h2r_karen = """Hola {nombre}, un gusto saludarte.
+plantilla_h2r_karen = """¡Hola {nombre}, un gusto saludarte!
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en #Empresa.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
 
 Nos centramos en nuestros agentes digitales de IA diseñados para los procesos Hire to Retire (H2R) entre otros para diferentes áreas.
 
@@ -142,14 +142,14 @@ Nos centramos en nuestros agentes digitales de IA diseñados para los procesos H
 
 Estos agentes reducen significativamente errores y tiempos de operación, también podemos integrar diferentes automatizaciones que se adecuan a tus necesidades.
 
-Me gustaría invitarte a una breve conversación para evaluar juntos si nuestra tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Durante la sesión, podríamos platicar sobre algunos casos de uso y éxito que hemos tenido con clientes de la misma industria, mostrándote cómo este enfoque ya está funcionando en organizaciones similares; creo firmemente que esto puede ser de gran valor.
+Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido.
 
-Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
+¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
 plantilla_p2p_karen = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en #Empresa.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
 
 Nos centramos principalmente en nuestros agentes digitales de IA diseñados para el proceso Procure-to-Pay (P2P) entre otros para diferentes áreas.
 
@@ -159,16 +159,16 @@ Nos centramos principalmente en nuestros agentes digitales de IA diseñados para
 - Daniel: Agente de procesamiento de facturas.
 - David: Agente de procesamiento de órdenes de pago.
 
-Estos agentes automatizan todo el ciclo de compras, desde la selección de proveedor hasta el pago, asegurando el cumplimiento de políticas empresariales en cada transacción y reduciendo significativamente errores y tiempos de operation.
+Estos agentes automatizan todo el ciclo de compras, desde la selección de proveedor hasta el pago, asegurando el cumplimiento de políticas empresariales en cada transacción y reduciendo significativamente errores y tiempos de operación.
 
-Me gustaría invitarte a una breve conversación para evaluar juntos si nuestra tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Durante la sesión, podríamos platicar sobre algunos casos de uso y éxito que hemos tenido con clientes de la misma industria, mostrándote cómo este enfoque ya está funcionando en organizaciones similares; creo firmemente que esto puede ser de gran valor.
+Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido con empresas de la misma industria.
 
-Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
+¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
 plantilla_o2c_karen = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en #Empresa.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
 
 Nos centramos principalmente en agentes digitales de IA diseñados para los procesos Order to Cash (O2C) entre otros para diferentes áreas.
 
@@ -185,9 +185,12 @@ Nos centramos principalmente en agentes digitales de IA diseñados para los proc
 
 Estos agentes optimizan cada etapa del proceso, garantizando la satisfacción del cliente, reduciendo significativamente errores, mejorando los tiempos de operación y ofreciendo una trazabilidad completa.
 
-Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido con empresas de la misma industria. ¿Te parece si nos reunimos 30 minutos la próxima semana?
+Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido con empresas de la misma industria.
+
+¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
+# La plantilla de TI no se encontró en el documento de Word y se ha mantenido sin cambios.
 plantilla_ti_karen = """Hola {nombre}, un gusto saludarte.
 
 Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y, como partners Platinum de UiPath, nuestro foco es aplicar esta tecnología para que los equipos de TI puedan escalar su eficiencia en empresas como #Empresa.
@@ -206,15 +209,20 @@ Me gustaría invitarte a una breve conversación para evaluar juntos si nuestra 
 
 plantilla_aduanas_karen = """Hola {nombre}, un gusto saludar.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia de #Empresa en el proceso aduanal:
+Soy {avatar}, Gerente de Transformación Digital en Beecker.ai. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia de {empresa} en el proceso aduanal:
 
-Nos centramos principalmente en nuestro Agente Digital Pedro de IA que procesan todo el flujo de aduanas en minutos te ayuda a: Extraer y validar archivos y datos desde correo, Clasificar clientes y régimen, Generar reportes automáticos, Asignar costos y validar con cuentas por cobrar, Registrar y procesar facturas en su ERP.
+Nos centramos principalmente en nuestro Agente Digital Pedro de IA que procesan todo el flujo de aduanas en minutos te ayuda a:
+- Extraer y validar archivos y datos desde correo
+- Clasificar clientes y régimen
+- Generar reportes automáticos
+- Asignar costos y validar con cuentas por cobrar
+- Registrar y procesar facturas en su ERP
 
 Este agente no sólo extrae y clasifica datos correctamente desde documentos, sino que también Detecta inconsistencias, Válida cuentas internas, Genera reportes para contabilidad, Asigna automáticamente los montos correctos a cada cliente involucrado todo esto en minutos.
 
-Me gustaría invitarte a una breve conversación para evaluar juntos si nuestra tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Durante la sesión, podríamos platicar sobre algunos casos de uso y éxito que hemos tenido con clientes de la misma industria, mostrándote cómo este enfoque ya está funcionando en organizaciones similares; creo firmemente que esto puede ser de gran valor.
+Me encantaría coordinar una breve sesión contigo para compartirte una Demo.
 
-Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
+¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
 plantillas_karen = {
