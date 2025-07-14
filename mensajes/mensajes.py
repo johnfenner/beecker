@@ -235,104 +235,118 @@ plantillas_karen = {
 }
 
 # =======================================================================================
-# ===== SET DE PLANTILLAS "JOHN MEJORADO" (V5 - VERSIÓN FINAL CON ENFOQUE EN PSICOLOGÍA DEL ROL) =====
+# ===== SET DE PLANTILLAS "JOHN MEJORADO" (VERSIÓN FINAL CON AJUSTES) ===================
 # =======================================================================================
 
 plantilla_h2r_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en Beecker. En procesos de gestión humana como los de {empresa}, lo que más limita el impacto no es la estrategia, sino la carga operativa constante que termina ocupando el tiempo que debería usarse para potenciar el talento.
+Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/.
 
-Por eso en Beecker (https://beecker.ai/agentic-ai/) diseñamos un ecosistema de Agentes IA que libera al equipo de esa carga operativa:
+Mi rol consiste en conectar con líderes de alto impacto como tú para explorar sinergias reales. En nuestro caso, eso significa acompañar a equipos que enfrentan el reto diario de operar el ciclo Hire-to-Retire, desarrollando agentes digitales de IA que se integran a sus sistemas actuales y asumen tareas específicas, como:
 
-- Fer y Lucas filtran candidatos de forma automática.
-- Isa gestiona todo el onboarding, desde contratos hasta herramientas.
-- Ben, Lily y Lisa ejecutan desempeño, nómina y viáticos sin errores ni intervención.
-- Cleo automatiza el offboarding, cumpliendo al detalle la normativa.
+- Fer (Postulación de Vacantes): publica vacantes con trazabilidad y estandarización en múltiples canales, sin intervención manual.  
+- Lucas (Reclutamiento y Selección): automatiza la recepción, filtrado y revisión de solicitudes, acelerando el proceso y mejorando la cobertura.  
+- Isa (Gestión de Empleados): gestiona la contratación y el alta de empleados desde documentos hasta el registro en sistemas como HCM o IDSE.  
+- Ben, Lily y Lisa (Administración): se encargan de la gestión de desempeño, nómina y viáticos con precisión y sin errores.  
+- Cleo (Cierre de Ciclo): automatiza el offboarding, garantizando cumplimiento normativo y cierre formal del proceso.
 
-Esto no es reemplazar personas. Es devolverle al área la capacidad de enfocarse en lo que realmente transforma el negocio: cultura, engagement y retención.
+Con este enfoque, nuestros clientes han logrado reducir más del 70% del tiempo dedicado a tareas operativas en todo el ciclo del colaborador.
 
-Me encantaría coordinar una breve sesión contigo para mostrarte cómo este enfoque ya está funcionando en organizaciones similares a {empresa}. Estoy convencido de que podrías encontrarle un valor directo desde el primer momento.  
-Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
+Por eso me encantaría coordinar una sesión breve contigo, donde podamos compartir algunos de estos casos aplicados, los aprendizajes que hemos recogido en distintas industrias y explorar si algo de esto puede adaptarse al contexto actual de tu equipo.
+
+¿Te parece bien si lo coordinamos para esta semana o prefieres la próxima?
 """
+
 
 plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en Beecker. En procesos de abastecimiento, sourcing y pagos como los de {empresa}, lo que suele generar mayor exposición no es el volumen de gasto… sino los errores silenciosos que se filtran entre sistemas, personas y controles desconectados.
+Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/.
 
-En Beecker (https://beecker.ai/agentic-ai/) creamos un ecosistema de Agentes IA que blinda cada etapa del ciclo Procure-to-Pay:
+Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA que se integran a sus sistemas actuales y asumen tareas críticas para asegurar trazabilidad, cumplimiento y control en cada etapa:
 
-- Jessica y Elsa validan proveedores contra políticas internas antes de darlos de alta.
-- Alice, Olivia, Chris y Tony controlan la demanda, PO y recepción con trazabilidad total.
-- Daniel coteja facturas con PO y entrega, y David programa pagos seguros y auditables.
+- Jessica y Elsa (Gestión de Proveedores): seleccionan y dan de alta a proveedores de forma automatizada, asegurando que cada incorporación cumpla con las políticas internas.
+- Olivia (Órdenes de Compra): genera y valida órdenes de compra, previniendo discrepancias desde el origen.
+- Daniel (Procesamiento de Facturas): coteja facturas contra órdenes y entregas, detectando inconsistencias en montos, fechas y autorizaciones.
+- David (Procesamiento de Pagos): programa y ejecuta pagos conforme a las condiciones pactadas, garantizando visibilidad y cumplimiento financiero.
 
-Con esto, el área recupera visibilidad completa y reduce el riesgo antes de que se vuelva incidente.
+Con este enfoque, nuestros clientes han logrado reducir el tiempo del ciclo de compra en más de un 60%, y al mismo tiempo mejorar significativamente la precisión, la auditoría y el cumplimiento en sus procesos de pago.
 
-Me encantaría coordinar una breve sesión contigo para mostrarte en detalle cómo otras empresas han logrado visibilidad total y prevención de errores sin cambiar sus sistemas actuales.  
-Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
+Por eso me encantaría coordinar una sesión breve contigo, donde podamos compartir algunos de estos casos aplicados, los aprendizajes que hemos recogido en distintas industrias y explorar si algo de esto puede adaptarse al contexto actual de tu equipo.
+
+¿Te parece bien si lo coordinamos para esta semana o prefieres la próxima?
 """
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en Beecker. En procesos como el ciclo Order-to-Cash de {empresa}, lo que suele frenar el resultado no es la demanda… sino los cuellos de botella invisibles entre áreas: pedidos que se atascan, entregas que se retrasan y cobros que se diluyen.
+Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/.
 
-En Beecker (https://beecker.ai/agentic-ai/) desarrollamos Agentes IA que aceleran y conectan todo el ciclo Order-to-Cash:
+Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA que se integran a sus sistemas actuales para acelerar el flujo de caja, garantizar trazabilidad y proteger la rentabilidad en cada etapa:
 
-- Adrian y Nico automatizan el alta de clientes y la gestión de pedidos.
-- Diana, James y Julia optimizan rutas, entregas y devoluciones.
-- Mia, Nina y Alice gestionan crédito, cobranza y stock con precisión anticipada.
+- Nico, Adrian y Mia (Clientes y Crédito): automatizan el alta de clientes, procesan pedidos sin fricción y gestionan el crédito.
+- Diana, James y Julia (Logística y Entrega): planifican rutas, transporte y entregas.
+- Nina y Aaron (Cobranza y Facturación): gestionan cuentas por cobrar, automatizan recordatorios y ejecutan facturación con precisión.
+- Alice (Inventario): mantiene visibilidad en tiempo real y previene quiebres de stock.
 
-Esto permite convertir ventas en efectivo con mayor velocidad y menos fricción interna.
+Con este enfoque, nuestros clientes han acelerado su ciclo de conversión de efectivo y mejorado el indicador de entregas OTIF en más de un 20%.
 
-Me encantaría coordinar una breve sesión contigo para mostrarte cómo este sistema ya está ayudando a empresas similares a {empresa} a recuperar días —y liquidez— sin reestructurar todo el proceso.  
-Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
+Por eso me encantaría coordinar una sesión breve contigo, donde podamos compartir casos aplicados, los aprendizajes que hemos recogido en distintas industrias y explorar si algo de esto puede adaptarse al contexto actual de tu equipo.
+
+¿Te parece bien si lo coordinamos para esta semana o prefieres la próxima?
 """
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en Beecker. En organizaciones como {empresa}, los mayores cuellos de botella no siempre están dentro de un área… sino entre ellas. Aprobaciones que no fluyen, datos que se duplican o tareas que quedan sin seguimiento.
+Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/.
 
-Por eso en Beecker (https://beecker.ai/agentic-ai/) construimos Agentes IA que funcionan como un sistema nervioso digital, integrando procesos entre departamentos:
+Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA que se integran a los sistemas existentes para automatizar procesos clave en distintas áreas del negocio.
 
-- Elsa sincroniza alta de proveedores con inventario y compras.
-- Nico conecta ventas con logística y cobranza.
-- Isa automatiza onboarding y activa accesos en TI desde RRHH.
+Me gustaría mostrarte cómo nuestras soluciones pueden aportar valor en áreas como:
 
-Esto no es solo eficiencia: es hacer que el negocio fluya sin depender de correos, excel o reenvíos.
+- Procurement: Validación automática de facturas con órdenes de compra, detección de discrepancias en montos y autorizaciones, análisis de rendimiento de proveedores y optimización del ciclo Procure-to-Pay (P2P).
+- Finanzas y Contabilidad: Automatización de conciliaciones bancarias, procesamiento de facturas y seguimiento de pagos, con trazabilidad completa y menor intervención manual.
+- Recursos Humanos: Gestión automatizada de nóminas, selección de personal con IA y manejo eficiente de beneficios para empleados.
+- Atención al Cliente: Implementación de agentes virtuales inteligentes que mejoran la experiencia del usuario y reducen significativamente los tiempos de respuesta.
+- Cadena de Suministro: Optimización de inventarios, automatización de pedidos y gestión logística.
 
-Me encantaría coordinar una breve sesión contigo para mostrarte cómo este enfoque ya está eliminando fricción entre áreas clave en empresas como {empresa}. Te aseguro que es una perspectiva que vale revisar.  
-Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
+Con este enfoque, nuestros clientes han logrado reducir entre un 50% y 70% los tiempos operativos en procesos críticos, mejorando la trazabilidad, el cumplimiento y la capacidad de reacción interárea.
+
+Por eso me encantaría coordinar una sesión breve contigo, donde podamos compartir casos aplicados, los aprendizajes que hemos recogido en distintos sectores y explorar si algo de esto puede adaptarse al contexto actual de tu equipo.
+
+¿Te parece bien si lo coordinamos para esta semana o prefieres la próxima?
 """
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en Beecker. En áreas de TI como la de {empresa}, lo más difícil no suele ser lo técnico… sino liberar al equipo del soporte constante para que pueda enfocarse en iniciativas de mayor impacto.
+Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/.
 
-En Beecker (https://beecker.ai/agentic-ai/) implementamos Agentes IA que orquestan, analizan y documentan:
+Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA que se integran a sus plataformas actuales para asumir tareas como:
 
-- Monitorean la salud de aplicaciones para prevenir incidentes.
-- Orquestan flujos entre sistemas cloud y legacy sin intervención manual.
-- Detectan patrones de error y actualizan la base de conocimiento automáticamente.
+- Gestión de Tickets y Soporte: automatizando la gestión y resolución de solicitudes recurrentes, reduciendo drásticamente los tiempos de respuesta.
+- Mantenimiento y Monitoreo: ejecutando rutinas de mantenimiento, monitoreo de sistemas y respaldos sin intervención humana.
+- Integración de Sistemas: facilitando la orquestación de flujos de datos entre sistemas legacy y nuevas plataformas en la nube.
 
-Esto no solo reduce tickets: convierte al área en un habilitador directo del negocio.
+Con este enfoque, nuestros clientes de TI han logrado automatizar más del 60% de las tareas de soporte Nivel 1 y reducido el tiempo de resolución de incidentes hasta en un 50%.
 
-Me encantaría coordinar una breve sesión contigo para que veas cómo esto ya está funcionando en áreas de TI con retos similares a los tuyos. Estoy seguro de que puede aportar valor desde el día uno.  
-Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
+Por eso me encantaría coordinar una sesión breve contigo, donde podamos compartir algunos de estos casos aplicados, los aprendizajes que hemos recogido en distintas industrias y explorar si algo de esto puede adaptarse al contexto actual de tu equipo.
+
+¿Te parece bien que lo coordinemos esta semana o prefieres la próxima?
 """
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en Beecker. En logística internacional como la de {empresa}, un solo error en clasificación, cálculo o validación puede escalar de forma inmediata a un problema legal o financiero.
+Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/.
 
-Por eso diseñamos a Pedro, nuestro Agente IA para procesos aduanales críticos:
+Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA como Pedro, que asegura el cumplimiento y la agilidad en el proceso aduanal, encargándose de:
 
-- Valida datos entre pedimento, factura y orden de compra.
-- Detecta discrepancias en clasificación, peso, valor y costo.
-- Genera un expediente auditable en tiempo real, listo para cualquier revisión.
+- Validación de Documentos: extrae y cruza datos entre pedimento, factura y orden de compra para detectar discrepancias al instante.
+- Clasificación y Costeo: asigna costos y clasifica regímenes de forma automática, minimizando el riesgo de errores.
+- Generación de Expedientes: crea un expediente digital y auditable en tiempo real para cada operación.
 
-Esto no solo acelera el proceso… te da tranquilidad operativa y cumplimiento constante.
+Con este enfoque, nuestros clientes han reducido el tiempo de procesamiento de sus flujos de aduanas en más de un 80%, eliminando prácticamente los errores manuales que generan multas y retrasos.
 
-Me encantaría coordinar una breve sesión contigo para mostrarte cómo Pedro ya está resolviendo este problema para otras empresas. Te aseguro que verlo aplicado al caso de {empresa} puede cambiar la perspectiva.  
-Para dar el siguiente paso, ¿te parece bien si buscamos un espacio en los próximos días?
+Por eso me encantaría coordinar una sesión breve contigo, donde podamos compartir algunos de estos casos aplicados, los aprendizajes que hemos recogido en distintas industrias y explorar si algo de esto puede adaptarse al contexto actual de tu equipo.
+
+¿Te parece bien si lo coordinamos para esta semana o prefieres la próxima?
 """
 
 plantillas_john_mejorado = {
