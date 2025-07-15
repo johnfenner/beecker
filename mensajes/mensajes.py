@@ -240,21 +240,19 @@ plantillas_karen = {
 
 plantilla_h2r_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/.
+Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/. Mi rol consiste en conectar con líderes de alto impacto como tú para explorar sinergias reales. En nuestro caso, eso significa acompañar a equipos que enfrentan el reto diario de operar el ciclo Hire-to-Retire, desarrollando agentes digitales de IA que se integran a sus sistemas actuales y asumen tareas específicas, como:
 
-Mi rol consiste en conectar con líderes de alto impacto como tú para explorar sinergias reales. En nuestro caso, eso significa acompañar a equipos que enfrentan el reto diario de operar el ciclo Hire-to-Retire, desarrollando agentes digitales de IA que se integran a sus sistemas actuales y asumen tareas específicas, como:
-
-- Fer (Postulación de Vacantes): publica vacantes con trazabilidad y estandarización en múltiples canales, sin intervención manual.  
-- Lucas (Reclutamiento y Selección): automatiza la recepción, filtrado y revisión de solicitudes, acelerando el proceso y mejorando la cobertura.  
-- Isa (Gestión de Empleados): gestiona la contratación y el alta de empleados desde documentos hasta el registro en sistemas como HCM o IDSE.  
-- Ben, Lily y Lisa (Administración): se encargan de la gestión de desempeño, nómina y viáticos con precisión y sin errores.  
-- Cleo (Cierre de Ciclo): automatiza el offboarding, garantizando cumplimiento normativo y cierre formal del proceso.
+- FER (Postulación de Vacantes): publica vacantes con trazabilidad y estandarización en múltiples canales, sin intervención manual.  
+- LUCAS (Reclutamiento y Selección): automatiza la recepción, filtrado y revisión de solicitudes, acelerando el proceso y mejorando la cobertura.  
+- ISA (Gestión de Empleados): gestiona la contratación y el alta de empleados desde documentos hasta el registro en sistemas como HCM o IDSE.  
+- BEN, LILY y LISA (Administración): se encargan de la gestión de desempeño, nómina y viáticos con precisión y sin errores.  
+- CLEO (Cierre de Ciclo): automatiza el offboarding, garantizando cumplimiento normativo y cierre formal del proceso.
 
 Con este enfoque, nuestros clientes han logrado reducir más del 70% del tiempo dedicado a tareas operativas en todo el ciclo del colaborador.
 
-Por eso me encantaría coordinar una sesión breve contigo, donde podamos compartir algunos de estos casos aplicados, los aprendizajes que hemos recogido en distintas industrias y explorar si algo de esto puede adaptarse al contexto actual de tu equipo.
+Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
 
-¿Te parece bien si lo coordinamos para esta semana o prefieres la próxima?
+¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
 """
 
 
@@ -271,9 +269,9 @@ Nos especializamos en Intelligent Process Automation, desarrollando agentes digi
 
 Con este enfoque, nuestros clientes han logrado reducir el tiempo del ciclo de compra en más de un 60%, y al mismo tiempo mejorar significativamente la precisión, la auditoría y el cumplimiento en sus procesos de pago.
 
-Por eso me encantaría coordinar una sesión breve contigo, donde podamos compartir algunos de estos casos aplicados, los aprendizajes que hemos recogido en distintas industrias y explorar si algo de esto puede adaptarse al contexto actual de tu equipo.
+Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
 
-¿Te parece bien si lo coordinamos para esta semana o prefieres la próxima?
+¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
 """
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -289,9 +287,9 @@ Nos especializamos en Intelligent Process Automation, desarrollando agentes digi
 
 Con este enfoque, nuestros clientes han acelerado su ciclo de conversión de efectivo y mejorado el indicador de entregas OTIF en más de un 20%.
 
-Por eso me encantaría coordinar una sesión breve contigo, donde podamos compartir casos aplicados, los aprendizajes que hemos recogido en distintas industrias y explorar si algo de esto puede adaptarse al contexto actual de tu equipo.
+Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
 
-¿Te parece bien si lo coordinamos para esta semana o prefieres la próxima?
+¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
 """
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -310,9 +308,9 @@ Me gustaría mostrarte cómo nuestras soluciones pueden aportar valor en áreas 
 
 Con este enfoque, nuestros clientes han logrado reducir entre un 50% y 70% los tiempos operativos en procesos críticos, mejorando la trazabilidad, el cumplimiento y la capacidad de reacción interárea.
 
-Por eso me encantaría coordinar una sesión breve contigo, donde podamos compartir casos aplicados, los aprendizajes que hemos recogido en distintos sectores y explorar si algo de esto puede adaptarse al contexto actual de tu equipo.
+Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
 
-¿Te parece bien si lo coordinamos para esta semana o prefieres la próxima?
+¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
 """
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -327,9 +325,9 @@ Nos especializamos en Intelligent Process Automation, desarrollando agentes digi
 
 Con este enfoque, nuestros clientes de TI han logrado automatizar más del 60% de las tareas de soporte Nivel 1 y reducido el tiempo de resolución de incidentes hasta en un 50%.
 
-Por eso me encantaría coordinar una sesión breve contigo, donde podamos compartir algunos de estos casos aplicados, los aprendizajes que hemos recogido en distintas industrias y explorar si algo de esto puede adaptarse al contexto actual de tu equipo.
+Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
 
-¿Te parece bien que lo coordinemos esta semana o prefieres la próxima?
+¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
 """
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -344,9 +342,9 @@ Nos especializamos en Intelligent Process Automation, desarrollando agentes digi
 
 Con este enfoque, nuestros clientes han reducido el tiempo de procesamiento de sus flujos de aduanas en más de un 80%, eliminando prácticamente los errores manuales que generan multas y retrasos.
 
-Por eso me encantaría coordinar una sesión breve contigo, donde podamos compartir algunos de estos casos aplicados, los aprendizajes que hemos recogido en distintas industrias y explorar si algo de esto puede adaptarse al contexto actual de tu equipo.
+Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
 
-¿Te parece bien si lo coordinamos para esta semana o prefieres la próxima?
+¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
 """
 
 plantillas_john_mejorado = {
