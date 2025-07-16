@@ -107,7 +107,7 @@ plantillas_john = {
 # ===== SET DE PLANTILLAS "KAREN CH" ============================================
 # ===============================================================================
 
-plantilla_general_karen = """Hola {nombre}, un gusto saludarte. Espero que te encuentres excelente el día de hoy.
+plantilla_general_karen = """Hola {nombre}, un gusto saludarte.
 
 Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Inteligent Process Automation, desarrollamos agentes digitales de IA para optimizar procesos clave en las organizaciones, en los procesos de Hire to Retire (H2R), Order to Cash (O2C) y Procure-to-Pay (P2P).
 
@@ -126,7 +126,7 @@ Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos 
 ¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
 """
 
-plantilla_h2r_karen = """¡Hola {nombre}, un gusto saludarte!
+plantilla_h2r_karen = """Hola {nombre}, un gusto saludarte.
 
 Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
 
@@ -207,9 +207,9 @@ Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos 
 ¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
 """
 
-plantilla_aduanas_karen = """Hola {nombre}, un gusto saludar.
+plantilla_aduanas_karen = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en Beecker.ai. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia de {empresa} en el proceso aduanal:
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia de {empresa} en el proceso aduanal:
 
 Nos centramos principalmente en nuestro Agente Digital Pedro de IA que procesan todo el flujo de aduanas en minutos te ayuda a:
 - Extraer y validar archivos y datos desde correo
