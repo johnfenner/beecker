@@ -121,9 +121,9 @@ Me gustaría mostrarte cómo nuestras soluciones pueden mejorar la eficiencia en
 
 Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso, también tenemos soluciones que se pueden adecuar a las necesidades que tengas en tu área.
 
-Me gustaría tener una corta sesión contigo para platicar algunos casos de uso y éxito que hemos tenido con clientes de la misma industria.
+Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
 
-¿Te parece si nos reunimos 30 minutos esta o la próxima semana?
+¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
 """
 
 plantilla_h2r_karen = """¡Hola {nombre}, un gusto saludarte!
@@ -142,9 +142,9 @@ Nos centramos en nuestros agentes digitales de IA diseñados para los procesos H
 
 Estos agentes reducen significativamente errores y tiempos de operación, también podemos integrar diferentes automatizaciones que se adecuan a tus necesidades.
 
-Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido.
+Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
 
-¿Te parece si nos reunimos 30 minutos la próxima semana?
+¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
 """
 
 plantilla_p2p_karen = """Hola {nombre}, un gusto saludarte.
@@ -161,9 +161,9 @@ Nos centramos principalmente en nuestros agentes digitales de IA diseñados para
 
 Estos agentes automatizan todo el ciclo de compras, desde la selección de proveedor hasta el pago, asegurando el cumplimiento de políticas empresariales en cada transacción y reduciendo significativamente errores y tiempos de operación.
 
-Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido con empresas de la misma industria.
+Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
 
-¿Te parece si nos reunimos 30 minutos la próxima semana?
+¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
 """
 
 plantilla_o2c_karen = """Hola {nombre}, un gusto saludarte.
@@ -185,9 +185,9 @@ Nos centramos principalmente en agentes digitales de IA diseñados para los proc
 
 Estos agentes optimizan cada etapa del proceso, garantizando la satisfacción del cliente, reduciendo significativamente errores, mejorando los tiempos de operación y ofreciendo una trazabilidad completa.
 
-Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido con empresas de la misma industria.
+Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
 
-¿Te parece si nos reunimos 30 minutos la próxima semana?
+¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
 """
 
 # La plantilla de TI no se encontró en el documento de Word y se ha mantenido sin cambios.
@@ -202,9 +202,9 @@ Ayudamos a equipos como el tuyo a:
 - Reducir tiempos de respuesta en soporte técnico.
 - Facilitar la integración entre sistemas legacy y nuevos entornos.
 
-Me gustaría invitarte a una breve conversación para evaluar juntos si nuestra tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Durante la sesión, podríamos platicar sobre algunos casos de uso y éxito que hemos tenido con clientes de la misma industria, mostrándote cómo este enfoque ya está funcionando en organizaciones similares; creo firmemente que esto puede ser de gran valor.
+Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
 
-¿Te parece si nos reunimos 30 minutos la próxima semana?
+¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
 """
 
 plantilla_aduanas_karen = """Hola {nombre}, un gusto saludar.
@@ -220,9 +220,9 @@ Nos centramos principalmente en nuestro Agente Digital Pedro de IA que procesan 
 
 Este agente no sólo extrae y clasifica datos correctamente desde documentos, sino que también Detecta inconsistencias, Válida cuentas internas, Genera reportes para contabilidad, Asigna automáticamente los montos correctos a cada cliente involucrado todo esto en minutos.
 
-Me encantaría coordinar una breve sesión contigo para compartirte una Demo.
+Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
 
-¿Te parece si nos reunimos 30 minutos la próxima semana?
+¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
 """
 
 plantillas_karen = {
