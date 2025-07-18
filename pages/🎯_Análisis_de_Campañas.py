@@ -825,6 +825,15 @@ def display_new_email_stats_analysis(df, campaign_name, column_mapping):
     Recibe un DataFrame FILTRADO, calcula métricas avanzadas y muestra
     un mini-dashboard con gráficos de barras de volumen y eficiencia.
     """
+    # =================================================================
+    # PASO DE DIAGNÓSTICO TEMPORAL: Mostrar la tabla de datos en bruto
+    # =================================================================
+    st.info(f"PASO DE DIAGNÓSTICO: Mostrando los datos en bruto para '{campaign_name}'")
+    st.dataframe(df.copy())
+    st.write("Nombres de las columnas detectadas:", df.columns.tolist())
+    st.write("---")
+    # =================================================================
+
     if df.empty:
         st.info(f"No hay datos para mostrar con los filtros seleccionados para la campaña '{campaign_name}'.")
         return
@@ -864,7 +873,7 @@ def display_new_email_stats_analysis(df, campaign_name, column_mapping):
     
     st.divider()
 
-    # --- ✨ NUEVO MINI-DASHBOARD DE GRÁFICOS ---
+    # --- ✨ MINI-DASHBOARD DE GRÁFICOS (sin cambios) ---
     chart_col, data_col = st.columns([2, 1])
 
     with chart_col:
@@ -897,7 +906,7 @@ def display_new_email_stats_analysis(df, campaign_name, column_mapping):
             summary_df, 
             use_container_width=True, 
             hide_index=True,
-            height=620 # Ajustar altura para alinear con los dos gráficos
+            height=620 
         )
     st.markdown("---")
 
