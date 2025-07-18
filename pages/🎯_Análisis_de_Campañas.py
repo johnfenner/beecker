@@ -776,7 +776,6 @@ def load_email_stats_from_new_sheet():
         y extrae sus datos y encabezados.
         """
         start_row, start_col = -1, -1
-        # 1. Encuentra la celda que contiene el identificador
         for r, row in enumerate(all_data):
             try:
                 c = row.index(identifier)
@@ -786,11 +785,9 @@ def load_email_stats_from_new_sheet():
                 continue
         if start_row == -1: return pd.DataFrame()
 
-        # 2. Extrae los encabezados desde la celda del identificador en adelante
         header_row = all_data[start_row]
         headers_raw = header_row[start_col:]
         
-        # 3. Determina el fin de los encabezados (la primera celda en blanco)
         col_count = len(headers_raw)
         try:
             col_count = headers_raw.index('')
@@ -799,15 +796,12 @@ def load_email_stats_from_new_sheet():
         
         headers = headers_raw[:col_count]
 
-        # 4. Lee las filas de datos de abajo
         table_data = []
         for r_idx in range(start_row + 1, len(all_data)):
             row = all_data[r_idx]
-            # Condición de parada: la fila es muy corta o la celda de inicio está vacía
             if not row or len(row) <= start_col or not row[start_col].strip():
                 break
             
-            # Extrae el pedazo de fila que corresponde a nuestra tabla
             row_slice = row[start_col : start_col + len(headers)]
             table_data.append(row_slice)
         
@@ -815,12 +809,12 @@ def load_email_stats_from_new_sheet():
         
         return pd.DataFrame(table_data, columns=headers)
 
-    # Cargar las tres campañas
+    # Cargar las tres campañas (con el nombre corregido)
     df_h2r_isa = parse_specific_table(all_data, "H2R - ISA")
     df_p2p_elsa = parse_specific_table(all_data, "P2P - ELSA")
-    df_h2r_luca = parse_specific_table(all_data, "H2R - LUCA")
+    df_h2r_lucas = parse_specific_table(all_data, "H2R - LUCAS") # <--- CORREGIDO
     
-    return df_h2r_isa, df_p2p_elsa, df_h2r_luca
+    return df_h2r_isa, df_p2p_elsa, df_h2r_lucas 
 
 
 # No necesitas cambiar los imports, pero asegúrate de tener plotly.express como px
@@ -943,20 +937,16 @@ else:
 st.header("📈 Análisis de Hoja Independiente (Números por correo campaña)", divider="rainbow")
 
 with st.container(border=True):
-    # Cargar los datos una sola vez (ahora son 3 tablas)
-    df_h2r_isa, df_p2p_elsa, df_h2r_luca = load_email_stats_from_new_sheet()
+    # Cargar los datos (con la variable corregida)
+    df_h2r_isa, df_p2p_elsa, df_h2r_lucas = load_email_stats_from_new_sheet()
 
-    # Mapeo de columnas para H2R - ISA
+    # Mapeos de columnas
     mapping_h2r = { "sent": "Sent", "open": "Open Number", "responses": "Responses", "session": "Sesion" }
-    
-    # Mapeo de columnas para P2P - ELSA
     mapping_p2p = { "sent": "Sent", "open": "Open Number", "responses": "Responses", "session": "Sesion" }
+    mapping_lucas = { "sent": "Sent", "open": "Open Numl", "responses": "Responses", "session": "Sesion" } # <--- CORREGIDO
 
-    # Mapeo de columnas para H2R - LUCA (OJO con "Open Numl")
-    mapping_luca = { "sent": "Sent", "open": "Open Numl", "responses": "Responses", "session": "Sesion" }
-
-    # Crear pestañas para cada campaña (ahora son 3)
-    tab1, tab2, tab3 = st.tabs(["📊 Campaña H2R - ISA", "📊 Campaña P2P - ELSA", "📊 Campaña H2R - LUCAS"])
+    # Crear pestañas (con el título corregido)
+    tab1, tab2, tab3 = st.tabs(["📊 Campaña H2R - ISA", "📊 Campaña P2P - ELSA", "📊 Campaña H2R - LUCAS"]) # <--- CORREGIDO
 
     with tab1:
         st.subheader("Análisis de Rendimiento: H2R - ISA")
@@ -994,24 +984,24 @@ with st.container(border=True):
         else:
             st.info("No se cargaron datos para la campaña 'P2P - ELSA'.")
 
-    # --- NUEVA PESTAÑA PARA LUCA ---
+    # Pestaña para LUCAS (todo corregido)
     with tab3:
-        st.subheader("Análisis de Rendimiento: H2R - LUCA")
-        if not df_h2r_luca.empty:
+        st.subheader("Análisis de Rendimiento: H2R - LUCAS")
+        if not df_h2r_lucas.empty:
             try:
-                email_categories_luca = df_h2r_luca.iloc[:, 0].unique().tolist()
-                selected_categories_luca = st.multiselect(
+                email_categories_lucas = df_h2r_lucas.iloc[:, 0].unique().tolist()
+                selected_categories_lucas = st.multiselect(
                     "Filtrar por categoría de Email:",
-                    options=email_categories_luca,
-                    default=email_categories_luca,
-                    key="filter_h2r_luca" # Clave única para el nuevo filtro
+                    options=email_categories_lucas,
+                    default=email_categories_lucas,
+                    key="filter_h2r_lucas"
                 )
-                df_luca_filtered = df_h2r_luca[df_h2r_luca.iloc[:, 0].isin(selected_categories_luca)]
-                display_new_email_stats_analysis(df_luca_filtered.copy(), "H2R - LUCA", mapping_luca)
+                df_lucas_filtered = df_h2r_lucas[df_h2r_lucas.iloc[:, 0].isin(selected_categories_lucas)]
+                display_new_email_stats_analysis(df_lucas_filtered.copy(), "H2R - LUCAS", mapping_lucas)
             except Exception as e:
-                st.error(f"Ocurrió un error al procesar la campaña H2R - LUCA: {e}")
+                st.error(f"Ocurrió un error al procesar la campaña H2R - LUCAS: {e}")
         else:
-            st.info("No se cargaron datos para la campaña 'H2R - LUCA'.")
+            st.info("No se cargaron datos para la campaña 'H2R - LUCAS'.")
 
 # --- FIN DE LA NUEVA SECCIÓN  ---
 
