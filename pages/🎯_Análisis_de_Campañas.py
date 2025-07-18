@@ -825,20 +825,15 @@ def display_new_email_stats_analysis(df, campaign_name, column_mapping):
     Recibe un DataFrame FILTRADO, calcula métricas avanzadas y muestra
     un mini-dashboard con gráficos de barras de volumen y eficiencia.
     """
-    # =================================================================
-    # PASO DE DIAGNÓSTICO TEMPORAL: Mostrar la tabla de datos en bruto
-    # =================================================================
-    st.info(f"PASO DE DIAGNÓSTICO: Mostrando los datos en bruto para '{campaign_name}'")
-    st.dataframe(df.copy())
-    st.write("Nombres de las columnas detectadas:", df.columns.tolist())
-    st.write("---")
-    # =================================================================
-
     if df.empty:
         st.info(f"No hay datos para mostrar con los filtros seleccionados para la campaña '{campaign_name}'.")
         return
 
-    # --- CÁLCULOS (sin cambios) ---
+    # ===== LÍNEA DE LIMPIEZA FINAL =====
+    # Aseguramos que los nombres de las columnas no tengan espacios ni caracteres ocultos.
+    df.columns = df.columns.str.strip()
+    
+    # --- CÁLCULOS ---
     first_col_name = df.columns[0]
     col_sent = column_mapping.get("sent")
     col_open = column_mapping.get("open")
@@ -863,7 +858,7 @@ def display_new_email_stats_analysis(df, campaign_name, column_mapping):
     session_rate_vs_response = (total_sessions / total_responses * 100) if total_responses > 0 else 0
     global_conversion_rate = (total_sessions / total_sent * 100) if total_sent > 0 else 0
     
-    # --- VISTA DE MÉTRICAS (sin cambios) ---
+    # --- VISTA DE MÉTRICAS ---
     st.markdown("##### Métricas Clave de Rendimiento")
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("📧 Enviados", f"{total_sent:,}")
@@ -873,13 +868,13 @@ def display_new_email_stats_analysis(df, campaign_name, column_mapping):
     
     st.divider()
 
-    # --- ✨ MINI-DASHBOARD DE GRÁFICOS (sin cambios) ---
+    # --- MINI-DASHBOARD DE GRÁFICOS ---
     chart_col, data_col = st.columns([2, 1])
 
     with chart_col:
         st.markdown("##### Análisis Gráfico del Embudo")
 
-        # --- Gráfico 1: Volumen Absoluto ---
+        # Gráfico 1: Volumen Absoluto
         volume_data = pd.DataFrame({
             "Etapa": ["Enviados", "Abiertos", "Respondieron", "Sesiones"],
             "Cantidad": [total_sent, total_opened, total_responses, total_sessions]
@@ -889,7 +884,7 @@ def display_new_email_stats_analysis(df, campaign_name, column_mapping):
         fig_vol.update_layout(height=300, margin=dict(t=30, b=10, l=0, r=0))
         st.plotly_chart(fig_vol, use_container_width=True)
 
-        # --- Gráfico 2: Tasas de Eficiencia ---
+        # Gráfico 2: Tasas de Eficiencia
         rate_data = pd.DataFrame({
             'Etapa': ['Tasa de Apertura', 'Tasa de Respuesta<br>(de Abiertos)', 'Tasa de Sesión<br>(de Respuestas)'],
             'Tasa (%)': [open_rate, response_rate_vs_open, session_rate_vs_response]
@@ -901,7 +896,9 @@ def display_new_email_stats_analysis(df, campaign_name, column_mapping):
 
     with data_col:
         st.markdown("##### Desglose por Categoría")
-        summary_df = df.groupby(first_col_name)[[col_sent, col_open, col_responses, col_session]].sum().reset_index()
+        # Preparamos una lista de columnas que existen para evitar errores en el groupby
+        agg_cols_exist = [c for c in [col_sent, col_open, col_responses, col_session] if c in df.columns]
+        summary_df = df.groupby(first_col_name)[agg_cols_exist].sum().reset_index()
         st.dataframe(
             summary_df, 
             use_container_width=True, 
