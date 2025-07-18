@@ -748,18 +748,18 @@ def display_email_prospecting_analysis(df_common_filtered):
 @st.cache_data(ttl=600)
 def load_email_stats_from_new_sheet():
     """
-    Se conecta a Google Sheets y extrae datos de dos tablas con una estructura específica.
-    Esta versión está corregida para ignorar las filas de subtotales.
+    Se conecta a Google Sheets y extrae datos de tablas con una estructura específica.
+    VERSIÓN MEJORADA: Busca las tablas en cualquier parte de la hoja y carga todas las campañas.
     """
     try:
         creds_dict = st.secrets["gcp_service_account"]
         client = gspread.service_account_from_dict(creds_dict)
     except KeyError:
         st.error("Error de Configuración (Secrets): Falta [gcp_service_account] para la nueva hoja.")
-        return pd.DataFrame(), pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
     except Exception as e:
         st.error(f"Error al cargar credenciales de Google Sheets para la nueva hoja: {e}")
-        return pd.DataFrame(), pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
     try:
         sheet_url = st.secrets["email_stats_sheet_url"]
@@ -768,66 +768,59 @@ def load_email_stats_from_new_sheet():
         all_data = sheet.get_all_values()
     except Exception as e:
         st.error(f"Error al leer la nueva hoja de cálculo: {e}")
-        return pd.DataFrame(), pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
-   def parse_specific_table(all_data, header_identifier):
-    """
-    Busca una fila que contenga el 'header_identifier' en su primera celda,
-    la usa como la fila de encabezados y lee los datos subsiguientes, ignorando subtotales.
-    VERSIÓN CORREGIDA: Identifica los límites de la tabla para evitar leer columnas de otras tablas.
-    """
-    header_row_index = -1
-    for i, row in enumerate(all_data):
-        if row and row[0].strip() == header_identifier:
-            header_row_index = i
-            break
-    
-    if header_row_index == -1:
-        return pd.DataFrame()
+    def parse_specific_table(all_data, identifier):
+        """
+        Parser robusto: encuentra una tabla buscando el 'identifier' en cualquier celda,
+        y extrae sus datos y encabezados.
+        """
+        start_row, start_col = -1, -1
+        # 1. Encuentra la celda que contiene el identificador
+        for r, row in enumerate(all_data):
+            try:
+                c = row.index(identifier)
+                start_row, start_col = r, c
+                break
+            except ValueError:
+                continue
+        if start_row == -1: return pd.DataFrame()
 
-    # ===== INICIO DE LA CORRECCIÓN CLAVE =====
-    
-    # 1. Obtener la fila completa que contiene los encabezados.
-    raw_header_row = all_data[header_row_index]
-
-    # 2. Encontrar el final de las columnas de ESTA tabla buscando la primera celda vacía.
-    table_column_count = len(raw_header_row)  # Por defecto, usar toda la fila.
-    try:
-        # Busca el índice de la primera celda de encabezado que está en blanco.
-        first_blank_index = raw_header_row.index('')
-        table_column_count = first_blank_index
-    except ValueError:
-        # Si no hay celdas en blanco, la tabla ocupa hasta el final de la fila.
-        pass
-
-    # 3. Extraer solo los encabezados que pertenecen a esta tabla.
-    headers = [h.strip() for h in raw_header_row[:table_column_count]]
-    
-    # ===== FIN DE LA CORRECCIÓN CLAVE =====
-
-    table_data = []
-    for i in range(header_row_index + 1, len(all_data)):
-        row = all_data[i]
+        # 2. Extrae los encabezados desde la celda del identificador en adelante
+        header_row = all_data[start_row]
+        headers_raw = header_row[start_col:]
         
-        # Condición de parada si encuentra la siguiente tabla.
-        if not row or (len(row) > 0 and row[0].strip() in ["H2R - ISA", "P2P - ELSA"] and i > header_row_index):
-            break
+        # 3. Determina el fin de los encabezados (la primera celda en blanco)
+        col_count = len(headers_raw)
+        try:
+            col_count = headers_raw.index('')
+        except ValueError:
+            pass
         
-        # Ignorar filas de subtotales que no empiezan con "Email".
-        if not str(row[0]).strip().lower().startswith("email"):
-            continue
+        headers = headers_raw[:col_count]
 
-        # Extraer los datos de la fila, pero solo para las columnas de nuestra tabla.
-        row_slice = row[:table_column_count]
+        # 4. Lee las filas de datos de abajo
+        table_data = []
+        for r_idx in range(start_row + 1, len(all_data)):
+            row = all_data[r_idx]
+            # Condición de parada: la fila es muy corta o la celda de inicio está vacía
+            if not row or len(row) <= start_col or not row[start_col].strip():
+                break
+            
+            # Extrae el pedazo de fila que corresponde a nuestra tabla
+            row_slice = row[start_col : start_col + len(headers)]
+            table_data.append(row_slice)
         
-        if len(row_slice) < len(headers):
-            row_slice.extend([''] * (len(headers) - len(row_slice)))
-        table_data.append(row_slice)
+        if not table_data: return pd.DataFrame(columns=headers)
+        
+        return pd.DataFrame(table_data, columns=headers)
 
-    if not table_data:
-        return pd.DataFrame(columns=headers)
-
-    return pd.DataFrame(table_data, columns=headers)
+    # Cargar las tres campañas
+    df_h2r_isa = parse_specific_table(all_data, "H2R - ISA")
+    df_p2p_elsa = parse_specific_table(all_data, "P2P - ELSA")
+    df_h2r_luca = parse_specific_table(all_data, "H2R - LUCA")
+    
+    return df_h2r_isa, df_p2p_elsa, df_h2r_luca
 
 
 # No necesitas cambiar los imports, pero asegúrate de tener plotly.express como px
@@ -950,35 +943,33 @@ else:
 st.header("📈 Análisis de Hoja Independiente (Números por correo campaña)", divider="rainbow")
 
 with st.container(border=True):
-    # Cargar los datos una sola vez
-    df_h2r_isa, df_p2p_elsa = load_email_stats_from_new_sheet()
+    # Cargar los datos una sola vez (ahora son 3 tablas)
+    df_h2r_isa, df_p2p_elsa, df_h2r_luca = load_email_stats_from_new_sheet()
 
-    # Mapeo de columnas para la tabla H2R - ISA (basado en tu imagen)
+    # Mapeo de columnas para H2R - ISA
     mapping_h2r = { "sent": "Sent", "open": "Open Number", "responses": "Responses", "session": "Sesion" }
     
-    # Mapeo de columnas para la tabla P2P - ELSA (AJUSTA ESTOS NOMBRES si son diferentes)
+    # Mapeo de columnas para P2P - ELSA
     mapping_p2p = { "sent": "Sent", "open": "Open Number", "responses": "Responses", "session": "Sesion" }
 
-    # Crear pestañas para cada campaña
-    tab1, tab2 = st.tabs(["📊 Campaña H2R - ISA", "📊 Campaña P2P - ELSA"])
+    # Mapeo de columnas para H2R - LUCA (OJO con "Open Numl")
+    mapping_luca = { "sent": "Sent", "open": "Open Numl", "responses": "Responses", "session": "Sesion" }
+
+    # Crear pestañas para cada campaña (ahora son 3)
+    tab1, tab2, tab3 = st.tabs(["📊 Campaña H2R - ISA", "📊 Campaña P2P - ELSA", "📊 Campaña H2R - LUCAS"])
 
     with tab1:
         st.subheader("Análisis de Rendimiento: H2R - ISA")
         if not df_h2r_isa.empty:
             try:
-                # Filtro independiente por categoría de Email
                 email_categories_h2r = df_h2r_isa.iloc[:, 0].unique().tolist()
                 selected_categories_h2r = st.multiselect(
                     "Filtrar por categoría de Email:",
                     options=email_categories_h2r,
                     default=email_categories_h2r,
-                    key="filter_h2r_isa" # Clave única para este filtro
+                    key="filter_h2r_isa"
                 )
-                
-                # Filtrar el DataFrame basado en la selección
                 df_h2r_filtered = df_h2r_isa[df_h2r_isa.iloc[:, 0].isin(selected_categories_h2r)]
-                
-                # Llamar a la función de análisis con el DataFrame filtrado
                 display_new_email_stats_analysis(df_h2r_filtered.copy(), "H2R - ISA", mapping_h2r)
             except Exception as e:
                 st.error(f"Ocurrió un error al procesar la campaña H2R - ISA: {e}")
@@ -989,26 +980,40 @@ with st.container(border=True):
         st.subheader("Análisis de Rendimiento: P2P - ELSA")
         if not df_p2p_elsa.empty:
             try:
-                # Filtro independiente por categoría de Email
                 email_categories_p2p = df_p2p_elsa.iloc[:, 0].unique().tolist()
                 selected_categories_p2p = st.multiselect(
                     "Filtrar por categoría de Email:",
                     options=email_categories_p2p,
                     default=email_categories_p2p,
-                    key="filter_p2p_elsa" # Clave única para este filtro
+                    key="filter_p2p_elsa"
                 )
-
-                # Filtrar el DataFrame basado en la selección
                 df_p2p_filtered = df_p2p_elsa[df_p2p_elsa.iloc[:, 0].isin(selected_categories_p2p)]
-
-                # Llamar a la función de análisis con el DataFrame filtrado
                 display_new_email_stats_analysis(df_p2p_filtered.copy(), "P2P - ELSA", mapping_p2p)
             except Exception as e:
                 st.error(f"Ocurrió un error al procesar la campaña P2P - ELSA: {e}")
         else:
             st.info("No se cargaron datos para la campaña 'P2P - ELSA'.")
 
-# --- FIN DE LA NUEVA SECCIÓN DE ANÁLISIS MEJORADA ---
+    # --- NUEVA PESTAÑA PARA LUCA ---
+    with tab3:
+        st.subheader("Análisis de Rendimiento: H2R - LUCA")
+        if not df_h2r_luca.empty:
+            try:
+                email_categories_luca = df_h2r_luca.iloc[:, 0].unique().tolist()
+                selected_categories_luca = st.multiselect(
+                    "Filtrar por categoría de Email:",
+                    options=email_categories_luca,
+                    default=email_categories_luca,
+                    key="filter_h2r_luca" # Clave única para el nuevo filtro
+                )
+                df_luca_filtered = df_h2r_luca[df_h2r_luca.iloc[:, 0].isin(selected_categories_luca)]
+                display_new_email_stats_analysis(df_luca_filtered.copy(), "H2R - LUCA", mapping_luca)
+            except Exception as e:
+                st.error(f"Ocurrió un error al procesar la campaña H2R - LUCA: {e}")
+        else:
+            st.info("No se cargaron datos para la campaña 'H2R - LUCA'.")
+
+# --- FIN DE LA NUEVA SECCIÓN  ---
 
 st.markdown("---")
 st.info("Esta página de análisis de campañas ha sido desarrollada por Johnsito ✨")
