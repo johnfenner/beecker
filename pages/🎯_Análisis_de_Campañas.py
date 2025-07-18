@@ -770,50 +770,64 @@ def load_email_stats_from_new_sheet():
         st.error(f"Error al leer la nueva hoja de cálculo: {e}")
         return pd.DataFrame(), pd.DataFrame()
 
-    def parse_specific_table(all_data, header_identifier):
-        """
-        Busca una fila que contenga el 'header_identifier' en su primera celda,
-        la usa como la fila de encabezados y lee los datos subsiguientes, ignorando subtotales.
-        """
-        header_row_index = -1
-        for i, row in enumerate(all_data):
-            if row and row[0].strip() == header_identifier:
-                header_row_index = i
-                break
-        
-        if header_row_index == -1:
-            return pd.DataFrame()
-
-        headers = [h.strip() for h in all_data[header_row_index]]
-        
-        table_data = []
-        for i in range(header_row_index + 1, len(all_data)):
-            row = all_data[i]
-            
-            if not row or (len(row) > 0 and row[0].strip() in ["H2R - ISA", "P2P - ELSA"] and i > header_row_index):
-                break
-            
-            # ===== INICIO DE LA MODIFICACIÓN CLAVE =====
-            # Se ignora cualquier fila que no comience con "Email" en la primera celda.
-            # Esto filtra eficazmente los subtotales y otras filas de resumen.
-            if not str(row[0]).strip().lower().startswith("email"):
-                continue # Saltar esta fila y pasar a la siguiente
-            # ===== FIN DE LA MODIFICACIÓN CLAVE =====
-
-            if len(row) < len(headers):
-                row.extend([''] * (len(headers) - len(row)))
-            table_data.append(row[:len(headers)])
-
-        if not table_data:
-            return pd.DataFrame(columns=headers)
-
-        return pd.DataFrame(table_data, columns=headers)
-
-    # Llama a la función de parseo para cada tabla usando su identificador de encabezado único
-    df_h2r_isa = parse_specific_table(all_data, "H2R - ISA")
-    df_p2p_elsa = parse_specific_table(all_data, "P2P - ELSA")
+   def parse_specific_table(all_data, header_identifier):
+    """
+    Busca una fila que contenga el 'header_identifier' en su primera celda,
+    la usa como la fila de encabezados y lee los datos subsiguientes, ignorando subtotales.
+    VERSIÓN CORREGIDA: Identifica los límites de la tabla para evitar leer columnas de otras tablas.
+    """
+    header_row_index = -1
+    for i, row in enumerate(all_data):
+        if row and row[0].strip() == header_identifier:
+            header_row_index = i
+            break
     
-    return df_h2r_isa, df_p2p_elsa
+    if header_row_index == -1:
+        return pd.DataFrame()
+
+    # ===== INICIO DE LA CORRECCIÓN CLAVE =====
+    
+    # 1. Obtener la fila completa que contiene los encabezados.
+    raw_header_row = all_data[header_row_index]
+
+    # 2. Encontrar el final de las columnas de ESTA tabla buscando la primera celda vacía.
+    table_column_count = len(raw_header_row)  # Por defecto, usar toda la fila.
+    try:
+        # Busca el índice de la primera celda de encabezado que está en blanco.
+        first_blank_index = raw_header_row.index('')
+        table_column_count = first_blank_index
+    except ValueError:
+        # Si no hay celdas en blanco, la tabla ocupa hasta el final de la fila.
+        pass
+
+    # 3. Extraer solo los encabezados que pertenecen a esta tabla.
+    headers = [h.strip() for h in raw_header_row[:table_column_count]]
+    
+    # ===== FIN DE LA CORRECCIÓN CLAVE =====
+
+    table_data = []
+    for i in range(header_row_index + 1, len(all_data)):
+        row = all_data[i]
+        
+        # Condición de parada si encuentra la siguiente tabla.
+        if not row or (len(row) > 0 and row[0].strip() in ["H2R - ISA", "P2P - ELSA"] and i > header_row_index):
+            break
+        
+        # Ignorar filas de subtotales que no empiezan con "Email".
+        if not str(row[0]).strip().lower().startswith("email"):
+            continue
+
+        # Extraer los datos de la fila, pero solo para las columnas de nuestra tabla.
+        row_slice = row[:table_column_count]
+        
+        if len(row_slice) < len(headers):
+            row_slice.extend([''] * (len(headers) - len(row_slice)))
+        table_data.append(row_slice)
+
+    if not table_data:
+        return pd.DataFrame(columns=headers)
+
+    return pd.DataFrame(table_data, columns=headers)
 
 
 # No necesitas cambiar los imports, pero asegúrate de tener plotly.express como px
