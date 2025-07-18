@@ -949,10 +949,10 @@ with st.container(border=True):
     # Mapeos de columnas
     mapping_h2r = { "sent": "Sent", "open": "Open Number", "responses": "Responses", "session": "Sesion" }
     mapping_p2p = { "sent": "Sent", "open": "Open Number", "responses": "Responses", "session": "Sesion" }
-    mapping_lucas = { "sent": "Sent", "open": "Open Numl", "responses": "Responses", "session": "Sesion" } # <--- CORREGIDO
+    mapping_lucas = { "sent": "Sent", "open": "Open Number", "responses": "Responses", "session": "Sesion" } # 
 
     # Crear pestañas (con el título corregido)
-    tab1, tab2, tab3 = st.tabs(["📊 Campaña H2R - ISA", "📊 Campaña P2P - ELSA", "📊 Campaña H2R - LUCAS"]) # <--- CORREGIDO
+    tab1, tab2, tab3 = st.tabs(["📊 Campaña H2R - ISA", "📊 Campaña P2P - ELSA", "📊 Campaña H2R - LUCAS"]) # 
 
     with tab1:
         st.subheader("Análisis de Rendimiento: H2R - ISA")
