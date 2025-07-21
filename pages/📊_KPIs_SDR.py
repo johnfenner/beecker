@@ -6,7 +6,7 @@ import gspread
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import locale
-import numpy as np
+from datetime import datetime
 
 # --- CONFIGURACIÓN DE LA PÁGINA --
 st.set_page_config(page_title="Dashboard de KPIs", layout="wide")
@@ -55,17 +55,45 @@ def load_sdr_data():
         st.error("Error crítico: La columna 'Semana' es indispensable y no se encontró o está vacía.")
         return pd.DataFrame()
 
-    df['FechaSemana'] = pd.to_datetime(df['Semana'], format='%d/%m/%Y', errors='coerce')
+    # --- CAMBIO CLAVE: Función para interpretar el formato de semana "Semana #1 de julio" ---
+    def parse_custom_week(week_str):
+        month_map = {
+            'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4, 'mayo': 5, 'junio': 6,
+            'julio': 7, 'agosto': 8, 'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12
+        }
+        try:
+            # Normalizar el string, ej: "Semana #1 de julio"
+            parts = week_str.lower().split(' de ')
+            month_name = parts[-1].strip()
+            week_num_part = parts[0]
+            week_num = int(''.join(filter(str.isdigit, week_num_part)))
+            
+            month_num = month_map[month_name]
+            year = datetime.now().year # Asume el año actual
+            
+            # Calcula la fecha como el primer día de la semana correspondiente en el mes.
+            day = (week_num - 1) * 7 + 1
+            return pd.to_datetime(f"{year}-{month_num:02d}-{day:02d}", errors='coerce')
+        except:
+            return pd.NaT # Retorna 'Not a Time' si el formato no es el esperado
+            
+    # Aplicar la nueva función de parseo
+    df['FechaSemana'] = df['Semana'].apply(parse_custom_week)
+    
+    # Eliminar filas donde la fecha no se pudo interpretar
     df.dropna(subset=['FechaSemana'], inplace=True)
     
-    # --- CAMBIO: Lista de columnas numéricas actualizada a la nueva estructura ---
+    # Si después de procesar las fechas no quedan datos, avisar al usuario.
+    if df.empty:
+        st.error("Error: No se encontró ninguna fila con un formato de semana reconocible (ej: 'Semana #1 de julio'). Por favor, revisa la columna 'Semana' en tu Google Sheet.")
+        return pd.DataFrame()
+
     numeric_cols = [
         'Llamadas Realizadas', 'Llamada Respondidas', 'Mensajes de Whats app', 
         'Mensajes de whats app contestados', 'Conexiones enviadas', 'Conexiones Aceptadas', 
         'Sesiones Logradas', 'Mensajes de seguimiento enviados por linkedin', 
         'Empresas en seguimiento el siguiente año', 'Empresas en seguimiento', 
         'Empresas descartadas', 'Correos enviados', 'Empresas nuevas agregadas esta semana',
-        # Se mantienen las columnas de metas por si existen
         'Meta empresas', 'Meta sesiones'
     ]
     
@@ -73,7 +101,6 @@ def load_sdr_data():
         if col in df.columns:
             df[col] = df[col].apply(clean_numeric)
         else:
-            # Si una columna esperada no existe, la crea con ceros para evitar errores
             df[col] = 0
 
     return df.sort_values(by='FechaSemana', ascending=False)
@@ -110,7 +137,7 @@ if not df_sdr_raw.empty:
     if df_filtered.empty and selected_weeks_labels != ["– Todas las Semanas –"]:
         st.warning("No hay datos para las semanas específicas seleccionadas.")
     else:
-        # --- CAMBIO: CÁLCULOS GLOBALES con los nuevos nombres de columnas ---
+        # CÁLCULOS GLOBALES con los nuevos nombres de columnas
         total_conex_enviadas = int(df_filtered['Conexiones enviadas'].sum())
         total_conex_aceptadas = int(df_filtered['Conexiones Aceptadas'].sum())
         total_wa_enviados = int(df_filtered['Mensajes de Whats app'].sum())
@@ -119,14 +146,14 @@ if not df_sdr_raw.empty:
         total_sesiones = int(df_filtered['Sesiones Logradas'].sum())
         total_empresas = int(df_filtered['Empresas nuevas agregadas esta semana'].sum())
         
-        # --- CAMBIO: Verificación de existencia de columnas de Metas ---
+        # Verificación de existencia de columnas de Metas
         has_meta_empresas = 'Meta empresas' in df_filtered.columns and df_filtered['Meta empresas'].sum() > 0
         has_meta_sesiones = 'Meta sesiones' in df_filtered.columns and df_filtered['Meta sesiones'].sum() > 0
 
         meta_empresas = int(df_filtered['Meta empresas'].sum()) if has_meta_empresas else 0
         meta_sesiones = int(df_filtered['Meta sesiones'].sum()) if has_meta_sesiones else 0
 
-        # --- RESUMEN DE KPIS ---
+        # RESUMEN DE KPIS
         st.subheader("Resumen de KPIs (Período Filtrado)")
         
         with st.container(border=True):
@@ -144,7 +171,7 @@ if not df_sdr_raw.empty:
         
         st.markdown("---")
 
-        # --- CAMBIO: SECCIÓN DE METAS CONDICIONAL ---
+        # SECCIÓN DE METAS CONDICIONAL
         if has_meta_empresas or has_meta_sesiones:
             st.subheader("🎯 Seguimiento de Metas")
             with st.container(border=True):
@@ -178,7 +205,7 @@ if not df_sdr_raw.empty:
                         st.metric(label="Porcentaje de Cumplimiento", value=f"{cumplimiento_sesiones:.1f}%")
             st.markdown("---")
 
-        # --- CAMBIO: TASAS DE CONVERSIÓN con los nuevos nombres de columnas ---
+        # TASAS DE CONVERSIÓN
         st.subheader("Tasas de Conversión")
         with st.container(border=True):
             tasa_aceptacion = (total_conex_aceptadas / total_conex_enviadas * 100) if total_conex_enviadas > 0 else 0
@@ -193,7 +220,7 @@ if not df_sdr_raw.empty:
             tasa4.metric("🏆 Tasa Global", f"{tasa_global:.1f}%", help="De cada 100 conexiones enviadas desde el inicio, cuántas terminan en una sesión.")
         st.markdown("---")
         
-        # --- GRÁFICOS AVANZADOS ---
+        # GRÁFICOS AVANZADOS
         st.subheader("Análisis de Tendencia Semanal")
         
         df_chart = df_filtered.groupby('FechaSemana').sum(numeric_only=True).reset_index()
@@ -204,7 +231,6 @@ if not df_sdr_raw.empty:
             st.markdown("##### Esfuerzo vs. Resultados por Semana")
             fig1 = make_subplots(specs=[[{"secondary_y": True}]])
             
-            # --- CAMBIO: Gráfico con nuevos nombres de columnas ---
             fig1.add_trace(go.Bar(name='Conexiones Enviadas', x=df_chart['SemanaLabel'], y=df_chart['Conexiones enviadas'], marker_color='#36719F'), secondary_y=False)
             fig1.add_trace(go.Bar(name='Whatsapps Enviados', x=df_chart['SemanaLabel'], y=df_chart['Mensajes de Whats app'], marker_color='#6A8D73'), secondary_y=False)
             fig1.add_trace(go.Bar(name='Llamadas Realizadas', x=df_chart['SemanaLabel'], y=df_chart['Llamadas Realizadas'], marker_color='#B4A05B'), secondary_y=False)
@@ -218,7 +244,6 @@ if not df_sdr_raw.empty:
 
         with st.container(border=True):
             st.markdown("##### Eficacia del Embudo Semanal (%)")
-            # --- CAMBIO: Cálculo de tasas con nuevos nombres de columnas ---
             df_chart['TasaAceptacion'] = (df_chart['Conexiones Aceptadas'] / df_chart['Conexiones enviadas'] * 100).fillna(0)
             df_chart['TasaRespuestaWA'] = (df_chart['Mensajes de whats app contestados'] / df_chart['Mensajes de Whats app'] * 100).fillna(0)
             
@@ -230,21 +255,22 @@ if not df_sdr_raw.empty:
             fig2.update_yaxes(title_text="Tasa de Conversión (%)", range=[0, max(10, df_chart['TasaAceptacion'].max(), df_chart['TasaRespuestaWA'].max()) * 1.2])
             st.plotly_chart(fig2, use_container_width=True)
 
-        # --- TABLA DE DATOS ORIGINALES ---
+        # TABLA DE DATOS ORIGINALES
         st.markdown("---")
         with st.expander("Ver tabla de datos originales del período seleccionado"):
-            # --- CAMBIO: Columnas a mostrar actualizadas ---
             columnas_brutas_a_mostrar = [
                 'Semana', 'Empresas nuevas agregadas esta semana', 'Conexiones enviadas', 
                 'Conexiones Aceptadas', 'Mensajes de Whats app', 'Mensajes de whats app contestados', 
                 'Llamadas Realizadas', 'Sesiones Logradas'
             ]
-            # Agregar columnas de metas si existen
             if has_meta_empresas: columnas_brutas_a_mostrar.insert(2, 'Meta empresas')
             if has_meta_sesiones: columnas_brutas_a_mostrar.append('Meta sesiones')
 
             columnas_finales = [col for col in columnas_brutas_a_mostrar if col in df_filtered.columns]
             
             st.dataframe(df_filtered[columnas_finales], hide_index=True)
+# Se deja el 'else' final por si la carga inicial de GSheets falla por otras razones (ej. permisos)
+elif 'st' in globals():
+    pass # st.error ya se mostró dentro de load_sdr_data si hubo un problema de formato
 else:
-    st.error("No se pudieron cargar o procesar los datos para el dashboard.")
+    print("No se pudieron cargar o procesar los datos para el dashboard.")
