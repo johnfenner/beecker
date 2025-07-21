@@ -44,7 +44,10 @@ def load_sdr_data():
             st.warning("La hoja de cálculo está vacía o solo tiene encabezados.")
             return pd.DataFrame()
         
-        headers = values[0]
+        # --- CAMBIO CLAVE: Limpiar espacios en blanco de los encabezados ---
+        # Esto soluciona el problema de que los datos aparezcan en cero.
+        headers = [h.strip() for h in values[0]]
+        
         df = pd.DataFrame(values[1:], columns=headers)
 
     except Exception as e:
@@ -55,35 +58,25 @@ def load_sdr_data():
         st.error("Error crítico: La columna 'Semana' es indispensable y no se encontró o está vacía.")
         return pd.DataFrame()
 
-    # --- CAMBIO CLAVE: Función para interpretar el formato de semana "Semana #1 de julio" ---
     def parse_custom_week(week_str):
         month_map = {
             'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4, 'mayo': 5, 'junio': 6,
             'julio': 7, 'agosto': 8, 'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12
         }
         try:
-            # Normalizar el string, ej: "Semana #1 de julio"
             parts = week_str.lower().split(' de ')
             month_name = parts[-1].strip()
-            week_num_part = parts[0]
-            week_num = int(''.join(filter(str.isdigit, week_num_part)))
-            
+            week_num = int(''.join(filter(str.isdigit, parts[0])))
             month_num = month_map[month_name]
-            year = datetime.now().year # Asume el año actual
-            
-            # Calcula la fecha como el primer día de la semana correspondiente en el mes.
+            year = datetime.now().year
             day = (week_num - 1) * 7 + 1
             return pd.to_datetime(f"{year}-{month_num:02d}-{day:02d}", errors='coerce')
         except:
-            return pd.NaT # Retorna 'Not a Time' si el formato no es el esperado
+            return pd.NaT
             
-    # Aplicar la nueva función de parseo
     df['FechaSemana'] = df['Semana'].apply(parse_custom_week)
-    
-    # Eliminar filas donde la fecha no se pudo interpretar
     df.dropna(subset=['FechaSemana'], inplace=True)
     
-    # Si después de procesar las fechas no quedan datos, avisar al usuario.
     if df.empty:
         st.error("Error: No se encontró ninguna fila con un formato de semana reconocible (ej: 'Semana #1 de julio'). Por favor, revisa la columna 'Semana' en tu Google Sheet.")
         return pd.DataFrame()
@@ -269,8 +262,8 @@ if not df_sdr_raw.empty:
             columnas_finales = [col for col in columnas_brutas_a_mostrar if col in df_filtered.columns]
             
             st.dataframe(df_filtered[columnas_finales], hide_index=True)
-# Se deja el 'else' final por si la carga inicial de GSheets falla por otras razones (ej. permisos)
+
 elif 'st' in globals():
-    pass # st.error ya se mostró dentro de load_sdr_data si hubo un problema de formato
+    pass 
 else:
     print("No se pudieron cargar o procesar los datos para el dashboard.")
