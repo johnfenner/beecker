@@ -240,19 +240,21 @@ plantillas_karen = {
 
 plantilla_h2r_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/. Mi rol consiste en conectar con líderes de alto impacto como tú para explorar sinergias reales. En nuestro caso, eso significa acompañar a equipos que enfrentan el reto diario de operar el ciclo Hire-to-Retire, desarrollando agentes digitales de IA que se integran a sus sistemas actuales y asumen tareas específicas, como:
+Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/.
 
-- FER (Postulación de Vacantes): publica vacantes con trazabilidad y estandarización en múltiples canales, sin intervención manual.  
-- LUCAS (Reclutamiento y Selección): automatiza la recepción, filtrado y revisión de solicitudes, acelerando el proceso y mejorando la cobertura.  
-- ISA (Gestión de Empleados): gestiona la contratación y el alta de empleados desde documentos hasta el registro en sistemas como HCM o IDSE.  
-- BEN, LILY y LISA (Administración): se encargan de la gestión de desempeño, nómina y viáticos con precisión y sin errores.  
-- CLEO (Cierre de Ciclo): automatiza el offboarding, garantizando cumplimiento normativo y cierre formal del proceso.
+Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA, y actualmente me encuentro compartiendo con algunos líderes cómo estamos resolviendo tareas clave dentro del ciclo Hire-to-Retire.
 
-Con este enfoque, nuestros clientes han logrado reducir más del 70% del tiempo dedicado a tareas operativas en todo el ciclo del colaborador.
+Por ejemplo:
 
-Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
+- FER publica vacantes en canales clave sin intervención manual.
+- LUCAS organiza postulaciones para que el equipo se enfoque en entrevistas.
+- ISA facilita todo el proceso de ingreso en los sistemas: datos, contrato, recursos.
+- BEN, LILY y LISA apoyan con nómina, desempeño y viáticos de forma estructurada.
+- CLEO coordina procesos de retiro y cierre respetando políticas internas.
 
-¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
+Con este enfoque, nuestros clientes han logrado reducir más del 70% del tiempo dedicado a tareas operativas en todo el ciclo del colaborador. Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
+
+¿Te gustaría verlo en una sesión breve y evaluar si algo de esto puede adaptarse a tus flujos actuales? Lo hacemos cuando tengas el espacio y lo veas más conveniente.
 """
 
 
@@ -260,36 +262,37 @@ plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
 Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/.
 
-Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA que se integran a sus sistemas actuales y asumen tareas críticas para asegurar trazabilidad, cumplimiento y control en cada etapa:
+Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA que asumen tareas críticas para asegurar trazabilidad, cumplimiento y control en cada etapa:
 
-- Jessica y Elsa (Gestión de Proveedores): seleccionan y dan de alta a proveedores de forma automatizada, asegurando que cada incorporación cumpla con las políticas internas.
-- Olivia (Órdenes de Compra): genera y valida órdenes de compra, previniendo discrepancias desde el origen.
-- Daniel (Procesamiento de Facturas): coteja facturas contra órdenes y entregas, detectando inconsistencias en montos, fechas y autorizaciones.
-- David (Procesamiento de Pagos): programa y ejecuta pagos conforme a las condiciones pactadas, garantizando visibilidad y cumplimiento financiero.
+- Jessica y Elsa seleccionan y dan de alta a proveedores de forma automatizada.
+- Olivia genera órdenes de compra, previniendo discrepancias desde el origen.
+- Daniel coteja facturas contra órdenes y entregas, detectando inconsistencias en montos, fechas y autorizaciones.
+- David programa y ejecuta pagos conforme a las condiciones pactadas, garantizando visibilidad y cumplimiento financiero.
 
 Con este enfoque, nuestros clientes han logrado reducir el tiempo del ciclo de compra en más de un 60%, y al mismo tiempo mejorar significativamente la precisión, la auditoría y el cumplimiento en sus procesos de pago.
 
-Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
+Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
 
-¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
+¿Te gustaría verlo en una sesión breve y evaluar si algo de esto puede adaptarse a tus flujos actuales? Lo hacemos cuando tengas el espacio y lo veas más conveniente.
+
 """
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
 Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/.
 
-Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA que se integran a sus sistemas actuales para acelerar el flujo de caja, garantizar trazabilidad y proteger la rentabilidad en cada etapa:
+Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA  para acelerar el flujo de caja, garantizar trazabilidad y proteger la rentabilidad en cada etapa:
 
-- Nico, Adrian y Mia (Clientes y Crédito): automatizan el alta de clientes, procesan pedidos sin fricción y gestionan el crédito.
-- Diana, James y Julia (Logística y Entrega): planifican rutas, transporte y entregas.
-- Nina y Aaron (Cobranza y Facturación): gestionan cuentas por cobrar, automatizan recordatorios y ejecutan facturación con precisión.
-- Alice (Inventario): mantiene visibilidad en tiempo real y previene quiebres de stock.
+- Nico, Adrian y Mia automatizan el alta de clientes, procesan pedidos y gestionan el crédito.
+- Diana, James y Julia planifican rutas, transporte y entregas.
+- Nina y Aaron gestionan cuentas por cobrar, automatizan recordatorios y ejecutan facturación con precisión.
+- Alice mantiene visibilidad en tiempo real y previene quiebres de stock.
 
 Con este enfoque, nuestros clientes han acelerado su ciclo de conversión de efectivo y mejorado el indicador de entregas OTIF en más de un 20%.
 
-Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
+Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
 
-¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
+¿Te gustaría verlo en una sesión breve y evaluar si algo de esto puede adaptarse a tus flujos actuales? Lo hacemos cuando tengas el espacio y lo veas más conveniente.
 """
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -306,11 +309,11 @@ Me gustaría mostrarte cómo nuestras soluciones pueden aportar valor en áreas 
 - Atención al Cliente: Implementación de agentes virtuales inteligentes que mejoran la experiencia del usuario y reducen significativamente los tiempos de respuesta.
 - Cadena de Suministro: Optimización de inventarios, automatización de pedidos y gestión logística.
 
-Con este enfoque, nuestros clientes han logrado reducir entre un 50% y 70% los tiempos operativos en procesos críticos, mejorando la trazabilidad, el cumplimiento y la capacidad de reacción interárea.
+Con este enfoque, nuestros clientes han logrado reducir entre un 50% y 70% los tiempos operativos en procesos críticos, mejorando la trazabilidad, el cumplimiento y la capacidad de reacción.
 
-Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
+Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
 
-¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
+¿Te gustaría verlo en una sesión breve y evaluar si algo de esto puede adaptarse a tus flujos actuales? Lo hacemos cuando tengas el espacio y lo veas más conveniente.
 """
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -325,9 +328,9 @@ Nos especializamos en Intelligent Process Automation, desarrollando agentes digi
 
 Con este enfoque, nuestros clientes de TI han logrado automatizar más del 60% de las tareas de soporte Nivel 1 y reducido el tiempo de resolución de incidentes hasta en un 50%.
 
-Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
+Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
 
-¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
+¿Te gustaría verlo en una sesión breve y evaluar si algo de esto puede adaptarse a tus flujos actuales? Lo hacemos cuando tengas el espacio y lo veas más conveniente.
 """
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -342,9 +345,9 @@ Nos especializamos en Intelligent Process Automation, desarrollando agentes digi
 
 Con este enfoque, nuestros clientes han reducido el tiempo de procesamiento de sus flujos de aduanas en más de un 80%, eliminando prácticamente los errores manuales que generan multas y retrasos.
 
-Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
+Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
 
-¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
+¿Te gustaría verlo en una sesión breve y evaluar si algo de esto puede adaptarse a tus flujos actuales? Lo hacemos cuando tengas el espacio y lo veas más conveniente.
 """
 
 plantillas_john_mejorado = {
