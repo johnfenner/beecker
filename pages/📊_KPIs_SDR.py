@@ -162,14 +162,30 @@ if not df_sdr_raw.empty:
             tasa_aceptacion = (total_conex_aceptadas / total_conex_enviadas * 100) if total_conex_enviadas > 0 else 0
             tasa_resp_wa = (total_wa_respondidos / total_wa_enviados * 100) if total_wa_enviados > 0 else 0
             tasa_resp_llamada = (total_llamadas_respondidas / total_llamadas_realizadas * 100) if total_llamadas_realizadas > 0 else 0
-            tasa_agendamiento_wa = (total_sesiones / total_wa_respondidos * 100) if total_wa_respondidos > 0 else 0
             
-            tc1, tc2, tc3, tc4 = st.columns(4)
+            # --- CAMBIO: Lógica de tasas de agendamiento basada en el ESFUERZO (acciones) ---
+            tasa_agendamiento_li = (total_sesiones / total_conex_enviadas * 100) if total_conex_enviadas > 0 else 0
+            tasa_agendamiento_wa = (total_sesiones / total_wa_enviados * 100) if total_wa_enviados > 0 else 0
+            tasa_agendamiento_llamada = (total_sesiones / total_llamadas_realizadas * 100) if total_llamadas_realizadas > 0 else 0
+            
+            total_acercamientos_globales = total_conex_enviadas + total_wa_enviados + total_llamadas_realizadas
+            tasa_agendamiento_global = (total_sesiones / total_acercamientos_globales * 100) if total_acercamientos_globales > 0 else 0
+
+            st.markdown("##### Tasas de Respuesta por Canal")
+            tc1, tc2, tc3 = st.columns(3)
             tc1.metric("🔗 Tasa de Aceptación (LI)", f"{tasa_aceptacion:.1f}%", help="De 100 conexiones enviadas, cuántas son aceptadas.")
             tc2.metric("💬 Tasa de Respuesta (WA)", f"{tasa_resp_wa:.1f}%", help="De 100 WhatsApps enviados, cuántos son respondidos.")
             tc3.metric("📞 Tasa de Respuesta (Llamada)", f"{tasa_resp_llamada:.1f}%", help="De 100 llamadas hechas, cuántas son respondidas.")
-            tc4.metric("🎯 Tasa de Agendamiento (WA)", f"{tasa_agendamiento_wa:.1f}%", help="De los WhatsApps respondidos, qué % se convierte en sesión.")
-        
+
+            st.markdown("<br>", unsafe_allow_html=True) 
+            
+            st.markdown("##### Tasas de Agendamiento (Sesiones Logradas / Esfuerzo Total)")
+            ta1, ta2, ta3, ta4 = st.columns(4)
+            ta1.metric("🎯 Agendamiento (LI)", f"{tasa_agendamiento_li:.1f}%", help="De las conexiones de LI enviadas, qué % termina en sesión.")
+            ta2.metric("🎯 Agendamiento (WA)", f"{tasa_agendamiento_wa:.1f}%", help="De los WhatsApps enviados, qué % termina en sesión.")
+            ta3.metric("🎯 Agendamiento (Llamada)", f"{tasa_agendamiento_llamada:.1f}%", help="De las llamadas realizadas, qué % termina en sesión.")
+            ta4.metric("🏆 Agendamiento Global", f"{tasa_agendamiento_global:.1f}%", help="Del total de acercamientos realizados (LI, WA, Llamada), qué % termina en sesión.")
+
         st.markdown("---")
         
         # --- SECCIÓN 3: VISUALIZACIÓN DEL EMBUDO Y PIPELINE ---
@@ -177,11 +193,9 @@ if not df_sdr_raw.empty:
         with col_funnel:
             st.subheader("Embudo de Conversión General")
             with st.container(border=True):
-                # Datos para el embudo de conversión
                 funnel_values = [total_conex_enviadas, total_conex_aceptadas, total_wa_enviados, total_wa_respondidos, total_sesiones]
                 funnel_labels = ['Conexiones Enviadas', 'Conexiones Aceptadas', 'Whatsapps Enviados', 'Whatsapps Respondidos', 'Sesiones Logradas']
                 
-                # Filtrar etapas con valor 0 para no mostrarlas
                 valid_indices = [i for i, v in enumerate(funnel_values) if v > 0]
                 funnel_values = [funnel_values[i] for i in valid_indices]
                 funnel_labels = [funnel_labels[i] for i in valid_indices]
@@ -267,7 +281,4 @@ if not df_sdr_raw.empty:
         with st.expander("Ver tabla de datos detallados del período seleccionado"):
             st.dataframe(df_filtered, hide_index=True)
 else:
-    # Este mensaje se muestra si la carga inicial de datos falla por permisos o si la hoja está vacía.
     st.error("No se pudieron cargar o procesar los datos para el dashboard.")
-
-
