@@ -254,7 +254,7 @@ Por ejemplo:
 
 Con este enfoque, nuestros clientes han logrado reducir más del 70% del tiempo dedicado a tareas operativas en todo el ciclo del colaborador. Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
 
-¿Te gustaría verlo en una sesión breve y evaluar si algo de esto puede adaptarse a tus flujos actuales? Lo hacemos cuando tengas el espacio y lo veas más conveniente.
+¿Qué día tendrías disponibilidad para que conversemos?
 """
 
 
@@ -264,27 +264,26 @@ Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en
 
 Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA que asumen tareas críticas para asegurar trazabilidad, cumplimiento y control en cada etapa:
 
-- Jessica y Elsa seleccionan y dan de alta a proveedores de forma automatizada.
-- Olivia genera órdenes de compra, previniendo discrepancias desde el origen.
-- Daniel coteja facturas contra órdenes y entregas, detectando inconsistencias en montos, fechas y autorizaciones.
-- David programa y ejecuta pagos conforme a las condiciones pactadas, garantizando visibilidad y cumplimiento financiero.
+- JESSICA y ELSA seleccionan y dan de alta a proveedores de forma automatizada.
+- OLIVIA genera órdenes de compra, previniendo discrepancias desde el origen.
+- DANIEL coteja facturas contra órdenes y entregas, detectando inconsistencias en montos, fechas y autorizaciones.
+- DAVID programa y ejecuta pagos conforme a las condiciones pactadas, garantizando visibilidad y cumplimiento financiero.
 
 Con este enfoque, nuestros clientes han logrado reducir el tiempo del ciclo de compra en más de un 60%, y al mismo tiempo mejorar significativamente la precisión, la auditoría y el cumplimiento en sus procesos de pago.
 
 Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
 
-¿Te gustaría verlo en una sesión breve y evaluar si algo de esto puede adaptarse a tus flujos actuales? Lo hacemos cuando tengas el espacio y lo veas más conveniente.
-
+¿Qué día tendrías disponibilidad para que conversemos?
 """
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
 Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/.
 
-Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA  para acelerar el flujo de caja, garantizar trazabilidad y proteger la rentabilidad en cada etapa:
+Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA para acelerar el flujo de caja, garantizar trazabilidad y proteger la rentabilidad en cada etapa:
 
-- Nico, Adrian y Mia automatizan el alta de clientes, procesan pedidos y gestionan el crédito.
-- Diana, James y Julia planifican rutas, transporte y entregas.
+- NICO, ADRIAN y MIA automatizan el alta de clientes, procesan pedidos y gestionan el crédito.
+- DIANA, JAMES y JULIA planifican rutas, transporte y entregas.
 - Nina y Aaron gestionan cuentas por cobrar, automatizan recordatorios y ejecutan facturación con precisión.
 - Alice mantiene visibilidad en tiempo real y previene quiebres de stock.
 
@@ -292,7 +291,7 @@ Con este enfoque, nuestros clientes han acelerado su ciclo de conversión de efe
 
 Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
 
-¿Te gustaría verlo en una sesión breve y evaluar si algo de esto puede adaptarse a tus flujos actuales? Lo hacemos cuando tengas el espacio y lo veas más conveniente.
+¿Qué día tendrías disponibilidad para que conversemos?
 """
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -303,17 +302,17 @@ Nos especializamos en Intelligent Process Automation, desarrollando agentes digi
 
 Me gustaría mostrarte cómo nuestras soluciones pueden aportar valor en áreas como:
 
-- Procurement: Validación automática de facturas con órdenes de compra, detección de discrepancias en montos y autorizaciones, análisis de rendimiento de proveedores y optimización del ciclo Procure-to-Pay (P2P).
-- Finanzas y Contabilidad: Automatización de conciliaciones bancarias, procesamiento de facturas y seguimiento de pagos, con trazabilidad completa y menor intervención manual.
-- Recursos Humanos: Gestión automatizada de nóminas, selección de personal con IA y manejo eficiente de beneficios para empleados.
-- Atención al Cliente: Implementación de agentes virtuales inteligentes que mejoran la experiencia del usuario y reducen significativamente los tiempos de respuesta.
-- Cadena de Suministro: Optimización de inventarios, automatización de pedidos y gestión logística.
+- Procurement: Cruces automáticos de facturas con órdenes de compra, identificando discrepancias y evitando pagos erróneos.
+- Finanzas y Contabilidad: Conciliaciones, pagos y trazabilidad automatizadas.
+- Recursos Humanos: Optimización de la gestión del talento, desde selección de personal más ágil con IA, hasta una administración de nóminas y beneficios sin fricciones..
+- Atención al Cliente: Implementación de agentes virtuales inteligentes que mejoran la experiencia del usuario y resuelven consultas 24/7, disminuyendo drásticamente los tiempos de espera.
+- Cadena de Suministro: Pedidos, inventarios y logística mucho más precisa y automatizada.  
 
-Con este enfoque, nuestros clientes han logrado reducir entre un 50% y 70% los tiempos operativos en procesos críticos, mejorando la trazabilidad, el cumplimiento y la capacidad de reacción.
+Con este enfoque, nuestros clientes han logrado reducir entre un 50% y 70% los tiempos operativos en procesos críticos. 
 
-Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
+Si esto te parece interesante, me gustaría coordinar un breve espacio para mostrarte, de manera práctica, cómo podrias aplicar este modelo de optimización para fortalecer tu gestión y superar los objetivos de tu equipo.
 
-¿Te gustaría verlo en una sesión breve y evaluar si algo de esto puede adaptarse a tus flujos actuales? Lo hacemos cuando tengas el espacio y lo veas más conveniente.
+¿Qué día tendrías disponibilidad para que conversemos?
 """
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -330,7 +329,8 @@ Con este enfoque, nuestros clientes de TI han logrado automatizar más del 60% d
 
 Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
 
-¿Te gustaría verlo en una sesión breve y evaluar si algo de esto puede adaptarse a tus flujos actuales? Lo hacemos cuando tengas el espacio y lo veas más conveniente.
+¿Qué día tendrías disponibilidad para que conversemos?
+
 """
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -347,7 +347,8 @@ Con este enfoque, nuestros clientes han reducido el tiempo de procesamiento de s
 
 Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
 
-¿Te gustaría verlo en una sesión breve y evaluar si algo de esto puede adaptarse a tus flujos actuales? Lo hacemos cuando tengas el espacio y lo veas más conveniente.
+¿Qué día tendrías disponibilidad para que conversemos?
+
 """
 
 plantillas_john_mejorado = {
