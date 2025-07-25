@@ -32,8 +32,7 @@ def make_unique(headers_list):
 @st.cache_data(ttl=300)
 def load_and_process_sdr_data():
     """
-    Carga y procesa datos desde la hoja 'Evelyn', creando un embudo de conversión
-    y métricas de velocidad.
+    Carga y procesa datos desde la hoja 'Evelyn'.
     """
     try:
         creds_dict = st.secrets["gcp_service_account"]
@@ -59,10 +58,8 @@ def load_and_process_sdr_data():
 
     date_columns_to_process = {
         "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha",
-        "Fecha de Generacion (no aplica para zoom info)": "Fecha_Generacion",
         "Fecha de Primer Acercamiento": "Fecha_Primer_Acercamiento",
         "Fecha de Primer Respuesta": "Fecha_Primera_Respuesta",
-        "Fecha Agendamiento": "Fecha_Agendamiento",
         "Fecha De Recontacto": "Fecha_Recontacto"
     }
     
@@ -84,17 +81,7 @@ def load_and_process_sdr_data():
     df['Sesiones_Agendadas'] = df["Sesion Agendada?"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí'] else 0) if "Sesion Agendada?" in df.columns else 0
     df['Necesita_Recontacto'] = df['Fecha_Recontacto'].notna().astype(int)
     
-    if 'Fecha_Generacion' in df.columns:
-        df['Dias_Gen_a_Contacto'] = (df['Fecha'] - df['Fecha_Generacion']).dt.days
-        df['Dias_Gen_a_Contacto'] = df['Dias_Gen_a_Contacto'].clip(lower=0)
-    if 'Fecha_Primera_Respuesta' in df.columns:
-        df['Dias_Contacto_a_Rpta'] = (df['Fecha_Primera_Respuesta'] - df['Fecha']).dt.days
-        df['Dias_Contacto_a_Rpta'] = df['Dias_Contacto_a_Rpta'].clip(lower=0)
-    if 'Fecha_Agendamiento' in df.columns and 'Fecha_Primera_Respuesta' in df.columns:
-        df['Dias_Rpta_a_Agenda'] = (df['Fecha_Agendamiento'] - df['Fecha_Primera_Respuesta']).dt.days
-        df['Dias_Rpta_a_Agenda'] = df['Dias_Rpta_a_Agenda'].clip(lower=0)
-
-    df['AñoMes'] = df['Fecha'].dt.strftime('%Y-%m') # Usado para filtro por mes
+    df['AñoMes'] = df['Fecha'].dt.strftime('%Y-%m')
 
     for col in ["Fuente de la Lista", "Campaña", "Proceso", "Industria", "Pais", "Puesto"]:
         if col in df.columns:
@@ -112,7 +99,8 @@ def clear_all_filters():
     st.session_state.date_filter_mode = "Rango de Fechas"
     st.session_state.month_select = []
     
-    prospecting_cols = ["Campaña", "Fuente de la Lista", "Proceso"]
+    # --- FILTROS SIMPLIFICADOS ---
+    prospecting_cols = ["Fuente de la Lista"]
     for col in prospecting_cols:
         key = f"filter_{col.lower().replace(' ', '_')}"
         if key in st.session_state:
@@ -151,10 +139,10 @@ def sidebar_filters(df):
             selected_months = st.sidebar.multiselect("Selecciona el/los mes(es):", meses_disponibles, key="month_select")
 
     other_filters = {}
-    st.sidebar.subheader("🔎 Por Estrategia de Prospección")
+    st.sidebar.subheader("🔎 Filtrar por Fuente")
     
-    # --- FILTROS RESTAURADOS A LA VERSIÓN ORIGINAL ---
-    prospecting_cols = ["Campaña", "Fuente de la Lista", "Proceso"]
+    # --- FILTROS SIMPLIFICADOS A SOLO UNO ---
+    prospecting_cols = ["Fuente de la Lista"]
     for dim_col in prospecting_cols:
         if dim_col in df.columns and df[dim_col].nunique() > 1:
             opciones = ["– Todos –"] + sorted(df[dim_col].unique().tolist())
@@ -179,8 +167,6 @@ def apply_filters(df, filter_mode, start_date, end_date, selected_months, other_
         if values and "– Todos –" not in values:
             df_f = df_f[df_f[col].isin(values)]
     return df_f
-
-# --- MÉTRICAS ORIGINALES RESTAURADAS ---
 
 def display_kpi_summary(df_filtered):
     st.markdown("### 🧮 Resumen de KPIs SDR Totales (Periodo Filtrado)")
@@ -221,50 +207,12 @@ def display_follow_up_metrics(df_filtered):
     col1.metric("🔄 Total Prospectos en Seguimiento", f"{total_recontactos:,}", help="Número de prospectos que tienen una fecha de recontacto futura.")
     col2.metric("📊 Tasa de Seguimiento", f"{tasa_recontacto:.1f}%", help="Porcentaje de todos los acercamientos que necesitaron un seguimiento planificado.")
 
-# --- NUEVAS VISUALIZACIONES (SIMPLIFICADAS) ---
-
-def display_funnel_and_velocity(df_filtered):
-    st.markdown("### 🏺 Funnel y Velocidad del Proceso")
-
-    total_acercamientos = int(df_filtered['Acercamientos'].sum())
-    total_respuestas = int(df_filtered['Respuestas_Iniciales'].sum())
-    total_sesiones = int(df_filtered['Sesiones_Agendadas'].sum())
-    
-    avg_gen_contacto = pd.to_numeric(df_filtered['Dias_Gen_a_Contacto'], errors='coerce').mean()
-    avg_contacto_rpta = pd.to_numeric(df_filtered['Dias_Contacto_a_Rpta'], errors='coerce').mean()
-    avg_rpta_agenda = pd.to_numeric(df_filtered['Dias_Rpta_a_Agenda'], errors='coerce').mean()
-
-    col1, col2 = st.columns([0.4, 0.6])
-
-    with col1:
-        st.markdown("##### Flujo de Conversión")
-        if total_acercamientos > 0:
-            fig = go.Figure(go.Funnel(
-                y=["Acercamientos", "Respuestas", "Sesiones"],
-                x=[total_acercamientos, total_respuestas, total_sesiones],
-                textposition="inside", textinfo="value+percent initial",
-                marker={"color": ["#4B8BBE", "#30B88A", "#2E6B5A"]}
-            ))
-            fig.update_layout(margin=dict(t=30, b=0, l=0, r=0))
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("No hay datos para el funnel.")
-
-    with col2:
-        st.markdown("##### Tiempos Promedio del Proceso")
-        st.write("") 
-        if not pd.isna(avg_gen_contacto):
-            st.metric("Lead a 1er Contacto", f"{avg_gen_contacto:.1f} días", help="Tiempo promedio desde que se genera un lead hasta que se le contacta.")
-        if not pd.isna(avg_contacto_rpta):
-            st.metric("Contacto a 1ra Respuesta", f"{avg_contacto_rpta:.1f} días", help="Tiempo promedio desde el primer contacto hasta recibir la primera respuesta.")
-        if not pd.isna(avg_rpta_agenda):
-            st.metric("Respuesta a Sesión Agendada", f"{avg_rpta_agenda:.1f} días", help="Tiempo promedio desde la primera respuesta hasta que se agenda la sesión.")
-
-def display_grouped_breakdown(df_filtered, group_by_col, title):
-    st.markdown(f"### {title} por `{group_by_col}`")
+# --- NUEVO DISEÑO DE VISUALIZACIÓN ---
+def display_new_grouped_breakdown(df_filtered, group_by_col):
+    st.markdown(f"#### Análisis por `{group_by_col}`")
     
     if group_by_col not in df_filtered.columns or df_filtered[group_by_col].nunique() < 2:
-        st.info(f"No hay suficientes datos o diversidad para este análisis.")
+        st.info(f"No hay suficientes datos o diversidad para analizar por '{group_by_col}'.")
         return
 
     summary_df = df_filtered.groupby(group_by_col).agg(
@@ -273,23 +221,46 @@ def display_grouped_breakdown(df_filtered, group_by_col, title):
     ).reset_index()
 
     summary_df = summary_df[summary_df['Acercamientos'] > 0]
-    summary_df = summary_df.nlargest(10, 'Sesiones_Agendadas').sort_values('Sesiones_Agendadas', ascending=True)
+    summary_df['Tasa_Conversion'] = summary_df.apply(lambda r: calculate_rate(r.Sesiones_Agendadas, r.Acercamientos), axis=1)
+    
+    col1, col2 = st.columns([0.5, 0.5])
 
-    fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=summary_df['Acercamientos'], y=summary_df[group_by_col],
-        name='Acercamientos', orientation='h', marker_color='#4B8BBE'
-    ))
-    fig.add_trace(go.Bar(
-        x=summary_df['Sesiones_Agendadas'], y=summary_df[group_by_col],
-        name='Sesiones Agendadas', orientation='h', marker_color='#30B88A'
-    ))
-    fig.update_layout(
-        barmode='group', title_text=f"Top 10 por Volumen", yaxis_title=group_by_col,
-        xaxis_title="Volumen",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    with col1:
+        st.markdown("##### Top 10 por Volumen de Sesiones")
+        top_10_volumen = summary_df.nlargest(10, 'Sesiones_Agendadas')
+        st.dataframe(
+            top_10_volumen.style.format({
+                'Tasa_Conversion': '{:.1f}%'
+            }),
+            hide_index=True,
+            use_container_width=True
+        )
+
+    with col2:
+        st.markdown("##### Top 10 por Eficiencia (Tasa de Conversión)")
+        top_10_eficiencia = summary_df[summary_df['Sesiones_Agendadas'] > 0].nlargest(10, 'Tasa_Conversion')
+
+        fig = px.bar(
+            top_10_eficiencia.sort_values('Tasa_Conversion', ascending=True),
+            x='Tasa_Conversion',
+            y=group_by_col,
+            orientation='h',
+            text='Tasa_Conversion',
+            title=f"Tasa de Sesión Agendada / Acercamiento"
+        )
+        fig.update_traces(
+            texttemplate='%{x:.1f}%', 
+            textposition='outside',
+            marker_color='#30B88A'
+        )
+        fig.update_layout(
+            yaxis_title=None,
+            xaxis_title="Tasa de Conversión (%)",
+            showlegend=False,
+            margin=dict(t=30, b=10, l=10, r=10),
+            height=400
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
 # --- FLUJO PRINCIPAL DE LA PÁGINA ---
 df_sdr_data = load_and_process_sdr_data()
@@ -309,36 +280,22 @@ if not df_sdr_data.empty:
         display_follow_up_metrics(df_sdr_filtered)
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
         
-        # 3. Funnel y Velocidad (NUEVO Y SIMPLIFICADO)
-        display_funnel_and_velocity(df_sdr_filtered)
-        
-        # 4. Desgloses por Dimensiones
-        st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
+        # 3. SECCIÓN DE ANÁLISIS POR DIMENSIONES (REDİSEÑADA)
         st.markdown("## 🔬 Desglose de Rendimiento por Dimensiones")
         
-        tab1, tab2, tab3, tab4 = st.tabs(["Por Campaña", "Por Industria", "Por País", "Por Puesto"])
+        # Se añaden "Campaña" y "Proceso" a las pestañas
+        tabs_list = ["Campaña", "Proceso", "Industria", "Pais", "Puesto"]
+        tabs = st.tabs([f"📊 Por {t}" for t in tabs_list])
         
-        with tab1:
-            display_grouped_breakdown(df_sdr_filtered, "Campaña", "Análisis de Rendimiento")
-        with tab2:
-            display_grouped_breakdown(df_sdr_filtered, "Industria", "Análisis de Rendimiento")
-        with tab3:
-            display_grouped_breakdown(df_sdr_filtered, "Pais", "Análisis de Rendimiento")
-        with tab4:
-            display_grouped_breakdown(df_sdr_filtered, "Puesto", "Análisis de Rendimiento")
-            
-        # 5. Tabla de datos detallados
+        for i, dimension in enumerate(tabs_list):
+            with tabs[i]:
+                display_new_grouped_breakdown(df_sdr_filtered, dimension)
+
+        # 4. Tabla de datos detallados
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
         with st.expander("Ver tabla de datos detallados del período filtrado"):
-            cols_to_show = [
-                'Empresa', 'Nombre', 'Apellido', 'Puesto', 'Industria', 'Pais', 'Fecha', 
-                'Dias_Gen_a_Contacto', 'Dias_Contacto_a_Rpta', 'Dias_Rpta_a_Agenda',
-                'Sesiones_Agendadas'
-            ]
-            existing_cols = [col for col in cols_to_show if col in df_sdr_filtered.columns]
-            st.dataframe(df_sdr_filtered[existing_cols], hide_index=True)
+            st.dataframe(df_sdr_filtered, hide_index=True)
 else:
     st.error("No se pudieron cargar o procesar los datos para el dashboard de SDR.")
 
 st.markdown("---")
-st.info("Plataforma de análisis de KPIs de SDR. ✨")
