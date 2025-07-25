@@ -7,7 +7,7 @@ import datetime
 import plotly.express as px
 import plotly.graph_objects as go
 from collections import Counter
-import locale # <<--- IMPORTANTE: Se añade la librería locale
+# La librería locale ya no es necesaria, la eliminamos.
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="Dashboard de Desempeño SDR", layout="wide")
@@ -33,20 +33,9 @@ def make_unique(headers_list):
 @st.cache_data(ttl=300)
 def load_and_process_sdr_data():
     """
-    Carga y procesa datos desde la hoja 'Evelyn', creando un embudo de conversión
-    y métricas específicas, incluyendo el análisis de recontacto.
+    MODIFICADO: Ahora usa un diccionario manual para los meses en español,
+    haciendo la solución 100% robusta e independiente del servidor.
     """
-    # --- CAMBIO AQUÍ: Se configura el locale a español para los nombres de los meses ---
-    try:
-        # Intenta configurar el locale para español. Puede variar según el sistema operativo.
-        locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
-    except locale.Error:
-        try:
-            locale.setlocale(locale.LC_TIME, 'Spanish')
-        except locale.Error:
-            st.warning("No se pudo configurar el idioma a español para los meses. Se mostrarán en inglés.")
-    # --- FIN DEL CAMBIO ---
-
     try:
         creds_dict = st.secrets["gcp_service_account"]
         sheet_url = st.secrets.get("main_prostraction_sheet_url", "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0")
@@ -97,8 +86,12 @@ def load_and_process_sdr_data():
     df['Año'] = df['Fecha'].dt.year
     df['NumSemana'] = df['Fecha'].dt.isocalendar().week.astype(int)
     
-    # --- CAMBIO AQUÍ: Se crea la columna con formato "Mes Año" (ej: "Julio 2025") ---
-    df['AñoMes'] = df['Fecha'].dt.strftime('%B %Y').str.capitalize()
+    # --- CAMBIO AQUÍ: Creación manual de la etiqueta "Mes Año" ---
+    meses_espanol = {
+        1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 5: "Mayo", 6: "Junio",
+        7: "Julio", 8: "Agosto", 9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+    }
+    df['AñoMes'] = df['Fecha'].dt.month.map(meses_espanol) + ' ' + df['Fecha'].dt.year.astype(str)
     # --- FIN DEL CAMBIO ---
 
     for col in ["Fuente de la Lista", "Campaña", "Proceso", "Industria"]:
@@ -154,7 +147,6 @@ def sidebar_filters(df):
             
     else: # filter_mode == "Mes(es) Específico(s)"
         if 'AñoMes' in df.columns:
-            # Ordenar por fecha real para que los meses aparezcan en orden cronológico
             meses_disponibles = df.sort_values('Fecha', ascending=False)['AñoMes'].unique().tolist()
             selected_months = st.sidebar.multiselect(
                 "Selecciona el/los mes(es):",
@@ -271,20 +263,22 @@ def display_time_evolution(df_filtered, time_col, title):
     st.markdown(f"### 📈 {title}")
     if df_filtered.empty or time_col not in df_filtered.columns: return
 
-    # Para la gráfica de evolución, necesitamos un orden cronológico.
-    # Usaremos una copia del dataframe ordenado por la fecha real.
+    # Para asegurar el orden cronológico en el gráfico, usamos la fecha real para ordenar.
     df_temp = df_filtered.copy()
     df_temp['FechaRef'] = pd.to_datetime(df_temp['Fecha'].dt.strftime('%Y-%m-01'))
+    
     df_agg = df_temp.groupby('FechaRef').agg(
         Acercamientos=('Acercamientos', 'sum'),
         Sesiones_Agendadas=('Sesiones_Agendadas', 'sum')
     ).reset_index()
+    
+    # Mapeamos la fecha de referencia a la etiqueta de texto correcta que ya creamos.
+    label_map = df_temp[['FechaRef', 'AñoMes']].drop_duplicates()
+    df_agg = pd.merge(df_agg, label_map, on='FechaRef')
     df_agg = df_agg.sort_values(by='FechaRef')
-    # Usamos la columna de texto para las etiquetas del gráfico
-    df_agg['AñoMes'] = df_agg['FechaRef'].dt.strftime('%B %Y').str.capitalize()
-
 
     fig = go.Figure()
+    # Usamos la columna de texto 'AñoMes' para las etiquetas del eje X.
     fig.add_trace(go.Bar(x=df_agg['AñoMes'], y=df_agg['Acercamientos'], name='Acercamientos', marker_color='#4B8BBE'))
     fig.add_trace(go.Scatter(x=df_agg['AñoMes'], y=df_agg['Sesiones_Agendadas'], name='Sesiones Agendadas', mode='lines+markers', line=dict(color='#30B88A', width=3), yaxis='y2'))
 
