@@ -32,9 +32,9 @@ def make_unique(headers_list):
 @st.cache_data(ttl=300)
 def load_and_process_sdr_data():
     """
-    Carga y procesa datos desde la hoja 'Evelyn', creando un embudo de conversión
-    y métricas específicas para el análisis de rendimiento de un SDR, utilizando la
-    terminología nativa de la hoja.
+    Carga y procesa datos desde la hoja 'Evelyn'. Utiliza la presencia de fechas
+    y valores 'si' en columnas clave para contar los eventos en cada etapa del embudo,
+    reflejando el flujo de trabajo real.
     """
     try:
         creds_dict = st.secrets["gcp_service_account"]
@@ -58,38 +58,34 @@ def load_and_process_sdr_data():
         st.error(f"No se pudo cargar la hoja 'Evelyn'. Error: {e}")
         return pd.DataFrame()
 
-    # --- Creación del Embudo Lógico basado en Columnas de Evelyn ---
+    # --- Creación del Embudo Lógico basado en las columnas de Evelyn ---
     
-    # 1. Acercamientos: Se cuenta si existe una fecha en la columna de primer contacto.
-    if "Fecha Primer contacto (Linkedin, correo, llamada, WA)" in df.columns:
-        df['Fecha'] = pd.to_datetime(df["Fecha Primer contacto (Linkedin, correo, llamada, WA)"], format='%d/%m/%Y', errors='coerce')
-        df['Acercamientos'] = df['Fecha'].notna().astype(int)
-    else:
-        st.error("Columna 'Fecha Primer contacto (...)' no encontrada. Es esencial para el análisis.")
+    date_columns_to_process = {
+        "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha",
+        "Fecha de Primer Acercamiento": "Fecha_Primer_Acercamiento",
+        "Fecha de Primer Respuesta": "Fecha_Primera_Respuesta"
+    }
+    
+    for original_col, new_col in date_columns_to_process.items():
+        if original_col in df.columns:
+            df[new_col] = pd.to_datetime(df[original_col], format='%d/%m/%Y', errors='coerce')
+        else:
+            df[new_col] = pd.NaT
+
+    if "Fecha" not in df.columns or df["Fecha"].isnull().all():
+        st.error("Columna 'Fecha Primer contacto (...)' no encontrada o vacía. Es esencial para el análisis.")
         return pd.DataFrame()
     
     df.dropna(subset=['Fecha'], inplace=True)
 
-    # 2. Respuestas Iniciales: Se cuenta si existe una fecha en 'Fecha de Primer Respuesta'.
-    if "Fecha de Primer Respuesta" in df.columns:
-        df['Fecha_Respuesta'] = pd.to_datetime(df["Fecha de Primer Respuesta"], format='%d/%m/%Y', errors='coerce')
-        df['Respuestas_Iniciales'] = df['Fecha_Respuesta'].notna().astype(int)
-    else:
-        df['Respuestas_Iniciales'] = 0
+    # Contadores basados en la existencia de fechas o valores 'si'
+    df['Acercamientos'] = df['Fecha'].notna().astype(int)
+    df['Mensajes_Enviados'] = df['Fecha_Primer_Acercamiento'].notna().astype(int)
+    df['Respuestas_Iniciales'] = df['Fecha_Primera_Respuesta'].notna().astype(int)
+    df['Conversaciones'] = df["Respuestas Subsecuentes"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí'] else 0) if "Respuestas Subsecuentes" in df.columns else 0
+    df['Sesiones_Agendadas'] = df["Sesion Agendada?"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí'] else 0) if "Sesion Agendada?" in df.columns else 0
 
-    # 3. Conversaciones Iniciadas: Se cuenta si 'Respuestas Subsecuentes' es 'si'.
-    if "Respuestas Subsecuentes" in df.columns:
-        df['Conversaciones_Iniciadas'] = df["Respuestas Subsecuentes"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí', 'yes', 'true', '1'] else 0)
-    else:
-        df['Conversaciones_Iniciadas'] = 0
-
-    # 4. Sesiones Agendadas: Se cuenta si 'Sesion Agendada?' es 'si'.
-    if "Sesion Agendada?" in df.columns:
-        df['Sesiones_Agendadas'] = df["Sesion Agendada?"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí', 'yes', 'true', '1'] else 0)
-    else:
-        df['Sesiones_Agendadas'] = 0
-
-    # Creación de dimensiones de tiempo
+    # Dimensiones de tiempo
     df['Año'] = df['Fecha'].dt.year
     df['NumSemana'] = df['Fecha'].dt.isocalendar().week.astype(int)
     df['AñoMes'] = df['Fecha'].dt.strftime('%Y-%m')
@@ -116,13 +112,9 @@ def sidebar_filters(df):
         return {}, None, None
 
     filtros = {}
-
     st.sidebar.subheader("📅 Por Fecha de Acercamiento")
-    min_date = df['Fecha'].min().date()
-    max_date = df['Fecha'].max().date()
-    col1, col2 = st.sidebar.columns(2)
-    start_date = col1.date_input("Desde", min_date, min_value=min_date, max_value=max_date)
-    end_date = col2.date_input("Hasta", max_date, min_value=min_date, max_value=max_date)
+    min_date, max_date = df['Fecha'].min().date(), df['Fecha'].max().date()
+    start_date, end_date = st.sidebar.date_input("Rango de Fechas", [min_date, max_date], min_value=min_date, max_value=max_date)
 
     st.sidebar.subheader("🔎 Por Estrategia de Prospección")
     for dim_col in ["Campaña", "Fuente de la Lista", "Proceso", "Industria"]:
@@ -147,32 +139,39 @@ def apply_filters(df, filtros, start_date, end_date):
     return df_f
 
 def display_kpi_summary(df_filtered):
-    st.markdown("### 🧮 Resumen del Embudo (Periodo Filtrado)")
+    st.markdown("### 🧮 Resumen del Proceso (Periodo Filtrado)")
 
     total_acercamientos = int(df_filtered['Acercamientos'].sum())
+    total_mensajes = int(df_filtered['Mensajes_Enviados'].sum())
     total_respuestas = int(df_filtered['Respuestas_Iniciales'].sum())
-    total_conversaciones = int(df_filtered['Conversaciones_Iniciadas'].sum())
+    total_conversaciones = int(df_filtered['Conversaciones'].sum())
     total_sesiones = int(df_filtered['Sesiones_Agendadas'].sum())
 
-    kpi_cols = st.columns(4)
+    kpi_cols = st.columns(5)
     kpi_cols[0].metric("🚀 Total Acercamientos", f"{total_acercamientos:,}")
-    kpi_cols[1].metric("💬 Total Respuestas Iniciales", f"{total_respuestas:,}")
-    kpi_cols[2].metric("🔁 Total Conversaciones", f"{total_conversaciones:,}")
-    kpi_cols[3].metric("🗓️ Total Sesiones Agendadas", f"{total_sesiones:,}")
+    kpi_cols[1].metric("📤 Total Mensajes Enviados", f"{total_mensajes:,}")
+    kpi_cols[2].metric("💬 Total Respuestas Iniciales", f"{total_respuestas:,}")
+    kpi_cols[3].metric("🔁 Total Conversaciones", f"{total_conversaciones:,}")
+    kpi_cols[4].metric("🗓️ Total Sesiones Agendadas", f"{total_sesiones:,}")
 
     st.markdown("---")
-    st.markdown("#### Tasas de Conversión del Proceso")
+    st.markdown("#### Tasas de Conversión y Eficiencia")
 
+    # Tasas del embudo
     tasa_resp_vs_acerc = calculate_rate(total_respuestas, total_acercamientos)
     tasa_conv_vs_resp = calculate_rate(total_conversaciones, total_respuestas)
     tasa_sesion_vs_conv = calculate_rate(total_sesiones, total_conversaciones)
     tasa_sesion_global = calculate_rate(total_sesiones, total_acercamientos)
+    
+    # Métrica de eficiencia
+    acercamientos_por_sesion = total_acercamientos / total_sesiones if total_sesiones > 0 else "N/A"
 
-    rate_cols = st.columns(4)
-    rate_cols[0].metric("Tasa de Respuesta", f"{tasa_resp_vs_acerc:.1f}%", help="De cada 100 acercamientos, cuántos generan una respuesta inicial.")
-    rate_cols[1].metric("Tasa de Engagement", f"{tasa_conv_vs_resp:.1f}%", help="De cada 100 respuestas, cuántas se convierten en una conversación.")
-    rate_cols[2].metric("Tasa de Cierre", f"{tasa_sesion_vs_conv:.1f}%", help="De cada 100 conversaciones, cuántas terminan en una sesión.")
-    rate_cols[3].metric("Tasa de Éxito Global", f"{tasa_sesion_global:.1f}%", help="La eficiencia total del proceso: (Sesiones / Acercamientos).")
+    rate_cols = st.columns(5)
+    rate_cols[0].metric("Respuesta / Acercamiento", f"{tasa_resp_vs_acerc:.1f}%", help="Efectividad para iniciar una conversación.")
+    rate_cols[1].metric("Conversación / Respuesta", f"{tasa_conv_vs_resp:.1f}%", help="Efectividad para generar engagement real.")
+    rate_cols[2].metric("Sesión / Conversación", f"{tasa_sesion_vs_conv:.1f}%", help="Efectividad para convertir el interés en una reunión.")
+    rate_cols[3].metric("Éxito Global (Sesión / Acerc.)", f"{tasa_sesion_global:.1f}%", help="La eficiencia total del proceso, de principio a fin.")
+    rate_cols[4].metric("Acercamientos por Sesión", f"{acercamientos_por_sesion:.1f}" if isinstance(acercamientos_por_sesion, float) else "N/A", help="Esfuerzo necesario para lograr una sesión.")
 
 def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_icon="📊"):
     st.markdown(f"### {chart_icon} {title_prefix}")
