@@ -7,7 +7,6 @@ import datetime
 import plotly.express as px
 import plotly.graph_objects as go
 from collections import Counter
-# La librería locale ya no es necesaria, la eliminamos.
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="Dashboard de Desempeño SDR", layout="wide")
@@ -33,8 +32,8 @@ def make_unique(headers_list):
 @st.cache_data(ttl=300)
 def load_and_process_sdr_data():
     """
-    MODIFICADO: Ahora usa un diccionario manual para los meses en español,
-    haciendo la solución 100% robusta e independiente del servidor.
+    Carga y procesa datos desde la hoja 'Evelyn', creando un embudo de conversión
+    y métricas específicas, incluyendo el análisis de recontacto.
     """
     try:
         creds_dict = st.secrets["gcp_service_account"]
@@ -86,13 +85,11 @@ def load_and_process_sdr_data():
     df['Año'] = df['Fecha'].dt.year
     df['NumSemana'] = df['Fecha'].dt.isocalendar().week.astype(int)
     
-    # --- CAMBIO AQUÍ: Creación manual de la etiqueta "Mes Año" ---
     meses_espanol = {
         1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 5: "Mayo", 6: "Junio",
         7: "Julio", 8: "Agosto", 9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
     }
     df['AñoMes'] = df['Fecha'].dt.month.map(meses_espanol) + ' ' + df['Fecha'].dt.year.astype(str)
-    # --- FIN DEL CAMBIO ---
 
     for col in ["Fuente de la Lista", "Campaña", "Proceso", "Industria"]:
         if col in df.columns:
@@ -109,6 +106,10 @@ def calculate_rate(numerator, denominator, round_to=1):
 # --- COMPONENTES VISUALES ---
 
 def sidebar_filters(df):
+    """
+    MODIFICADO: Se añade un `key` a cada filtro de prospección para que el botón
+    de limpiar filtros funcione correctamente para todos.
+    """
     st.sidebar.header("🔍 Filtros de Análisis")
     if df.empty:
         st.sidebar.warning("No hay datos para filtrar.")
@@ -159,7 +160,16 @@ def sidebar_filters(df):
     for dim_col in ["Campaña", "Fuente de la Lista", "Proceso", "Industria"]:
         if dim_col in df.columns and df[dim_col].nunique() > 1:
             opciones = ["– Todos –"] + sorted(df[dim_col].unique().tolist())
-            other_filters[dim_col] = st.sidebar.multiselect(dim_col, opciones, default=["– Todos –"])
+            
+            # --- CAMBIO AQUÍ: Se asigna una llave única a cada filtro ---
+            filtro_key = f"filter_{dim_col.lower().replace(' ', '_')}"
+            other_filters[dim_col] = st.sidebar.multiselect(
+                dim_col,
+                opciones,
+                default=["– Todos –"],
+                key=filtro_key
+            )
+            # --- FIN DEL CAMBIO ---
 
     if st.sidebar.button("🧹 Limpiar Todos los Filtros", use_container_width=True):
         st.session_state.clear()
@@ -263,7 +273,6 @@ def display_time_evolution(df_filtered, time_col, title):
     st.markdown(f"### 📈 {title}")
     if df_filtered.empty or time_col not in df_filtered.columns: return
 
-    # Para asegurar el orden cronológico en el gráfico, usamos la fecha real para ordenar.
     df_temp = df_filtered.copy()
     df_temp['FechaRef'] = pd.to_datetime(df_temp['Fecha'].dt.strftime('%Y-%m-01'))
     
@@ -272,13 +281,11 @@ def display_time_evolution(df_filtered, time_col, title):
         Sesiones_Agendadas=('Sesiones_Agendadas', 'sum')
     ).reset_index()
     
-    # Mapeamos la fecha de referencia a la etiqueta de texto correcta que ya creamos.
     label_map = df_temp[['FechaRef', 'AñoMes']].drop_duplicates()
     df_agg = pd.merge(df_agg, label_map, on='FechaRef')
     df_agg = df_agg.sort_values(by='FechaRef')
 
     fig = go.Figure()
-    # Usamos la columna de texto 'AñoMes' para las etiquetas del eje X.
     fig.add_trace(go.Bar(x=df_agg['AñoMes'], y=df_agg['Acercamientos'], name='Acercamientos', marker_color='#4B8BBE'))
     fig.add_trace(go.Scatter(x=df_agg['AñoMes'], y=df_agg['Sesiones_Agendadas'], name='Sesiones Agendadas', mode='lines+markers', line=dict(color='#30B88A', width=3), yaxis='y2'))
 
