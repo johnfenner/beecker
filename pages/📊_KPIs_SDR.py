@@ -32,9 +32,9 @@ def make_unique(headers_list):
 @st.cache_data(ttl=300)
 def load_and_process_sdr_data():
     """
-    Carga y procesa datos desde la hoja 'Evelyn'. Utiliza la presencia de fechas
-    en columnas clave para contar los eventos en cada etapa del embudo de conversión,
-    replicando la lógica del dashboard principal.
+    Carga y procesa datos desde la hoja 'Evelyn', creando un embudo de conversión
+    y métricas específicas para el análisis de rendimiento de un SDR, utilizando la
+    terminología nativa de la hoja.
     """
     try:
         creds_dict = st.secrets["gcp_service_account"]
@@ -58,40 +58,35 @@ def load_and_process_sdr_data():
         st.error(f"No se pudo cargar la hoja 'Evelyn'. Error: {e}")
         return pd.DataFrame()
 
-    # --- Creación del Embudo de 4 Etapas basado en la existencia de fechas ---
+    # --- Creación del Embudo Lógico basado en Columnas de Evelyn ---
     
-    # 1. 'Invites Enviadas': Se cuenta si existe una fecha en la columna de primer contacto.
-    #    Esta será la fecha principal para todos los filtros de tiempo.
+    # 1. Acercamientos: Se cuenta si existe una fecha en la columna de primer contacto.
     if "Fecha Primer contacto (Linkedin, correo, llamada, WA)" in df.columns:
         df['Fecha'] = pd.to_datetime(df["Fecha Primer contacto (Linkedin, correo, llamada, WA)"], format='%d/%m/%Y', errors='coerce')
-        df['Invites_Enviadas'] = df['Fecha'].notna().astype(int)
+        df['Acercamientos'] = df['Fecha'].notna().astype(int)
     else:
         st.error("Columna 'Fecha Primer contacto (...)' no encontrada. Es esencial para el análisis.")
         return pd.DataFrame()
     
-    df.dropna(subset=['Fecha'], inplace=True) # Solo analizamos prospectos que han sido contactados
+    df.dropna(subset=['Fecha'], inplace=True)
 
-    # 2. 'Mensajes Enviados': Se cuenta si existe una fecha en 'Fecha de Primer Acercamiento'.
-    if "Fecha de Primer Acercamiento" in df.columns:
-        df['Fecha_Acercamiento'] = pd.to_datetime(df["Fecha de Primer Acercamiento"], format='%d/%m/%Y', errors='coerce')
-        df['Mensajes_Enviados'] = df['Fecha_Acercamiento'].notna().astype(int)
-    else:
-        st.warning("Columna 'Fecha de Primer Acercamiento' no encontrada. 'Mensajes Enviados' se mostrará como 0.")
-        df['Mensajes_Enviados'] = 0
-
-    # 3. 'Respuestas': Se cuenta si existe una fecha en 'Fecha de Primer Respuesta'.
+    # 2. Respuestas Iniciales: Se cuenta si existe una fecha en 'Fecha de Primer Respuesta'.
     if "Fecha de Primer Respuesta" in df.columns:
         df['Fecha_Respuesta'] = pd.to_datetime(df["Fecha de Primer Respuesta"], format='%d/%m/%Y', errors='coerce')
-        df['Respuestas'] = df['Fecha_Respuesta'].notna().astype(int)
+        df['Respuestas_Iniciales'] = df['Fecha_Respuesta'].notna().astype(int)
     else:
-        st.warning("Columna 'Fecha de Primer Respuesta' no encontrada. 'Respuestas' se mostrará como 0.")
-        df['Respuestas'] = 0
+        df['Respuestas_Iniciales'] = 0
 
-    # 4. 'Sesiones Agendadas': Se cuenta si la columna 'Sesion Agendada?' es 'si'.
+    # 3. Conversaciones Iniciadas: Se cuenta si 'Respuestas Subsecuentes' es 'si'.
+    if "Respuestas Subsecuentes" in df.columns:
+        df['Conversaciones_Iniciadas'] = df["Respuestas Subsecuentes"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí', 'yes', 'true', '1'] else 0)
+    else:
+        df['Conversaciones_Iniciadas'] = 0
+
+    # 4. Sesiones Agendadas: Se cuenta si 'Sesion Agendada?' es 'si'.
     if "Sesion Agendada?" in df.columns:
         df['Sesiones_Agendadas'] = df["Sesion Agendada?"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí', 'yes', 'true', '1'] else 0)
     else:
-        st.warning("Columna 'Sesion Agendada?' no encontrada. 'Sesiones Agendadas' se mostrará como 0.")
         df['Sesiones_Agendadas'] = 0
 
     # Creación de dimensiones de tiempo
@@ -122,7 +117,7 @@ def sidebar_filters(df):
 
     filtros = {}
 
-    st.sidebar.subheader("📅 Por Fecha de Primer Contacto")
+    st.sidebar.subheader("📅 Por Fecha de Acercamiento")
     min_date = df['Fecha'].min().date()
     max_date = df['Fecha'].max().date()
     col1, col2 = st.sidebar.columns(2)
@@ -152,32 +147,32 @@ def apply_filters(df, filtros, start_date, end_date):
     return df_f
 
 def display_kpi_summary(df_filtered):
-    st.markdown("### 🧮 Resumen de KPIs Totales (Periodo Filtrado)")
+    st.markdown("### 🧮 Resumen del Embudo (Periodo Filtrado)")
 
-    total_invites = int(df_filtered['Invites_Enviadas'].sum())
-    total_mensajes = int(df_filtered['Mensajes_Enviados'].sum())
-    total_respuestas = int(df_filtered['Respuestas'].sum())
+    total_acercamientos = int(df_filtered['Acercamientos'].sum())
+    total_respuestas = int(df_filtered['Respuestas_Iniciales'].sum())
+    total_conversaciones = int(df_filtered['Conversaciones_Iniciadas'].sum())
     total_sesiones = int(df_filtered['Sesiones_Agendadas'].sum())
 
     kpi_cols = st.columns(4)
-    kpi_cols[0].metric("📧 Total Invites Enviadas", f"{total_invites:,}")
-    kpi_cols[1].metric("📤 Total Mensajes Enviados", f"{total_mensajes:,}")
-    kpi_cols[2].metric("💬 Total Respuestas", f"{total_respuestas:,}")
+    kpi_cols[0].metric("🚀 Total Acercamientos", f"{total_acercamientos:,}")
+    kpi_cols[1].metric("💬 Total Respuestas Iniciales", f"{total_respuestas:,}")
+    kpi_cols[2].metric("🔁 Total Conversaciones", f"{total_conversaciones:,}")
     kpi_cols[3].metric("🗓️ Total Sesiones Agendadas", f"{total_sesiones:,}")
 
     st.markdown("---")
-    st.markdown("#### Tasas de Conversión")
+    st.markdown("#### Tasas de Conversión del Proceso")
 
-    tasa_mens_vs_invite = calculate_rate(total_mensajes, total_invites)
-    tasa_resp_vs_mensaje = calculate_rate(total_respuestas, total_mensajes)
-    tasa_sesion_vs_resp = calculate_rate(total_sesiones, total_respuestas)
-    tasa_sesion_global = calculate_rate(total_sesiones, total_invites)
+    tasa_resp_vs_acerc = calculate_rate(total_respuestas, total_acercamientos)
+    tasa_conv_vs_resp = calculate_rate(total_conversaciones, total_respuestas)
+    tasa_sesion_vs_conv = calculate_rate(total_sesiones, total_conversaciones)
+    tasa_sesion_global = calculate_rate(total_sesiones, total_acercamientos)
 
     rate_cols = st.columns(4)
-    rate_cols[0].metric("Tasa Mensajes / Invite", f"{tasa_mens_vs_invite:.1f}%")
-    rate_cols[1].metric("Tasa Respuesta / Mensaje", f"{tasa_resp_vs_mensaje:.1f}%")
-    rate_cols[2].metric("Tasa Agend. / Respuesta", f"{tasa_sesion_vs_resp:.1f}%")
-    rate_cols[3].metric("Tasa Agend. / Invite (Global)", f"{tasa_sesion_global:.1f}%")
+    rate_cols[0].metric("Tasa de Respuesta", f"{tasa_resp_vs_acerc:.1f}%", help="De cada 100 acercamientos, cuántos generan una respuesta inicial.")
+    rate_cols[1].metric("Tasa de Engagement", f"{tasa_conv_vs_resp:.1f}%", help="De cada 100 respuestas, cuántas se convierten en una conversación.")
+    rate_cols[2].metric("Tasa de Cierre", f"{tasa_sesion_vs_conv:.1f}%", help="De cada 100 conversaciones, cuántas terminan en una sesión.")
+    rate_cols[3].metric("Tasa de Éxito Global", f"{tasa_sesion_global:.1f}%", help="La eficiencia total del proceso: (Sesiones / Acercamientos).")
 
 def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_icon="📊"):
     st.markdown(f"### {chart_icon} {title_prefix}")
@@ -186,28 +181,28 @@ def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_ico
         return
 
     summary_df = df_filtered.groupby(group_by_col).agg(
-        Invites_Enviadas=('Invites_Enviadas', 'sum'),
+        Acercamientos=('Acercamientos', 'sum'),
         Sesiones_Agendadas=('Sesiones_Agendadas', 'sum')
     ).reset_index()
 
-    summary_df['Tasa de Éxito Global (%)'] = summary_df.apply(lambda r: calculate_rate(r.Sesiones_Agendadas, r.Invites_Enviadas), axis=1)
+    summary_df['Tasa de Éxito Global (%)'] = summary_df.apply(lambda r: calculate_rate(r.Sesiones_Agendadas, r.Acercamientos), axis=1)
 
     st.markdown("##### Tabla de Rendimiento")
-    st.dataframe(summary_df[summary_df['Invites_Enviadas'] > 0].style.format({'Tasa de Éxito Global (%)': '{:.1f}%'}), use_container_width=True)
+    st.dataframe(summary_df[summary_df['Acercamientos'] > 0].style.format({'Tasa de Éxito Global (%)': '{:.1f}%'}), use_container_width=True)
 
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("##### Sesiones Agendadas (Volumen)")
         fig_abs = px.bar(summary_df.sort_values('Sesiones_Agendadas', ascending=False),
                          x=group_by_col, y='Sesiones_Agendadas', text_auto=True,
-                         title=f"Sesiones por {group_by_col}", color="Sesiones_Agendadas",
+                         title=f"Volumen de Sesiones por {group_by_col}", color="Sesiones_Agendadas",
                          color_continuous_scale=px.colors.sequential.Teal)
         st.plotly_chart(fig_abs, use_container_width=True)
     with col2:
         st.markdown("##### Tasa de Éxito Global (Eficiencia)")
         fig_rate = px.bar(summary_df.sort_values('Tasa de Éxito Global (%)', ascending=False),
                           x=group_by_col, y='Tasa de Éxito Global (%)', text_auto='.1f',
-                          title=f"Tasa de Éxito por {group_by_col}", color="Tasa de Éxito Global (%)",
+                          title=f"Eficiencia por {group_by_col}", color="Tasa de Éxito Global (%)",
                           color_continuous_scale=px.colors.sequential.Mint)
         fig_rate.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
         fig_rate.update_layout(yaxis_range=[0, max(10, summary_df['Tasa de Éxito Global (%)'].max() * 1.1)])
@@ -218,18 +213,18 @@ def display_time_evolution(df_filtered, time_col, title):
     if df_filtered.empty or time_col not in df_filtered.columns: return
 
     df_agg = df_filtered.groupby(time_col).agg(
-        Invites_Enviadas=('Invites_Enviadas', 'sum'),
+        Acercamientos=('Acercamientos', 'sum'),
         Sesiones_Agendadas=('Sesiones_Agendadas', 'sum')
     ).reset_index()
     df_agg = df_agg.sort_values(by=time_col)
 
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=df_agg[time_col], y=df_agg['Invites_Enviadas'], name='Invites Enviadas', marker_color='#4B8BBE'))
+    fig.add_trace(go.Bar(x=df_agg[time_col], y=df_agg['Acercamientos'], name='Acercamientos', marker_color='#4B8BBE'))
     fig.add_trace(go.Scatter(x=df_agg[time_col], y=df_agg['Sesiones_Agendadas'], name='Sesiones Agendadas', mode='lines+markers', line=dict(color='#30B88A', width=3), yaxis='y2'))
 
     fig.update_layout(
-        title_text=f"Evolución de Invites vs. Sesiones por {time_col.replace('Año', '').replace('Num', '')}",
-        yaxis=dict(title='Volumen de Invites'),
+        title_text=f"Evolución de Acercamientos vs. Sesiones",
+        yaxis=dict(title='Volumen de Acercamientos'),
         yaxis2=dict(title='N° de Sesiones', overlaying='y', side='right', showgrid=False),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
@@ -248,11 +243,11 @@ if not df_sdr_data.empty:
         display_kpi_summary(df_sdr_filtered)
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
 
-        display_grouped_breakdown(df_sdr_filtered, "Campaña", "Análisis de Rendimiento por Campaña", "📊")
+        display_grouped_breakdown(df_sdr_filtered, "Campaña", "Análisis por Campaña", "📊")
         st.markdown("---")
-        display_grouped_breakdown(df_sdr_filtered, "Fuente de la Lista", "Análisis de Rendimiento por Fuente", "📂")
+        display_grouped_breakdown(df_sdr_filtered, "Fuente de la Lista", "Análisis por Fuente de Lista", "📂")
         st.markdown("---")
-        display_grouped_breakdown(df_sdr_filtered, "Proceso", "Análisis de Rendimiento por Proceso", "⚙️")
+        display_grouped_breakdown(df_sdr_filtered, "Proceso", "Análisis por Proceso", "⚙️")
         
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
         
