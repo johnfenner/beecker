@@ -32,8 +32,8 @@ def make_unique(headers_list):
 @st.cache_data(ttl=300)
 def load_and_process_sdr_data():
     """
-    Carga y procesa datos desde la hoja 'Evelyn', creando un embudo de conversión
-    de 3 etapas (Acercamiento -> Respuesta -> Sesión).
+    Carga y procesa datos desde la hoja 'Evelyn', utilizando la presencia de fechas
+    en columnas clave para contar los eventos en cada etapa del embudo de conversión.
     """
     try:
         creds_dict = st.secrets["gcp_service_account"]
@@ -57,30 +57,32 @@ def load_and_process_sdr_data():
         st.error(f"No se pudo cargar la hoja 'Evelyn'. Error: {e}")
         return pd.DataFrame()
 
-    # --- Creación del Embudo Lógico de 3 Etapas ---
+    # --- Creación del Embudo de 4 Etapas basado en la existencia de fechas ---
     
-    # 1. Acercamientos
-    if "Fecha Primer contacto (Linkedin, correo, llamada, WA)" in df.columns:
-        df['Fecha'] = pd.to_datetime(df["Fecha Primer contacto (Linkedin, correo, llamada, WA)"], format='%d/%m/%Y', errors='coerce')
-        df['Acercamientos'] = df['Fecha'].notna().astype(int)
-    else:
-        st.error("Columna 'Fecha Primer contacto (...)' no encontrada. Es esencial para el análisis.")
+    date_columns_to_process = {
+        "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha_Acercamiento_Inicial",
+        "Fecha de Primer Acercamiento": "Fecha_Mensaje_Enviado",
+        "Fecha de Primer Respuesta": "Fecha_Respuesta_Inicial"
+    }
+    
+    for original_col, new_col in date_columns_to_process.items():
+        if original_col in df.columns:
+            df[new_col] = pd.to_datetime(df[original_col], format='%d/%m/%Y', errors='coerce')
+        else:
+            df[new_col] = pd.NaT
+
+    if "Fecha_Acercamiento_Inicial" not in df.columns or df["Fecha_Acercamiento_Inicial"].isnull().all():
+        st.error("Columna 'Fecha Primer contacto (...)' no encontrada o vacía. Es esencial para el análisis.")
         return pd.DataFrame()
     
+    df.rename(columns={'Fecha_Acercamiento_Inicial': 'Fecha'}, inplace=True)
     df.dropna(subset=['Fecha'], inplace=True)
 
-    # 2. Respuestas Iniciales
-    if "Fecha de Primer Respuesta" in df.columns:
-        df['Fecha_Respuesta'] = pd.to_datetime(df["Fecha de Primer Respuesta"], format='%d/%m/%Y', errors='coerce')
-        df['Respuestas_Iniciales'] = df['Fecha_Respuesta'].notna().astype(int)
-    else:
-        df['Respuestas_Iniciales'] = 0
-
-    # 3. Sesiones Agendadas
-    if "Sesion Agendada?" in df.columns:
-        df['Sesiones_Agendadas'] = df["Sesion Agendada?"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí'] else 0)
-    else:
-        df['Sesiones_Agendadas'] = 0
+    # Contadores basados en la existencia de fechas o valores 'si'
+    df['Acercamientos'] = df['Fecha'].notna().astype(int)
+    df['Mensajes_Enviados'] = df['Fecha_Mensaje_Enviado'].notna().astype(int)
+    df['Respuestas_Iniciales'] = df['Fecha_Respuesta_Inicial'].notna().astype(int)
+    df['Sesiones_Agendadas'] = df["Sesion Agendada?"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí'] else 0) if "Sesion Agendada?" in df.columns else 0
 
     # Dimensiones de tiempo
     df['Año'] = df['Fecha'].dt.year
@@ -88,7 +90,7 @@ def load_and_process_sdr_data():
     df['AñoMes'] = df['Fecha'].dt.strftime('%Y-%m')
 
     # Limpieza de columnas de filtro
-    for col in ["Fuente de la Lista", "Campaña", "Proceso", "Industria", "Empresa"]:
+    for col in ["Fuente de la Lista", "Campaña", "Proceso", "Industria"]:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().fillna("N/D").replace("", "N/D")
         else:
@@ -109,7 +111,7 @@ def sidebar_filters(df):
         return {}, None, None
 
     filtros = {}
-    st.sidebar.subheader("📅 Por Fecha de Acercamiento")
+    st.sidebar.subheader("📅 Por Fecha de Primer Contacto")
     min_date, max_date = df['Fecha'].min().date(), df['Fecha'].max().date()
     start_date, end_date = st.sidebar.date_input("Rango de Fechas", [min_date, max_date], min_value=min_date, max_value=max_date)
 
@@ -136,36 +138,32 @@ def apply_filters(df, filtros, start_date, end_date):
     return df_f
 
 def display_kpi_summary(df_filtered):
-    st.markdown("### 🧮 Resumen del Proceso (Periodo Filtrado)")
+    st.markdown("### 🧮 Resumen del Embudo (Periodo Filtrado)")
 
-    # Volúmenes del embudo
     total_acercamientos = int(df_filtered['Acercamientos'].sum())
+    total_mensajes = int(df_filtered['Mensajes_Enviados'].sum())
     total_respuestas = int(df_filtered['Respuestas_Iniciales'].sum())
     total_sesiones = int(df_filtered['Sesiones_Agendadas'].sum())
-    # Métrica de alcance
-    total_empresas = df_filtered['Empresa'].nunique()
 
     kpi_cols = st.columns(4)
     kpi_cols[0].metric("🚀 Total Acercamientos", f"{total_acercamientos:,}")
-    kpi_cols[1].metric("💬 Total Respuestas Iniciales", f"{total_respuestas:,}")
-    kpi_cols[2].metric("🗓️ Total Sesiones Agendadas", f"{total_sesiones:,}")
-    kpi_cols[3].metric("🏢 Empresas Únicas Contactadas", f"{total_empresas:,}")
+    kpi_cols[1].metric("📤 Total Mensajes Enviados", f"{total_mensajes:,}")
+    kpi_cols[2].metric("💬 Total Respuestas Iniciales", f"{total_respuestas:,}")
+    kpi_cols[3].metric("🗓️ Total Sesiones Agendadas", f"{total_sesiones:,}")
 
     st.markdown("---")
-    st.markdown("#### Tasas de Conversión y Eficiencia")
+    st.markdown("#### Tasas de Conversión del Proceso")
 
-    # Tasas del embudo
-    tasa_resp_vs_acerc = calculate_rate(total_respuestas, total_acercamientos)
+    tasa_mens_vs_acerc = calculate_rate(total_mensajes, total_acercamientos)
+    tasa_resp_vs_msj = calculate_rate(total_respuestas, total_mensajes)
     tasa_sesion_vs_resp = calculate_rate(total_sesiones, total_respuestas)
     tasa_sesion_global = calculate_rate(total_sesiones, total_acercamientos)
-    # Métrica de eficiencia
-    acercamientos_por_sesion = total_acercamientos / total_sesiones if total_sesiones > 0 else "N/A"
 
     rate_cols = st.columns(4)
-    rate_cols[0].metric("Tasa de Respuesta", f"{tasa_resp_vs_acerc:.1f}%", help="De cada 100 acercamientos, cuántos generan una respuesta.")
-    rate_cols[1].metric("Tasa de Sesión / Respuesta", f"{tasa_sesion_vs_resp:.1f}%", help="De cada 100 respuestas, cuántas terminan en una sesión.")
-    rate_cols[2].metric("Tasa de Éxito Global", f"{tasa_sesion_global:.1f}%", help="Eficiencia total del proceso: (Sesiones / Acercamientos).")
-    rate_cols[3].metric("Acercamientos por Sesión", f"{acercamientos_por_sesion:.1f}" if isinstance(acercamientos_por_sesion, float) else "N/A", help="Esfuerzo necesario para lograr una sesión (menos es mejor).")
+    rate_cols[0].metric("Tasa de Mensajes / Acercamiento", f"{tasa_mens_vs_acerc:.1f}%")
+    rate_cols[1].metric("Tasa de Respuesta / Mensaje", f"{tasa_resp_vs_msj:.1f}%")
+    rate_cols[2].metric("Tasa de Sesión / Respuesta", f"{tasa_sesion_vs_resp:.1f}%")
+    rate_cols[3].metric("Tasa de Éxito Global", f"{tasa_sesion_global:.1f}%", help="Eficiencia total: (Sesiones / Acercamientos)")
 
 def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_icon="📊"):
     st.markdown(f"### {chart_icon} {title_prefix}")
