@@ -33,7 +33,7 @@ def make_unique(headers_list):
 def load_and_process_sdr_data():
     """
     Carga y procesa datos desde la hoja 'Evelyn', utilizando la presencia de fechas
-    en columnas clave para contar los eventos en cada etapa del embudo de conversión.
+    y valores 'si' en columnas clave para contar los eventos en cada etapa del embudo.
     """
     try:
         creds_dict = st.secrets["gcp_service_account"]
@@ -57,7 +57,7 @@ def load_and_process_sdr_data():
         st.error(f"No se pudo cargar la hoja 'Evelyn'. Error: {e}")
         return pd.DataFrame()
 
-    # --- Creación del Embudo de 4 Etapas basado en la existencia de fechas ---
+    # --- Creación del Embudo de 4 Etapas ---
     
     date_columns_to_process = {
         "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha_Acercamiento_Inicial",
@@ -78,7 +78,6 @@ def load_and_process_sdr_data():
     df.rename(columns={'Fecha_Acercamiento_Inicial': 'Fecha'}, inplace=True)
     df.dropna(subset=['Fecha'], inplace=True)
 
-    # Contadores basados en la existencia de fechas o valores 'si'
     df['Acercamientos'] = df['Fecha'].notna().astype(int)
     df['Mensajes_Enviados'] = df['Fecha_Mensaje_Enviado'].notna().astype(int)
     df['Respuestas_Iniciales'] = df['Fecha_Respuesta_Inicial'].notna().astype(int)
@@ -111,7 +110,7 @@ def sidebar_filters(df):
         return {}, None, None
 
     filtros = {}
-    st.sidebar.subheader("📅 Por Fecha de Primer Contacto")
+    st.sidebar.subheader("📅 Por Fecha de Acercamiento")
     min_date, max_date = df['Fecha'].min().date(), df['Fecha'].max().date()
     start_date, end_date = st.sidebar.date_input("Rango de Fechas", [min_date, max_date], min_value=min_date, max_value=max_date)
 
@@ -160,10 +159,10 @@ def display_kpi_summary(df_filtered):
     tasa_sesion_global = calculate_rate(total_sesiones, total_acercamientos)
 
     rate_cols = st.columns(4)
-    rate_cols[0].metric("Tasa de Mensajes / Acercamiento", f"{tasa_mens_vs_acerc:.1f}%")
-    rate_cols[1].metric("Tasa de Respuesta / Mensaje", f"{tasa_resp_vs_msj:.1f}%")
-    rate_cols[2].metric("Tasa de Sesión / Respuesta", f"{tasa_sesion_vs_resp:.1f}%")
-    rate_cols[3].metric("Tasa de Éxito Global", f"{tasa_sesion_global:.1f}%", help="Eficiencia total: (Sesiones / Acercamientos)")
+    rate_cols[0].metric("📨 Tasa Mensajes / Acercamiento", f"{tasa_mens_vs_acerc:.1f}%", help="Porcentaje de acercamientos que resultaron en un mensaje enviado. (Mensajes Enviados / Acercamientos)")
+    rate_cols[1].metric("🗣️ Tasa Respuesta / Mensaje", f"{tasa_resp_vs_msj:.1f}%", help="Porcentaje de mensajes enviados que recibieron una respuesta. (Respuestas / Mensajes Enviados)")
+    rate_cols[2].metric("🤝 Tasa Sesión / Respuesta", f"{tasa_sesion_vs_resp:.1f}%", help="Porcentaje de respuestas que condujeron a una sesión agendada. (Sesiones Agendadas / Respuestas Iniciales)")
+    rate_cols[3].metric("🏆 Tasa Sesión / Acercamiento (Global)", f"{tasa_sesion_global:.1f}%", help="Eficiencia total del proceso: (Sesiones Agendadas / Acercamientos)")
 
 def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_icon="📊"):
     st.markdown(f"### {chart_icon} {title_prefix}")
@@ -176,10 +175,10 @@ def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_ico
         Sesiones_Agendadas=('Sesiones_Agendadas', 'sum')
     ).reset_index()
 
-    summary_df['Tasa de Éxito Global (%)'] = summary_df.apply(lambda r: calculate_rate(r.Sesiones_Agendadas, r.Acercamientos), axis=1)
+    summary_df['Tasa Sesión / Acercamiento (%)'] = summary_df.apply(lambda r: calculate_rate(r.Sesiones_Agendadas, r.Acercamientos), axis=1)
 
     st.markdown("##### Tabla de Rendimiento")
-    st.dataframe(summary_df[summary_df['Acercamientos'] > 0].style.format({'Tasa de Éxito Global (%)': '{:.1f}%'}), use_container_width=True)
+    st.dataframe(summary_df[summary_df['Acercamientos'] > 0].style.format({'Tasa Sesión / Acercamiento (%)': '{:.1f}%'}), use_container_width=True)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -190,13 +189,13 @@ def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_ico
                          color_continuous_scale=px.colors.sequential.Teal)
         st.plotly_chart(fig_abs, use_container_width=True)
     with col2:
-        st.markdown("##### Tasa de Éxito Global (Eficiencia)")
-        fig_rate = px.bar(summary_df.sort_values('Tasa de Éxito Global (%)', ascending=False),
-                          x=group_by_col, y='Tasa de Éxito Global (%)', text_auto='.1f',
-                          title=f"Eficiencia por {group_by_col}", color="Tasa de Éxito Global (%)",
+        st.markdown("##### Tasa Sesión / Acercamiento (Eficiencia)")
+        fig_rate = px.bar(summary_df.sort_values('Tasa Sesión / Acercamiento (%)', ascending=False),
+                          x=group_by_col, y='Tasa Sesión / Acercamiento (%)', text_auto='.1f',
+                          title=f"Eficiencia por {group_by_col}", color="Tasa Sesión / Acercamiento (%)",
                           color_continuous_scale=px.colors.sequential.Mint)
         fig_rate.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
-        fig_rate.update_layout(yaxis_range=[0, max(10, summary_df['Tasa de Éxito Global (%)'].max() * 1.1)])
+        fig_rate.update_layout(yaxis_range=[0, max(10, summary_df['Tasa Sesión / Acercamiento (%)'].max() * 1.1)])
         st.plotly_chart(fig_rate, use_container_width=True)
 
 def display_time_evolution(df_filtered, time_col, title):
