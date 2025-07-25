@@ -7,6 +7,7 @@ import datetime
 import plotly.express as px
 import plotly.graph_objects as go
 from collections import Counter
+import locale # <<--- IMPORTANTE: Se añade la librería locale
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="Dashboard de Desempeño SDR", layout="wide")
@@ -35,6 +36,17 @@ def load_and_process_sdr_data():
     Carga y procesa datos desde la hoja 'Evelyn', creando un embudo de conversión
     y métricas específicas, incluyendo el análisis de recontacto.
     """
+    # --- CAMBIO AQUÍ: Se configura el locale a español para los nombres de los meses ---
+    try:
+        # Intenta configurar el locale para español. Puede variar según el sistema operativo.
+        locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+    except locale.Error:
+        try:
+            locale.setlocale(locale.LC_TIME, 'Spanish')
+        except locale.Error:
+            st.warning("No se pudo configurar el idioma a español para los meses. Se mostrarán en inglés.")
+    # --- FIN DEL CAMBIO ---
+
     try:
         creds_dict = st.secrets["gcp_service_account"]
         sheet_url = st.secrets.get("main_prostraction_sheet_url", "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0")
@@ -57,8 +69,6 @@ def load_and_process_sdr_data():
         st.error(f"No se pudo cargar la hoja 'Evelyn'. Error: {e}")
         return pd.DataFrame()
 
-    # --- Creación del Embudo Lógico y Métricas ---
-    
     date_columns_to_process = {
         "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha",
         "Fecha de Primer Acercamiento": "Fecha_Primer_Acercamiento",
@@ -78,19 +88,19 @@ def load_and_process_sdr_data():
     
     df.dropna(subset=['Fecha'], inplace=True)
 
-    # Contadores
     df['Acercamientos'] = df['Fecha'].notna().astype(int)
     df['Mensajes_Enviados'] = df['Fecha_Primer_Acercamiento'].notna().astype(int)
     df['Respuestas_Iniciales'] = df['Fecha_Primera_Respuesta'].notna().astype(int)
     df['Sesiones_Agendadas'] = df["Sesion Agendada?"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí'] else 0) if "Sesion Agendada?" in df.columns else 0
     df['Necesita_Recontacto'] = df['Fecha_Recontacto'].notna().astype(int)
 
-    # Dimensiones de tiempo
     df['Año'] = df['Fecha'].dt.year
     df['NumSemana'] = df['Fecha'].dt.isocalendar().week.astype(int)
-    df['AñoMes'] = df['Fecha'].dt.strftime('%Y-%m')
+    
+    # --- CAMBIO AQUÍ: Se crea la columna con formato "Mes Año" (ej: "Julio 2025") ---
+    df['AñoMes'] = df['Fecha'].dt.strftime('%B %Y').str.capitalize()
+    # --- FIN DEL CAMBIO ---
 
-    # Limpieza de columnas de filtro
     for col in ["Fuente de la Lista", "Campaña", "Proceso", "Industria"]:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().fillna("N/D").replace("", "N/D")
@@ -106,16 +116,11 @@ def calculate_rate(numerator, denominator, round_to=1):
 # --- COMPONENTES VISUALES ---
 
 def sidebar_filters(df):
-    """
-    MODIFICADO: Ahora permite elegir entre filtrar por rango de fechas o por mes,
-    evitando filtros conflictivos.
-    """
     st.sidebar.header("🔍 Filtros de Análisis")
     if df.empty:
         st.sidebar.warning("No hay datos para filtrar.")
         return None, None, None, None, {}
 
-    # --- NUEVO: Selector de modo de filtro de fecha ---
     st.sidebar.subheader("📅 Filtrar por Fecha")
     filter_mode = st.sidebar.radio(
         "Elige cómo filtrar por fecha:",
@@ -126,19 +131,31 @@ def sidebar_filters(df):
 
     start_date, end_date, selected_months = None, None, None
 
-    # Muestra el filtro correspondiente según el modo seleccionado
     if filter_mode == "Rango de Fechas":
         min_date, max_date = df['Fecha'].min().date(), df['Fecha'].max().date()
-        start_date, end_date = st.sidebar.date_input(
-            "Selecciona el rango:",
-            [min_date, max_date],
-            min_value=min_date,
-            max_value=max_date,
-            key="date_range"
-        )
+        
+        col1, col2 = st.sidebar.columns(2)
+        with col1:
+            start_date = st.date_input(
+                "Fecha Inicial",
+                value=min_date,
+                min_value=min_date,
+                max_value=max_date,
+                key="start_date"
+            )
+        with col2:
+            end_date = st.date_input(
+                "Fecha Final",
+                value=max_date,
+                min_value=start_date,
+                max_value=max_date,
+                key="end_date"
+            )
+            
     else: # filter_mode == "Mes(es) Específico(s)"
         if 'AñoMes' in df.columns:
-            meses_disponibles = sorted(df['AñoMes'].unique().tolist(), reverse=True)
+            # Ordenar por fecha real para que los meses aparezcan en orden cronológico
+            meses_disponibles = df.sort_values('Fecha', ascending=False)['AñoMes'].unique().tolist()
             selected_months = st.sidebar.multiselect(
                 "Selecciona el/los mes(es):",
                 meses_disponibles,
@@ -159,20 +176,18 @@ def sidebar_filters(df):
     return filter_mode, start_date, end_date, selected_months, other_filters
 
 def apply_filters(df, filter_mode, start_date, end_date, selected_months, other_filters):
-    """
-    MODIFICADO: Aplica los filtros de fecha de forma condicional según el modo elegido.
-    """
     df_f = df.copy()
     
-    # --- LÓGICA DE FILTRADO DE FECHA MEJORADA ---
     if filter_mode == "Rango de Fechas":
         if start_date and end_date:
+            if start_date > end_date:
+                st.sidebar.error("La fecha inicial no puede ser posterior a la fecha final.")
+                return pd.DataFrame()
             df_f = df_f[(df_f['Fecha'].dt.date >= start_date) & (df_f['Fecha'].dt.date <= end_date)]
     elif filter_mode == "Mes(es) Específico(s)":
-        if selected_months:  # Solo filtrar si se ha seleccionado al menos un mes
+        if selected_months:
             df_f = df_f[df_f['AñoMes'].isin(selected_months)]
 
-    # Aplica los otros filtros dimensionales
     for col, values in other_filters.items():
         if values and "– Todos –" not in values:
             df_f = df_f[df_f[col].isin(values)]
@@ -256,15 +271,22 @@ def display_time_evolution(df_filtered, time_col, title):
     st.markdown(f"### 📈 {title}")
     if df_filtered.empty or time_col not in df_filtered.columns: return
 
-    df_agg = df_filtered.groupby(time_col).agg(
+    # Para la gráfica de evolución, necesitamos un orden cronológico.
+    # Usaremos una copia del dataframe ordenado por la fecha real.
+    df_temp = df_filtered.copy()
+    df_temp['FechaRef'] = pd.to_datetime(df_temp['Fecha'].dt.strftime('%Y-%m-01'))
+    df_agg = df_temp.groupby('FechaRef').agg(
         Acercamientos=('Acercamientos', 'sum'),
         Sesiones_Agendadas=('Sesiones_Agendadas', 'sum')
     ).reset_index()
-    df_agg = df_agg.sort_values(by=time_col)
+    df_agg = df_agg.sort_values(by='FechaRef')
+    # Usamos la columna de texto para las etiquetas del gráfico
+    df_agg['AñoMes'] = df_agg['FechaRef'].dt.strftime('%B %Y').str.capitalize()
+
 
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=df_agg[time_col], y=df_agg['Acercamientos'], name='Acercamientos', marker_color='#4B8BBE'))
-    fig.add_trace(go.Scatter(x=df_agg[time_col], y=df_agg['Sesiones_Agendadas'], name='Sesiones Agendadas', mode='lines+markers', line=dict(color='#30B88A', width=3), yaxis='y2'))
+    fig.add_trace(go.Bar(x=df_agg['AñoMes'], y=df_agg['Acercamientos'], name='Acercamientos', marker_color='#4B8BBE'))
+    fig.add_trace(go.Scatter(x=df_agg['AñoMes'], y=df_agg['Sesiones_Agendadas'], name='Sesiones Agendadas', mode='lines+markers', line=dict(color='#30B88A', width=3), yaxis='y2'))
 
     fig.update_layout(
         title_text=f"Evolución de Acercamientos vs. Sesiones",
@@ -274,14 +296,12 @@ def display_time_evolution(df_filtered, time_col, title):
     )
     st.plotly_chart(fig, use_container_width=True)
 
-# --- FLUJO PRINCIPAL DE LA PÁGINA (MODIFICADO) ---
+# --- FLUJO PRINCIPAL DE LA PÁGINA ---
 df_sdr_data = load_and_process_sdr_data()
 
 if not df_sdr_data.empty:
-    # Captura los valores de los filtros desde la barra lateral
     filter_mode, start_date, end_date, selected_months, other_filters = sidebar_filters(df_sdr_data)
     
-    # Aplica los filtros al dataframe
     df_sdr_filtered = apply_filters(df_sdr_data, filter_mode, start_date, end_date, selected_months, other_filters)
 
     if df_sdr_filtered.empty:
