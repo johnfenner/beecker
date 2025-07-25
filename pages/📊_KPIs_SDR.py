@@ -57,7 +57,6 @@ def load_and_process_sdr_data():
         st.error(f"No se pudo cargar la hoja 'Evelyn'. Error: {e}")
         return pd.DataFrame()
 
-    # --- MODIFICADO: Ampliamos el procesamiento de fechas ---
     date_columns_to_process = {
         "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha",
         "Fecha de Generacion (no aplica para zoom info)": "Fecha_Generacion",
@@ -80,14 +79,12 @@ def load_and_process_sdr_data():
     
     df.dropna(subset=['Fecha'], inplace=True)
 
-    # Métricas de conteo (se mantienen igual)
     df['Acercamientos'] = df['Fecha'].notna().astype(int)
     df['Mensajes_Enviados'] = df['Fecha_Primer_Acercamiento'].notna().astype(int)
     df['Respuestas_Iniciales'] = df['Fecha_Primera_Respuesta'].notna().astype(int)
     df['Sesiones_Agendadas'] = df["Sesion Agendada?"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí'] else 0) if "Sesion Agendada?" in df.columns else 0
     df['Necesita_Recontacto'] = df['Fecha_Recontacto'].notna().astype(int)
     
-    # --- NUEVO: Cálculo de métricas de velocidad (en días) ---
     if 'Fecha_Generacion' in df.columns:
         df['Dias_Gen_a_Contacto'] = (df['Fecha'] - df['Fecha_Generacion']).dt.days
     if 'Fecha_Primera_Respuesta' in df.columns:
@@ -95,7 +92,6 @@ def load_and_process_sdr_data():
     if 'Fecha_Agendamiento' in df.columns and 'Fecha_Primera_Respuesta' in df.columns:
         df['Dias_Rpta_a_Agenda'] = (df['Fecha_Agendamiento'] - df['Fecha_Primera_Respuesta']).dt.days
 
-    # Columnas de tiempo para agrupar (se mantienen igual)
     df['Año'] = df['Fecha'].dt.year
     df['NumSemana'] = df['Fecha'].dt.isocalendar().week.astype(int)
     meses_espanol = {
@@ -104,7 +100,6 @@ def load_and_process_sdr_data():
     }
     df['AñoMes'] = df['Fecha'].dt.month.map(meses_espanol) + ' ' + df['Fecha'].dt.year.astype(str)
 
-    # --- MODIFICADO: Se incluye "Industria", "Pais", "Puesto", etc. en la limpieza ---
     for col in ["Fuente de la Lista", "Campaña", "Proceso", "Industria", "Pais", "Puesto", "¿Quién Prospecto?"]:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().fillna("N/D").replace("", "N/D")
@@ -122,7 +117,8 @@ def clear_all_filters():
     st.session_state.date_filter_mode = "Rango de Fechas"
     st.session_state.month_select = []
     
-    prospecting_cols = ["Campaña", "Fuente de la Lista", "Proceso", "Industria", "Pais", "¿Quién Prospecto?"]
+    # --- CORRECCIÓN FINAL: Se usa únicamente la lista de filtros original ---
+    prospecting_cols = ["Campaña", "Fuente de la Lista", "Proceso"]
     for col in prospecting_cols:
         key = f"filter_{col.lower().replace(' ', '_')}"
         if key in st.session_state:
@@ -164,7 +160,8 @@ def sidebar_filters(df):
     other_filters = {}
     st.sidebar.subheader("🔎 Por Estrategia de Prospección")
     
-    prospecting_cols = ["Campaña", "Fuente de la Lista", "Proceso", "Industria", "Pais", "¿Quién Prospecto?"]
+    # --- CORRECCIÓN FINAL: Se usa únicamente la lista de filtros original ---
+    prospecting_cols = ["Campaña", "Fuente de la Lista", "Proceso"]
     for dim_col in prospecting_cols:
         if dim_col in df.columns and df[dim_col].nunique() > 1:
             opciones = ["– Todos –"] + sorted(df[dim_col].unique().tolist())
@@ -228,8 +225,6 @@ def display_follow_up_metrics(df_filtered):
     col1, col2 = st.columns(2)
     col1.metric("🔄 Total Prospectos en Seguimiento", f"{total_recontactos:,}", help="Número de prospectos que tienen una fecha de recontacto futura.")
     col2.metric("📊 Tasa de Seguimiento", f"{tasa_recontacto:.1f}%", help="Porcentaje de todos los acercamientos que necesitaron un seguimiento planificado.")
-
-# --- NUEVAS FUNCIONES DE VISUALIZACIÓN ---
 
 def display_conversion_funnel(df_filtered):
     st.markdown("### 🏺 Funnel de Conversión del Periodo")
@@ -348,13 +343,11 @@ if not df_sdr_data.empty:
     if df_sdr_filtered.empty:
         st.warning("No se encontraron datos que coincidan con los filtros seleccionados.")
     else:
-        # Métricas principales (se mantienen sin cambios)
         display_kpi_summary(df_sdr_filtered)
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
         display_follow_up_metrics(df_sdr_filtered)
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
 
-        # --- NUEVA SECCIÓN DE VISUALIZACIONES AVANZADAS ---
         col_funnel, col_velocity = st.columns([0.4, 0.6])
         with col_funnel:
             display_conversion_funnel(df_sdr_filtered)
