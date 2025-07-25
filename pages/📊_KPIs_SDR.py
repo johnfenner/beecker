@@ -32,8 +32,8 @@ def make_unique(headers_list):
 @st.cache_data(ttl=300)
 def load_and_process_sdr_data():
     """
-    Carga y procesa datos desde la hoja 'Evelyn', creando un embudo de conversión
-    y métricas específicas, incluyendo el análisis de recontacto.
+    Carga y procesa datos desde la hoja 'Evelyn', utilizando la presencia de fechas
+    y valores 'si' en columnas clave para contar los eventos en cada etapa del embudo.
     """
     try:
         creds_dict = st.secrets["gcp_service_account"]
@@ -57,13 +57,12 @@ def load_and_process_sdr_data():
         st.error(f"No se pudo cargar la hoja 'Evelyn'. Error: {e}")
         return pd.DataFrame()
 
-    # --- Creación del Embudo Lógico y Métricas ---
+    # --- Creación del Embudo de 4 Etapas ---
     
     date_columns_to_process = {
-        "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha",
-        "Fecha de Primer Acercamiento": "Fecha_Primer_Acercamiento",
-        "Fecha de Primer Respuesta": "Fecha_Primera_Respuesta",
-        "Fecha De Recontacto": "Fecha_Recontacto" # Nueva columna
+        "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha_Acercamiento_Inicial",
+        "Fecha de Primer Acercamiento": "Fecha_Mensaje_Enviado",
+        "Fecha de Primer Respuesta": "Fecha_Respuesta_Inicial"
     }
     
     for original_col, new_col in date_columns_to_process.items():
@@ -72,18 +71,17 @@ def load_and_process_sdr_data():
         else:
             df[new_col] = pd.NaT
 
-    if "Fecha" not in df.columns or df["Fecha"].isnull().all():
+    if "Fecha_Acercamiento_Inicial" not in df.columns or df["Fecha_Acercamiento_Inicial"].isnull().all():
         st.error("Columna 'Fecha Primer contacto (...)' no encontrada o vacía. Es esencial para el análisis.")
         return pd.DataFrame()
     
+    df.rename(columns={'Fecha_Acercamiento_Inicial': 'Fecha'}, inplace=True)
     df.dropna(subset=['Fecha'], inplace=True)
 
-    # Contadores basados en la existencia de fechas o valores 'si'
     df['Acercamientos'] = df['Fecha'].notna().astype(int)
-    df['Mensajes_Enviados'] = df['Fecha_Primer_Acercamiento'].notna().astype(int)
-    df['Respuestas_Iniciales'] = df['Fecha_Primera_Respuesta'].notna().astype(int)
+    df['Mensajes_Enviados'] = df['Fecha_Mensaje_Enviado'].notna().astype(int)
+    df['Respuestas_Iniciales'] = df['Fecha_Respuesta_Inicial'].notna().astype(int)
     df['Sesiones_Agendadas'] = df["Sesion Agendada?"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí'] else 0) if "Sesion Agendada?" in df.columns else 0
-    df['Necesita_Recontacto'] = df['Fecha_Recontacto'].notna().astype(int) # Nuevo contador
 
     # Dimensiones de tiempo
     df['Año'] = df['Fecha'].dt.year
@@ -139,7 +137,7 @@ def apply_filters(df, filtros, start_date, end_date):
     return df_f
 
 def display_kpi_summary(df_filtered):
-    st.markdown("### 🧮 Resumen del Embudo (Periodo Filtrado)")
+    st.markdown("### 🧮 Resumen de KPIs SDR Totales (Periodo Filtrado)")
 
     total_acercamientos = int(df_filtered['Acercamientos'].sum())
     total_mensajes = int(df_filtered['Mensajes_Enviados'].sum())
@@ -153,7 +151,7 @@ def display_kpi_summary(df_filtered):
     kpi_cols[3].metric("🗓️ Total Sesiones Agendadas", f"{total_sesiones:,}")
 
     st.markdown("---")
-    st.markdown("#### Tasas de Conversión del Proceso")
+    st.markdown("#### 📊 Tasas de Conversión")
 
     tasa_mens_vs_acerc = calculate_rate(total_mensajes, total_acercamientos)
     tasa_resp_vs_msj = calculate_rate(total_respuestas, total_mensajes)
@@ -161,22 +159,10 @@ def display_kpi_summary(df_filtered):
     tasa_sesion_global = calculate_rate(total_sesiones, total_acercamientos)
 
     rate_cols = st.columns(4)
-    rate_cols[0].metric("Tasa de Mensajes / Acercamiento", f"{tasa_mens_vs_acerc:.1f}%")
-    rate_cols[1].metric("Tasa de Respuesta / Mensaje", f"{tasa_resp_vs_msj:.1f}%")
-    rate_cols[2].metric("Tasa de Sesión / Respuesta", f"{tasa_sesion_vs_resp:.1f}%")
-    rate_cols[3].metric("Tasa Sesión / Acercamiento (Global)", f"{tasa_sesion_global:.1f}%", help="Eficiencia total: (Sesiones Agendadas / Acercamientos)")
-
-def display_follow_up_metrics(df_filtered):
-    st.markdown("### 📈 Análisis de Seguimiento y Recontacto")
-    
-    total_acercamientos = int(df_filtered['Acercamientos'].sum())
-    total_recontactos = int(df_filtered['Necesita_Recontacto'].sum())
-    tasa_recontacto = calculate_rate(total_recontactos, total_acercamientos)
-
-    col1, col2 = st.columns(2)
-    col1.metric("🔄 Total Prospectos en Seguimiento", f"{total_recontactos:,}", help="Número de prospectos que tienen una fecha de recontacto futura.")
-    col2.metric("📊 Tasa de Seguimiento", f"{tasa_recontacto:.1f}%", help="Porcentaje de todos los acercamientos que necesitaron un seguimiento planificado.")
-
+    rate_cols[0].metric("📨 Tasa Mensajes / Acercamiento", f"{tasa_mens_vs_acerc:.1f}%", help="Porcentaje de acercamientos que resultaron en un mensaje enviado.")
+    rate_cols[1].metric("🗣️ Tasa Respuesta / Mensaje", f"{tasa_resp_vs_msj:.1f}%", help="Porcentaje de mensajes enviados que recibieron una respuesta.")
+    rate_cols[2].metric("🤝 Tasa Sesión / Respuesta", f"{tasa_sesion_vs_resp:.1f}%", help="Porcentaje de respuestas que condujeron a una sesión agendada.")
+    rate_cols[3].metric("🏆 Tasa Sesión / Acercamiento (Global)", f"{tasa_sesion_global:.1f}%", help="Eficiencia total del proceso: (Sesiones Agendadas / Acercamientos)")
 
 def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_icon="📊"):
     st.markdown(f"### {chart_icon} {title_prefix}")
@@ -245,10 +231,6 @@ if not df_sdr_data.empty:
         st.warning("No se encontraron datos que coincidan con los filtros seleccionados.")
     else:
         display_kpi_summary(df_sdr_filtered)
-        st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
-
-        # NUEVA SECCIÓN DE ANÁLISIS DE SEGUIMIENTO
-        display_follow_up_metrics(df_sdr_filtered)
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
 
         display_grouped_breakdown(df_sdr_filtered, "Campaña", "Análisis por Campaña", "📊")
