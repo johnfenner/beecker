@@ -33,7 +33,7 @@ def make_unique(headers_list):
 def load_and_process_sdr_data():
     """
     Carga y procesa datos desde la hoja 'Evelyn', creando un embudo de conversión
-    y métricas específicas, incluyendo el análisis de recontacto.
+    y métricas específicas.
     """
     try:
         creds_dict = st.secrets["gcp_service_account"]
@@ -91,7 +91,8 @@ def load_and_process_sdr_data():
     }
     df['AñoMes'] = df['Fecha'].dt.month.map(meses_espanol) + ' ' + df['Fecha'].dt.year.astype(str)
 
-    for col in ["Fuente de la Lista", "Campaña", "Proceso", "Industria"]:
+    # --- CAMBIO AQUÍ: Se elimina "Industria" de la lista de limpieza ---
+    for col in ["Fuente de la Lista", "Campaña", "Proceso"]:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().fillna("N/D").replace("", "N/D")
         else:
@@ -103,13 +104,34 @@ def calculate_rate(numerator, denominator, round_to=1):
     if denominator == 0: return 0.0
     return round((numerator / denominator) * 100, round_to)
 
+# --- CAMBIO AQUÍ: Se define una función callback para limpiar los filtros ---
+# Esta es la forma más robusta de manejar acciones de botones en Streamlit.
+def clear_all_filters():
+    """Resetea todos los widgets a su estado por defecto."""
+    
+    # Resetea el selector de modo de fecha al primer item ("Rango de Fechas")
+    st.session_state.date_filter_mode = "Rango de Fechas"
+    
+    # Resetea el multiselect de meses a una lista vacía
+    st.session_state.month_select = []
+
+    # Lista de filtros de prospección (sin "Industria")
+    prospecting_cols = ["Campaña", "Fuente de la Lista", "Proceso"]
+    for col in prospecting_cols:
+        key = f"filter_{col.lower().replace(' ', '_')}"
+        # Resetea cada multiselect a su valor por defecto
+        st.session_state[key] = ["– Todos –"]
+
+    # Para los selectores de fecha, es mejor eliminarlos de la sesión
+    # para que se recalculen con las fechas min/max del dataframe en la recarga.
+    if "start_date" in st.session_state:
+        del st.session_state.start_date
+    if "end_date" in st.session_state:
+        del st.session_state.end_date
+
 # --- COMPONENTES VISUALES ---
 
 def sidebar_filters(df):
-    """
-    MODIFICADO: La lógica del botón de limpieza ahora elimina explícitamente cada
-    llave de filtro de la sesión para un reseteo visual correcto.
-    """
     st.sidebar.header("🔍 Filtros de Análisis")
     if df.empty:
         st.sidebar.warning("No hay datos para filtrar.")
@@ -130,65 +152,28 @@ def sidebar_filters(df):
         
         col1, col2 = st.sidebar.columns(2)
         with col1:
-            start_date = st.date_input(
-                "Fecha Inicial",
-                value=min_date,
-                min_value=min_date,
-                max_value=max_date,
-                key="start_date"
-            )
+            start_date = st.date_input("Fecha Inicial", value=min_date, min_value=min_date, max_value=max_date, key="start_date")
         with col2:
-            end_date = st.date_input(
-                "Fecha Final",
-                value=max_date,
-                min_value=start_date,
-                max_value=max_date,
-                key="end_date"
-            )
+            end_date = st.date_input("Fecha Final", value=max_date, min_value=start_date, max_value=max_date, key="end_date")
             
-    else: # filter_mode == "Mes(es) Específico(s)"
+    else:
         if 'AñoMes' in df.columns:
             meses_disponibles = df.sort_values('Fecha', ascending=False)['AñoMes'].unique().tolist()
-            selected_months = st.sidebar.multiselect(
-                "Selecciona el/los mes(es):",
-                meses_disponibles,
-                key="month_select"
-            )
+            selected_months = st.sidebar.multiselect("Selecciona el/los mes(es):", meses_disponibles, key="month_select")
 
     other_filters = {}
     st.sidebar.subheader("🔎 Por Estrategia de Prospección")
     
-    # Lista para guardar las llaves de los filtros de prospección
-    prospecting_filter_keys = []
-    for dim_col in ["Campaña", "Fuente de la Lista", "Proceso", "Industria"]:
+    # --- CAMBIO AQUÍ: Se elimina "Industria" de la lista de filtros ---
+    prospecting_cols = ["Campaña", "Fuente de la Lista", "Proceso"]
+    for dim_col in prospecting_cols:
         if dim_col in df.columns and df[dim_col].nunique() > 1:
             opciones = ["– Todos –"] + sorted(df[dim_col].unique().tolist())
-            
             filtro_key = f"filter_{dim_col.lower().replace(' ', '_')}"
-            prospecting_filter_keys.append(filtro_key) # Guardamos la llave
-            
-            other_filters[dim_col] = st.sidebar.multiselect(
-                dim_col,
-                opciones,
-                default=["– Todos –"],
-                key=filtro_key
-            )
+            other_filters[dim_col] = st.sidebar.multiselect(dim_col, opciones, default=["– Todos –"], key=filtro_key)
 
-    # --- CAMBIO AQUÍ: Lógica de limpieza explícita y robusta ---
-    if st.sidebar.button("🧹 Limpiar Todos los Filtros", use_container_width=True):
-        # Lista de todas las llaves de los widgets que queremos resetear
-        keys_to_clear = [
-            "date_filter_mode", "start_date", "end_date", "month_select"
-        ] + prospecting_filter_keys
-
-        # Eliminamos cada llave de la sesión una por una
-        for key in keys_to_clear:
-            if key in st.session_state:
-                del st.session_state[key]
-        
-        # Forzamos la recarga de la app para que los widgets usen sus valores por defecto
-        st.rerun()
-    # --- FIN DEL CAMBIO ---
+    # --- CAMBIO AQUÍ: El botón ahora llama a la función callback "on_click" ---
+    st.sidebar.button("🧹 Limpiar Todos los Filtros", on_click=clear_all_filters, use_container_width=True)
 
     return filter_mode, start_date, end_date, selected_months, other_filters
 
