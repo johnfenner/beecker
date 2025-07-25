@@ -113,8 +113,18 @@ def sidebar_filters(df):
 
     filtros = {}
     st.sidebar.subheader("📅 Por Fecha de Acercamiento")
+
+    # Filtro de Rango de Fechas (existente)
     min_date, max_date = df['Fecha'].min().date(), df['Fecha'].max().date()
     start_date, end_date = st.sidebar.date_input("Rango de Fechas", [min_date, max_date], min_value=min_date, max_value=max_date)
+
+    # --- NUEVO FILTRO POR MES ---
+    # Se añade un filtro multi-selección para los meses, usando la columna 'AñoMes'
+    if 'AñoMes' in df.columns:
+        meses_disponibles = sorted(df['AñoMes'].unique().tolist(), reverse=True)
+        opciones_mes = ["– Todos –"] + meses_disponibles
+        # La clave del diccionario de filtros es 'AñoMes', que coincide con el nombre de la columna.
+        filtros['AñoMes'] = st.sidebar.multiselect("O por Mes(es) Específico(s)", opciones_mes, default=["– Todos –"])
 
     st.sidebar.subheader("🔎 Por Estrategia de Prospección")
     for dim_col in ["Campaña", "Fuente de la Lista", "Proceso", "Industria"]:
@@ -130,9 +140,12 @@ def sidebar_filters(df):
 
 def apply_filters(df, filtros, start_date, end_date):
     df_f = df.copy()
+    
+    # El filtrado por rango de fechas se mantiene
     if start_date and end_date:
         df_f = df_f[(df_f['Fecha'].dt.date >= start_date) & (df_f['Fecha'].dt.date <= end_date)]
 
+    # El bucle de filtros ahora aplicará también el filtro por 'AñoMes' si se selecciona
     for col, values in filtros.items():
         if values and "– Todos –" not in values:
             df_f = df_f[df_f[col].isin(values)]
