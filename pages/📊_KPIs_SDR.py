@@ -3,29 +3,25 @@
 import streamlit as st
 import pandas as pd
 import gspread
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import datetime
-import plotly.express as px
-import os
-import sys
 from collections import Counter
 
-# --- Configuración Inicial y Título de la Página ---
-st.set_page_config(layout="wide", page_title="KPIs de SDR")
+# --- CONFIGURACIÓN DE LA PÁGINA ---
+st.set_page_config(page_title="Dashboard de KPIs SDR", layout="wide")
 st.title("📊 Dashboard de KPIs de Prospección (SDR)")
-st.markdown(
-    "Análisis de métricas absolutas y tasas de conversión para el equipo de SDR, basado en la hoja de 'Evelyn'."
-)
+st.markdown("Análisis de métricas y tasas de conversión para el equipo de SDR, basado en la hoja de 'Evelyn'.")
 
-# --- Funciones de Carga y Procesamiento de Datos ---
+# --- FUNCIONES DE CARGA Y PROCESAMIENTO DE DATOS ---
 
 def make_unique(headers_list):
-    """Garantiza que los encabezados de columna sean únicos añadiendo sufijos."""
+    """Garantiza que los encabezados de columna sean únicos."""
     counts = Counter()
     new_headers = []
     for h in headers_list:
         h_stripped = str(h).strip() if pd.notna(h) else "Columna_Vacia"
-        if not h_stripped:
-            h_stripped = "Columna_Vacia"
+        if not h_stripped: h_stripped = "Columna_Vacia"
         counts[h_stripped] += 1
         if counts[h_stripped] == 1:
             new_headers.append(h_stripped)
@@ -34,320 +30,274 @@ def make_unique(headers_list):
     return new_headers
 
 @st.cache_data(ttl=300)
-def load_sdr_evelyn_data():
+def load_and_process_sdr_data():
     """
-    Carga y procesa los datos desde la hoja 'Evelyn' del Google Sheet principal.
+    Carga y procesa datos desde la hoja 'Evelyn' del Google Sheet principal,
+    adaptando las columnas y métricas a la estructura visual deseada.
     """
     try:
-        # Reutilizamos las credenciales ya definidas en los secrets
-        creds_from_secrets = st.secrets["gcp_service_account"]
-        client = gspread.service_account_from_dict(creds_from_secrets)
+        creds_dict = st.secrets["gcp_service_account"]
+        sheet_url = st.secrets.get("main_prostraction_sheet_url", "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0")
+        client = gspread.service_account_from_dict(creds_dict)
+        workbook = client.open_by_url(sheet_url)
+        sheet = workbook.worksheet("Evelyn")
+        values = sheet.get_all_values()
 
-        # Usamos la URL del sheet principal del dashboard
-        sheet_url_main = st.secrets.get("main_prostraction_sheet_url", "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0")
-        workbook = client.open_by_url(sheet_url_main)
-        sheet = workbook.worksheet("Evelyn") # Seleccionamos la hoja 'Evelyn'
-
-        raw_data = sheet.get_all_values()
-        if not raw_data or len(raw_data) <= 1:
-            st.error("No se pudieron obtener datos de la hoja 'Evelyn'. Puede que esté vacía.")
+        if len(values) < 2:
+            st.warning("La hoja de cálculo 'Evelyn' está vacía o solo tiene encabezados.")
             return pd.DataFrame()
 
-        headers = make_unique(raw_data[0])
-        df = pd.DataFrame(raw_data[1:], columns=headers)
+        headers = make_unique(values[0])
+        df = pd.DataFrame(values[1:], columns=headers)
 
     except gspread.exceptions.WorksheetNotFound:
-        st.error("Error Crítico: No se encontró la hoja de cálculo con el nombre 'Evelyn' en el Google Sheet principal. Verifica el nombre.")
+        st.error("Error Crítico: No se encontró la hoja 'Evelyn' en el Google Sheet. Verifica el nombre.")
         return pd.DataFrame()
     except Exception as e:
-        st.error(f"Error al leer la hoja 'Evelyn' de Google Sheets: {e}")
+        st.error(f"No se pudo cargar la hoja 'Evelyn'. Error: {e}")
         return pd.DataFrame()
 
-    # --- Mapeo y Limpieza de Columnas ---
-    # Renombramos las columnas para que coincidan con la lógica de la página de KPIs
+    # --- Mapeo y Limpieza de Columnas Clave ---
     column_mapping = {
         "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha",
         "¿Quién Prospecto?": "Analista",
         "Pais": "Región",
-        "Conexiones enviadas": "Invites enviadas",
-        "Mensajes de Whats app": "Mensajes Enviados", # Se puede ajustar si se suman más fuentes
         "Respuesta Primer contacto": "Respuestas",
-        "Sesion Agendada?": "Sesiones agendadas"
+        "Respuestas Subsecuentes": "Respuestas Subsecuentes",
+        "Sesion Agendada?": "Sesiones Agendadas"
     }
     df.rename(columns=column_mapping, inplace=True)
 
-    # Procesamiento de la fecha
-    if "Fecha" in df.columns:
-        df["Fecha"] = pd.to_datetime(df["Fecha"], format='%d/%m/%Y', errors='coerce')
-        df.dropna(subset=["Fecha"], inplace=True)
-        if not df.empty:
-            df['Año'] = df['Fecha'].dt.year
-            df['NumSemana'] = df['Fecha'].dt.isocalendar().week.astype(int)
-            df['MesNum'] = df['Fecha'].dt.month
-            df['AñoMes'] = df['Fecha'].dt.strftime('%Y-%m')
-        else:
-            for col_time in ['Año', 'NumSemana', 'MesNum']: df[col_time] = pd.Series(dtype='int')
-            df['AñoMes'] = pd.Series(dtype='str')
-    else:
-        st.warning("Columna de Fecha ('Fecha Primer contacto...') no encontrada. No se podrán aplicar filtros de fecha.")
-        for col_time in ['Año', 'NumSemana', 'MesNum']: df[col_time] = pd.Series(dtype='int')
-        df['AñoMes'] = pd.Series(dtype='str')
+    # Procesamiento de la fecha principal
+    if "Fecha" not in df.columns or df["Fecha"].eq('').all():
+        st.error("Error crítico: La columna 'Fecha Primer contacto (...)' es indispensable y no se encontró o está vacía.")
+        return pd.DataFrame()
 
-    # Procesamiento de columnas de KPIs numéricos
-    kpi_columns_ordered = ["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]
-    for col_name in kpi_columns_ordered:
-        if col_name not in df.columns:
-            st.warning(f"Columna KPI '{col_name}' no encontrada. Se creará con ceros.")
-            df[col_name] = 0
-        else:
-            # Limpiar valores: 'si'/'sí' a 1, numéricos a numéricos, vacíos/texto a 0.
-            if col_name in ["Respuestas", "Sesiones agendadas"]:
-                 df[col_name] = df[col_name].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí', 'vc', 'yes', 'true', '1'] else 0).astype(int)
-            else:
-                 df[col_name] = pd.to_numeric(df[col_name], errors='coerce').fillna(0).astype(int)
+    df["Fecha"] = pd.to_datetime(df["Fecha"], format='%d/%m/%Y', errors='coerce')
+    df.dropna(subset=['Fecha'], inplace=True)
+    df['Año'] = df['Fecha'].dt.year
+    df['NumSemana'] = df['Fecha'].dt.isocalendar().week.astype(int)
+    df['AñoMes'] = df['Fecha'].dt.strftime('%Y-%m')
 
+    # --- Definición y Cálculo del Embudo de SDR ---
+    # 1. Contactos: Cada fila con fecha es un contacto.
+    df['Contactos'] = 1
 
-    # Limpieza de columnas de texto (filtros)
-    string_cols_kpis = ["Analista", "Región"]
-    for col_str in string_cols_kpis:
-        if col_str not in df.columns:
-            df[col_str] = "N/D"
+    # 2. Respuestas y Sesiones: Convertir 'si'/'no'/vacío a 1/0
+    binary_cols = ["Respuestas", "Respuestas Subsecuentes", "Sesiones Agendadas"]
+    for col in binary_cols:
+        if col in df.columns:
+            df[col] = df[col].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí', 'yes', 'true', '1'] else 0)
         else:
-            df[col_str] = df[col_str].astype(str).str.strip().fillna("N/D").replace("", "N/D")
-    return df
+            st.warning(f"Columna '{col}' no encontrada. Se creará con ceros.")
+            df[col] = 0
+
+    # Limpieza de columnas de filtro
+    for col in ["Analista", "Región"]:
+        if col not in df.columns: df[col] = "N/D"
+        df[col] = df[col].astype(str).str.strip().fillna("N/D").replace("", "N/D")
+
+    return df.sort_values(by='Fecha', ascending=False)
 
 def calculate_rate(numerator, denominator, round_to=1):
     if denominator == 0: return 0.0
     return round((numerator / denominator) * 100, round_to)
 
-# --- COPIA DE LAS FUNCIONES DE LA PÁGINA KPIs.py (con mínimas adaptaciones) ---
+# --- REUTILIZACIÓN DE FUNCIONES VISUALES (ADAPTADAS) ---
+# Las funciones de la página de KPIs se copian aquí, ya que la lógica visual es la misma.
 
-def sidebar_filters_kpis(df_options):
-    st.sidebar.header("🔍 Filtros de KPIs de SDR")
-    # El resto de esta función es idéntica a la de pages/📊_KPIs.py
-    # ... (Copiado y pegado aquí)
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("🗓️ Por Fecha")
-    min_date_data, max_date_data = None, None
-    if "Fecha" in df_options.columns and pd.api.types.is_datetime64_any_dtype(df_options["Fecha"]) and not df_options["Fecha"].dropna().empty:
-        min_date_data, max_date_data = df_options["Fecha"].dropna().min().date(), df_options["Fecha"].dropna().max().date()
+def sidebar_filters(df):
+    st.sidebar.header("🔍 Filtros")
+    # El resto de esta función es idéntica a la de la página de KPIs
+    # y funcionará porque hemos estandarizado los nombres de las columnas.
+    if df.empty or 'Fecha' not in df.columns:
+        st.sidebar.warning("No hay datos para filtrar.")
+        return ["– Todos –"], None, None, ["– Todos –"], ["– Todos –"], "– Todos –"
 
-    col1_date, col2_date = st.sidebar.columns(2)
-    with col1_date:
-        st.date_input("Desde", value=st.session_state.get("kpis_page_fecha_inicio_v6"), min_value=min_date_data, max_value=max_date_data, format='DD/MM/YYYY', key="kpis_page_fecha_inicio_v6")
-    with col2_date:
-        st.date_input("Hasta", value=st.session_state.get("kpis_page_fecha_fin_v6"), min_value=min_date_data, max_value=max_date_data, format='DD/MM/YYYY', key="kpis_page_fecha_fin_v6")
+    opciones_analista = ["– Todos –"] + sorted(df['Analista'].unique().tolist())
+    opciones_region = ["– Todos –"] + sorted(df['Región'].unique().tolist())
+    opciones_año = ["– Todos –"] + sorted(df['Año'].unique().tolist(), reverse=True)
 
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("📅 Por Año y Semana (Filtro General)")
-    # El resto de la lógica de filtros se mantiene igual
-    raw_year_options_int = []
-    if "Año" in df_options.columns and not df_options["Año"].dropna().empty:
-        raw_year_options_int = sorted(df_options["Año"].dropna().astype(int).unique(), reverse=True)
+    selected_analistas = st.sidebar.multiselect("Analista", opciones_analista, default=["– Todos –"])
+    selected_regiones = st.sidebar.multiselect("Región", opciones_region, default=["– Todos –"])
+    selected_año = st.sidebar.selectbox("Año", opciones_año, index=0)
 
-    year_options_str_list = ["– Todos –"] + [str(y) for y in raw_year_options_int]
-    st.selectbox(
-        "Año", year_options_str_list, key="kpis_page_filtro_Año_v6"
-    )
-    selected_year_str_from_selectbox = st.session_state["kpis_page_filtro_Año_v6"]
-    selected_year_int_for_filtering = int(selected_year_str_from_selectbox) if selected_year_str_from_selectbox != "– Todos –" else None
+    semanas_disponibles = ["– Todas –"]
+    if selected_año != "– Todos –":
+        semanas_disponibles.extend(sorted(df[df['Año'] == selected_año]['NumSemana'].unique().tolist()))
+    selected_semanas = st.sidebar.multiselect("Semanas", semanas_disponibles, default=["– Todas –"])
 
-    week_options_sidebar = ["– Todas –"]
-    df_for_week_sidebar = df_options[df_options["Año"] == selected_year_int_for_filtering] if selected_year_int_for_filtering is not None and "NumSemana" in df_options.columns and "Año" in df_options.columns else df_options
-    if "NumSemana" in df_for_week_sidebar.columns and not df_for_week_sidebar["NumSemana"].dropna().empty:
-        week_options_sidebar.extend([str(w) for w in sorted(df_for_week_sidebar["NumSemana"].dropna().astype(int).unique())])
-    st.multiselect("Semanas del Año (Filtro General)", week_options_sidebar, key="kpis_page_filtro_Semana_v6")
+    min_date = df['Fecha'].min().date()
+    max_date = df['Fecha'].max().date()
+    col1, col2 = st.sidebar.columns(2)
+    start_date = col1.date_input("Desde", min_date, min_value=min_date, max_value=max_date)
+    end_date = col2.date_input("Hasta", max_date, min_value=min_date, max_value=max_date)
 
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("👥 Por Analista y Región")
+    if st.sidebar.button("🧹 Limpiar Filtros", use_container_width=True):
+        selected_analistas = ["– Todos –"]
+        selected_regiones = ["– Todos –"]
+        selected_año = "– Todos –"
+        selected_semanas = ["– Todas –"]
+        start_date = min_date
+        end_date = max_date
+        st.rerun()
 
-    def get_multiselect_val_kpis(col_name, label, key, df_opt):
-        options = ["– Todos –"]
-        if col_name in df_opt.columns and not df_opt[col_name].dropna().empty:
-            unique_vals = df_opt[col_name].astype(str).str.strip().replace('', 'N/D').unique()
-            options.extend(sorted([val for val in unique_vals if val and val != 'N/D']))
-            if 'N/D' in unique_vals and 'N/D' not in options: options.append('N/D')
-        return st.sidebar.multiselect(label, options, key=key)
-
-    get_multiselect_val_kpis("Analista", "Analista", "kpis_page_filtro_Analista_v6", df_options)
-    get_multiselect_val_kpis("Región", "Región", "kpis_page_filtro_Región_v6", df_options)
-
-    st.sidebar.markdown("---")
-    st.sidebar.button("🧹 Limpiar Filtros de KPIs", on_click=lambda: [st.session_state.update({k: v}) for k, v in default_filters_kpis.items()], use_container_width=True, key="btn_clear_kpis_filters_v2")
-
-    return (st.session_state.kpis_page_fecha_inicio_v6, st.session_state.kpis_page_fecha_fin_v6, selected_year_int_for_filtering, st.session_state.kpis_page_filtro_Semana_v6, st.session_state.kpis_page_filtro_Analista_v6, st.session_state.kpis_page_filtro_Región_v6)
+    return selected_analistas, selected_regiones, selected_año, selected_semanas, start_date, end_date
 
 
-def apply_kpis_filters(df, start_dt, end_dt, year_val, week_list, analista_list, region_list):
-    # Función idéntica a la de pages/📊_KPIs.py
-    # ... (Copiado y pegado aquí)
+def apply_filters(df, analistas, regiones, año, semanas, start_date, end_date):
     df_f = df.copy()
-    if "Fecha" in df_f.columns and pd.api.types.is_datetime64_any_dtype(df_f["Fecha"]):
-        start_dt_date = start_dt.date() if isinstance(start_dt, datetime.datetime) else start_dt
-        end_dt_date = end_dt.date() if isinstance(end_dt, datetime.datetime) else end_dt
-        if start_dt_date and end_dt_date:
-            df_f = df_f[(df_f["Fecha"].dt.date >= start_dt_date) & (df_f["Fecha"].dt.date <= end_dt_date)]
-        elif start_dt_date:
-            df_f = df_f[df_f["Fecha"].dt.date >= start_dt_date]
-        elif end_dt_date:
-            df_f = df_f[df_f["Fecha"].dt.date <= end_dt_date]
-
-    if year_val is not None and "Año" in df_f.columns:
-        df_f = df_f[df_f["Año"] == year_val]
-
-    if week_list and "– Todas –" not in week_list and "NumSemana" in df_f.columns:
-        selected_weeks_int = [int(w) for w in week_list if w.isdigit()]
-        if selected_weeks_int:
-            df_f = df_f[df_f["NumSemana"].isin(selected_weeks_int)]
-
-    if "Analista" in df_f.columns: df_f["Analista"] = df_f["Analista"].astype(str).str.strip().replace('', 'N/D')
-    if "Región" in df_f.columns: df_f["Región"] = df_f["Región"].astype(str).str.strip().replace('', 'N/D')
-
-    if analista_list and "– Todos –" not in analista_list and "Analista" in df_f.columns:
-        df_f = df_f[df_f["Analista"].isin(analista_list)]
-    if region_list and "– Todos –" not in region_list and "Región" in df_f.columns:
-        df_f = df_f[df_f["Región"].isin(region_list)]
+    if "– Todos –" not in analistas:
+        df_f = df_f[df_f['Analista'].isin(analistas)]
+    if "– Todos –" not in regiones:
+        df_f = df_f[df_f['Región'].isin(regiones)]
+    if año != "– Todos –":
+        df_f = df_f[df_f['Año'] == año]
+    if "– Todas –" not in semanas:
+        df_f = df_f[df_f['NumSemana'].isin(semanas)]
+    if start_date and end_date:
+        df_f = df_f[(df_f['Fecha'].dt.date >= start_date) & (df_f['Fecha'].dt.date <= end_date)]
     return df_f
 
 
 def display_kpi_summary(df_filtered):
-    # Función idéntica a la de pages/📊_KPIs.py
-    # ... (Copiado y pegado aquí)
     st.markdown("### 🧮 Resumen de KPIs Totales (Periodo Filtrado)")
-    kpi_cols_funnel_order = ["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]
-    icons_funnel_order = ["📧", "📤", "💬", "🤝"]
 
-    metrics = {}
-    if df_filtered.empty:
-        for col_name in kpi_cols_funnel_order: metrics[col_name] = 0
-    else:
-        for col_name in kpi_cols_funnel_order:
-            if col_name in df_filtered.columns and pd.api.types.is_numeric_dtype(df_filtered[col_name]):
-                metrics[col_name] = df_filtered[col_name].sum()
-            else:
-                metrics[col_name] = 0
+    # Métricas del nuevo embudo de SDR
+    total_contactos = int(df_filtered['Contactos'].sum())
+    total_respuestas = int(df_filtered['Respuestas'].sum())
+    total_resp_subs = int(df_filtered['Respuestas Subsecuentes'].sum())
+    total_sesiones = int(df_filtered['Sesiones Agendadas'].sum())
 
-    col_metrics_abs = st.columns(len(kpi_cols_funnel_order))
-    for i, col_name in enumerate(kpi_cols_funnel_order):
-        display_name = col_name.replace("_", " ").title()
-        col_metrics_abs[i].metric(f"{icons_funnel_order[i]} Total {display_name}", f"{metrics.get(col_name, 0):,}")
+    kpi_cols = st.columns(4)
+    kpi_cols[0].metric("🚀 Total Contactos", f"{total_contactos:,}")
+    kpi_cols[1].metric("💬 Respuestas Iniciales", f"{total_respuestas:,}")
+    kpi_cols[2].metric("🔁 Respuestas Subsecuentes", f"{total_resp_subs:,}")
+    kpi_cols[3].metric("🗓️ Sesiones Agendadas", f"{total_sesiones:,}")
 
     st.markdown("---")
-    st.markdown("#### Tasas de Conversión")
+    st.markdown("#### Tasas de Conversión del Embudo")
 
-    total_invites = metrics.get("Invites enviadas", 0)
-    total_mensajes = metrics.get("Mensajes Enviados", 0)
-    total_respuestas = metrics.get("Respuestas", 0)
-    total_sesiones = metrics.get("Sesiones agendadas", 0)
+    tasa_resp_vs_contacto = calculate_rate(total_respuestas, total_contactos)
+    tasa_sesion_vs_respuesta = calculate_rate(total_sesiones, total_respuestas)
+    tasa_sesion_global = calculate_rate(total_sesiones, total_contactos)
+    # Tasa adicional para usar la 4ta columna
+    tasa_resp_subs_vs_resp_ini = calculate_rate(total_resp_subs, total_respuestas)
 
-    tasa_mensajes_vs_invites = calculate_rate(total_mensajes, total_invites)
-    tasa_respuestas_vs_mensajes = calculate_rate(total_respuestas, total_mensajes)
-    tasa_sesiones_vs_respuestas = calculate_rate(total_sesiones, total_respuestas)
-    tasa_sesiones_vs_invites_global = calculate_rate(total_sesiones, total_invites)
-
-    rate_icons = ["📨➡️📤", "📤➡️💬", "💬➡️🤝", "📧➡️🤝"]
-    col_metrics_rates = st.columns(4)
-    col_metrics_rates[0].metric(f"{rate_icons[0]} Tasa Mensajes / Invite", f"{tasa_mensajes_vs_invites:.1f}%", help="Porcentaje de invites que resultaron en un mensaje enviado.")
-    col_metrics_rates[1].metric(f"{rate_icons[1]} Tasa Respuesta / Mensaje", f"{tasa_respuestas_vs_mensajes:.1f}%", help="Porcentaje de mensajes enviados que recibieron una respuesta.")
-    col_metrics_rates[2].metric(f"{rate_icons[2]} Tasa Agend. / Respuesta", f"{tasa_sesiones_vs_respuestas:.1f}%", help="Porcentaje de respuestas que condujeron a una sesión agendada.")
-    col_metrics_rates[3].metric(f"{rate_icons[3]} Tasa Agend. / Invite (Global)", f"{tasa_sesiones_vs_invites_global:.1f}%", help="Porcentaje de invites iniciales que resultaron en una sesión agendada.")
-
+    rate_cols = st.columns(4)
+    rate_cols[0].metric("🗣️ Tasa de Respuesta", f"{tasa_resp_vs_contacto:.1f}%", help="De 100 contactos, cuántos responden.")
+    rate_cols[1].metric("📈 Tasa de Interés", f"{tasa_resp_subs_vs_resp_ini:.1f}%", help="De 100 respuestas iniciales, cuántas generan una conversación.")
+    rate_cols[2].metric("🤝 Tasa de Agendamiento", f"{tasa_sesion_vs_respuesta:.1f}%", help="De 100 respuestas, cuántas agendan sesión.")
+    rate_cols[3].metric("🏆 Tasa de Éxito Global", f"{tasa_sesion_global:.1f}%", help="De 100 contactos iniciales, cuántos agendan sesión.")
 
 def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_icon="📊"):
-    # Función idéntica a la de pages/📊_KPIs.py
-    # ... (Copiado y pegado aquí)
-    st.markdown(f"### {chart_icon} {title_prefix} - KPIs Absolutos y Tasas")
-    if group_by_col not in df_filtered.columns:
-        st.warning(f"Columna '{group_by_col}' no encontrada para el desglose.")
+    st.markdown(f"### {chart_icon} {title_prefix}")
+    # Esta función se adapta perfectamente, solo hay que ajustar los cálculos internos.
+    if group_by_col not in df_filtered.columns or df_filtered.empty:
+        st.warning(f"No hay datos para el desglose por {group_by_col}.")
         return
 
-    kpi_cols_funnel = ["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]
-    rate_col_names = {
-        'tasa_mens_inv': 'Tasa Mens. / Invite (%)',
-        'tasa_resp_mens': 'Tasa Resp. / Mensaje (%)',
-        'tasa_agen_resp': 'Tasa Agend. / Resp. (%)',
-        'tasa_agen_inv': 'Tasa Agend. / Invite (%)'
-    }
+    summary_df = df_filtered.groupby(group_by_col).agg(
+        Contactos=('Contactos', 'sum'),
+        Respuestas=('Respuestas', 'sum'),
+        Sesiones_Agendadas=('Sesiones Agendadas', 'sum')
+    ).reset_index()
 
-    actual_kpi_cols = [col for col in kpi_cols_funnel if col in df_filtered.columns and pd.api.types.is_numeric_dtype(df_filtered[col])]
-    if not actual_kpi_cols:
-        st.warning(f"No hay columnas de KPI numéricas para desglose por {group_by_col}.")
-        return
+    summary_df['Tasa de Respuesta (%)'] = summary_df.apply(lambda r: calculate_rate(r.Respuestas, r.Contactos), axis=1)
+    summary_df['Tasa de Agendamiento Global (%)'] = summary_df.apply(lambda r: calculate_rate(r.Sesiones_Agendadas, r.Contactos), axis=1)
 
-    df_to_group = df_filtered.copy()
-    df_to_group[group_by_col] = df_to_group[group_by_col].astype(str).str.strip().replace('', 'N/D')
+    st.markdown("##### Tabla Resumen")
+    st.dataframe(summary_df.style.format({
+        'Tasa de Respuesta (%)': '{:.1f}%',
+        'Tasa de Agendamiento Global (%)': '{:.1f}%'
+    }), use_container_width=True)
 
-    if df_to_group.empty or df_to_group[group_by_col].nunique() == 0:
-        st.info(f"No hay datos con '{group_by_col}' definido para el desglose en el periodo filtrado.")
-        return
-
-    summary_df = df_to_group.groupby(group_by_col, as_index=False)[actual_kpi_cols].sum()
-    # ... resto de la lógica de la función ...
-    invites_col, mensajes_col, respuestas_col, sesiones_col = "Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"
-    summary_df[rate_col_names['tasa_mens_inv']] = summary_df.apply(lambda r: calculate_rate(r.get(mensajes_col, 0), r.get(invites_col, 0)), axis=1) if invites_col in summary_df and mensajes_col in summary_df else 0.0
-    summary_df[rate_col_names['tasa_resp_mens']] = summary_df.apply(lambda r: calculate_rate(r.get(respuestas_col, 0), r.get(mensajes_col, 0)), axis=1) if mensajes_col in summary_df and respuestas_col in summary_df else 0.0
-    summary_df[rate_col_names['tasa_agen_resp']] = summary_df.apply(lambda r: calculate_rate(r.get(sesiones_col, 0), r.get(respuestas_col, 0)), axis=1) if respuestas_col in summary_df and sesiones_col in summary_df else 0.0
-    summary_df[rate_col_names['tasa_agen_inv']] = summary_df.apply(lambda r: calculate_rate(r.get(sesiones_col, 0), r.get(invites_col, 0)), axis=1) if invites_col in summary_df and sesiones_col in summary_df else 0.0
-    
-    # ... la lógica de visualización se mantiene ...
-    st.dataframe(summary_df, use_container_width=True)
-
-
-def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_title, x_axis_label, chart_icon="📈"):
-    # Función idéntica a la de pages/📊_KPIs.py
-    # ... (Copiado y pegado aquí)
-    st.markdown(f"### {chart_icon} {chart_title}")
-    # ... (toda la lógica de la función se mantiene)
-    if df_filtered.empty:
-        st.info(f"No hay datos filtrados para {chart_title.lower()}.")
-        return
-    kpi_cols_to_sum_time = ["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]
-    df_agg_time = df_filtered.groupby(time_col_agg, as_index=False)[kpi_cols_to_sum_time].sum()
-    fig_time = px.line(df_agg_time, x=time_col_agg, y="Sesiones agendadas", title=f"Evolución de Sesiones Agendadas por {x_axis_label}", markers=True)
-    st.plotly_chart(fig_time, use_container_width=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("##### Sesiones Agendadas (Absoluto)")
+        fig_abs = px.bar(summary_df.sort_values('Sesiones_Agendadas', ascending=False),
+                         x=group_by_col, y='Sesiones_Agendadas', text_auto=True,
+                         title=f"Sesiones por {group_by_col}")
+        st.plotly_chart(fig_abs, use_container_width=True)
+    with col2:
+        st.markdown("##### Tasa de Agendamiento Global")
+        fig_rate = px.bar(summary_df.sort_values('Tasa de Agendamiento Global (%)', ascending=False),
+                          x=group_by_col, y='Tasa de Agendamiento Global (%)', text_auto='.1f',
+                          title=f"Tasa de Éxito por {group_by_col}")
+        fig_rate.update_traces(texttemplate='%{y:.1f}%')
+        st.plotly_chart(fig_rate, use_container_width=True)
 
 
-# --- Flujo Principal de la Página ---
+def display_time_evolution(df_filtered, time_col, title):
+    st.markdown(f"### 📈 {title}")
+    # Esta función también se adapta bien.
+    if df_filtered.empty: return
 
-# Inicialización del estado de sesión
-default_filters_kpis = {
-    "kpis_page_fecha_inicio_v6": None, "kpis_page_fecha_fin_v6": None,
-    "kpis_page_filtro_Analista_v6": ["– Todos –"], "kpis_page_filtro_Región_v6": ["– Todos –"],
-    "kpis_page_filtro_Año_v6": "– Todos –", "kpis_page_filtro_Semana_v6": ["– Todas –"]
-}
-for key, default_val in default_filters_kpis.items():
-    if key not in st.session_state:
-        st.session_state[key] = default_val
+    df_agg = df_filtered.groupby(time_col).agg(
+        Contactos=('Contactos', 'sum'),
+        Respuestas=('Respuestas', 'sum'),
+        Sesiones_Agendadas=('Sesiones Agendadas', 'sum')
+    ).reset_index()
 
-# Carga de datos
-df_sdr_raw = load_sdr_evelyn_data()
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=df_agg[time_col], y=df_agg['Contactos'], name='Contactos'))
+    fig.add_trace(go.Scatter(x=df_agg[time_col], y=df_agg['Sesiones_Agendadas'], name='Sesiones Agendadas', mode='lines+markers', yaxis='y2'))
 
-if df_sdr_raw.empty:
-    st.error("El DataFrame de SDR está vacío después de la carga. No se puede continuar.")
-    st.stop()
-
-# Filtros y aplicación
-start_date, end_date, year_val, week_list, analista_list, region_list = sidebar_filters_kpis(df_sdr_raw)
-df_sdr_filtered = apply_kpis_filters(df_sdr_raw, start_date, end_date, year_val, week_list, analista_list, region_list)
+    fig.update_layout(
+        title=title,
+        yaxis=dict(title='Volumen de Actividades'),
+        yaxis2=dict(title='Sesiones Agendadas', overlaying='y', side='right'),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
 
-# --- Presentación del Dashboard ---
-display_kpi_summary(df_sdr_filtered)
+# --- FLUJO PRINCIPAL DE LA PÁGINA ---
+df_sdr_data = load_and_process_sdr_data()
+
+if not df_sdr_data.empty:
+    # Obtener filtros de la barra lateral
+    (
+        selected_analistas,
+        selected_regiones,
+        selected_año,
+        selected_semanas,
+        start_date,
+        end_date,
+    ) = sidebar_filters(df_sdr_data)
+
+    # Aplicar filtros
+    df_sdr_filtered = apply_filters(
+        df_sdr_data,
+        selected_analistas,
+        selected_regiones,
+        selected_año,
+        selected_semanas,
+        start_date,
+        end_date,
+    )
+
+    if df_sdr_filtered.empty:
+        st.warning("No se encontraron datos para los filtros seleccionados.")
+    else:
+        # --- RENDERIZADO DEL DASHBOARD ---
+        display_kpi_summary(df_sdr_filtered)
+        st.markdown("---")
+
+        col_breakdown1, col_breakdown2 = st.columns(2)
+        with col_breakdown1:
+            display_grouped_breakdown(df_sdr_filtered, "Analista", "Desglose por Analista", "🧑‍💻")
+        with col_breakdown2:
+            display_grouped_breakdown(df_sdr_filtered, "Región", "Desglose por Región", "🌎")
+        st.markdown("---")
+
+        display_time_evolution(df_sdr_filtered, 'AñoMes', "Evolución Mensual")
+        st.markdown("---")
+
+        with st.expander("Ver tabla de datos detallados del período seleccionado"):
+            st.dataframe(df_sdr_filtered, hide_index=True)
+
+else:
+    st.error("No se pudieron cargar o procesar los datos para el dashboard de SDR.")
+
 st.markdown("---")
-
-col_breakdown1, col_breakdown2 = st.columns(2)
-with col_breakdown1:
-    display_grouped_breakdown(df_sdr_filtered, "Analista", "Desglose por Analista", chart_icon="🧑‍💻")
-with col_breakdown2:
-    display_grouped_breakdown(df_sdr_filtered, "Región", "Desglose por Región", chart_icon="🌎")
-st.markdown("---")
-
-# Se omite la tabla detallada y la vista semanal por simplicidad, pero se pueden añadir si es necesario
-
-display_time_evolution(df_sdr_filtered, 'AñoMes', 'Año-Mes', "Evolución Mensual de KPIs", "Mes", chart_icon="📈")
-st.markdown("---")
-display_time_evolution(df_sdr_filtered, 'NumSemana', 'Semana', "Evolución Semanal de KPIs", "Semana", chart_icon="🗓️")
-
-
-st.markdown("---")
-
