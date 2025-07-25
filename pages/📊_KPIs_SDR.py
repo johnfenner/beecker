@@ -32,8 +32,8 @@ def make_unique(headers_list):
 @st.cache_data(ttl=300)
 def load_and_process_sdr_data():
     """
-    Carga y procesa datos desde la hoja 'Evelyn', utilizando la presencia de fechas
-    y valores 'si' en columnas clave para contar los eventos en cada etapa del embudo.
+    Carga y procesa datos desde la hoja 'Evelyn', creando un embudo de conversión
+    y métricas específicas, incluyendo el análisis de recontacto.
     """
     try:
         creds_dict = st.secrets["gcp_service_account"]
@@ -57,12 +57,13 @@ def load_and_process_sdr_data():
         st.error(f"No se pudo cargar la hoja 'Evelyn'. Error: {e}")
         return pd.DataFrame()
 
-    # --- Creación del Embudo de 4 Etapas ---
+    # --- Creación del Embudo Lógico y Métricas ---
     
     date_columns_to_process = {
-        "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha_Acercamiento_Inicial",
-        "Fecha de Primer Acercamiento": "Fecha_Mensaje_Enviado",
-        "Fecha de Primer Respuesta": "Fecha_Respuesta_Inicial"
+        "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha",
+        "Fecha de Primer Acercamiento": "Fecha_Primer_Acercamiento",
+        "Fecha de Primer Respuesta": "Fecha_Primera_Respuesta",
+        "Fecha De Recontacto": "Fecha_Recontacto" # Columna para la métrica de seguimiento
     }
     
     for original_col, new_col in date_columns_to_process.items():
@@ -71,17 +72,18 @@ def load_and_process_sdr_data():
         else:
             df[new_col] = pd.NaT
 
-    if "Fecha_Acercamiento_Inicial" not in df.columns or df["Fecha_Acercamiento_Inicial"].isnull().all():
+    if "Fecha" not in df.columns or df["Fecha"].isnull().all():
         st.error("Columna 'Fecha Primer contacto (...)' no encontrada o vacía. Es esencial para el análisis.")
         return pd.DataFrame()
     
-    df.rename(columns={'Fecha_Acercamiento_Inicial': 'Fecha'}, inplace=True)
     df.dropna(subset=['Fecha'], inplace=True)
 
+    # Contadores basados en la existencia de fechas o valores 'si'
     df['Acercamientos'] = df['Fecha'].notna().astype(int)
-    df['Mensajes_Enviados'] = df['Fecha_Mensaje_Enviado'].notna().astype(int)
-    df['Respuestas_Iniciales'] = df['Fecha_Respuesta_Inicial'].notna().astype(int)
+    df['Mensajes_Enviados'] = df['Fecha_Primer_Acercamiento'].notna().astype(int)
+    df['Respuestas_Iniciales'] = df['Fecha_Primera_Respuesta'].notna().astype(int)
     df['Sesiones_Agendadas'] = df["Sesion Agendada?"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí'] else 0) if "Sesion Agendada?" in df.columns else 0
+    df['Necesita_Recontacto'] = df['Fecha_Recontacto'].notna().astype(int) # Contador para seguimiento
 
     # Dimensiones de tiempo
     df['Año'] = df['Fecha'].dt.year
@@ -164,6 +166,18 @@ def display_kpi_summary(df_filtered):
     rate_cols[2].metric("🤝 Tasa Sesión / Respuesta", f"{tasa_sesion_vs_resp:.1f}%", help="Porcentaje de respuestas que condujeron a una sesión agendada.")
     rate_cols[3].metric("🏆 Tasa Sesión / Acercamiento (Global)", f"{tasa_sesion_global:.1f}%", help="Eficiencia total del proceso: (Sesiones Agendadas / Acercamientos)")
 
+def display_follow_up_metrics(df_filtered):
+    st.markdown("### 📈 Análisis de Seguimiento y Recontacto")
+    
+    total_acercamientos = int(df_filtered['Acercamientos'].sum())
+    total_recontactos = int(df_filtered['Necesita_Recontacto'].sum())
+    tasa_recontacto = calculate_rate(total_recontactos, total_acercamientos)
+
+    col1, col2 = st.columns(2)
+    col1.metric("🔄 Total Prospectos en Seguimiento", f"{total_recontactos:,}", help="Número de prospectos que tienen una fecha de recontacto futura.")
+    col2.metric("📊 Tasa de Seguimiento", f"{tasa_recontacto:.1f}%", help="Porcentaje de todos los acercamientos que necesitaron un seguimiento planificado.")
+
+
 def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_icon="📊"):
     st.markdown(f"### {chart_icon} {title_prefix}")
     if group_by_col not in df_filtered.columns or df_filtered.empty or df_filtered[group_by_col].nunique() <= 1:
@@ -231,6 +245,10 @@ if not df_sdr_data.empty:
         st.warning("No se encontraron datos que coincidan con los filtros seleccionados.")
     else:
         display_kpi_summary(df_sdr_filtered)
+        st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
+
+        # SECCIÓN DE ANÁLISIS DE SEGUIMIENTO RESTAURADA
+        display_follow_up_metrics(df_sdr_filtered)
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
 
         display_grouped_breakdown(df_sdr_filtered, "Campaña", "Análisis por Campaña", "📊")
