@@ -8,7 +8,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from collections import Counter
 
-# --- CONFIGURACIÓN DE LA PÁGINA --
+# --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="Dashboard de Desempeño SDR", layout="wide")
 st.title("📊 Dashboard de Desempeño SDR")
 st.markdown("Análisis de efectividad y conversión basado en la hoja de trabajo 'Evelyn'.")
