@@ -107,8 +107,8 @@ def calculate_rate(numerator, denominator, round_to=1):
 
 def sidebar_filters(df):
     """
-    MODIFICADO: Se añade un `key` a cada filtro de prospección para que el botón
-    de limpiar filtros funcione correctamente para todos.
+    MODIFICADO: La lógica del botón de limpieza ahora elimina explícitamente cada
+    llave de filtro de la sesión para un reseteo visual correcto.
     """
     st.sidebar.header("🔍 Filtros de Análisis")
     if df.empty:
@@ -157,23 +157,38 @@ def sidebar_filters(df):
 
     other_filters = {}
     st.sidebar.subheader("🔎 Por Estrategia de Prospección")
+    
+    # Lista para guardar las llaves de los filtros de prospección
+    prospecting_filter_keys = []
     for dim_col in ["Campaña", "Fuente de la Lista", "Proceso", "Industria"]:
         if dim_col in df.columns and df[dim_col].nunique() > 1:
             opciones = ["– Todos –"] + sorted(df[dim_col].unique().tolist())
             
-            # --- CAMBIO AQUÍ: Se asigna una llave única a cada filtro ---
             filtro_key = f"filter_{dim_col.lower().replace(' ', '_')}"
+            prospecting_filter_keys.append(filtro_key) # Guardamos la llave
+            
             other_filters[dim_col] = st.sidebar.multiselect(
                 dim_col,
                 opciones,
                 default=["– Todos –"],
                 key=filtro_key
             )
-            # --- FIN DEL CAMBIO ---
 
+    # --- CAMBIO AQUÍ: Lógica de limpieza explícita y robusta ---
     if st.sidebar.button("🧹 Limpiar Todos los Filtros", use_container_width=True):
-        st.session_state.clear()
+        # Lista de todas las llaves de los widgets que queremos resetear
+        keys_to_clear = [
+            "date_filter_mode", "start_date", "end_date", "month_select"
+        ] + prospecting_filter_keys
+
+        # Eliminamos cada llave de la sesión una por una
+        for key in keys_to_clear:
+            if key in st.session_state:
+                del st.session_state[key]
+        
+        # Forzamos la recarga de la app para que los widgets usen sus valores por defecto
         st.rerun()
+    # --- FIN DEL CAMBIO ---
 
     return filter_mode, start_date, end_date, selected_months, other_filters
 
