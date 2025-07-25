@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 from collections import Counter
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
-st.set_page_config(page_title="Dashboard de KPIs SDR", layout="wide")
+st.set_page_config(page_title="Dashboard de Desempeño SDR", layout="wide")
 st.title("📊 Dashboard de Desempeño SDR")
 st.markdown("Análisis de efectividad y conversión basado en la hoja de trabajo 'Evelyn'.")
 
@@ -58,34 +58,44 @@ def load_and_process_sdr_data():
         return pd.DataFrame()
 
     # --- Interpretación y Creación del Embudo de SDR ---
-    df.rename(columns={"Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha"}, inplace=True)
+    df.rename(columns={
+        "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha",
+        "Fecha de Primer Respuesta": "Fecha_Respuesta",
+        "Respuesta Primer contacto": "Respuesta_Inicial",
+        "Respuestas Subsecuentes": "Respuesta_Subsecuente",
+        "Sesion Agendada?": "Sesion_Agendada"
+    }, inplace=True)
 
     if "Fecha" not in df.columns or df["Fecha"].eq('').all():
         st.error("Error crítico: La columna 'Fecha Primer contacto (...)' es indispensable para el análisis.")
         return pd.DataFrame()
 
     df["Fecha"] = pd.to_datetime(df["Fecha"], format='%d/%m/%Y', errors='coerce')
+    df["Fecha_Respuesta"] = pd.to_datetime(df["Fecha_Respuesta"], format='%d/%m/%Y', errors='coerce')
     df.dropna(subset=['Fecha'], inplace=True)
     df['Año'] = df['Fecha'].dt.year
     df['NumSemana'] = df['Fecha'].dt.isocalendar().week.astype(int)
     df['AñoMes'] = df['Fecha'].dt.strftime('%Y-%m')
 
-    # 1. Contactos (Tope del Embudo): Cada fila con fecha es un contacto.
     df['Contactos'] = 1
-
-    # 2. Respuestas: 'si' en "Respuesta Primer contacto".
-    if "Respuesta Primer contacto" in df.columns:
-        df['Respuestas'] = df["Respuesta Primer contacto"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí', 'yes', 'true', '1'] else 0)
+    
+    for col, new_col_name in [
+        ("Respuesta_Inicial", "Respuestas"),
+        ("Respuesta_Subsecuente", "Respuestas_Subsecuentes"),
+        ("Sesion_Agendada", "Sesiones_Agendadas")
+    ]:
+        if col in df.columns:
+            df[new_col_name] = df[col].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí', 'yes', 'true', '1'] else 0)
+        else:
+            df[new_col_name] = 0
+            
+    # Calcular tiempo de respuesta
+    if "Fecha_Respuesta" in df.columns:
+        df['Tiempo_Respuesta_Dias'] = (df['Fecha_Respuesta'] - df['Fecha']).dt.days
     else:
-        df['Respuestas'] = 0
+        df['Tiempo_Respuesta_Dias'] = None
 
-    # 3. Sesiones Agendadas: 'si' en "Sesion Agendada?".
-    if "Sesion Agendada?" in df.columns:
-        df['Sesiones_Agendadas'] = df["Sesion Agendada?"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí', 'yes', 'true', '1'] else 0)
-    else:
-        df['Sesiones_Agendadas'] = 0
-
-    # Limpieza de columnas de filtro (Dimensiones de análisis)
+    # Limpieza de columnas de filtro
     for col in ["Fuente de la Lista", "Campaña", "Proceso", "Industria"]:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().fillna("N/D").replace("", "N/D")
@@ -95,14 +105,12 @@ def load_and_process_sdr_data():
     return df.sort_values(by='Fecha', ascending=False)
 
 def calculate_rate(numerator, denominator, round_to=1):
-    """Calcula una tasa como porcentaje, manejando la división por cero."""
     if denominator == 0: return 0.0
     return round((numerator / denominator) * 100, round_to)
 
 # --- COMPONENTES VISUALES ---
 
 def sidebar_filters(df):
-    """Muestra filtros en la barra lateral basados en las dimensiones de trabajo del SDR."""
     st.sidebar.header("🔍 Filtros de Análisis")
     if df.empty:
         st.sidebar.warning("No hay datos para filtrar.")
@@ -119,7 +127,7 @@ def sidebar_filters(df):
 
     st.sidebar.subheader("🔎 Por Atributo de Prospección")
     for dim_col in ["Campaña", "Fuente de la Lista", "Proceso", "Industria"]:
-        if dim_col in df.columns:
+        if dim_col in df.columns and df[dim_col].nunique() > 1:
             opciones = ["– Todos –"] + sorted(df[dim_col].unique().tolist())
             filtros[dim_col] = st.sidebar.multiselect(dim_col, opciones, default=["– Todos –"])
 
@@ -130,7 +138,6 @@ def sidebar_filters(df):
     return filtros, start_date, end_date
 
 def apply_filters(df, filtros, start_date, end_date):
-    """Aplica los filtros seleccionados al DataFrame."""
     df_f = df.copy()
     if start_date and end_date:
         df_f = df_f[(df_f['Fecha'].dt.date >= start_date) & (df_f['Fecha'].dt.date <= end_date)]
@@ -141,35 +148,39 @@ def apply_filters(df, filtros, start_date, end_date):
     return df_f
 
 def display_kpi_summary(df_filtered):
-    """Muestra el resumen de KPIs y las tasas de conversión diferenciadas."""
     st.markdown("### 🧮 Resumen de Rendimiento (Periodo Filtrado)")
 
     total_contactos = int(df_filtered['Contactos'].sum())
     total_respuestas = int(df_filtered['Respuestas'].sum())
+    total_resp_subs = int(df_filtered['Respuestas_Subsecuentes'].sum())
     total_sesiones = int(df_filtered['Sesiones_Agendadas'].sum())
 
-    kpi_cols = st.columns(3)
-    kpi_cols[0].metric("🚀 Contactos Realizados", f"{total_contactos:,}")
-    kpi_cols[1].metric("💬 Respuestas Obtenidas", f"{total_respuestas:,}")
-    kpi_cols[2].metric("🗓️ Sesiones Agendadas", f"{total_sesiones:,}")
+    kpi_cols1 = st.columns(3)
+    kpi_cols1[0].metric("🚀 Contactos Realizados", f"{total_contactos:,}")
+    kpi_cols1[1].metric("💬 Respuestas Obtenidas", f"{total_respuestas:,}")
+    kpi_cols1[2].metric("🗓️ Sesiones Agendadas", f"{total_sesiones:,}")
 
     st.markdown("---")
-    st.markdown("#### Tasas de Efectividad del Embudo")
-
+    st.markdown("#### Métricas de Eficiencia y Engagement")
+    
     tasa_resp_vs_contacto = calculate_rate(total_respuestas, total_contactos)
     tasa_sesion_vs_respuesta = calculate_rate(total_sesiones, total_respuestas)
     tasa_sesion_global = calculate_rate(total_sesiones, total_contactos)
+    
+    # Nuevas Métricas
+    contactos_por_sesion = total_contactos / total_sesiones if total_sesiones > 0 else "N/A"
+    tiempo_prom_respuesta = df_filtered['Tiempo_Respuesta_Dias'].mean() if not df_filtered['Tiempo_Respuesta_Dias'].isnull().all() else "N/A"
+    tasa_engagement = calculate_rate(total_resp_subs, total_respuestas)
 
-    rate_cols = st.columns(3)
-    rate_cols[0].metric("🗣️ Tasa de Respuesta", f"{tasa_resp_vs_contacto:.1f}%", help="Efectividad para iniciar una conversación (Respuestas / Contactos).")
-    rate_cols[1].metric("🤝 Tasa de Cierre por Respuesta", f"{tasa_sesion_vs_respuesta:.1f}%", help="Habilidad para convertir interés en reuniones (Sesiones / Respuestas).")
-    rate_cols[2].metric("🏆 Tasa de Éxito Global", f"{tasa_sesion_global:.1f}%", help="Eficiencia general del proceso, de principio a fin (Sesiones / Contactos).")
+    kpi_cols2 = st.columns(3)
+    kpi_cols2[0].metric("🏆 Tasa de Éxito Global", f"{tasa_sesion_global:.1f}%", help="La métrica más importante: (Sesiones / Contactos)")
+    kpi_cols2[1].metric("⚡ Tiempo Prom. Respuesta", f"{tiempo_prom_respuesta:.1f} días" if isinstance(tiempo_prom_respuesta, float) else "N/A", help="Días promedio entre el primer contacto y la primera respuesta.")
+    kpi_cols2[2].metric("🎯 Contactos por Sesión", f"{contactos_por_sesion:.1f}" if isinstance(contactos_por_sesion, float) else "N/A", help="Cuántos contactos se necesitan en promedio para lograr una sesión.")
 
 def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_icon="📊"):
-    """Muestra KPIs y gráficos desglosados por una dimensión de trabajo."""
     st.markdown(f"### {chart_icon} {title_prefix}")
-    if group_by_col not in df_filtered.columns or df_filtered.empty:
-        st.warning(f"No hay datos para el desglose por {group_by_col}.")
+    if group_by_col not in df_filtered.columns or df_filtered.empty or df_filtered[group_by_col].nunique() <= 1:
+        st.info(f"No hay suficientes datos o diversidad en la columna '{group_by_col}' para generar un desglose.")
         return
 
     summary_df = df_filtered.groupby(group_by_col).agg(
@@ -181,7 +192,7 @@ def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_ico
     summary_df['Tasa de Éxito Global (%)'] = summary_df.apply(lambda r: calculate_rate(r.Sesiones_Agendadas, r.Contactos), axis=1)
 
     st.markdown("##### Tabla de Rendimiento")
-    st.dataframe(summary_df.style.format({'Tasa de Éxito Global (%)': '{:.1f}%'}), use_container_width=True)
+    st.dataframe(summary_df[summary_df['Contactos'] > 0].style.format({'Tasa de Éxito Global (%)': '{:.1f}%'}), use_container_width=True)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -198,11 +209,10 @@ def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_ico
                           title=f"Tasa de Éxito por {group_by_col}", color="Tasa de Éxito Global (%)",
                           color_continuous_scale=px.colors.sequential.Mint)
         fig_rate.update_traces(texttemplate='%{y:.1f}%', textposition='outside')
-        fig_rate.update_layout(yaxis_range=[0, 105])
+        fig_rate.update_layout(yaxis_range=[0, max(10, summary_df['Tasa de Éxito Global (%)'].max() * 1.1)])
         st.plotly_chart(fig_rate, use_container_width=True)
 
 def display_time_evolution(df_filtered, time_col, title):
-    """Muestra la evolución temporal de las métricas clave."""
     st.markdown(f"### 📈 {title}")
     if df_filtered.empty or time_col not in df_filtered.columns: return
 
@@ -238,13 +248,12 @@ if not df_sdr_data.empty:
         display_kpi_summary(df_sdr_filtered)
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
 
-        tabs = st.tabs(["📊 Análisis por Campaña", "📂 Por Fuente de Lista", "⚙️ Por Proceso"])
-        with tabs[0]:
-            display_grouped_breakdown(df_sdr_filtered, "Campaña", "Desglose por Campaña")
-        with tabs[1]:
-            display_grouped_breakdown(df_sdr_filtered, "Fuente de la Lista", "Desglose por Fuente de Lista")
-        with tabs[2]:
-            display_grouped_breakdown(df_sdr_filtered, "Proceso", "Desglose por Proceso")
+        # Desgloses mostrados directamente, sin pestañas
+        display_grouped_breakdown(df_sdr_filtered, "Campaña", "Desglose por Campaña", "📊")
+        st.markdown("---")
+        display_grouped_breakdown(df_sdr_filtered, "Fuente de la Lista", "Desglose por Fuente de Lista", "📂")
+        st.markdown("---")
+        display_grouped_breakdown(df_sdr_filtered, "Proceso", "Desglose por Proceso", "⚙️")
         
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
         
@@ -252,7 +261,13 @@ if not df_sdr_data.empty:
         st.markdown("---")
 
         with st.expander("Ver tabla de datos detallados del período filtrado"):
-            st.dataframe(df_sdr_filtered, hide_index=True)
+            columnas_a_mostrar = [
+                'Fecha', 'Campaña', 'Fuente de la Lista', 'Proceso', 'Industria', 
+                'Empresa', 'Nombre', 'Apellido', 'Puesto', 'Contactos', 'Respuestas', 'Sesiones_Agendadas',
+                'Tiempo_Respuesta_Dias'
+            ]
+            columnas_existentes = [col for col in columnas_a_mostrar if col in df_sdr_filtered.columns]
+            st.dataframe(df_sdr_filtered[columnas_existentes], hide_index=True)
 else:
     st.error("No se pudieron cargar o procesar los datos para el dashboard de SDR.")
 
