@@ -63,7 +63,7 @@ def load_and_process_sdr_data():
         "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha",
         "Fecha de Primer Acercamiento": "Fecha_Primer_Acercamiento",
         "Fecha de Primer Respuesta": "Fecha_Primera_Respuesta",
-        "Fecha De Recontacto": "Fecha_Recontacto" # Columna para la métrica de seguimiento
+        "Fecha De Recontacto": "Fecha_Recontacto"
     }
     
     for original_col, new_col in date_columns_to_process.items():
@@ -78,12 +78,12 @@ def load_and_process_sdr_data():
     
     df.dropna(subset=['Fecha'], inplace=True)
 
-    # Contadores basados en la existencia de fechas o valores 'si'
+    # Contadores
     df['Acercamientos'] = df['Fecha'].notna().astype(int)
     df['Mensajes_Enviados'] = df['Fecha_Primer_Acercamiento'].notna().astype(int)
     df['Respuestas_Iniciales'] = df['Fecha_Primera_Respuesta'].notna().astype(int)
     df['Sesiones_Agendadas'] = df["Sesion Agendada?"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí'] else 0) if "Sesion Agendada?" in df.columns else 0
-    df['Necesita_Recontacto'] = df['Fecha_Recontacto'].notna().astype(int) # Contador para seguimiento
+    df['Necesita_Recontacto'] = df['Fecha_Recontacto'].notna().astype(int)
 
     # Dimensiones de tiempo
     df['Año'] = df['Fecha'].dt.year
@@ -106,47 +106,74 @@ def calculate_rate(numerator, denominator, round_to=1):
 # --- COMPONENTES VISUALES ---
 
 def sidebar_filters(df):
+    """
+    MODIFICADO: Ahora permite elegir entre filtrar por rango de fechas o por mes,
+    evitando filtros conflictivos.
+    """
     st.sidebar.header("🔍 Filtros de Análisis")
     if df.empty:
         st.sidebar.warning("No hay datos para filtrar.")
-        return {}, None, None
+        return None, None, None, None, {}
 
-    filtros = {}
-    st.sidebar.subheader("📅 Por Fecha de Acercamiento")
+    # --- NUEVO: Selector de modo de filtro de fecha ---
+    st.sidebar.subheader("📅 Filtrar por Fecha")
+    filter_mode = st.sidebar.radio(
+        "Elige cómo filtrar por fecha:",
+        ("Rango de Fechas", "Mes(es) Específico(s)"),
+        key="date_filter_mode",
+        horizontal=True
+    )
 
-    # Filtro de Rango de Fechas (existente)
-    min_date, max_date = df['Fecha'].min().date(), df['Fecha'].max().date()
-    start_date, end_date = st.sidebar.date_input("Rango de Fechas", [min_date, max_date], min_value=min_date, max_value=max_date)
+    start_date, end_date, selected_months = None, None, None
 
-    # --- NUEVO FILTRO POR MES ---
-    # Se añade un filtro multi-selección para los meses, usando la columna 'AñoMes'
-    if 'AñoMes' in df.columns:
-        meses_disponibles = sorted(df['AñoMes'].unique().tolist(), reverse=True)
-        opciones_mes = ["– Todos –"] + meses_disponibles
-        # La clave del diccionario de filtros es 'AñoMes', que coincide con el nombre de la columna.
-        filtros['AñoMes'] = st.sidebar.multiselect("O por Mes(es) Específico(s)", opciones_mes, default=["– Todos –"])
+    # Muestra el filtro correspondiente según el modo seleccionado
+    if filter_mode == "Rango de Fechas":
+        min_date, max_date = df['Fecha'].min().date(), df['Fecha'].max().date()
+        start_date, end_date = st.sidebar.date_input(
+            "Selecciona el rango:",
+            [min_date, max_date],
+            min_value=min_date,
+            max_value=max_date,
+            key="date_range"
+        )
+    else: # filter_mode == "Mes(es) Específico(s)"
+        if 'AñoMes' in df.columns:
+            meses_disponibles = sorted(df['AñoMes'].unique().tolist(), reverse=True)
+            selected_months = st.sidebar.multiselect(
+                "Selecciona el/los mes(es):",
+                meses_disponibles,
+                key="month_select"
+            )
 
+    other_filters = {}
     st.sidebar.subheader("🔎 Por Estrategia de Prospección")
     for dim_col in ["Campaña", "Fuente de la Lista", "Proceso", "Industria"]:
         if dim_col in df.columns and df[dim_col].nunique() > 1:
             opciones = ["– Todos –"] + sorted(df[dim_col].unique().tolist())
-            filtros[dim_col] = st.sidebar.multiselect(dim_col, opciones, default=["– Todos –"])
+            other_filters[dim_col] = st.sidebar.multiselect(dim_col, opciones, default=["– Todos –"])
 
     if st.sidebar.button("🧹 Limpiar Todos los Filtros", use_container_width=True):
         st.session_state.clear()
         st.rerun()
 
-    return filtros, start_date, end_date
+    return filter_mode, start_date, end_date, selected_months, other_filters
 
-def apply_filters(df, filtros, start_date, end_date):
+def apply_filters(df, filter_mode, start_date, end_date, selected_months, other_filters):
+    """
+    MODIFICADO: Aplica los filtros de fecha de forma condicional según el modo elegido.
+    """
     df_f = df.copy()
     
-    # El filtrado por rango de fechas se mantiene
-    if start_date and end_date:
-        df_f = df_f[(df_f['Fecha'].dt.date >= start_date) & (df_f['Fecha'].dt.date <= end_date)]
+    # --- LÓGICA DE FILTRADO DE FECHA MEJORADA ---
+    if filter_mode == "Rango de Fechas":
+        if start_date and end_date:
+            df_f = df_f[(df_f['Fecha'].dt.date >= start_date) & (df_f['Fecha'].dt.date <= end_date)]
+    elif filter_mode == "Mes(es) Específico(s)":
+        if selected_months:  # Solo filtrar si se ha seleccionado al menos un mes
+            df_f = df_f[df_f['AñoMes'].isin(selected_months)]
 
-    # El bucle de filtros ahora aplicará también el filtro por 'AñoMes' si se selecciona
-    for col, values in filtros.items():
+    # Aplica los otros filtros dimensionales
+    for col, values in other_filters.items():
         if values and "– Todos –" not in values:
             df_f = df_f[df_f[col].isin(values)]
     return df_f
@@ -247,12 +274,15 @@ def display_time_evolution(df_filtered, time_col, title):
     )
     st.plotly_chart(fig, use_container_width=True)
 
-# --- FLUJO PRINCIPAL DE LA PÁGINA ---
+# --- FLUJO PRINCIPAL DE LA PÁGINA (MODIFICADO) ---
 df_sdr_data = load_and_process_sdr_data()
 
 if not df_sdr_data.empty:
-    filtros, start_date, end_date = sidebar_filters(df_sdr_data)
-    df_sdr_filtered = apply_filters(df_sdr_data, filtros, start_date, end_date)
+    # Captura los valores de los filtros desde la barra lateral
+    filter_mode, start_date, end_date, selected_months, other_filters = sidebar_filters(df_sdr_data)
+    
+    # Aplica los filtros al dataframe
+    df_sdr_filtered = apply_filters(df_sdr_data, filter_mode, start_date, end_date, selected_months, other_filters)
 
     if df_sdr_filtered.empty:
         st.warning("No se encontraron datos que coincidan con los filtros seleccionados.")
@@ -260,7 +290,6 @@ if not df_sdr_data.empty:
         display_kpi_summary(df_sdr_filtered)
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
 
-        # SECCIÓN DE ANÁLISIS DE SEGUIMIENTO RESTAURADA
         display_follow_up_metrics(df_sdr_filtered)
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
 
