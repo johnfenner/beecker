@@ -56,13 +56,14 @@ def load_and_process_sdr_data():
         st.error(f"No se pudo cargar la hoja 'Evelyn'. Error: {e}")
         return pd.DataFrame()
 
-    # --- CORRECCIÓN: Usando los nombres de columna correctos ---
+    # --- LÓGICA CORRECTA ---
+    # 1. Se procesan todas las fechas relevantes
     date_columns_to_process = {
         "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha",
         "Fecha de Primer Acercamiento": "Fecha_Primer_Acercamiento",
         "Fecha de Primer Respuesta": "Fecha_Primera_Respuesta",
         "Fecha De Recontacto": "Fecha_Recontacto",
-        "Fecha Agendamiento": "Fecha_Agendamiento"  # <-- ¡AÑADIDO!
+        "Fecha Agendamiento": "Fecha_Agendamiento"
     }
     
     for original_col, new_col in date_columns_to_process.items():
@@ -71,24 +72,21 @@ def load_and_process_sdr_data():
         else:
             df[new_col] = pd.NaT
 
+    # 2. La fecha principal para FILTRAR es 'Fecha Primer contacto'
     if "Fecha" not in df.columns or df["Fecha"].isnull().all():
         st.error("Columna 'Fecha Primer contacto (...)' no encontrada o vacía. Es esencial para el análisis.")
         return pd.DataFrame()
     
     df.dropna(subset=['Fecha'], inplace=True)
 
+    # 3. Se crean las columnas de métricas (banderas 0 o 1) para CADA prospecto
     df['Acercamientos'] = df['Fecha'].notna().astype(int)
     df['Mensajes_Enviados'] = df['Fecha_Primer_Acercamiento'].notna().astype(int)
     df['Respuestas_Iniciales'] = df['Fecha_Primera_Respuesta'].notna().astype(int)
-    
-    # --- CORRECCIÓN: El cálculo de sesiones ahora se basa en la fecha de agendamiento ---
-    if 'Fecha_Agendamiento' in df.columns:
-        df['Sesiones_Agendadas'] = df['Fecha_Agendamiento'].notna().astype(int)
-    else:
-        df['Sesiones_Agendadas'] = 0 # Si la columna no existe, las sesiones son 0
-
+    df['Sesiones_Agendadas'] = df['Fecha_Agendamiento'].notna().astype(int)
     df['Necesita_Recontacto'] = df['Fecha_Recontacto'].notna().astype(int)
     
+    # 4. Se crea la columna para el widget de filtro de mes, basada en la fecha principal
     df['AñoMes'] = df['Fecha'].dt.strftime('%Y-%m')
 
     for col in ["Fuente de la Lista", "Campaña", "Proceso", "Industria", "Pais", "Puesto"]:
