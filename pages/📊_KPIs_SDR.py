@@ -56,11 +56,13 @@ def load_and_process_sdr_data():
         st.error(f"No se pudo cargar la hoja 'Evelyn'. Error: {e}")
         return pd.DataFrame()
 
+    # --- CORRECCIÓN: Usando los nombres de columna correctos ---
     date_columns_to_process = {
         "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha",
         "Fecha de Primer Acercamiento": "Fecha_Primer_Acercamiento",
         "Fecha de Primer Respuesta": "Fecha_Primera_Respuesta",
-        "Fecha De Recontacto": "Fecha_Recontacto"
+        "Fecha De Recontacto": "Fecha_Recontacto",
+        "Fecha Agendamiento": "Fecha_Agendamiento"  # <-- ¡AÑADIDO!
     }
     
     for original_col, new_col in date_columns_to_process.items():
@@ -78,7 +80,13 @@ def load_and_process_sdr_data():
     df['Acercamientos'] = df['Fecha'].notna().astype(int)
     df['Mensajes_Enviados'] = df['Fecha_Primer_Acercamiento'].notna().astype(int)
     df['Respuestas_Iniciales'] = df['Fecha_Primera_Respuesta'].notna().astype(int)
-    df['Sesiones_Agendadas'] = df["Sesion Agendada?"].apply(lambda x: 1 if str(x).strip().lower() in ['si', 'sí'] else 0) if "Sesion Agendada?" in df.columns else 0
+    
+    # --- CORRECCIÓN: El cálculo de sesiones ahora se basa en la fecha de agendamiento ---
+    if 'Fecha_Agendamiento' in df.columns:
+        df['Sesiones_Agendadas'] = df['Fecha_Agendamiento'].notna().astype(int)
+    else:
+        df['Sesiones_Agendadas'] = 0 # Si la columna no existe, las sesiones son 0
+
     df['Necesita_Recontacto'] = df['Fecha_Recontacto'].notna().astype(int)
     
     df['AñoMes'] = df['Fecha'].dt.strftime('%Y-%m')
@@ -99,7 +107,6 @@ def clear_all_filters():
     st.session_state.date_filter_mode = "Rango de Fechas"
     st.session_state.month_select = []
     
-    # --- FILTROS SIMPLIFICADOS ---
     prospecting_cols = ["Fuente de la Lista"]
     for col in prospecting_cols:
         key = f"filter_{col.lower().replace(' ', '_')}"
@@ -141,7 +148,6 @@ def sidebar_filters(df):
     other_filters = {}
     st.sidebar.subheader("🔎 Filtrar por Fuente")
     
-    # --- FILTROS SIMPLIFICADOS A SOLO UNO ---
     prospecting_cols = ["Fuente de la Lista"]
     for dim_col in prospecting_cols:
         if dim_col in df.columns and df[dim_col].nunique() > 1:
@@ -207,7 +213,6 @@ def display_follow_up_metrics(df_filtered):
     col1.metric("🔄 Total Prospectos en Seguimiento", f"{total_recontactos:,}", help="Número de prospectos que tienen una fecha de recontacto futura.")
     col2.metric("📊 Tasa de Seguimiento", f"{tasa_recontacto:.1f}%", help="Porcentaje de todos los acercamientos que necesitaron un seguimiento planificado.")
 
-# --- NUEVO DISEÑO DE VISUALIZACIÓN ---
 def display_new_grouped_breakdown(df_filtered, group_by_col):
     st.markdown(f"#### Análisis por `{group_by_col}`")
     
@@ -272,18 +277,14 @@ if not df_sdr_data.empty:
     if df_sdr_filtered.empty:
         st.warning("No se encontraron datos que coincidan con los filtros seleccionados.")
     else:
-        # 1. KPIs y Tasas (VERSIÓN ORIGINAL RESTAURADA)
         display_kpi_summary(df_sdr_filtered)
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
         
-        # 2. Métricas de Seguimiento (VERSIÓN ORIGINAL RESTAURADA)
         display_follow_up_metrics(df_sdr_filtered)
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
         
-        # 3. SECCIÓN DE ANÁLISIS POR DIMENSIONES (REDİSEÑADA)
         st.markdown("## 🔬 Desglose de Rendimiento por Dimensiones")
         
-        # Se añaden "Campaña" y "Proceso" a las pestañas
         tabs_list = ["Campaña", "Proceso", "Industria", "Pais", "Puesto"]
         tabs = st.tabs([f"📊 Por {t}" for t in tabs_list])
         
@@ -291,7 +292,6 @@ if not df_sdr_data.empty:
             with tabs[i]:
                 display_new_grouped_breakdown(df_sdr_filtered, dimension)
 
-        # 4. Tabla de datos detallados
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
         with st.expander("Ver tabla de datos detallados del período filtrado"):
             st.dataframe(df_sdr_filtered, hide_index=True)
