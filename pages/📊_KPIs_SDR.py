@@ -64,11 +64,11 @@ def load_and_process_sdr_data():
         st.error(f"No se pudo cargar la hoja 'Evelyn'. Error: {e}")
         return pd.DataFrame()
 
+    # CAMBIO: Se elimina 'Fecha De Recontacto' del procesamiento
     date_columns_to_process = {
         "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha_Contacto_Inicial",
         "Fecha de Primer Respuesta": "Fecha_Primera_Respuesta",
         "Fecha Agendamiento": "Fecha_Sesion_Agendada",
-        "Fecha De Recontacto": "Fecha_Recontacto"
     }
     
     for original_col, new_col in date_columns_to_process.items():
@@ -84,10 +84,10 @@ def load_and_process_sdr_data():
     
     df.dropna(subset=['Fecha_Contacto_Inicial'], inplace=True)
 
+    # CAMBIO: Se elimina la métrica 'Necesita_Recontacto'
     df['Acercamientos'] = df['Fecha_Contacto_Inicial'].notna()
     df['Respuestas_Iniciales'] = df['Fecha_Primera_Respuesta'].notna()
     df['Sesiones_Agendadas'] = df['Fecha_Sesion_Agendada'].notna() & (df["Sesion Agendada?"].str.strip().str.lower().isin(['si', 'sí']))
-    df['Necesita_Recontacto'] = df['Fecha_Recontacto'].notna()
     
     df['AñoMes_Contacto'] = df['Fecha_Contacto_Inicial'].dt.strftime('%Y-%m')
 
@@ -101,10 +101,11 @@ def load_and_process_sdr_data():
 
 # --- COMPONENTES DE LA UI Y FILTROS ---
 
-def clear_all_filters(df):
+def clear_all_filters():
     """Limpia todos los filtros en el estado de la sesión."""
-    st.session_state.date_filter_mode = "Rango de Fechas"
-    st.session_state.month_select = []
+    # CAMBIO: Al limpiar, las fechas se ponen en None para que aparezcan vacías
+    st.session_state.start_date = None
+    st.session_state.end_date = None
     
     prospecting_cols = ["Fuente de la Lista", "Campaña", "Proceso", "Industria", "Pais", "Puesto"]
     for col in prospecting_cols:
@@ -112,13 +113,8 @@ def clear_all_filters(df):
         if key in st.session_state:
             st.session_state[key] = ["– Todos –"]
 
-    if df is not None and not df.empty:
-        # Al limpiar, volvemos al rango de fechas de contacto. El usuario puede refrescar para el rango global.
-        st.session_state.start_date = df['Fecha_Contacto_Inicial'].min().date()
-        st.session_state.end_date = df['Fecha_Contacto_Inicial'].max().date()
-
 def sidebar_filters(df, global_min_date, global_max_date):
-    """Renderiza los filtros de la barra lateral usando un rango de fechas global."""
+    """Renderiza los filtros de la barra lateral con fechas vacías por defecto."""
     st.sidebar.header("🔍 Filtros de Análisis")
     if df.empty:
         st.sidebar.warning("No hay datos para filtrar.")
@@ -127,9 +123,10 @@ def sidebar_filters(df, global_min_date, global_max_date):
     st.sidebar.subheader("📅 Filtrar por Fecha")
     col1, col2 = st.sidebar.columns(2)
     with col1:
-        start_date = st.date_input("Fecha Inicial", value=global_min_date, min_value=global_min_date, max_value=global_max_date, key="start_date")
+        # CAMBIO: 'value' se establece en None para que la casilla aparezca vacía
+        start_date = st.date_input("Fecha Inicial", value=None, min_value=global_min_date, max_value=global_max_date, key="start_date", help="Dejar vacío para incluir todo desde el inicio.")
     with col2:
-        end_date = st.date_input("Fecha Final", value=global_max_date, min_value=start_date, max_value=global_max_date, key="end_date")
+        end_date = st.date_input("Fecha Final", value=None, min_value=start_date if start_date else global_min_date, max_value=global_max_date, key="end_date", help="Dejar vacío para incluir todo hasta el final.")
 
     other_filters = {}
     st.sidebar.subheader("🔎 Filtrar por Dimensiones")
@@ -140,7 +137,7 @@ def sidebar_filters(df, global_min_date, global_max_date):
             filtro_key = f"filter_{dim_col.lower().replace(' ', '_')}"
             other_filters[dim_col] = st.sidebar.multiselect(dim_col, opciones, default=["– Todos –"], key=filtro_key)
 
-    st.sidebar.button("🧹 Limpiar Todos los Filtros", on_click=clear_all_filters, args=(df,), use_container_width=True)
+    st.sidebar.button("🧹 Limpiar Todos los Filtros", on_click=clear_all_filters, use_container_width=True)
 
     return start_date, end_date, other_filters
 
@@ -152,10 +149,9 @@ def apply_dimension_filters(df, other_filters):
             df_f = df_f[df_f[col].isin(values)]
     return df_f
 
-# --- COMPONENTES DE VISUALIZACIÓN ---
+# --- COMPONENTES DE VISUALIZACIÓN --- (Sin cambios en estas funciones)
 
 def display_kpi_summary(total_acercamientos, total_respuestas, total_sesiones):
-    """Muestra los KPIs y tasas de conversión calculados."""
     st.markdown("### 🧮 Resumen de KPIs Totales (Período Filtrado)")
     kpi_cols = st.columns(3)
     kpi_cols[0].metric("🚀 Total Acercamientos", f"{total_acercamientos:,}")
@@ -174,7 +170,6 @@ def display_kpi_summary(total_acercamientos, total_respuestas, total_sesiones):
     rate_cols[2].metric("🏆 Tasa Sesión / Acercamiento (Global)", f"{tasa_sesion_global:.1f}%", help="Eficiencia total del proceso: (Sesiones Agendadas / Acercamientos)")
 
 def display_grouped_breakdown(df_to_analyze, group_by_col, perspective, start_date, end_date):
-    """Muestra el análisis agrupado por una dimensión, adaptándose a la perspectiva."""
     st.markdown(f"#### Análisis por `{group_by_col}`")
     if group_by_col not in df_to_analyze.columns or df_to_analyze[group_by_col].nunique() < 2:
         st.info(f"No hay suficientes datos o diversidad para analizar por '{group_by_col}'.")
@@ -188,7 +183,7 @@ def display_grouped_breakdown(df_to_analyze, group_by_col, perspective, start_da
             Acercamientos=('Acercamientos', 'sum'),
             Sesiones_Agendadas=('Sesiones_Agendadas', 'sum')
         ).reset_index()
-    else: # 'Fecha del Evento (Actividad del Período)'
+    else:
         summary_df = df_to_analyze.groupby(group_by_col).agg(
             Acercamientos=('Fecha_Contacto_Inicial', lambda x: x.between(start_dt, end_dt).sum()),
             Sesiones_Agendadas=('Fecha_Sesion_Agendada', lambda x: x.between(start_dt, end_dt).sum())
@@ -239,7 +234,8 @@ else:
         """
     )
     
-    date_cols_for_range = ['Fecha_Contacto_Inicial', 'Fecha_Primera_Respuesta', 'Fecha_Sesion_Agendada', 'Fecha_Recontacto']
+    # CAMBIO: Se elimina 'Fecha_Recontacto' de la lista para el rango global
+    date_cols_for_range = ['Fecha_Contacto_Inicial', 'Fecha_Primera_Respuesta', 'Fecha_Sesion_Agendada']
     existing_date_cols = [col for col in date_cols_for_range if col in df_sdr_data.columns and df_sdr_data[col].notna().any()]
     
     if not existing_date_cols:
@@ -250,9 +246,14 @@ else:
 
         start_date, end_date, other_filters = sidebar_filters(df_sdr_data, global_min_date, global_max_date)
         
+        # CAMBIO: Si las fechas están vacías (None), usamos el rango global para los cálculos internos
+        start_date_filter = start_date if start_date is not None else global_min_date
+        end_date_filter = end_date if end_date is not None else global_max_date
+
         df_filtered_by_dims = apply_dimension_filters(df_sdr_data, other_filters)
         
-        start_dt, end_dt = pd.to_datetime(start_date), pd.to_datetime(end_date) + pd.Timedelta(days=1)
+        start_dt = pd.to_datetime(start_date_filter)
+        end_dt = pd.to_datetime(end_date_filter) + pd.Timedelta(days=1)
 
         if analysis_perspective == 'Fecha de Contacto Inicial (Cohorte)':
             df_final = df_filtered_by_dims[df_filtered_by_dims['Fecha_Contacto_Inicial'].between(start_dt, end_dt)]
@@ -277,7 +278,7 @@ else:
             
             for i, dimension in enumerate(tabs_list):
                 with tabs[i]:
-                    display_grouped_breakdown(df_filtered_by_dims, dimension, analysis_perspective, start_date, end_date)
+                    display_grouped_breakdown(df_filtered_by_dims, dimension, analysis_perspective, start_date_filter, end_date_filter)
 
             st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
             with st.expander("Ver tabla de datos detallados del período filtrado"):
