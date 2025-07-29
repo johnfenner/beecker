@@ -103,11 +103,11 @@ def load_and_process_sdr_data():
 
 def clear_all_filters():
     """Limpia todos los filtros en el estado de la sesión."""
-    # CAMBIO: Al limpiar, las fechas se ponen en None para que aparezcan vacías
     st.session_state.start_date = None
     st.session_state.end_date = None
     
-    prospecting_cols = ["Fuente de la Lista", "Campaña", "Proceso", "Industria", "Pais", "Puesto"]
+    # CAMBIO: Nos aseguramos de que solo limpie el filtro de la lista
+    prospecting_cols = ["Fuente de la Lista"]
     for col in prospecting_cols:
         key = f"filter_{col.lower().replace(' ', '_')}"
         if key in st.session_state:
@@ -123,14 +123,16 @@ def sidebar_filters(df, global_min_date, global_max_date):
     st.sidebar.subheader("📅 Filtrar por Fecha")
     col1, col2 = st.sidebar.columns(2)
     with col1:
-        # CAMBIO: 'value' se establece en None para que la casilla aparezca vacía
         start_date = st.date_input("Fecha Inicial", value=None, min_value=global_min_date, max_value=global_max_date, key="start_date", help="Dejar vacío para incluir todo desde el inicio.")
     with col2:
         end_date = st.date_input("Fecha Final", value=None, min_value=start_date if start_date else global_min_date, max_value=global_max_date, key="end_date", help="Dejar vacío para incluir todo hasta el final.")
 
     other_filters = {}
     st.sidebar.subheader("🔎 Filtrar por Dimensiones")
-    dimension_cols = ["Fuente de la Lista", "Campaña", "Proceso", "Industria", "Pais", "Puesto"]
+    
+    # CAMBIO: Volvemos a tener solo el filtro que tenías originalmente
+    dimension_cols = ["Fuente de la Lista"]
+    
     for dim_col in dimension_cols:
         if dim_col in df.columns and df[dim_col].nunique() > 1:
             opciones = ["– Todos –"] + sorted(df[dim_col].unique().tolist())
