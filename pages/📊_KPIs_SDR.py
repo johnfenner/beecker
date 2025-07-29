@@ -5,19 +5,19 @@ import pandas as pd
 import gspread
 import datetime
 import plotly.express as px
-import plotly.graph_objects as go
 from collections import Counter
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="Dashboard de Desempeño SDR", layout="wide")
 st.title("📊 Dashboard de Desempeño SDR")
 
-# --- SELECTOR DE PERSPECTIVA (LA SOLUCIÓN AL "PROBLEMOTA") ---
+# --- SELECTOR DE PERSPECTIVA ---
 st.markdown("---")
 analysis_mode = st.radio(
     "Selecciona la perspectiva del análisis:",
     options=["Desempeño del Mes (Fecha del Evento)", "Análisis de Cohorte (Fecha de Primer Contacto)"],
     horizontal=True,
+    key="analysis_mode_selector",
     help=(
         "**Desempeño del Mes:** Muestra los totales de eventos que ocurrieron en el período seleccionado (ej: sesiones agendadas en Julio). "
         "**Análisis de Cohorte:** Filtra un grupo de prospectos por su fecha de primer contacto y analiza todo su recorrido."
@@ -25,27 +25,12 @@ analysis_mode = st.radio(
 )
 st.markdown("---")
 
-
 # --- FUNCIONES DE CARGA Y LÓGICA DE NEGOCIO ---
-
-def make_unique(headers_list):
-    """Garantiza que los encabezados de columna sean únicos."""
-    counts = Counter()
-    new_headers = []
-    for h in headers_list:
-        h_stripped = str(h).strip() if pd.notna(h) else "Columna_Vacia"
-        if not h_stripped: h_stripped = "Columna_Vacia"
-        counts[h_stripped] += 1
-        if counts[h_stripped] == 1:
-            new_headers.append(h_stripped)
-        else:
-            new_headers.append(f"{h_stripped}_{counts[h_stripped]-1}")
-    return new_headers
 
 @st.cache_data(ttl=300)
 def load_and_process_sdr_data():
     """
-    Carga y procesa datos desde la hoja 'Evelyn'.
+    Carga y procesa todos los datos y fechas necesarios desde la hoja 'Evelyn'.
     """
     try:
         creds_dict = st.secrets["gcp_service_account"]
@@ -55,13 +40,24 @@ def load_and_process_sdr_data():
         sheet = workbook.worksheet("Evelyn")
         values = sheet.get_all_values()
         if len(values) < 2: return pd.DataFrame()
-        headers = make_unique(values[0])
+        
+        # Función interna para asegurar encabezados únicos
+        counts = Counter()
+        headers = []
+        for h in values[0]:
+            h_stripped = str(h).strip()
+            counts[h_stripped] += 1
+            if counts[h_stripped] == 1:
+                headers.append(h_stripped)
+            else:
+                headers.append(f"{h_stripped}_{counts[h_stripped]-1}")
+
         df = pd.DataFrame(values[1:], columns=headers)
     except Exception as e:
         st.error(f"No se pudo cargar la hoja 'Evelyn'. Error: {e}")
         return pd.DataFrame()
 
-    date_columns_to_process = {
+    date_columns = {
         "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha_Primer_Contacto",
         "Fecha de Primer Acercamiento": "Fecha_Primer_Acercamiento",
         "Fecha de Primer Respuesta": "Fecha_Primera_Respuesta",
@@ -69,13 +65,14 @@ def load_and_process_sdr_data():
         "Fecha Agendamiento": "Fecha_Agendamiento"
     }
     
-    for original_col, new_col in date_columns_to_process.items():
-        if original_col in df.columns:
-            df[new_col] = pd.to_datetime(df[original_col], format='%d/%m/%Y', errors='coerce')
+    for original, new in date_columns.items():
+        if original in df.columns:
+            df[new] = pd.to_datetime(df[original], format='%d/%m/%Y', errors='coerce')
         else:
-            df[new_col] = pd.NaT
+            df[new] = pd.NaT
 
     df['AñoMes_Contacto'] = df['Fecha_Primer_Contacto'].dt.strftime('%Y-%m')
+    
     for col in ["Fuente de la Lista", "Campaña", "Proceso", "Industria", "Pais", "Puesto"]:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().fillna("N/D").replace("", "N/D")
@@ -89,66 +86,89 @@ def calculate_rate(numerator, denominator, round_to=1):
 
 # --- COMPONENTES VISUALES Y DE FILTRADO ---
 
-def sidebar_filters(df, mode):
+def sidebar_filters(df):
+    """
+    Gestiona los filtros de la barra lateral. Devuelve un rango de fechas y filtros de categorías.
+    La interfaz es la original, con el selector de modo de fecha.
+    """
     st.sidebar.header("🔍 Filtros de Análisis")
     if df.empty:
-        st.sidebar.warning("No hay datos para filtrar.")
         return None, None, {}
-    
-    date_col = 'Fecha_Primer_Contacto'
-    st.sidebar.subheader(f"📅 Filtrar por Fecha")
-    
-    min_date = df[date_col].dropna().min().date()
-    max_date = df[date_col].dropna().max().date()
 
-    # Usamos un rango de fechas unificado para ambos modos
-    col1, col2 = st.sidebar.columns(2)
-    start_date = col1.date_input("Fecha Inicial", value=min_date, min_value=min_date, max_value=max_date, key="start_date")
-    end_date = col2.date_input("Fecha Final", value=max_date, min_value=start_date, max_value=max_date, key="end_date")
+    st.sidebar.subheader("📅 Filtrar por Fecha")
+    filter_mode = st.sidebar.radio(
+        "Elige cómo filtrar por fecha:",
+        ("Rango de Fechas", "Mes(es) Específico(s)"),
+        key="date_filter_mode",
+        horizontal=True
+    )
+    
+    start_date, end_date = None, None
+
+    if filter_mode == "Rango de Fechas":
+        min_date = df['Fecha_Primer_Contacto'].dropna().min().date()
+        max_date = df['Fecha_Primer_Contacto'].dropna().max().date()
+        col1, col2 = st.sidebar.columns(2)
+        start_date = col1.date_input("Fecha Inicial", value=min_date, min_value=min_date, max_value=max_date, key="start_date")
+        end_date = col2.date_input("Fecha Final", value=max_date, min_value=start_date, max_value=max_date, key="end_date")
+    else: # Mes(es) Específico(s)
+        meses_disponibles = sorted(df['AñoMes_Contacto'].dropna().unique(), reverse=True)
+        selected_months = st.sidebar.multiselect("Selecciona el/los mes(es):", meses_disponibles, key="month_select")
+        if selected_months:
+            start_date = pd.to_datetime(min(selected_months) + "-01").date()
+            last_month = pd.to_datetime(max(selected_months) + "-01")
+            end_date = (last_month + pd.offsets.MonthEnd(1)).date()
 
     other_filters = {}
     st.sidebar.subheader("🔎 Filtros Adicionales")
-    prospecting_cols = ["Fuente de la Lista", "Campaña"]
-    for dim_col in prospecting_cols:
+    for dim_col in ["Fuente de la Lista", "Campaña"]:
         if dim_col in df.columns and df[dim_col].nunique() > 1:
             opciones = ["– Todos –"] + sorted(df[dim_col].unique().tolist())
-            filtro_key = f"filter_{dim_col.lower().replace(' ', '_')}"
-            other_filters[dim_col] = st.sidebar.multiselect(f"Filtrar por {dim_col}", opciones, default=["– Todos –"], key=filtro_key)
+            other_filters[dim_col] = st.sidebar.multiselect(f"Filtrar por {dim_col}", opciones, default=["– Todos –"])
     
     return start_date, end_date, other_filters
 
-def display_kpi_summary(df, start_date, end_date, other_filters, mode):
-    st.header(f"🧮 Resumen de KPIs: {mode}")
 
+def display_kpi_summary(df, start_date, end_date, other_filters, mode):
+    """
+    Calcula y muestra los KPIs según la perspectiva de análisis seleccionada.
+    """
+    st.header(f"🧮 Resumen de KPIs: {mode.split('(')[0].strip()}")
+
+    # Aplica filtros de categorías (Fuente, Campaña, etc.) primero
     df_filtered_by_cats = df.copy()
     for col, values in other_filters.items():
         if values and "– Todos –" not in values:
             df_filtered_by_cats = df_filtered_by_cats[df_filtered_by_cats[col].isin(values)]
     
-    start_date = pd.to_datetime(start_date)
-    end_date = pd.to_datetime(end_date)
+    start_date_ts = pd.to_datetime(start_date)
+    end_date_ts = pd.to_datetime(end_date)
 
     if mode == "Análisis de Cohorte (Fecha de Primer Contacto)":
-        mask = (df_filtered_by_cats['Fecha_Primer_Contacto'] >= start_date) & (df_filtered_by_cats['Fecha_Primer_Contacto'] <= end_date)
-        df_final_cohort = df_filtered_by_cats[mask]
+        # 1. Se filtra el grupo de prospectos por fecha de primer contacto
+        mask = (df_filtered_by_cats['Fecha_Primer_Contacto'] >= start_date_ts) & (df_filtered_by_cats['Fecha_Primer_Contacto'] <= end_date_ts)
+        df_cohort = df_filtered_by_cats[mask]
         
-        total_acercamientos = len(df_final_cohort)
-        total_mensajes = df_final_cohort['Fecha_Primer_Acercamiento'].notna().sum()
-        total_respuestas = df_final_cohort['Fecha_Primera_Respuesta'].notna().sum()
-        total_sesiones = df_final_cohort['Fecha_Agendamiento'].notna().sum()
+        # 2. Todos los KPIs se calculan sobre ese grupo fijo
+        total_acercamientos = len(df_cohort)
+        total_mensajes = df_cohort['Fecha_Primer_Acercamiento'].notna().sum()
+        total_respuestas = df_cohort['Fecha_Primera_Respuesta'].notna().sum()
+        total_sesiones = df_cohort['Fecha_Agendamiento'].notna().sum()
         
-    else: # Desempeño del Mes (Fecha del Evento)
-        total_acercamientos = len(df_filtered_by_cats[(df_filtered_by_cats['Fecha_Primer_Contacto'] >= start_date) & (df_filtered_by_cats['Fecha_Primer_Contacto'] <= end_date)])
-        total_mensajes = len(df_filtered_by_cats[(df_filtered_by_cats['Fecha_Primer_Acercamiento'] >= start_date) & (df_filtered_by_cats['Fecha_Primer_Acercamiento'] <= end_date)])
-        total_respuestas = len(df_filtered_by_cats[(df_filtered_by_cats['Fecha_Primera_Respuesta'] >= start_date) & (df_filtered_by_cats['Fecha_Primera_Respuesta'] <= end_date)])
-        total_sesiones = len(df_filtered_by_cats[(df_filtered_by_cats['Fecha_Agendamiento'] >= start_date) & (df_filtered_by_cats['Fecha_Agendamiento'] <= end_date)])
+    else: # "Desempeño del Mes (Fecha del Evento)"
+        # Cada KPI se calcula de forma independiente filtrando por su propia fecha
+        total_acercamientos = len(df_filtered_by_cats[(df_filtered_by_cats['Fecha_Primer_Contacto'] >= start_date_ts) & (df_filtered_by_cats['Fecha_Primer_Contacto'] <= end_date_ts)])
+        total_mensajes = len(df_filtered_by_cats[(df_filtered_by_cats['Fecha_Primer_Acercamiento'] >= start_date_ts) & (df_filtered_by_cats['Fecha_Primer_Acercamiento'] <= end_date_ts)])
+        total_respuestas = len(df_filtered_by_cats[(df_filtered_by_cats['Fecha_Primera_Respuesta'] >= start_date_ts) & (df_filtered_by_cats['Fecha_Primera_Respuesta'] <= end_date_ts)])
+        total_sesiones = len(df_filtered_by_cats[(df_filtered_by_cats['Fecha_Agendamiento'] >= start_date_ts) & (df_filtered_by_cats['Fecha_Agendamiento'] <= end_date_ts)])
 
     kpi_cols = st.columns(4)
-    kpi_cols[0].metric("🚀 Total Acercamientos", f"{total_acercamientos:,}")
-    kpi_cols[1].metric("📤 Total Mensajes Enviados", f"{total_mensajes:,}")
-    kpi_cols[2].metric("💬 Total Respuestas Iniciales", f"{total_respuestas:,}")
-    kpi_cols[3].metric("🗓️ Total Sesiones Agendadas", f"{total_sesiones:,}")
+    kpi_cols[0].metric("🚀 Total Acercamientos", f"{int(total_acercamientos):,}")
+    kpi_cols[1].metric("📤 Total Mensajes Enviados", f"{int(total_mensajes):,}")
+    kpi_cols[2].metric("💬 Total Respuestas Iniciales", f"{int(total_respuestas):,}")
+    kpi_cols[3].metric("🗓️ Total Sesiones Agendadas", f"{int(total_sesiones):,}")
 
+    # Las tasas de conversión solo tienen sentido en el Análisis de Cohorte
     if mode == "Análisis de Cohorte (Fecha de Primer Contacto)":
         st.markdown("---")
         st.markdown("#### 📊 Tasas de Conversión de la Cohorte")
@@ -168,16 +188,16 @@ def display_kpi_summary(df, start_date, end_date, other_filters, mode):
 df_sdr_data = load_and_process_sdr_data()
 
 if not df_sdr_data.empty:
-    start_date, end_date, other_filters = sidebar_filters(df_sdr_data, analysis_mode)
+    start_date, end_date, other_filters = sidebar_filters(df_sdr_data)
     
     if start_date and end_date:
         display_kpi_summary(df_sdr_data, start_date, end_date, other_filters, analysis_mode)
+        # Aquí se podrían añadir más visualizaciones que respeten el modo de análisis
     else:
-        st.warning("Por favor, selecciona un rango de fechas válido en la barra lateral.")
+        st.info("Por favor, selecciona un rango de fechas o uno o más meses en la barra lateral para comenzar el análisis.")
 
-    # El resto de los desgloses se pueden adaptar o mostrar condicionalmente si se desea
     st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
-    with st.expander("Ver tabla de datos completos (sin filtrar por fecha)"):
+    with st.expander("Ver tabla de datos completos (sin filtrar)"):
         st.dataframe(df_sdr_data, hide_index=True)
 else:
     st.error("No se pudieron cargar o procesar los datos para el dashboard de SDR.")
