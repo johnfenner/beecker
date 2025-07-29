@@ -56,7 +56,6 @@ def load_and_process_sdr_data():
         st.error(f"No se pudo cargar la hoja 'Evelyn'. Error: {e}")
         return pd.DataFrame()
 
-    # --- LÓGICA CORRECTA ---
     # 1. Se procesan todas las fechas relevantes
     date_columns_to_process = {
         "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha",
@@ -68,8 +67,13 @@ def load_and_process_sdr_data():
     
     for original_col, new_col in date_columns_to_process.items():
         if original_col in df.columns:
+            # Se añade un alias a la columna original de primer contacto para cálculos posteriores
+            if new_col == "Fecha":
+                df['Fecha_Primer_Contacto_Original'] = pd.to_datetime(df[original_col], format='%d/%m/%Y', errors='coerce')
             df[new_col] = pd.to_datetime(df[original_col], format='%d/%m/%Y', errors='coerce')
         else:
+            if new_col == "Fecha":
+                df['Fecha_Primer_Contacto_Original'] = pd.NaT
             df[new_col] = pd.NaT
 
     # 2. La fecha principal para FILTRAR es 'Fecha Primer contacto'
@@ -89,7 +93,7 @@ def load_and_process_sdr_data():
     # 4. Se crea la columna para el widget de filtro de mes, basada en la fecha principal
     df['AñoMes'] = df['Fecha'].dt.strftime('%Y-%m')
 
-    for col in ["Fuente de la Lista", "Campaña", "Proceso", "Industria", "Pais", "Puesto"]:
+    for col in ["Fuente de la Lista", "Campaña", "Proceso", "Industria", "Pais", "Puesto", "Empresa", "Nombre", "Fecha Sesion"]:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().fillna("N/D").replace("", "N/D")
         else:
@@ -122,7 +126,7 @@ def sidebar_filters(df):
         st.sidebar.warning("No hay datos para filtrar.")
         return None, None, None, None, {}
 
-    st.sidebar.subheader("📅 Filtrar por Fecha")
+    st.sidebar.subheader("📅 Filtrar por Fecha de Primer Contacto")
     filter_mode = st.sidebar.radio(
         "Elige cómo filtrar por fecha:",
         ("Rango de Fechas", "Mes(es) Específico(s)"),
@@ -173,7 +177,7 @@ def apply_filters(df, filter_mode, start_date, end_date, selected_months, other_
     return df_f
 
 def display_kpi_summary(df_filtered):
-    st.markdown("### 🧮 Resumen de KPIs SDR Totales (Periodo Filtrado)")
+    st.markdown("### 🧮 Resumen de KPIs (Basado en Fecha de Primer Contacto)")
 
     total_acercamientos = int(df_filtered['Acercamientos'].sum())
     total_mensajes = int(df_filtered['Mensajes_Enviados'].sum())
@@ -265,6 +269,56 @@ def display_new_grouped_breakdown(df_filtered, group_by_col):
         )
         st.plotly_chart(fig, use_container_width=True)
 
+def display_scheduling_analysis(df_original):
+    """
+    Muestra un análisis basado únicamente en la Fecha de Agendamiento,
+    ignorando los filtros principales de la barra lateral.
+    """
+    st.markdown("### 🗓️ Análisis por Mes de Agendamiento de Sesión")
+    st.info("Utiliza el siguiente filtro para analizar las sesiones agendadas en un período específico.")
+
+    df_agendamiento = df_original.copy()
+    
+    # Trabajar solo con las filas que tienen una fecha de agendamiento
+    df_agendamiento.dropna(subset=['Fecha_Agendamiento'], inplace=True)
+
+    if df_agendamiento.empty:
+        st.warning("No se encontraron datos con fechas de agendamiento para analizar.")
+        return
+
+    # Crear una columna de mes/año específica para el agendamiento
+    df_agendamiento['AñoMes_Agendamiento'] = df_agendamiento['Fecha_Agendamiento'].dt.strftime('%Y-%m')
+    
+    meses_disponibles = sorted(df_agendamiento['AñoMes_Agendamiento'].unique(), reverse=True)
+    
+    # Crear un filtro de mes exclusivo para esta sección
+    selected_month = st.selectbox(
+        "Selecciona el Mes de Agendamiento:",
+        options=meses_disponibles,
+        key="scheduling_month_filter"
+    )
+
+    if selected_month:
+        # Filtrar el dataframe por el mes de agendamiento seleccionado
+        df_filtrado = df_agendamiento[df_agendamiento['AñoMes_Agendamiento'] == selected_month]
+        
+        total_sesiones_periodo = len(df_filtrado)
+        
+        col1, col2 = st.columns(2)
+        col1.metric(f"Total Sesiones Agendadas en {selected_month}", f"{total_sesiones_periodo:,}")
+
+        # Opcional: Calcular el tiempo promedio desde el primer contacto hasta el agendamiento
+        if 'Fecha_Primer_Contacto_Original' in df_filtrado.columns:
+            df_filtrado['Dias_Para_Agendar'] = (df_filtrado['Fecha_Agendamiento'] - df_filtrado['Fecha_Primer_Contacto_Original']).dt.days
+            avg_dias = df_filtrado['Dias_Para_Agendar'].mean()
+            col2.metric("Tiempo Promedio para Agendar", f"{avg_dias:.1f} días")
+
+        # Mostrar la tabla de datos para esta sección
+        with st.expander("Ver detalle de las sesiones agendadas en este período"):
+            st.dataframe(df_filtrado[[
+                "Empresa", "Nombre", "Puesto", "Fecha_Primer_Contacto_Original", "Fecha_Agendamiento", "Fecha Sesion"
+            ]], hide_index=True)
+
 # --- FLUJO PRINCIPAL DE LA PÁGINA ---
 df_sdr_data = load_and_process_sdr_data()
 
@@ -275,14 +329,16 @@ if not df_sdr_data.empty:
     if df_sdr_filtered.empty:
         st.warning("No se encontraron datos que coincidan con los filtros seleccionados.")
     else:
+        # 1. KPIs y Tasas (Basado en el filtro principal)
         display_kpi_summary(df_sdr_filtered)
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
         
+        # 2. Métricas de Seguimiento (Basado en el filtro principal)
         display_follow_up_metrics(df_sdr_filtered)
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
         
+        # 3. Desglose por Dimensiones (Basado en el filtro principal)
         st.markdown("## 🔬 Desglose de Rendimiento por Dimensiones")
-        
         tabs_list = ["Campaña", "Proceso", "Industria", "Pais", "Puesto"]
         tabs = st.tabs([f"📊 Por {t}" for t in tabs_list])
         
@@ -290,8 +346,13 @@ if not df_sdr_data.empty:
             with tabs[i]:
                 display_new_grouped_breakdown(df_sdr_filtered, dimension)
 
+        # 4. NUEVA SECCIÓN DE ANÁLISIS POR FECHA DE AGENDAMIENTO
         st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
-        with st.expander("Ver tabla de datos detallados del período filtrado"):
+        display_scheduling_analysis(df_sdr_data) # Se pasa el dataframe ORIGINAL, sin filtrar
+
+        # 5. Tabla de datos detallados (Basado en el filtro principal)
+        st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
+        with st.expander("Ver tabla de datos detallados del período filtrado (según filtro principal)"):
             st.dataframe(df_sdr_filtered, hide_index=True)
 else:
     st.error("No se pudieron cargar o procesar los datos para el dashboard de SDR.")
