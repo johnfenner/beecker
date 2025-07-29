@@ -64,7 +64,6 @@ def load_and_process_sdr_data():
         st.error(f"No se pudo cargar la hoja 'Evelyn'. Error: {e}")
         return pd.DataFrame()
 
-    # --- CAMBIO CLAVE: Parsear TODAS las fechas importantes ---
     date_columns_to_process = {
         "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha_Contacto_Inicial",
         "Fecha de Primer Respuesta": "Fecha_Primera_Respuesta",
@@ -85,7 +84,6 @@ def load_and_process_sdr_data():
     
     df.dropna(subset=['Fecha_Contacto_Inicial'], inplace=True)
 
-    # Las columnas de métricas ahora se basan en la existencia de fechas válidas
     df['Acercamientos'] = df['Fecha_Contacto_Inicial'].notna()
     df['Respuestas_Iniciales'] = df['Fecha_Primera_Respuesta'].notna()
     df['Sesiones_Agendadas'] = df['Fecha_Sesion_Agendada'].notna() & (df["Sesion Agendada?"].str.strip().str.lower().isin(['si', 'sí']))
@@ -93,7 +91,6 @@ def load_and_process_sdr_data():
     
     df['AñoMes_Contacto'] = df['Fecha_Contacto_Inicial'].dt.strftime('%Y-%m')
 
-    # Limpieza de columnas de dimensiones
     for col in ["Fuente de la Lista", "Campaña", "Proceso", "Industria", "Pais", "Puesto"]:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().fillna("N/D").replace("", "N/D")
@@ -116,30 +113,26 @@ def clear_all_filters(df):
             st.session_state[key] = ["– Todos –"]
 
     if df is not None and not df.empty:
+        # Al limpiar, volvemos al rango de fechas de contacto. El usuario puede refrescar para el rango global.
         st.session_state.start_date = df['Fecha_Contacto_Inicial'].min().date()
         st.session_state.end_date = df['Fecha_Contacto_Inicial'].max().date()
 
-def sidebar_filters(df):
-    """Renderiza los filtros de la barra lateral y devuelve los valores seleccionados."""
+def sidebar_filters(df, global_min_date, global_max_date):
+    """Renderiza los filtros de la barra lateral usando un rango de fechas global."""
     st.sidebar.header("🔍 Filtros de Análisis")
     if df.empty:
         st.sidebar.warning("No hay datos para filtrar.")
-        return None, None, None, {}
+        return None, None, {}
 
-    # --- FILTRO DE FECHA ---
     st.sidebar.subheader("📅 Filtrar por Fecha")
-    min_date, max_date = df['Fecha_Contacto_Inicial'].min().date(), df['Fecha_Contacto_Inicial'].max().date()
-    
     col1, col2 = st.sidebar.columns(2)
     with col1:
-        start_date = st.date_input("Fecha Inicial", value=min_date, min_value=min_date, max_value=max_date, key="start_date")
+        start_date = st.date_input("Fecha Inicial", value=global_min_date, min_value=global_min_date, max_value=global_max_date, key="start_date")
     with col2:
-        end_date = st.date_input("Fecha Final", value=max_date, min_value=start_date, max_value=max_date, key="end_date")
+        end_date = st.date_input("Fecha Final", value=global_max_date, min_value=start_date, max_value=global_max_date, key="end_date")
 
-    # --- FILTROS DE DIMENSIONES ---
     other_filters = {}
     st.sidebar.subheader("🔎 Filtrar por Dimensiones")
-    
     dimension_cols = ["Fuente de la Lista", "Campaña", "Proceso", "Industria", "Pais", "Puesto"]
     for dim_col in dimension_cols:
         if dim_col in df.columns and df[dim_col].nunique() > 1:
@@ -164,7 +157,6 @@ def apply_dimension_filters(df, other_filters):
 def display_kpi_summary(total_acercamientos, total_respuestas, total_sesiones):
     """Muestra los KPIs y tasas de conversión calculados."""
     st.markdown("### 🧮 Resumen de KPIs Totales (Período Filtrado)")
-
     kpi_cols = st.columns(3)
     kpi_cols[0].metric("🚀 Total Acercamientos", f"{total_acercamientos:,}")
     kpi_cols[1].metric("💬 Total Respuestas Iniciales", f"{total_respuestas:,}")
@@ -172,7 +164,6 @@ def display_kpi_summary(total_acercamientos, total_respuestas, total_sesiones):
 
     st.markdown("---")
     st.markdown("#### 📊 Tasas de Conversión")
-
     tasa_resp_vs_acerc = calculate_rate(total_respuestas, total_acercamientos)
     tasa_sesion_vs_resp = calculate_rate(total_sesiones, total_respuestas)
     tasa_sesion_global = calculate_rate(total_sesiones, total_acercamientos)
@@ -183,29 +174,21 @@ def display_kpi_summary(total_acercamientos, total_respuestas, total_sesiones):
     rate_cols[2].metric("🏆 Tasa Sesión / Acercamiento (Global)", f"{tasa_sesion_global:.1f}%", help="Eficiencia total del proceso: (Sesiones Agendadas / Acercamientos)")
 
 def display_grouped_breakdown(df_to_analyze, group_by_col, perspective, start_date, end_date):
-    """
-    Muestra el análisis agrupado por una dimensión, adaptándose a la perspectiva.
-    `df_to_analyze` ya debe tener los filtros de dimensión aplicados.
-    """
+    """Muestra el análisis agrupado por una dimensión, adaptándose a la perspectiva."""
     st.markdown(f"#### Análisis por `{group_by_col}`")
-    
     if group_by_col not in df_to_analyze.columns or df_to_analyze[group_by_col].nunique() < 2:
         st.info(f"No hay suficientes datos o diversidad para analizar por '{group_by_col}'.")
         return
 
-    # Convertir fechas de input a datetime para comparar
-    start_dt = pd.to_datetime(start_date)
-    end_dt = pd.to_datetime(end_date) + pd.Timedelta(days=1) # Incluir el día final
+    start_dt, end_dt = pd.to_datetime(start_date), pd.to_datetime(end_date) + pd.Timedelta(days=1)
 
     if perspective == 'Fecha de Contacto Inicial (Cohorte)':
         df_period = df_to_analyze[df_to_analyze['Fecha_Contacto_Inicial'].between(start_dt, end_dt)]
-        # Para cohorte, contamos todos los eventos subsecuentes sin importar su fecha
         summary_df = df_period.groupby(group_by_col).agg(
             Acercamientos=('Acercamientos', 'sum'),
             Sesiones_Agendadas=('Sesiones_Agendadas', 'sum')
         ).reset_index()
     else: # 'Fecha del Evento (Actividad del Período)'
-        # Para actividad, contamos eventos solo si ocurrieron DENTRO del período
         summary_df = df_to_analyze.groupby(group_by_col).agg(
             Acercamientos=('Fecha_Contacto_Inicial', lambda x: x.between(start_dt, end_dt).sum()),
             Sesiones_Agendadas=('Fecha_Sesion_Agendada', lambda x: x.between(start_dt, end_dt).sum())
@@ -215,41 +198,29 @@ def display_grouped_breakdown(df_to_analyze, group_by_col, perspective, start_da
     summary_df = summary_df[summary_df['Acercamientos'] > 0]
     
     if summary_df.empty:
-        st.info(f"No hay datos de acercamientos para la dimensión '{group_by_col}' en el período seleccionado.")
+        st.info(f"No hay datos de acercamientos para '{group_by_col}' en el período seleccionado.")
         return
 
     summary_df['Tasa_Conversion'] = summary_df.apply(lambda r: calculate_rate(r.Sesiones_Agendadas, r.Acercamientos), axis=1)
     
     col1, col2 = st.columns([0.5, 0.5])
-
     with col1:
         st.markdown("##### Top 10 por Volumen de Sesiones")
         top_10_volumen = summary_df.nlargest(10, 'Sesiones_Agendadas')
-        st.dataframe(
-            top_10_volumen.style.format({'Tasa_Conversion': '{:.1f}%'}),
-            hide_index=True, use_container_width=True
-        )
-
+        st.dataframe(top_10_volumen.style.format({'Tasa_Conversion': '{:.1f}%'}), hide_index=True, use_container_width=True)
     with col2:
         st.markdown("##### Top 10 por Eficiencia (Tasa de Conversión)")
         top_10_eficiencia = summary_df[summary_df['Sesiones_Agendadas'] > 0].nlargest(10, 'Tasa_Conversion')
-        
         if top_10_eficiencia.empty:
-            st.info("No hay suficientes datos para mostrar el top de eficiencia.")
+            st.info("No hay datos para mostrar el top de eficiencia.")
             return
-
-        fig = px.bar(
-            top_10_eficiencia.sort_values('Tasa_Conversion', ascending=True),
-            x='Tasa_Conversion', y=group_by_col, orientation='h', text='Tasa_Conversion',
-            title="Tasa de Sesión Agendada / Acercamiento"
-        )
+        fig = px.bar(top_10_eficiencia.sort_values('Tasa_Conversion', ascending=True),
+                     x='Tasa_Conversion', y=group_by_col, orientation='h', text='Tasa_Conversion',
+                     title="Tasa de Sesión Agendada / Acercamiento")
         fig.update_traces(texttemplate='%{x:.1f}%', textposition='outside', marker_color='#30B88A')
-        fig.update_layout(
-            yaxis_title=None, xaxis_title="Tasa de Conversión (%)",
-            showlegend=False, margin=dict(t=30, b=10, l=10, r=10), height=400
-        )
+        fig.update_layout(yaxis_title=None, xaxis_title="Tasa de Conversión (%)", showlegend=False,
+                          margin=dict(t=30, b=10, l=10, r=10), height=400)
         st.plotly_chart(fig, use_container_width=True)
-
 
 # --- FLUJO PRINCIPAL DE LA PÁGINA ---
 df_sdr_data = load_and_process_sdr_data()
@@ -257,7 +228,6 @@ df_sdr_data = load_and_process_sdr_data()
 if df_sdr_data.empty:
     st.error("No se pudieron cargar o procesar los datos para el dashboard.")
 else:
-    # 1. OBTENER PERSPECTIVA Y FILTROS DE LA BARRA LATERAL
     st.sidebar.subheader("🎯 Perspectiva de Análisis")
     analysis_perspective = st.sidebar.radio(
         "Ver métricas basadas en:",
@@ -269,63 +239,50 @@ else:
         """
     )
     
-    start_date, end_date, other_filters = sidebar_filters(df_sdr_data)
+    date_cols_for_range = ['Fecha_Contacto_Inicial', 'Fecha_Primera_Respuesta', 'Fecha_Sesion_Agendada', 'Fecha_Recontacto']
+    existing_date_cols = [col for col in date_cols_for_range if col in df_sdr_data.columns and df_sdr_data[col].notna().any()]
     
-    # 2. APLICAR FILTROS DE DIMENSIÓN (NO DE FECHA TODAVÍA)
-    df_filtered_by_dims = apply_dimension_filters(df_sdr_data, other_filters)
-    
-    # Convertir fechas de input a datetime para poder comparar
-    start_dt = pd.to_datetime(start_date)
-    end_dt = pd.to_datetime(end_date) + pd.Timedelta(days=1) # Incluir el día final
+    if not existing_date_cols:
+        st.error("No se encontraron columnas de fecha válidas para establecer el rango del dashboard.")
+    else:
+        global_min_date = df_sdr_data[existing_date_cols].min().min().date()
+        global_max_date = df_sdr_data[existing_date_cols].max().max().date()
 
-    # 3. CALCULAR KPIs SEGÚN LA PERSPECTIVA SELECCIONADA
-    if analysis_perspective == 'Fecha de Contacto Inicial (Cohorte)':
-        # Filtrar el DF una vez por la fecha de contacto inicial
-        df_final = df_filtered_by_dims[df_filtered_by_dims['Fecha_Contacto_Inicial'].between(start_dt, end_dt)]
+        start_date, end_date, other_filters = sidebar_filters(df_sdr_data, global_min_date, global_max_date)
         
-        if df_final.empty:
-            st.warning("No se encontraron datos de contacto inicial que coincidan con los filtros seleccionados.")
-        else:
-            # Los cálculos se hacen sobre este DF ya filtrado
+        df_filtered_by_dims = apply_dimension_filters(df_sdr_data, other_filters)
+        
+        start_dt, end_dt = pd.to_datetime(start_date), pd.to_datetime(end_date) + pd.Timedelta(days=1)
+
+        if analysis_perspective == 'Fecha de Contacto Inicial (Cohorte)':
+            df_final = df_filtered_by_dims[df_filtered_by_dims['Fecha_Contacto_Inicial'].between(start_dt, end_dt)]
+            if df_final.empty:
+                st.warning("No se encontraron datos de contacto inicial que coincidan con los filtros seleccionados.")
             total_acercamientos = int(df_final['Acercamientos'].sum())
             total_respuestas = int(df_final['Respuestas_Iniciales'].sum())
             total_sesiones = int(df_final['Sesiones_Agendadas'].sum())
-
-    else: # 'Fecha del Evento (Actividad del Período)'
-        # No hay un df_final único. Cada métrica se filtra y cuenta por separado.
-        df_final = df_filtered_by_dims # Base para cálculos y tabla de detalle
-        
-        if df_final.empty:
-            st.warning("No se encontraron datos que coincidan con los filtros de dimensión.")
-        else:
+        else: # 'Fecha del Evento (Actividad del Período)'
+            df_final = df_filtered_by_dims
             total_acercamientos = df_final[df_final['Fecha_Contacto_Inicial'].between(start_dt, end_dt)].shape[0]
             total_respuestas = df_final[df_final['Fecha_Primera_Respuesta'].between(start_dt, end_dt)].shape[0]
             total_sesiones = df_final[df_final['Fecha_Sesion_Agendada'].between(start_dt, end_dt)].shape[0]
 
-    # 4. MOSTRAR RESULTADOS (SOLO SI HAY DATOS PARA MOSTRAR)
-    if 'total_acercamientos' in locals() and (total_acercamientos > 0 or analysis_perspective != 'Fecha de Contacto Inicial (Cohorte)'):
-        display_kpi_summary(total_acercamientos, total_respuestas, total_sesiones)
-        st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
-        
-        # SECCIÓN DE ANÁLISIS POR DIMENSIONES
-        st.markdown("## 🔬 Desglose de Rendimiento por Dimensiones")
-        tabs_list = ["Campaña", "Proceso", "Industria", "Pais", "Puesto", "Fuente de la Lista"]
-        tabs = st.tabs([f"📊 Por {t}" for t in tabs_list])
-        
-        for i, dimension in enumerate(tabs_list):
-            with tabs[i]:
-                # La función de desglose ahora maneja la lógica de perspectiva internamente
-                display_grouped_breakdown(df_filtered_by_dims, dimension, analysis_perspective, start_date, end_date)
+        if 'total_acercamientos' in locals():
+            display_kpi_summary(total_acercamientos, total_respuestas, total_sesiones)
+            st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
+            
+            st.markdown("## 🔬 Desglose de Rendimiento por Dimensiones")
+            tabs_list = ["Campaña", "Proceso", "Industria", "Pais", "Puesto", "Fuente de la Lista"]
+            tabs = st.tabs([f"📊 Por {t}" for t in tabs_list])
+            
+            for i, dimension in enumerate(tabs_list):
+                with tabs[i]:
+                    display_grouped_breakdown(df_filtered_by_dims, dimension, analysis_perspective, start_date, end_date)
 
-        # Tabla de datos detallados
-        st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
-        with st.expander("Ver tabla de datos detallados del período filtrado"):
-             # Mostramos el df filtrado por dimensiones; el usuario puede ordenar por fecha si lo desea
-            st.dataframe(df_final, hide_index=True)
-    elif 'df_final' in locals() and df_final.empty:
-        # Este mensaje ya se muestra arriba, pero es un reaseguro.
-        pass
-    else:
-        st.info("Selecciona un rango de fechas y filtros para ver los resultados.")
+            st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
+            with st.expander("Ver tabla de datos detallados del período filtrado"):
+                st.dataframe(df_final, hide_index=True)
+        else:
+            st.info("Selecciona un rango de fechas y filtros para ver los resultados.")
 
 st.markdown("---")
