@@ -246,8 +246,8 @@ Nos especializamos en Intelligent Process Automation, desarrollando agentes digi
 
 Por ejemplo:
 
-— FER publica vacantes en canales clave sin intervención manual.
-— LUCAS organiza postulaciones para que el equipo se enfoque en entrevistas.
+— FER se encarga de la ejecución táctica de la publicación de vacantes.
+— LUCAS organiza el volumen de postulaciones.
 — ISA facilita todo el proceso de ingreso en los sistemas: datos, contrato, recursos.
 — BEN, LILY y LISA apoyan con nómina, desempeño y viáticos de forma estructurada.
 — CLEO coordina procesos de retiro y cierre respetando políticas internas.
