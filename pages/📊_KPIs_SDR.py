@@ -59,34 +59,35 @@ def load_sdr_kpi_data():
         st.error(f"Error al autenticar con Google Sheets para KPIs de SDR: {e}")
         st.stop()
 
-    # URL del Google Sheet principal (la misma que usan los otros módulos)
     sheet_url_kpis = st.secrets.get(
         "main_prostraction_sheet_url",
         "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0"
     )
     
     try:
-        # Abrir el workbook y seleccionar la hoja "KPI's SDR"
         workbook = client.open_by_url(sheet_url_kpis)
-        sheet = workbook.worksheet("KPI's SDR") # <-- CAMBIO CLAVE: Nombre de la hoja
+        # --- LÍNEA MODIFICADA ---
+        # Se cambia el apóstrofo para que coincida con el de tu hoja.
+        sheet = workbook.worksheet("KPI´s SDR") # <-- CAMBIO CLAVE
         
         raw_data = sheet.get_all_values()
         if not raw_data or len(raw_data) <= 1:
-            st.error(f"No se pudieron obtener datos suficientes de la hoja 'KPI's SDR'.")
+            st.error(f"No se pudieron obtener datos suficientes de la hoja 'KPI´s SDR'.")
             return pd.DataFrame()
         headers = raw_data[0]
         rows = raw_data[1:]
     except gspread.exceptions.WorksheetNotFound:
-        st.error(f"Error: No se encontró la hoja de cálculo 'KPI's SDR' en el Google Sheet.")
+        # Este mensaje de error seguirá siendo útil si el nombre vuelve a cambiar.
+        st.error(f"Error: No se encontró la hoja de cálculo 'KPI´s SDR' en el Google Sheet.")
         st.stop()
     except Exception as e:
-        st.error(f"Error al leer la hoja 'KPI's SDR': {e}")
+        st.error(f"Error al leer la hoja 'KPI´s SDR': {e}")
         st.stop()
 
+    # El resto de la función permanece igual...
     cleaned_headers = [str(h).strip() for h in headers]
     df = pd.DataFrame(rows, columns=cleaned_headers)
 
-    # Procesamiento de la columna 'Fecha'
     if "Fecha" in df.columns:
         df["Fecha"] = pd.to_datetime(df["Fecha"], format='%d/%m/%Y', errors='coerce')
         df.dropna(subset=["Fecha"], inplace=True)
@@ -103,7 +104,6 @@ def load_sdr_kpi_data():
         for col_time in ['Año', 'NumSemana', 'MesNum']: df[col_time] = pd.Series(dtype='int')
         df['AñoMes'] = pd.Series(dtype='str')
 
-    # Procesamiento de columnas de KPIs (Invites, Mensajes, Respuestas, Sesiones)
     kpi_columns_ordered = ["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]
     for col_name in kpi_columns_ordered:
         if col_name not in df.columns:
@@ -112,7 +112,6 @@ def load_sdr_kpi_data():
         else:
             df[col_name] = df[col_name].apply(lambda x: parse_kpi_value(x, column_name=col_name)).astype(int)
 
-    # Procesamiento de columnas de texto (Dimensiones)
     string_cols_kpis = ["Mes", "Semana", "Analista", "Región"]
     for col_str in string_cols_kpis:
         if col_str not in df.columns:
