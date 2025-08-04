@@ -1,291 +1,293 @@
 # pages/📊_KPIs_SDR.py
-
 import streamlit as st
 import pandas as pd
 import gspread
 import datetime
 import plotly.express as px
-import plotly.graph_objects as go
-from collections import Counter
 
-# --- CONFIGURACIÓN DE LA PÁGINA --
-st.set_page_config(page_title="Dashboard de Desempeño SDR", layout="wide")
-st.title("📊 Dashboard de Desempeño SDR")
-st.markdown("Análisis de efectividad y conversión con doble perspectiva: por **Cohorte** y por **Actividad del Período**.")
+# --- Configuración Inicial de la Página ---
+st.set_page_config(layout="wide", page_title="KPIs SDR (Evelyn)")
+st.title("📊 Dashboard de KPIs de SDR (Evelyn)")
+st.markdown(
+    "Análisis de métricas absolutas y tasas de conversión para el SDR."
+)
 
-# --- FUNCIONES DE UTILIDAD ---
+# --- Funciones de Procesamiento de Datos ---
 
-def make_unique(headers_list):
-    """Garantiza que los encabezados de columna sean únicos."""
-    counts = Counter()
-    new_headers = []
-    for h in headers_list:
-        h_stripped = str(h).strip() if pd.notna(h) else "Columna_Vacia"
-        if not h_stripped: h_stripped = "Columna_Vacia"
-        counts[h_stripped] += 1
-        if counts[h_stripped] == 1:
-            new_headers.append(h_stripped)
+def parse_kpi_value(value_str, column_name=""):
+    """
+    Parsea un valor de KPI, que puede ser numérico o de texto ('si', 'vc', etc.),
+    a un valor numérico flotante.
+    """
+    cleaned_val = str(value_str).strip().lower()
+    if not cleaned_val: return 0.0
+    try:
+        # Intenta convertir directamente a número
+        num_val = pd.to_numeric(cleaned_val, errors='raise')
+        return 0.0 if pd.isna(num_val) else float(num_val)
+    except ValueError:
+        # Si falla, procesa como texto
+        pass
+    
+    # Lógica especial para columnas que pueden tener texto afirmativo
+    if column_name == "Sesiones agendadas":
+        affirmative_session_texts = ['vc', 'si', 'sí', 'yes', 'true', '1', '1.0']
+        if cleaned_val in affirmative_session_texts: return 1.0
+        return 0.0
+    else:
+        # Intenta extraer un número de una cadena (ej. '1 - Realizada')
+        first_part = cleaned_val.split('-')[0].strip()
+        if not first_part: return 0.0
+        try:
+            num_val_from_part = pd.to_numeric(first_part, errors='raise')
+            return 0.0 if pd.isna(num_val_from_part) else float(num_val_from_part)
+        except ValueError:
+            return 0.0
+
+@st.cache_data(ttl=300)
+def load_sdr_kpi_data():
+    """
+    Carga los datos de KPIs para el SDR desde la hoja 'KPI's SDR'.
+    """
+    try:
+        creds_from_secrets = st.secrets["gcp_service_account"]
+        client = gspread.service_account_from_dict(creds_from_secrets)
+    except KeyError:
+        st.error("Error de Configuración (Secrets): Falta la sección [gcp_service_account] en los 'Secrets' de Streamlit.")
+        st.stop()
+    except Exception as e:
+        st.error(f"Error al autenticar con Google Sheets para KPIs de SDR: {e}")
+        st.stop()
+
+    # URL del Google Sheet principal (la misma que usan los otros módulos)
+    sheet_url_kpis = st.secrets.get(
+        "main_prostraction_sheet_url",
+        "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0"
+    )
+    
+    try:
+        # Abrir el workbook y seleccionar la hoja "KPI's SDR"
+        workbook = client.open_by_url(sheet_url_kpis)
+        sheet = workbook.worksheet("KPI's SDR") # <-- CAMBIO CLAVE: Nombre de la hoja
+        
+        raw_data = sheet.get_all_values()
+        if not raw_data or len(raw_data) <= 1:
+            st.error(f"No se pudieron obtener datos suficientes de la hoja 'KPI's SDR'.")
+            return pd.DataFrame()
+        headers = raw_data[0]
+        rows = raw_data[1:]
+    except gspread.exceptions.WorksheetNotFound:
+        st.error(f"Error: No se encontró la hoja de cálculo 'KPI's SDR' en el Google Sheet.")
+        st.stop()
+    except Exception as e:
+        st.error(f"Error al leer la hoja 'KPI's SDR': {e}")
+        st.stop()
+
+    cleaned_headers = [str(h).strip() for h in headers]
+    df = pd.DataFrame(rows, columns=cleaned_headers)
+
+    # Procesamiento de la columna 'Fecha'
+    if "Fecha" in df.columns:
+        df["Fecha"] = pd.to_datetime(df["Fecha"], format='%d/%m/%Y', errors='coerce')
+        df.dropna(subset=["Fecha"], inplace=True)
+        if not df.empty:
+            df['Año'] = df['Fecha'].dt.year
+            df['NumSemana'] = df['Fecha'].dt.isocalendar().week.astype(int)
+            df['MesNum'] = df['Fecha'].dt.month
+            df['AñoMes'] = df['Fecha'].dt.strftime('%Y-%m')
         else:
-            new_headers.append(f"{h_stripped}_{counts[h_stripped]-1}")
-    return new_headers
+            for col_time in ['Año', 'NumSemana', 'MesNum']: df[col_time] = pd.Series(dtype='int')
+            df['AñoMes'] = pd.Series(dtype='str')
+    else:
+        st.warning("Columna 'Fecha' no encontrada. No se podrán aplicar filtros de fecha.")
+        for col_time in ['Año', 'NumSemana', 'MesNum']: df[col_time] = pd.Series(dtype='int')
+        df['AñoMes'] = pd.Series(dtype='str')
+
+    # Procesamiento de columnas de KPIs (Invites, Mensajes, Respuestas, Sesiones)
+    kpi_columns_ordered = ["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]
+    for col_name in kpi_columns_ordered:
+        if col_name not in df.columns:
+            st.warning(f"Columna KPI '{col_name}' no encontrada. Se creará con ceros.")
+            df[col_name] = 0
+        else:
+            df[col_name] = df[col_name].apply(lambda x: parse_kpi_value(x, column_name=col_name)).astype(int)
+
+    # Procesamiento de columnas de texto (Dimensiones)
+    string_cols_kpis = ["Mes", "Semana", "Analista", "Región"]
+    for col_str in string_cols_kpis:
+        if col_str not in df.columns:
+            df[col_str] = pd.Series(dtype='str')
+        else:
+            df[col_str] = df[col_str].astype(str).str.strip().fillna("N/D")
+    
+    return df
 
 def calculate_rate(numerator, denominator, round_to=1):
     """Calcula una tasa como porcentaje, manejando la división por cero."""
     if denominator == 0: return 0.0
     return round((numerator / denominator) * 100, round_to)
 
-# --- CARGA Y PROCESAMIENTO DE DATOS ---
+# --- Carga de Datos ---
+df_kpis_sdr_raw = load_sdr_kpi_data()
 
-@st.cache_data(ttl=300)
-def load_and_process_sdr_data():
-    """
-    Carga y procesa datos desde la hoja 'Evelyn'.
-    Parsea todas las columnas de fecha clave para permitir un análisis de doble perspectiva.
-    """
-    try:
-        creds_dict = st.secrets["gcp_service_account"]
-        sheet_url = st.secrets.get("main_prostraction_sheet_url", "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0")
-        client = gspread.service_account_from_dict(creds_dict)
-        workbook = client.open_by_url(sheet_url)
-        sheet = workbook.worksheet("Evelyn")
-        values = sheet.get_all_values()
+if df_kpis_sdr_raw.empty:
+    st.error("El DataFrame de KPIs de SDR está vacío después de la carga. No se puede continuar.")
+    st.stop()
 
-        if len(values) < 2:
-            st.warning("La hoja 'Evelyn' está vacía o solo tiene encabezados.")
-            return pd.DataFrame()
+# --- Gestión de Estado y Filtros (Sidebar) ---
+START_DATE_KEY = "sdr_page_fecha_inicio_v1"
+END_DATE_KEY = "sdr_page_fecha_fin_v1"
+ANALISTA_FILTER_KEY = "sdr_page_filtro_Analista_v1"
+REGION_FILTER_KEY = "sdr_page_filtro_Región_v1"
+YEAR_FILTER_KEY = "sdr_page_filtro_Año_v1"
+WEEK_FILTER_KEY = "sdr_page_filtro_Semana_v1"
 
-        headers = make_unique(values[0])
-        df = pd.DataFrame(values[1:], columns=headers)
+default_filters_sdr = {
+    START_DATE_KEY: None, END_DATE_KEY: None,
+    ANALISTA_FILTER_KEY: ["– Todos –"], REGION_FILTER_KEY: ["– Todos –"],
+    YEAR_FILTER_KEY: "– Todos –", WEEK_FILTER_KEY: ["– Todas –"],
+}
+for key, default_val in default_filters_sdr.items():
+    if key not in st.session_state: st.session_state[key] = default_val
 
-    except gspread.exceptions.WorksheetNotFound:
-        st.error("Error Crítico: No se encontró la hoja 'Evelyn' en el Google Sheet principal.")
-        return pd.DataFrame()
-    except Exception as e:
-        st.error(f"No se pudo cargar la hoja 'Evelyn'. Error: {e}")
-        return pd.DataFrame()
+def clear_sdr_filters_callback():
+    """Limpia los filtros de esta página."""
+    for key, default_val in default_filters_sdr.items():
+        st.session_state[key] = default_val
+    st.toast("Filtros de KPIs de SDR reiniciados ✅", icon="🧹")
 
-    # CAMBIO: Se elimina 'Fecha De Recontacto' del procesamiento
-    date_columns_to_process = {
-        "Fecha Primer contacto (Linkedin, correo, llamada, WA)": "Fecha_Contacto_Inicial",
-        "Fecha de Primer Respuesta": "Fecha_Primera_Respuesta",
-        "Fecha Agendamiento": "Fecha_Sesion_Agendada",
-    }
+def sidebar_filters_sdr(df_options):
+    """Renderiza los filtros en la barra lateral."""
+    st.sidebar.header("🔍 Filtros de KPIs de SDR")
+    st.sidebar.markdown("---")
     
-    for original_col, new_col in date_columns_to_process.items():
-        if original_col in df.columns:
-            df[new_col] = pd.to_datetime(df[original_col], dayfirst=True, errors='coerce')
-        else:
-            df[new_col] = pd.NaT
-            st.warning(f"Advertencia: No se encontró la columna '{original_col}'. Las métricas relacionadas pueden ser 0.")
-
-    if "Fecha_Contacto_Inicial" not in df.columns or df["Fecha_Contacto_Inicial"].isnull().all():
-        st.error("Columna 'Fecha Primer contacto (...)' no encontrada o vacía. Es esencial para el análisis.")
-        return pd.DataFrame()
+    # Lógica de filtros (es la misma que en KPIs.py)
+    # Por Fecha
+    st.sidebar.subheader("🗓️ Por Fecha")
+    min_date_data, max_date_data = None, None
+    if "Fecha" in df_options.columns and pd.api.types.is_datetime64_any_dtype(df_options["Fecha"]) and not df_options["Fecha"].dropna().empty:
+        min_date_data, max_date_data = df_options["Fecha"].dropna().min().date(), df_options["Fecha"].dropna().max().date()
     
-    df.dropna(subset=['Fecha_Contacto_Inicial'], inplace=True)
+    col1_date, col2_date = st.sidebar.columns(2)
+    with col1_date:
+        st.date_input("Desde", value=st.session_state.get(START_DATE_KEY), min_value=min_date_data, max_value=max_date_data, format='DD/MM/YYYY', key=START_DATE_KEY)
+    with col2_date:
+        st.date_input("Hasta", value=st.session_state.get(END_DATE_KEY), min_value=min_date_data, max_value=max_date_data, format='DD/MM/YYYY', key=END_DATE_KEY)
 
-    # CAMBIO: Se elimina la métrica 'Necesita_Recontacto'
-    df['Acercamientos'] = df['Fecha_Contacto_Inicial'].notna()
-    df['Respuestas_Iniciales'] = df['Fecha_Primera_Respuesta'].notna()
-    df['Sesiones_Agendadas'] = df['Fecha_Sesion_Agendada'].notna() & (df["Sesion Agendada?"].str.strip().str.lower().isin(['si', 'sí']))
+    # Por Año y Semana
+    st.sidebar.subheader("📅 Por Año y Semana")
+    # ... (código idéntico a KPIs.py para filtros de año y semana)
+    raw_year_options_int = []
+    if "Año" in df_options.columns and not df_options["Año"].dropna().empty:
+        raw_year_options_int = sorted(df_options["Año"].dropna().astype(int).unique(), reverse=True)
     
-    df['AñoMes_Contacto'] = df['Fecha_Contacto_Inicial'].dt.strftime('%Y-%m')
+    year_options_str_list = ["– Todos –"] + [str(y) for y in raw_year_options_int]
+    selected_year_str = st.sidebar.selectbox("Año", year_options_str_list, key=YEAR_FILTER_KEY)
+    selected_year_int = int(selected_year_str) if selected_year_str != "– Todos –" else None
 
-    for col in ["Fuente de la Lista", "Campaña", "Proceso", "Industria", "Pais", "Puesto"]:
-        if col in df.columns:
-            df[col] = df[col].astype(str).str.strip().fillna("N/D").replace("", "N/D")
-        else:
-            df[col] = "N/D"
-
-    return df.sort_values(by='Fecha_Contacto_Inicial', ascending=False)
-
-# --- COMPONENTES DE LA UI Y FILTROS ---
-
-def clear_all_filters():
-    """Limpia todos los filtros en el estado de la sesión."""
-    st.session_state.start_date = None
-    st.session_state.end_date = None
+    # Por Analista y Región
+    st.sidebar.subheader("👥 Por Analista y Región")
     
-    # CAMBIO: Nos aseguramos de que solo limpie el filtro de la lista
-    prospecting_cols = ["Fuente de la Lista"]
-    for col in prospecting_cols:
-        key = f"filter_{col.lower().replace(' ', '_')}"
-        if key in st.session_state:
-            st.session_state[key] = ["– Todos –"]
+    def get_multiselect_val_sdr(col_name, label, key, df_opt):
+        options = ["– Todos –"]
+        if col_name in df_opt.columns and not df_opt[col_name].dropna().empty:
+            unique_vals = df_opt[col_name].astype(str).str.strip().replace('', 'N/D').unique()
+            options.extend(sorted([val for val in unique_vals if val and val != 'N/D']))
+        return st.sidebar.multiselect(label, options, key=key)
 
-def sidebar_filters(df, global_min_date, global_max_date):
-    """Renderiza los filtros de la barra lateral con fechas vacías por defecto."""
-    st.sidebar.header("🔍 Filtros de Análisis")
-    if df.empty:
-        st.sidebar.warning("No hay datos para filtrar.")
-        return None, None, {}
-
-    st.sidebar.subheader("📅 Filtrar por Fecha")
-    col1, col2 = st.sidebar.columns(2)
-    with col1:
-        start_date = st.date_input("Fecha Inicial", value=None, min_value=global_min_date, max_value=global_max_date, key="start_date", help="Dejar vacío para incluir todo desde el inicio.")
-    with col2:
-        end_date = st.date_input("Fecha Final", value=None, min_value=start_date if start_date else global_min_date, max_value=global_max_date, key="end_date", help="Dejar vacío para incluir todo hasta el final.")
-
-    other_filters = {}
-    st.sidebar.subheader("🔎 Filtrar por Dimensiones")
+    get_multiselect_val_sdr("Analista", "Analista", ANALISTA_FILTER_KEY, df_options)
+    get_multiselect_val_sdr("Región", "Región", REGION_FILTER_KEY, df_options)
     
-    # CAMBIO: Volvemos a tener solo el filtro que tenías originalmente
-    dimension_cols = ["Fuente de la Lista"]
+    st.sidebar.markdown("---")
+    st.sidebar.button("🧹 Limpiar Filtros de SDR", on_click=clear_sdr_filters_callback, use_container_width=True)
     
-    for dim_col in dimension_cols:
-        if dim_col in df.columns and df[dim_col].nunique() > 1:
-            opciones = ["– Todos –"] + sorted(df[dim_col].unique().tolist())
-            filtro_key = f"filter_{dim_col.lower().replace(' ', '_')}"
-            other_filters[dim_col] = st.sidebar.multiselect(dim_col, opciones, default=["– Todos –"], key=filtro_key)
+    return (st.session_state[START_DATE_KEY], st.session_state[END_DATE_KEY], selected_year_int,
+            st.session_state[WEEK_FILTER_KEY], st.session_state[ANALISTA_FILTER_KEY], st.session_state[REGION_FILTER_KEY])
 
-    st.sidebar.button("🧹 Limpiar Todos los Filtros", on_click=clear_all_filters, use_container_width=True)
-
-    return start_date, end_date, other_filters
-
-def apply_dimension_filters(df, other_filters):
-    """Aplica solo los filtros de dimensiones (no los de fecha)."""
+def apply_sdr_filters(df, start_dt, end_dt, year_val, week_list, analista_list, region_list):
+    """Aplica todos los filtros al DataFrame."""
     df_f = df.copy()
-    for col, values in other_filters.items():
-        if values and "– Todos –" not in values:
-            df_f = df_f[df_f[col].isin(values)]
+    if "Fecha" in df_f.columns and pd.api.types.is_datetime64_any_dtype(df_f["Fecha"]):
+        start_dt_date = start_dt.date() if isinstance(start_dt, datetime.datetime) else start_dt
+        end_dt_date = end_dt.date() if isinstance(end_dt, datetime.datetime) else end_dt
+        if start_dt_date and end_dt_date:
+            df_f = df_f[(df_f["Fecha"].dt.date >= start_dt_date) & (df_f["Fecha"].dt.date <= end_dt_date)]
+    
+    if analista_list and "– Todos –" not in analista_list and "Analista" in df_f.columns:
+        df_f = df_f[df_f["Analista"].isin(analista_list)]
+    if region_list and "– Todos –" not in region_list and "Región" in df_f.columns:
+        df_f = df_f[df_f["Región"].isin(region_list)]
+        
     return df_f
 
-# --- COMPONENTES DE VISUALIZACIÓN --- (Sin cambios en estas funciones)
+# --- Componentes de Visualización (Reutilizados de KPIs.py) ---
+def display_kpi_summary(df_filtered):
+    st.markdown("### 🧮 Resumen de KPIs Totales (Periodo Filtrado)")
+    
+    kpi_cols_funnel_order = ["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]
+    icons_funnel_order = ["📧", "📤", "💬", "🤝"]
+    
+    metrics = {col: df_filtered[col].sum() if col in df_filtered.columns else 0 for col in kpi_cols_funnel_order}
 
-def display_kpi_summary(total_acercamientos, total_respuestas, total_sesiones):
-    st.markdown("### 🧮 Resumen de KPIs Totales (Período Filtrado)")
-    kpi_cols = st.columns(3)
-    kpi_cols[0].metric("🚀 Total Acercamientos", f"{total_acercamientos:,}")
-    kpi_cols[1].metric("💬 Total Respuestas Iniciales", f"{total_respuestas:,}")
-    kpi_cols[2].metric("🗓️ Total Sesiones Agendadas", f"{total_sesiones:,}")
-
+    col_metrics_abs = st.columns(len(kpi_cols_funnel_order))
+    for i, col_name in enumerate(kpi_cols_funnel_order):
+        col_metrics_abs[i].metric(f"{icons_funnel_order[i]} Total {col_name.title()}", f"{metrics.get(col_name, 0):,}")
+    
     st.markdown("---")
-    st.markdown("#### 📊 Tasas de Conversión")
-    tasa_resp_vs_acerc = calculate_rate(total_respuestas, total_acercamientos)
-    tasa_sesion_vs_resp = calculate_rate(total_sesiones, total_respuestas)
-    tasa_sesion_global = calculate_rate(total_sesiones, total_acercamientos)
+    st.markdown("#### Tasas de Conversión")
 
-    rate_cols = st.columns(3)
-    rate_cols[0].metric("🗣️ Tasa Respuesta / Acercamiento", f"{tasa_resp_vs_acerc:.1f}%", help="De todos los acercamientos, qué % generó una respuesta.")
-    rate_cols[1].metric("🤝 Tasa Sesión / Respuesta", f"{tasa_sesion_vs_resp:.1f}%", help="De todas las respuestas, qué % condujo a una sesión.")
-    rate_cols[2].metric("🏆 Tasa Sesión / Acercamiento (Global)", f"{tasa_sesion_global:.1f}%", help="Eficiencia total del proceso: (Sesiones Agendadas / Acercamientos)")
+    total_invites = metrics.get("Invites enviadas", 0)
+    total_mensajes = metrics.get("Mensajes Enviados", 0)
+    total_respuestas = metrics.get("Respuestas", 0)
+    total_sesiones = metrics.get("Sesiones agendadas", 0)
 
-def display_grouped_breakdown(df_to_analyze, group_by_col, perspective, start_date, end_date):
-    st.markdown(f"#### Análisis por `{group_by_col}`")
-    if group_by_col not in df_to_analyze.columns or df_to_analyze[group_by_col].nunique() < 2:
-        st.info(f"No hay suficientes datos o diversidad para analizar por '{group_by_col}'.")
+    tasa_mensajes_vs_invites = calculate_rate(total_mensajes, total_invites)
+    tasa_respuestas_vs_mensajes = calculate_rate(total_respuestas, total_mensajes)
+    tasa_sesiones_vs_respuestas = calculate_rate(total_sesiones, total_respuestas)
+    tasa_sesiones_vs_invites_global = calculate_rate(total_sesiones, total_invites)
+
+    rate_icons = ["📨➡️📤", "📤➡️💬", "💬➡️🤝", "📧➡️🤝"]
+    col_metrics_rates = st.columns(4)
+    col_metrics_rates[0].metric(f"{rate_icons[0]} Tasa Mensajes / Invite", f"{tasa_mensajes_vs_invites:.1f}%")
+    col_metrics_rates[1].metric(f"{rate_icons[1]} Tasa Respuesta / Mensaje", f"{tasa_respuestas_vs_mensajes:.1f}%")
+    col_metrics_rates[2].metric(f"{rate_icons[2]} Tasa Agend. / Respuesta", f"{tasa_sesiones_vs_respuestas:.1f}%")
+    col_metrics_rates[3].metric(f"{rate_icons[3]} Tasa Agend. / Invite (Global)", f"{tasa_sesiones_vs_invites_global:.1f}%")
+
+def display_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_icon="📊"):
+    st.markdown(f"### {chart_icon} {title_prefix}")
+    if group_by_col not in df_filtered.columns or df_filtered.empty:
+        st.warning(f"No hay datos o falta la columna '{group_by_col}'.")
         return
-
-    start_dt, end_dt = pd.to_datetime(start_date), pd.to_datetime(end_date) + pd.Timedelta(days=1)
-
-    if perspective == 'Fecha de Contacto Inicial (Cohorte)':
-        df_period = df_to_analyze[df_to_analyze['Fecha_Contacto_Inicial'].between(start_dt, end_dt)]
-        summary_df = df_period.groupby(group_by_col).agg(
-            Acercamientos=('Acercamientos', 'sum'),
-            Sesiones_Agendadas=('Sesiones_Agendadas', 'sum')
-        ).reset_index()
+        
+    kpi_cols_funnel = ["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]
+    summary_df = df_filtered.groupby(group_by_col, as_index=False)[kpi_cols_funnel].sum()
+    
+    if not summary_df.empty:
+        st.markdown(f"##### Tabla Resumen por {group_by_col}")
+        st.dataframe(summary_df, use_container_width=True)
     else:
-        summary_df = df_to_analyze.groupby(group_by_col).agg(
-            Acercamientos=('Fecha_Contacto_Inicial', lambda x: x.between(start_dt, end_dt).sum()),
-            Sesiones_Agendadas=('Fecha_Sesion_Agendada', lambda x: x.between(start_dt, end_dt).sum())
-        ).reset_index()
+        st.info(f"No hay datos para desglosar por {group_by_col}.")
 
-    summary_df = summary_df.astype({'Acercamientos': 'int', 'Sesiones_Agendadas': 'int'})
-    summary_df = summary_df[summary_df['Acercamientos'] > 0]
+# --- Flujo Principal de la Página ---
+start_date_val, end_date_val, year_val, week_val, analista_val, region_val = sidebar_filters_sdr(df_kpis_sdr_raw)
+
+df_kpis_sdr_filtered = apply_sdr_filters(
+    df_kpis_sdr_raw, start_date_val, end_date_val, year_val, week_val, analista_val, region_val
+)
+
+# --- Presentación del Dashboard ---
+if not df_kpis_sdr_filtered.empty:
+    display_kpi_summary(df_kpis_sdr_filtered)
+    st.markdown("---")
     
-    if summary_df.empty:
-        st.info(f"No hay datos de acercamientos para '{group_by_col}' en el período seleccionado.")
-        return
+    display_grouped_breakdown(df_kpis_sdr_filtered, "Analista", "Desglose por Analista", chart_icon="🧑‍💻")
+    st.markdown("---")
+    display_grouped_breakdown(df_kpis_sdr_filtered, "Región", "Desglose por Región", chart_icon="🌎")
+    st.markdown("---")
 
-    summary_df['Tasa_Conversion'] = summary_df.apply(lambda r: calculate_rate(r.Sesiones_Agendadas, r.Acercamientos), axis=1)
-    
-    col1, col2 = st.columns([0.5, 0.5])
-    with col1:
-        st.markdown("##### Top 10 por Volumen de Sesiones")
-        top_10_volumen = summary_df.nlargest(10, 'Sesiones_Agendadas')
-        st.dataframe(top_10_volumen.style.format({'Tasa_Conversion': '{:.1f}%'}), hide_index=True, use_container_width=True)
-    with col2:
-        st.markdown("##### Top 10 por Eficiencia (Tasa de Conversión)")
-        top_10_eficiencia = summary_df[summary_df['Sesiones_Agendadas'] > 0].nlargest(10, 'Tasa_Conversion')
-        if top_10_eficiencia.empty:
-            st.info("No hay datos para mostrar el top de eficiencia.")
-            return
-        fig = px.bar(top_10_eficiencia.sort_values('Tasa_Conversion', ascending=True),
-                     x='Tasa_Conversion', y=group_by_col, orientation='h', text='Tasa_Conversion',
-                     title="Tasa de Sesión Agendada / Acercamiento")
-        fig.update_traces(texttemplate='%{x:.1f}%', textposition='outside', marker_color='#30B88A')
-        fig.update_layout(yaxis_title=None, xaxis_title="Tasa de Conversión (%)", showlegend=False,
-                          margin=dict(t=30, b=10, l=10, r=10), height=400)
-        st.plotly_chart(fig, use_container_width=True)
-
-# --- FLUJO PRINCIPAL DE LA PÁGINA ---
-df_sdr_data = load_and_process_sdr_data()
-
-if df_sdr_data.empty:
-    st.error("No se pudieron cargar o procesar los datos para el dashboard.")
+    with st.expander("Ver tabla de datos detallados del período filtrado"):
+        st.dataframe(df_kpis_sdr_filtered, hide_index=True)
 else:
-    st.sidebar.subheader("🎯 Perspectiva de Análisis")
-    analysis_perspective = st.sidebar.radio(
-        "Ver métricas basadas en:",
-        ('Fecha de Contacto Inicial (Cohorte)', 'Fecha del Evento (Actividad del Período)'),
-        key='analysis_perspective',
-        help="""
-        - **Cohorte:** Analiza el resultado final de los prospectos contactados en el rango de fechas.
-        - **Actividad del Período:** Muestra toda la actividad (contactos, respuestas, sesiones) que ocurrió en el rango de fechas.
-        """
-    )
-    
-    # CAMBIO: Se elimina 'Fecha_Recontacto' de la lista para el rango global
-    date_cols_for_range = ['Fecha_Contacto_Inicial', 'Fecha_Primera_Respuesta', 'Fecha_Sesion_Agendada']
-    existing_date_cols = [col for col in date_cols_for_range if col in df_sdr_data.columns and df_sdr_data[col].notna().any()]
-    
-    if not existing_date_cols:
-        st.error("No se encontraron columnas de fecha válidas para establecer el rango del dashboard.")
-    else:
-        global_min_date = df_sdr_data[existing_date_cols].min().min().date()
-        global_max_date = df_sdr_data[existing_date_cols].max().max().date()
-
-        start_date, end_date, other_filters = sidebar_filters(df_sdr_data, global_min_date, global_max_date)
-        
-        # CAMBIO: Si las fechas están vacías (None), usamos el rango global para los cálculos internos
-        start_date_filter = start_date if start_date is not None else global_min_date
-        end_date_filter = end_date if end_date is not None else global_max_date
-
-        df_filtered_by_dims = apply_dimension_filters(df_sdr_data, other_filters)
-        
-        start_dt = pd.to_datetime(start_date_filter)
-        end_dt = pd.to_datetime(end_date_filter) + pd.Timedelta(days=1)
-
-        if analysis_perspective == 'Fecha de Contacto Inicial (Cohorte)':
-            df_final = df_filtered_by_dims[df_filtered_by_dims['Fecha_Contacto_Inicial'].between(start_dt, end_dt)]
-            if df_final.empty:
-                st.warning("No se encontraron datos de contacto inicial que coincidan con los filtros seleccionados.")
-            total_acercamientos = int(df_final['Acercamientos'].sum())
-            total_respuestas = int(df_final['Respuestas_Iniciales'].sum())
-            total_sesiones = int(df_final['Sesiones_Agendadas'].sum())
-        else: # 'Fecha del Evento (Actividad del Período)'
-            df_final = df_filtered_by_dims
-            total_acercamientos = df_final[df_final['Fecha_Contacto_Inicial'].between(start_dt, end_dt)].shape[0]
-            total_respuestas = df_final[df_final['Fecha_Primera_Respuesta'].between(start_dt, end_dt)].shape[0]
-            total_sesiones = df_final[df_final['Fecha_Sesion_Agendada'].between(start_dt, end_dt)].shape[0]
-
-        if 'total_acercamientos' in locals():
-            display_kpi_summary(total_acercamientos, total_respuestas, total_sesiones)
-            st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
-            
-            st.markdown("## 🔬 Desglose de Rendimiento por Dimensiones")
-            tabs_list = ["Campaña", "Proceso", "Industria", "Pais", "Puesto", "Fuente de la Lista"]
-            tabs = st.tabs([f"📊 Por {t}" for t in tabs_list])
-            
-            for i, dimension in enumerate(tabs_list):
-                with tabs[i]:
-                    display_grouped_breakdown(df_filtered_by_dims, dimension, analysis_perspective, start_date_filter, end_date_filter)
-
-            st.markdown("<hr style='border:2px solid #2D3038'>", unsafe_allow_html=True)
-            with st.expander("Ver tabla de datos detallados del período filtrado"):
-                st.dataframe(df_final, hide_index=True)
-        else:
-            st.info("Selecciona un rango de fechas y filtros para ver los resultados.")
+    st.info("No se encontraron datos que coincidan con los filtros seleccionados.")
 
 st.markdown("---")
