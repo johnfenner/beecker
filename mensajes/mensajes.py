@@ -246,13 +246,15 @@ Nos especializamos en Intelligent Process Automation, desarrollando agentes digi
 
 Por ejemplo:
 
-— FER se encarga de la ejecución táctica de la publicación de vacantes.
-— LUCAS organiza el volumen de postulaciones.
+— FER publica vacantes en minutos.
+— LUCAS organiza postulaciones sin perder detalles.
 — ISA facilita todo el proceso de ingreso en los sistemas: datos, contrato, recursos.
-— BEN, LILY y LISA apoyan con nómina, desempeño y viáticos de forma estructurada.
+— BEN, LILY y LISA gestionan nómina, desempeño y viáticos.
 — CLEO coordina procesos de retiro y cierre respetando políticas internas.
 
-Con este enfoque, nuestros clientes han logrado reducir más del 70% del tiempo dedicado a tareas operativas en todo el ciclo del colaborador. Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
+Esto ha permitido a empresas de tu sector liberar hasta un 70% del tiempo dedicado a tareas operativas en todo el ciclo del colaborador. 
+
+Me gustaría mostrarte cómo funciona en casos reales y ver si tendría sentido para tu operación.  
 
 ¿Qué día tendrías disponibilidad para que conversemos?
 """
@@ -262,16 +264,16 @@ plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
 Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/.
 
-Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA que asumen tareas críticas para asegurar trazabilidad, cumplimiento y control en cada etapa:
+Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA que aseguran trazabilidad trazabilidad, cumplimiento y control en cada etapa:
 
-— JESSICA y ELSA seleccionan y dan de alta a proveedores de forma automatizada.
+— JESSICA y ELSA seleccionan y dan de alta a proveedores.
 — OLIVIA genera órdenes de compra, previniendo discrepancias desde el origen.
 — DANIEL coteja facturas contra órdenes y entregas, detectando inconsistencias en montos, fechas y autorizaciones.
-— DAVID programa y ejecuta pagos conforme a las condiciones pactadas, garantizando visibilidad y cumplimiento financiero.
+— DAVID programa y ejecuta pagos según condiciones pactadas.
 
-Con este enfoque, nuestros clientes han logrado reducir el tiempo del ciclo de compra en más de un 60%, y al mismo tiempo mejorar significativamente la precisión, la auditoría y el cumplimiento en sus procesos de pago.
+Con este modelo, nuestros clientes han reducido el ciclo de compra en más del 60% y mejorado la precisión y la auditoría de pagos.
 
-Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
+Me gustaría invitarte a una breve sesión para mostrarte cómo aplicamos esto y que evalúes si encaja en tu operación.  
 
 ¿Qué día tendrías disponibilidad para que conversemos?
 """
@@ -280,16 +282,16 @@ plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
 Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/.
 
-Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA para acelerar el flujo de caja, garantizar trazabilidad y proteger la rentabilidad en cada etapa:
+Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA para para agilizar el ciclo Order-to-Cash:
 
-— NICO, ADRIAN y MIA automatizan el alta de clientes, procesan pedidos y gestionan el crédito.
-— DIANA, JAMES y JULIA planifican rutas, transporte y entregas.
-— NINA y AARON gestionan cuentas por cobrar, automatizan recordatorios y ejecutan facturación con precisión.
+— NICO, ADRIAN y MIA automatizan alta de clientes, pedidos y gestión de crédito.
+— DIANA, JAMES y JULIA coordinan rutas, transporte y entregas.
+— NINA y AARON gestionan cuentas por cobrar, automatizan recordatorios y ejecutan facturación.
 — ALICE mantiene visibilidad en tiempo real y previene quiebres de stock.
 
 Con este enfoque, nuestros clientes han acelerado su ciclo de conversión de efectivo y mejorado el indicador de entregas OTIF en más de un 20%.
 
-Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
+Si te parece interesante, te propongo agendar una sesión breve para que lo veas en acción. 
 
 ¿Qué día tendrías disponibilidad para que conversemos?
 """
@@ -302,17 +304,17 @@ Nos especializamos en Intelligent Process Automation, desarrollando agentes digi
 
 Me gustaría mostrarte cómo nuestras soluciones pueden aportar valor en áreas como:
 
-— PROCUREMENT: Cruces automáticos de facturas con órdenes de compra, identificando discrepancias y evitando pagos erróneos.
+— PROCUREMENT: Cruces automáticos de facturas y órdenes de compra.
 — FINANZAS Y CONTABILIDAD: Conciliaciones, pagos y trazabilidad automatizadas.
-— RECURSOS HUMANOS: Optimización de la gestión del talento, desde selección de personal más ágil con IA, hasta una administración de nóminas y beneficios sin fricciones.
-— ATENCIÓN AL CLIENTE: Implementación de agentes virtuales inteligentes que mejoran la experiencia del usuario y resuelven consultas 24/7, disminuyendo drásticamente los tiempos de espera.
-— CADENA DE SUMINISTRO: Pedidos, inventarios y logística mucho más precisa y automatizada.  
+— RECURSOS HUMANOS: Optimización de la gestión del talento, desde selección de personal más ágil con IA, hasta una administración de nóminas y beneficios.
+— ATENCIÓN AL CLIENTE: Implementación de agentes virtuales inteligentes que mejoran la experiencia del usuario y resuelven consultas 24/7.
+— CADENA DE SUMINISTRO: Pedidos, inventarios y logística automatizados. 
 
 Con este enfoque, nuestros clientes han logrado reducir entre un 50% y 70% los tiempos operativos en procesos críticos. 
 
-Si esto te parece interesante, me gustaría coordinar un breve espacio para mostrarte, de manera práctica, cómo podrías aplicar este modelo de optimización para fortalecer tu gestión y superar los objetivos de tu equipo.
+Si esto te parece interesante, te invito a una breve sesión con nuestro equipo para que conozcas cómo lo aplicamos y evaluar si encaja en tus objetivos. 
 
-¿Qué día tendrías disponibilidad para que conversemos?
+¿Qué día tendrías disponibilidad para que conversemos? 
 """
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -321,15 +323,15 @@ Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en
 
 Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA que se integran a sus plataformas actuales para asumir tareas como:
 
-— GESTIÓN DE TICKETS Y SOPORTE: automatizando la gestión y resolución de solicitudes recurrentes, reduciendo drásticamente los tiempos de respuesta.
-— MANTENIMIENTO Y MONITOREO: ejecutando rutinas de mantenimiento, monitoreo de sistemas y respaldos.
-— INTEGRACIÓN DE SISTEMAS: facilitando la orquestación de flujos de datos entre sistemas legacy y nuevas plataformas en la nube.
+— GESTIÓN DE TICKETS Y SOPORTE: Automatizando la gestión y resolución de solicitudes recurrentes.
+— MANTENIMIENTO Y MONITOREO: Ejecutando rutinas de mantenimiento, monitoreo de sistemas y respaldos.
+— INTEGRACIÓN DE SISTEMAS: Conexión fluida entre plataformas legacy y cloud.
 
-Con este enfoque, nuestros clientes de TI han logrado automatizar más del 60% de las tareas de soporte Nivel 1 y reducido el tiempo de resolución de incidentes hasta en un 50%.
+Con este enfoque, nuestros clientes han automatizado más del 60% del soporte Nivel 1 y reducido el tiempo de resolución de incidentes hasta un 50%.
 
-Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
+Si te interesa, te invito a una breve sesión con nuestro equipo para mostrarte brevemente cómo lo hacemos.  
 
-¿Qué día tendrías disponibilidad para que conversemos?
+¿Qué día tendrías disponibilidad para que conversemos? 
 
 """
 
@@ -337,17 +339,17 @@ plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
 Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/.
 
-Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA como Pedro, que asegura el cumplimiento y la agilidad en el proceso aduanal, encargándose de:
+Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA como Pedro, que optimiza el proceso aduanal, encargándose de:
 
-— VALIDACIÓN DE DOCUMENTOS: extrae y cruza datos entre pedimento, factura y orden de compra para detectar discrepancias al instante.
-— CLASIFICACIÓN Y COSTEO: asigna costos y clasifica regímenes de forma automática, minimizando el riesgo de errores.
-— GENERACIÓN DE EXPEDIENTES: crea un expediente digital y auditable en tiempo real para cada operación.
+— VALIDACIÓN DE DOCUMENTOS: Cruza datos entre pedimento, factura y orden de compra.
+— CLASIFICACIÓN Y COSTEO: Asigna costos y clasifica regímenes de forma automática, minimizando el riesgo de errores.
+— GENERACIÓN DE EXPEDIENTES: Genera un archivo digital auditable en tiempo real.
 
 Con este enfoque, nuestros clientes han reducido el tiempo de procesamiento de sus flujos de aduanas en más de un 80%, eliminando prácticamente los errores manuales que generan multas y retrasos.
 
-Justo por eso me gustaría agendar una sesión breve contigo, hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo.
+Si esto te parece interesante, te invito a una breve sesión con nuestro equipo para que conozcas cómo lo aplicamos y evaluar si encaja en tus objetivos. 
 
-¿Qué día tendrías disponibilidad para que conversemos?
+¿Qué día tendrías disponibilidad para que conversemos? 
 
 """
 
