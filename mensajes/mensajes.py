@@ -242,7 +242,7 @@ plantilla_h2r_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
 Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/.
 
-Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA, y actualmente me encuentro compartiendo con algunos líderes cómo estamos resolviendo tareas clave dentro del ciclo Hire-to-Retire.
+Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA, y actualmente estoy compartiendo con algunos líderes cómo estamos resolviendo tareas clave dentro del ciclo Hire-to-Retire.
 
 Por ejemplo:
 
@@ -252,11 +252,11 @@ Por ejemplo:
 — BEN, LILY y LISA gestionan nómina, desempeño y viáticos.
 — CLEO coordina procesos de retiro y cierre respetando políticas internas.
 
-Esto ha permitido a empresas de tu sector liberar hasta un 70% del tiempo dedicado a tareas operativas en todo el ciclo del colaborador. 
+Esto ha permitido a empresas de tu sector liberar hasta un 70% del tiempo operativo en todo el ciclo del colaborador.
 
-Me gustaría mostrarte cómo funciona en casos reales y ver si tendría sentido para tu operación.  
+Esa experiencia, sumada a nuestro trabajo apoyando a profesionales en roles como el tuyo, nos ha permitido desarrollar avances medibles que podrían adaptarse a tu contexto para ahorrarte tiempo y optimizar procesos clave sin interrumpir tus prioridades actuales. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano.
 
-¿Qué día tendrías disponibilidad para que conversemos?
+Podemos coordinarla en el momento que te resulte más cómodo. ¿Cuándo te vendría bien que lo agendemos?
 """
 
 
@@ -264,7 +264,7 @@ plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
 Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/.
 
-Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA que aseguran trazabilidad trazabilidad, cumplimiento y control en cada etapa:
+Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA que aseguran trazabilidad, cumplimiento y control en cada etapa:
 
 — JESSICA y ELSA seleccionan y dan de alta a proveedores.
 — OLIVIA genera órdenes de compra, previniendo discrepancias desde el origen.
@@ -273,9 +273,9 @@ Nos especializamos en Intelligent Process Automation, desarrollando agentes digi
 
 Con este modelo, nuestros clientes han reducido el ciclo de compra en más del 60% y mejorado la precisión y la auditoría de pagos.
 
-Me gustaría invitarte a una breve sesión para mostrarte cómo aplicamos esto y que evalúes si encaja en tu operación.  
+Esa experiencia, sumada a nuestro trabajo apoyando a profesionales en roles como el tuyo, nos ha permitido desarrollar avances medibles que podrían adaptarse a tu contexto para ahorrarte tiempo y optimizar procesos clave sin interrumpir tus prioridades actuales. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano.
 
-¿Qué día tendrías disponibilidad para que conversemos?
+Podemos coordinarla en el momento que te resulte más cómodo. ¿Cuándo te vendría bien que lo agendemos?
 """
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -291,9 +291,9 @@ Nos especializamos en Intelligent Process Automation, desarrollando agentes digi
 
 Con este enfoque, nuestros clientes han acelerado su ciclo de conversión de efectivo y mejorado el indicador de entregas OTIF en más de un 20%.
 
-Si te parece interesante, te propongo agendar una sesión breve para que lo veas en acción. 
+Esa experiencia, sumada a nuestro trabajo apoyando a profesionales en roles como el tuyo, nos ha permitido desarrollar avances medibles que podrían adaptarse a tu contexto para ahorrarte tiempo y optimizar procesos clave sin interrumpir tus prioridades actuales. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano.
 
-¿Qué día tendrías disponibilidad para que conversemos?
+Podemos coordinarla en el momento que te resulte más cómodo. ¿Cuándo te vendría bien que lo agendemos?
 """
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -312,9 +312,9 @@ Me gustaría mostrarte cómo nuestras soluciones pueden aportar valor en áreas 
 
 Con este enfoque, nuestros clientes han logrado reducir entre un 50% y 70% los tiempos operativos en procesos críticos. 
 
-Si esto te parece interesante, te invito a una breve sesión con nuestro equipo para que conozcas cómo lo aplicamos y evaluar si encaja en tus objetivos. 
+Esa experiencia, sumada a nuestro trabajo apoyando a profesionales en roles como el tuyo, nos ha permitido desarrollar avances medibles que podrían adaptarse a tu contexto para ahorrarte tiempo y optimizar procesos clave sin interrumpir tus prioridades actuales. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano.
 
-¿Qué día tendrías disponibilidad para que conversemos? 
+Podemos coordinarla en el momento que te resulte más cómodo. ¿Cuándo te vendría bien que lo agendemos?
 """
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -329,10 +329,9 @@ Nos especializamos en Intelligent Process Automation, desarrollando agentes digi
 
 Con este enfoque, nuestros clientes han automatizado más del 60% del soporte Nivel 1 y reducido el tiempo de resolución de incidentes hasta un 50%.
 
-Si te interesa, te invito a una breve sesión con nuestro equipo para mostrarte brevemente cómo lo hacemos.  
+Esa experiencia, sumada a nuestro trabajo apoyando a profesionales en roles como el tuyo, nos ha permitido desarrollar avances medibles que podrían adaptarse a tu contexto para ahorrarte tiempo y optimizar procesos clave sin interrumpir tus prioridades actuales. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano.
 
-¿Qué día tendrías disponibilidad para que conversemos? 
-
+Podemos coordinarla en el momento que te resulte más cómodo. ¿Cuándo te vendría bien que lo agendemos?
 """
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -347,10 +346,9 @@ Nos especializamos en Intelligent Process Automation, desarrollando agentes digi
 
 Con este enfoque, nuestros clientes han reducido el tiempo de procesamiento de sus flujos de aduanas en más de un 80%, eliminando prácticamente los errores manuales que generan multas y retrasos.
 
-Si esto te parece interesante, te invito a una breve sesión con nuestro equipo para que conozcas cómo lo aplicamos y evaluar si encaja en tus objetivos. 
+Esa experiencia, sumada a nuestro trabajo apoyando a profesionales en roles como el tuyo, nos ha permitido desarrollar avances medibles que podrían adaptarse a tu contexto para ahorrarte tiempo y optimizar procesos clave sin interrumpir tus prioridades actuales. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano.
 
-¿Qué día tendrías disponibilidad para que conversemos? 
-
+Podemos coordinarla en el momento que te resulte más cómodo. ¿Cuándo te vendría bien que lo agendemos?
 """
 
 plantillas_john_mejorado = {
