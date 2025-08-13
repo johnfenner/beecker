@@ -254,7 +254,7 @@ Esto ha permitido a empresas de tu sector liberar hasta un 70% del tiempo operat
 
 Esa experiencia, sumada a nuestro trabajo, nos ha permitido desarrollar avances medibles que podrían adaptarse a cualquier contexto. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano. 
 
-Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibildad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
+Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibilidad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
 """
 
 
@@ -271,7 +271,7 @@ Con este modelo, nuestros clientes han reducido el ciclo de compra en más del 6
 
 Esa experiencia, sumada a nuestro trabajo, nos ha permitido desarrollar avances medibles que podrían adaptarse a cualquier contexto. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano. 
 
-Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibildad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
+Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibilidad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
 """
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -285,9 +285,9 @@ Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en
 
 Con este enfoque, nuestros clientes han acelerado su ciclo de conversión de efectivo y mejorado el indicador de entregas OTIF en más de un 20%.
 
-Esa experiencia, sumada a nuestro trabajo apoyando a profesionales en roles como el tuyo, nos ha permitido desarrollar avances medibles que podrían adaptarse a tu contexto para ahorrarte tiempo y optimizar procesos clave sin interrumpir tus prioridades actuales. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano.
+Esa experiencia, sumada a nuestro trabajo, nos ha permitido desarrollar avances medibles que podrían adaptarse a cualquier contexto. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano. 
 
-Podemos coordinarla en el momento que te resulte más cómodo. ¿Cuándo te vendría bien que lo agendemos?
+Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibilidad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
 """
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -306,7 +306,7 @@ Con este enfoque, nuestros clientes han logrado reducir entre un 50% y 70% los t
 
 Esa experiencia, sumada a nuestro trabajo, nos ha permitido desarrollar avances medibles que podrían adaptarse a cualquier contexto. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano. 
 
-Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibildad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
+Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibilidad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
 """
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -321,7 +321,7 @@ Con este enfoque, nuestros clientes han automatizado más del 60% del soporte Ni
 
 Esa experiencia, sumada a nuestro trabajo, nos ha permitido desarrollar avances medibles que podrían adaptarse a cualquier contexto. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano. 
 
-Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibildad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
+Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibilidad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
 """
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -336,7 +336,7 @@ Con este enfoque, nuestros clientes han reducido el tiempo de procesamiento de s
 
 Esa experiencia, sumada a nuestro trabajo, nos ha permitido desarrollar avances medibles que podrían adaptarse a cualquier contexto. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano. 
 
-Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibildad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
+Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibilidad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
 """
 
 plantillas_john_mejorado = {
