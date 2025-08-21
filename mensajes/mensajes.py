@@ -32,9 +32,9 @@ En el ciclo de compras, no siempre se trata de cambiar sistemas, sino de sumar i
 — Cruzar facturas contra entregas en segundos.
 — Ejecutar pagos conforme a las condiciones pactadas.
 
-Cuando esto se implementa bien, la operación fluye con menos fricción, mayor visibilidad y resultados que se notan: por ejemplo, en varios de nuestros proyectos, el ciclo total bajó más de un 60 %.
+Cuando esto se implementa bien, la operación fluye con menos fricción, mayor visibilidad y resultados que se notan: por ejemplo, en varios de nuestros proyectos, el ciclo total bajó más de un 60 %. Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos. 
 
-Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos. Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
+Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
 """
 
 plantilla_o2c_john = """Hola {nombre}, un gusto saludarte.
@@ -48,14 +48,14 @@ En el ciclo Order-to-Cash, no siempre hace falta cambiar sistemas, sino añadir 
 — Administración de cuentas por cobrar y facturación automática.
 — Prevención de quiebres de stock en tiempo real.
 
-Cuando esto se implementa bien, los indicadores de entrega mejoran y el flujo de caja se acelera: por ejemplo, en varios de nuestros proyectos, el tiempo de conversión a efectivo se redujo de forma notable.
+Cuando esto se implementa bien, los indicadores de entrega mejoran y el flujo de caja se acelera: por ejemplo, en varios de nuestros proyectos, el tiempo de conversión a efectivo se redujo de forma notable. Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos. 
 
-Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos. Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
+Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
 """
 
 plantilla_general_john = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/, empresa certificada ISO 27001 que ha generado más de $250 M en ahorros para marcas como Nestlé, Walmart o Heineken®, combinando IA avanzada y automatización inteligente.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/, empresa certificada ISO 27001 que ha generado más de $250 M en ahorros para marcas como Nestlé, Walmart o Heineken, combinando IA avanzada y automatización inteligente.
 
 En distintas áreas, no siempre se trata de rediseñar todo, sino de sumar inteligencia que potencie los procesos actuales. Por eso integramos agentes de IA que asumen tareas clave como:
 
@@ -65,9 +65,9 @@ En distintas áreas, no siempre se trata de rediseñar todo, sino de sumar intel
 — Atención al cliente: Agentes virtuales 24/7.
 — Supply chain: Inventarios, pedidos y logística.
 
-Cuando esto se implementa bien, el impacto es tangible: por ejemplo, varias organizaciones han reducido entre un 50% y 70% el tiempo operativo en procesos críticos.
+Cuando esto se implementa bien, el impacto es tangible: por ejemplo, varias organizaciones han reducido entre un 50% y 70% el tiempo operativo en procesos críticos. Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos. 
 
-Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos. Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
+Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
 """
 
 plantilla_ti_john = """Hola {nombre}, un gusto saludarte.
@@ -80,9 +80,9 @@ En TI, no siempre la solución pasa por ampliar el equipo, sino por sumar inteli
 — Ejecución de rutinas de mantenimiento y respaldos.
 — Integración entre sistemas legacy y entornos cloud.
 
-Cuando esto se implementa bien, el soporte Nivel 1 se automatiza en más de un 60% y los tiempos de resolución se reducen a la mitad, como ha ocurrido en varios de nuestros proyectos.
+Cuando esto se implementa bien, el soporte Nivel 1 se automatiza en más de un 60% y los tiempos de resolución se reducen a la mitad, como ha ocurrido en varios de nuestros proyectos. Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos. 
 
-Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos. Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
+Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
 """
 
 plantilla_aduanas_john = """Hola {nombre}, un gusto saludarte.
@@ -95,9 +95,9 @@ En aduanas, no siempre es cuestión de más personal, sino de sumar inteligencia
 — Clasificar regímenes y asignar costos sin intervención manual.
 — Generar expediente digital auditable en tiempo real.
 
-Cuando esto se implementa bien, el tiempo de procesamiento baja más de un 80% y se eliminan errores que suelen generar multas o retrasos, como hemos logrado en múltiples proyectos.
+Cuando esto se implementa bien, el tiempo de procesamiento baja más de un 80% y se eliminan errores que suelen generar multas o retrasos, como hemos logrado en múltiples proyectos. Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos. 
 
-Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos. Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
+Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
 """
 
 plantillas_john = {
