@@ -4,94 +4,100 @@
 # ===== SET DE PLANTILLAS "JOHN" ===============================================
 # ==============================================================================
 
-plantilla_h2r_john = """Hola {nombre},
+plantilla_h2r_john = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar} de Beecker. Me pongo en contacto contigo porque, tras colaborar con líderes en empresas como {empresa}, entiendo que el desafío constante es encontrar formas inteligentes de optimizar los procesos para liberar al equipo hacia tareas de mayor valor estratégico.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/, compañía con más de una década ayudando a empresas líderes a optimizar sus operaciones con IA avanzada y automatización multimodal.
 
-En Beecker (https://beecker.ai/agentic-ai/), nos dedicamos precisamente a eso: a fortalecer a los equipos de Talento Humano con Agentes IA Autónomos que se encargan del trabajo operativo complejo.
+Dentro del ciclo Hire-to-Retire, no siempre se trata de cambiar herramientas, sino de sumar inteligencia que libere al equipo de la carga operativa. Por eso integramos agentes de IA que asumen tareas clave como:
 
-Para ilustrarlo con ejemplos prácticos, nuestros agentes ayudan a:
-- Atraer talento ágilmente: El Agente Fer publica vacantes y el Agente Lucas gestiona la recepción y revisión de solicitudes.
-- Crear una gran primera impresión: El Agente Isa automatiza el onboarding, desde los documentos hasta la asignación de recursos.
-- Impulsar el crecimiento y bienestar: El Agente Ben facilita las evaluaciones de desempeño y el Agente Lisa gestiona los reembolsos de gastos.
-- Asegurar precisión y puntualidad: La Agente Lily se encarga de los procesos complejos de la nómina.
-- Gestionar un cierre de ciclo impecable: La Agente Cleo automatiza los procesos y la documentación de jubilación y baja.
+— Publicar vacantes y gestionar solicitudes automáticamente.
+— Automatizar el onboarding, desde documentos hasta asignación de recursos.
+— Facilitar evaluaciones de desempeño y gestión de reembolsos.
+— Ejecutar procesos complejos de nómina con precisión.
+— Gestionar automáticamente documentación de bajas o jubilaciones.
 
-El propósito es simplemente conversar y evaluar juntos si esta tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Si te parece interesante, ¿buscamos un espacio para conversarlo brevemente?
+Cuando esto se implementa bien, el área deja de estar atrapada en trámites y puede enfocarse en atraer, desarrollar y retener talento. En varios proyectos, esto se tradujo en contrataciones cerradas en la mitad de tiempo y procesos de nómina sin incidencias, mejorando la experiencia tanto para el equipo como para cada colaborador.
+
+Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos. Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
 """
 
-plantilla_p2p_john = """Hola {nombre},
+plantilla_p2p_john = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar} de Beecker. Me pongo en contacto contigo porque, tras colaborar con líderes en empresas como {empresa}, entiendo que el desafío constante es encontrar formas inteligentes de optimizar los procesos para liberar al equipo hacia tareas de mayor valor estratégico.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/, compañía con más de una década ayudando a más de 100 empresas líderes a ganar velocidad y control en sus operaciones gracias a automatización multimodal e IA avanzada.
 
-En Beecker (https://beecker.ai/agentic-ai/), nos dedicamos precisamente a eso: a fortalecer los ciclos de compra y finanzas con Agentes IA Autónomos que se encargan del trabajo operativo complejo.
+En el ciclo de compras, no siempre se trata de cambiar sistemas, sino de sumar inteligencia que optimice lo que ya tienes. Por eso integramos agentes de IA que asumen tareas clave como:
 
-Así es como lo hacemos en la práctica:
-- Planificando la compra de forma inteligente: El Agente Richard calcula las necesidades de materiales para generar requisiciones automáticamente.
-- Agilizando la incorporación de proveedores: Nuestra Agente Elsa automatiza el alta y la validación de nuevos socios comerciales.
-- Creando y procesando órdenes sin esfuerzo: La Agente Olivia genera las órdenes de compra y el Agente Daniel valida las facturas 24/7.
-- Dando visibilidad al inventario: El Agente Tony concilia la información de ventas y compras para generar alertas en tiempo real.
-- Asegurando pagos puntuales: Nuestro Agente David gestiona la programación y ejecución de pagos según las condiciones pactadas.
+— Validar y dar de alta proveedores sin errores.
+— Emitir órdenes de compra limpias desde el origen.
+— Cruzar facturas contra entregas en segundos.
+— Ejecutar pagos conforme a las condiciones pactadas.
 
-El propósito es simplemente conversar y evaluar juntos si esta tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Si te parece interesante, ¿buscamos un espacio para conversarlo brevemente?
+Cuando esto se implementa bien, la operación fluye con menos fricción, mayor visibilidad y resultados que se notan: por ejemplo, en varios de nuestros proyectos, el ciclo total bajó más de un 60 %.
+
+Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos. Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
 """
 
-plantilla_o2c_john = """Hola {nombre},
+plantilla_o2c_john = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar} de Beecker. Me pongo en contacto contigo porque, tras colaborar con líderes en empresas como {empresa}, entiendo que el desafío constante es encontrar formas inteligentes de optimizar los procesos para liberar al equipo hacia tareas de mayor valor estratégico.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/, donde más de 250 especialistas certificados han ayudado a más de 100 organizaciones a acelerar ingresos y optimizar la experiencia de sus clientes con automatización multimodal e IA avanzada.
 
-En Beecker (https://beecker.ai/agentic-ai/), nos dedicamos precisamente a eso: a fortalecer el ciclo comercial con Agentes IA Autónomos que se encargan del trabajo operativo complejo.
+En el ciclo Order-to-Cash, no siempre hace falta cambiar sistemas, sino añadir inteligencia que optimice lo que ya existe. Por eso integramos agentes de IA que asumen tareas clave como:
 
-Para un área como la tuya, donde cada día cuenta, nuestros agentes pueden tener un impacto directo:
-- Procesando pedidos sin demoras: Nuestro Agente Nico recibe y valida las órdenes de forma automática e instantánea.
-- Optimizando la logística de entrega: Los agentes Diana, James y Julia planifican las entregas, el transporte y las rutas de salida.
-- Protegiendo la rentabilidad: El Agente Mia evalúa la solvencia de los clientes y el Agente Alice gestiona el inventario para evitar quiebres de stock.
-- Mejorando el flujo de caja: Nuestra Agente Nina gestiona activamente las cuentas por cobrar, enviando recordatorios y escalando casos.
+— Alta de clientes, pedidos y crédito sin intervención manual.
+— Gestión de entregas y transporte con visibilidad total.
+— Administración de cuentas por cobrar y facturación automática.
+— Prevención de quiebres de stock en tiempo real.
 
-El propósito es simplemente conversar y evaluar juntos si esta tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Si te parece interesante, ¿buscamos un espacio para conversarlo brevemente?
+Cuando esto se implementa bien, los indicadores de entrega mejoran y el flujo de caja se acelera: por ejemplo, en varios de nuestros proyectos, el tiempo de conversión a efectivo se redujo de forma notable.
+
+Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos. Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
 """
 
-plantilla_general_john = """Hola {nombre},
+plantilla_general_john = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar} de Beecker. Me pongo en contacto contigo porque, tras colaborar con líderes en empresas como {empresa}, entiendo que el desafío constante es encontrar formas inteligentes de optimizar los procesos para liberar al equipo hacia tareas de mayor valor estratégico.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/, empresa certificada ISO 27001 que ha generado más de $250 M en ahorros para marcas como Nestlé, Walmart o Heineken®, combinando IA avanzada y automatización inteligente.
 
-En Beecker (https://beecker.ai/agentic-ai/), nos dedicamos precisamente a eso: a implementar Agentes IA Autónomos que actúan como equipos digitales en áreas críticas del negocio.
+En distintas áreas, no siempre se trata de rediseñar todo, sino de sumar inteligencia que potencie los procesos actuales. Por eso integramos agentes de IA que asumen tareas clave como:
 
-Más que hablar de funciones, nos centramos en los resultados que buscamos:
-- En Finanzas y Compras: Liberamos a los equipos de tareas manuales como la validación de facturas o la gestión de pagos, permitiendo un mayor enfoque en la estrategia de costos.
-- En el Ciclo Comercial y Logística: Nuestro objetivo es acelerar el flujo de caja y elevar la satisfacción del cliente, automatizando desde la toma de pedidos hasta la gestión de cobros e inventarios.
-- En Talento Humano: Potenciamos al equipo de RRHH para que se enfoque en la estrategia, mientras nuestros agentes se encargan de procesos operativos como el reclutamiento, el onboarding o la nómina.
+— Procurement: Cruce automático de facturas y órdenes.
+— Finanzas: Conciliaciones, pagos y trazabilidad.
+— RRHH: Selección, nómina y beneficios.
+— Atención al cliente: Agentes virtuales 24/7.
+— Supply chain: Inventarios, pedidos y logística.
 
-El propósito es simplemente conversar y evaluar juntos si esta tecnología puede ser un apoyo real para los objetivos de tu área en {empresa}. Si te parece interesante, ¿buscamos un espacio para conversarlo brevemente?
+Cuando esto se implementa bien, el impacto es tangible: por ejemplo, varias organizaciones han reducido entre un 50% y 70% el tiempo operativo en procesos críticos.
+
+Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos. Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
 """
 
-# Plantilla de TI añadida al set de John
-plantilla_ti_john = """Hola {nombre},
+plantilla_ti_john = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar} de Beecker. Como partners Platinum de UiPath, nuestro foco es aplicar Intelligent Process Automation para que los equipos de TI en empresas como {empresa} puedan escalar su eficiencia.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/, referente en automatización multimodal e IA avanzada, con integraciones listas para los principales ERPs y plataformas corporativas.
 
-Entendemos que equipos como el tuyo a menudo buscan:
-- Automatizar la gestión de tickets y solicitudes.
-- Ejecutar rutinas de mantenimiento y monitoreo sin intervención.
-- Reducir tiempos de respuesta en soporte técnico.
-- Facilitar la integración entre sistemas legacy y nuevos entornos.
+En TI, no siempre la solución pasa por ampliar el equipo, sino por sumar inteligencia que descargue las tareas repetitivas. Por eso integramos agentes de IA que asumen funciones como:
 
-En Beecker (https://beecker.ai/agentic-ai/) hemos desarrollado soluciones específicas para estos desafíos. Me gustaría tener una corta sesión contigo para compartirte casos de éxito y explorar cómo podemos apoyar tu estrategia tecnológica. ¿Te parece si nos reunimos 30 minutos la próxima semana?
+— Gestión y resolución de tickets recurrentes.
+— Ejecución de rutinas de mantenimiento y respaldos.
+— Integración entre sistemas legacy y entornos cloud.
+
+Cuando esto se implementa bien, el soporte Nivel 1 se automatiza en más de un 60% y los tiempos de resolución se reducen a la mitad, como ha ocurrido en varios de nuestros proyectos.
+
+Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos. Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
 """
 
-# Plantilla de Aduanas añadida al set de John
-plantilla_aduanas_john = """Hola {nombre},
+plantilla_aduanas_john = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar} de Beecker. Nos especializamos en Intelligent Process Automation y me gustaría mostrarte cómo podemos transformar la eficiencia de {empresa} en el proceso aduanal.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/, empresa que ha desarrollado agentes de IA para automatizar procesos complejos de principio a fin, como el aduanal, respaldados por más de 5 M de automatizaciones exitosas.
 
-Nuestro Agente Digital de IA, Pedro, procesa todo el flujo de aduanas en minutos, ayudando a:
-- Extraer y validar archivos y datos desde correo.
-- Clasificar clientes y régimen.
-- Generar reportes automáticos.
-- Asignar costos y validar con cuentas por cobrar.
-- Registrar y procesar facturas en su ERP.
+En aduanas, no siempre es cuestión de más personal, sino de sumar inteligencia que garantice precisión y velocidad. Por eso creamos agentes de IA como “Pedro”, que asume tareas clave como:
 
-Este agente no solo optimiza la operación, sino que también detecta inconsistencias y asigna montos correctamente, todo en minutos. Me encantaría coordinar una breve sesión contigo para mostrarte una Demo. ¿Te parece si nos reunimos 30 minutos la próxima semana?
+— Validar documentos cruzando pedimento, factura y orden de compra.
+— Clasificar regímenes y asignar costos sin intervención manual.
+— Generar expediente digital auditable en tiempo real.
+
+Cuando esto se implementa bien, el tiempo de procesamiento baja más de un 80% y se eliminan errores que suelen generar multas o retrasos, como hemos logrado en múltiples proyectos.
+
+Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos. Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
 """
 
 plantillas_john = {
@@ -99,8 +105,8 @@ plantillas_john = {
     "Plantilla John P2P": plantilla_p2p_john,
     "Plantilla John O2C": plantilla_o2c_john,
     "Plantilla John General": plantilla_general_john,
-    "Plantilla John TI (Alternativa)": plantilla_ti_john,
-    "Plantilla John Aduanas (Alternativa)": plantilla_aduanas_john,
+    "Plantilla John TI": plantilla_ti_john,
+    "Plantilla John Aduanas": plantilla_aduanas_john,
 }
 
 # ===============================================================================
@@ -297,7 +303,7 @@ Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en
 Me gustaría mostrarte cómo nuestras soluciones pueden aportar valor en áreas como:
 
 — PROCUREMENT: Cruces automáticos de facturas y órdenes de compra.
-— FINANZAS Y CONTABILIDAD: Conciliaciones, pagos y trazabilidad automatizadas.
+— FINANZAS Y CONTABILIDAD: Conciliaciones, pagos y trazabilidad automatizada.
 — RECURSOS HUMANOS: Optimización de la gestión del talento, desde selección de personal más ágil con IA, hasta una administración de nóminas y beneficios.
 — ATENCIÓN AL CLIENTE: Implementación de agentes virtuales inteligentes que mejoran la experiencia del usuario y resuelven consultas 24/7.
 — CADENA DE SUMINISTRO: Pedidos, inventarios y logística automatizados. 
