@@ -241,108 +241,115 @@ plantillas_karen = {
 }
 
 # =======================================================================================
-# ===== SET DE PLANTILLAS "JOHN MEJORADO" (VERSIÓN FINAL CON AJUSTES) ===================
+# ===== SET DE PLANTILLAS "JOHN MEJORADO" (VERSIÓN CONVERSACIONAL) =====================
 # =======================================================================================
 
-plantilla_h2r_john_mejorado = """Hola {nombre}, un gusto saludarte.
+plantilla_h2r_john_mejorado = """Hola {nombre}, ¿cómo estás? Qué gusto saludarte.
 
-Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA, y actualmente estoy compartiendo con algunos líderes cómo estamos resolviendo tareas clave dentro del ciclo Hire-to-Retire.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Desde hace más de una década ayudamos a empresas líderes a optimizar operaciones con IA avanzada y automatización.
 
-Por ejemplo:
+En Hire-to-Retire, no siempre se trata de cambiar sistemas, sino de sumar inteligencia que le quite peso operativo al equipo. Por ejemplo, integramos agentes que:
 
-— FER publica vacantes en minutos.
-— LUCAS organiza postulaciones sin perder detalles.
-— ISA facilita todo el proceso de ingreso en los sistemas: datos, contrato, recursos.
-— BEN, LILY y LISA gestionan nómina, desempeño y viáticos.
-— CLEO coordina procesos de retiro y cierre respetando políticas internas.
+— Publican vacantes y filtran candidatos automáticamente.
+— Automatizan onboarding: documentos, contratos, recursos.
+— Facilitan evaluaciones de desempeño y reembolsos.
+— Ejecutan procesos complejos de nómina sin errores.
+— Gestionan bajas y jubilaciones de forma ordenada.
 
-Esto ha permitido a empresas de tu sector liberar hasta un 70% del tiempo operativo en todo el ciclo del colaborador.
+Cuando esto se hace bien, el área de RRHH deja de estar “apagando incendios” y puede enfocarse en atraer y desarrollar talento. Hemos visto empresas reducir tiempos de contratación a la mitad y nóminas sin incidencias, mejorando la experiencia de todos.
 
-Esa experiencia, sumada a nuestro trabajo, nos ha permitido desarrollar avances medibles que podrían adaptarse a cualquier contexto. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano. 
+Me encantaría poder enseñarte esto en una sesión rápida, para revisar de manera práctica qué ideas o enfoques podrían ser útiles para ti y tu equipo.  
 
-Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibilidad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
+¿Te gustaría que agendemos un espacio entre nuestros equipos esta o la próxima semana?
 """
 
+plantilla_p2p_john_mejorado = """Hola {nombre}, qué gusto saludarte.
 
-plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Llevamos más de 10 años ayudando a más de 100 empresas a ganar velocidad y control en compras y finanzas con IA avanzada y automatización.
 
-Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA que aseguran trazabilidad, cumplimiento y control en cada etapa:
+En el ciclo Procure-to-Pay, muchas veces no se trata de cambiar sistemas, sino de sumar inteligencia que optimice lo que ya tienes. Por ejemplo:
 
-— JESSICA y ELSA seleccionan y dan de alta a proveedores.
-— OLIVIA genera órdenes de compra, previniendo discrepancias desde el origen.
-— DANIEL coteja facturas contra órdenes y entregas, detectando inconsistencias en montos, fechas y autorizaciones.
-— DAVID programa y ejecuta pagos según condiciones pactadas.
+— Validamos y damos de alta proveedores sin errores.
+— Generamos órdenes de compra limpias desde el inicio.
+— Cruzamos facturas contra entregas en segundos.
+— Ejecutamos pagos según condiciones pactadas.
 
-Con este modelo, nuestros clientes han reducido el ciclo de compra en más del 60% y mejorado la precisión y la auditoría de pagos.
+Con esto, varias empresas redujeron el ciclo de compra más de un 60% y ganaron trazabilidad completa. 
 
-Esa experiencia, sumada a nuestro trabajo, nos ha permitido desarrollar avances medibles que podrían adaptarse a cualquier contexto. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano. 
+Me encantaría poder enseñarte esto en una sesión rápida, para revisar de manera práctica qué ideas o enfoques podrían ser útiles para ti y tu equipo.  
 
-Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibilidad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
+¿Te gustaría que agendemos un espacio entre nuestros equipos esta o la próxima semana?
 """
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA para para agilizar el ciclo Order-to-Cash:
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Más de 250 especialistas de nuestro equipo han ayudado a más de 100 organizaciones a acelerar ingresos y mejorar la experiencia del cliente con automatización e IA.
 
-— NICO, ADRIAN y MIA automatizan alta de clientes, pedidos y gestión de crédito.
-— DIANA, JAMES y JULIA coordinan rutas, transporte y entregas.
-— NINA y AARON gestionan cuentas por cobrar, automatizan recordatorios y ejecutan facturación.
-— ALICE mantiene visibilidad en tiempo real y previene quiebres de stock.
+En Order-to-Cash, no siempre hace falta cambiar sistemas, sino añadir inteligencia que optimice lo que ya existe. Ejemplos:
 
-Con este enfoque, nuestros clientes han acelerado su ciclo de conversión de efectivo y mejorado el indicador de entregas OTIF en más de un 20%.
+— Alta de clientes, pedidos y crédito sin intervención manual.
+— Planificación de entregas y transporte con visibilidad total.
+— Gestión automática de cuentas por cobrar y facturación.
+— Alertas para prevenir quiebres de stock en tiempo real.
 
-Esa experiencia, sumada a nuestro trabajo, nos ha permitido desarrollar avances medibles que podrían adaptarse a cualquier contexto. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano. 
+Esto ha ayudado a empresas a mejorar entregas OTIF y a acelerar su flujo de caja de forma medible.
 
-Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibilidad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
+Me encantaría poder enseñarte esto en una sesión rápida, para revisar de manera práctica qué ideas o enfoques podrían ser útiles para ti y tu equipo.  
+
+¿Te gustaría que agendemos un espacio entre nuestros equipos esta o la próxima semana?
 """
 
-plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
+plantilla_general_john_mejorado = """Hola {nombre}, qué gusto saludarte.
 
-Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA que se integran a los sistemas existentes para automatizar procesos clave en distintas áreas del negocio.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Somos una empresa certificada ISO 27001 y hemos generado más de $250M en ahorros para marcas como Nestlé, Walmart y Heineken, combinando IA y automatización inteligente.
 
-Me gustaría mostrarte cómo nuestras soluciones pueden aportar valor en áreas como:
+En distintas áreas, no siempre es rediseñar todo, sino sumar inteligencia que potencie procesos. Por ejemplo:
 
-— PROCUREMENT: Cruces automáticos de facturas y órdenes de compra.
-— FINANZAS Y CONTABILIDAD: Conciliaciones, pagos y trazabilidad automatizada.
-— RECURSOS HUMANOS: Optimización de la gestión del talento, desde selección de personal más ágil con IA, hasta una administración de nóminas y beneficios.
-— ATENCIÓN AL CLIENTE: Implementación de agentes virtuales inteligentes que mejoran la experiencia del usuario y resuelven consultas 24/7.
-— CADENA DE SUMINISTRO: Pedidos, inventarios y logística automatizados. 
+— Procurement: Cruce automático de facturas y órdenes.
+— Finanzas: Conciliaciones, pagos y trazabilidad.
+— RRHH: Selección, nómina y beneficios.
+— Atención al cliente: Agentes virtuales 24/7.
+— Supply chain: Inventarios, pedidos y logística.
 
-Con este enfoque, nuestros clientes han logrado reducir entre un 50% y 70% los tiempos operativos en procesos críticos. 
+Esto ha ayudado a muchas empresas a reducir entre 50% y 70% el tiempo operativo en procesos clave. 
 
-Esa experiencia, sumada a nuestro trabajo, nos ha permitido desarrollar avances medibles que podrían adaptarse a cualquier contexto. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano. 
+Me encantaría poder enseñarte esto en una sesión rápida, para revisar de manera práctica qué ideas o enfoques podrían ser útiles para ti y tu equipo.  
 
-Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibilidad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
+¿Te gustaría que agendemos un espacio entre nuestros equipos esta o la próxima semana?
 """
 
-plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
+plantilla_ti_john_mejorado = """Hola {nombre}, ¿cómo estás? Un gusto saludarte.
 
-Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA que se integran a sus plataformas actuales para asumir tareas como:
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Llevamos más de 10 años ayudando a equipos de TI a descargar trabajo operativo y optimizar su soporte.
 
-— GESTIÓN DE TICKETS Y SOPORTE: Automatizando la gestión y resolución de solicitudes recurrentes.
-— MANTENIMIENTO Y MONITOREO: Ejecutando rutinas de mantenimiento, monitoreo de sistemas y respaldos.
-— INTEGRACIÓN DE SISTEMAS: Conexión fluida entre plataformas legacy y cloud.
+En TI, muchas veces la clave no es más personal, sino más inteligencia. Por ejemplo, nuestros agentes:
 
-Con este enfoque, nuestros clientes han automatizado más del 60% del soporte Nivel 1 y reducido el tiempo de resolución de incidentes hasta un 50%.
+— Gestionan y resuelven tickets recurrentes.
+— Ejecutan rutinas de mantenimiento y respaldos.
+— Integran sistemas legacy con entornos cloud.
 
-Esa experiencia, sumada a nuestro trabajo, nos ha permitido desarrollar avances medibles que podrían adaptarse a cualquier contexto. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano. 
+Esto ha permitido automatizar más del 60% del soporte Nivel 1 y reducir tiempos de resolución a la mitad.
 
-Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibilidad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
+Me encantaría poder enseñarte esto en una sesión rápida, para revisar de manera práctica qué ideas o enfoques podrían ser útiles para ti y tu equipo.  
+
+¿Te gustaría que agendemos un espacio entre nuestros equipos esta o la próxima semana?
 """
 
-plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
+plantilla_aduanas_john_mejorado = """Hola {nombre}, qué gusto saludarte.
 
-Soy {avatar}, y actualmente me desempeño como Digital Transformation Manager en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation, desarrollando agentes digitales de IA como Pedro, que optimiza el proceso aduanal, encargándose de:
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Hemos desarrollado agentes de IA que automatizan procesos complejos como aduanas, con más de 5M de automatizaciones exitosas.
 
-— VALIDACIÓN DE DOCUMENTOS: Cruza datos entre pedimento, factura y orden de compra.
-— CLASIFICACIÓN Y COSTEO: Asigna costos y clasifica regímenes de forma automática, minimizando el riesgo de errores.
-— GENERACIÓN DE EXPEDIENTES: Genera un archivo digital auditable en tiempo real.
+Nuestro agente “Pedro” asume tareas críticas como:
 
-Con este enfoque, nuestros clientes han reducido el tiempo de procesamiento de sus flujos de aduanas en más de un 80%, eliminando prácticamente los errores manuales que generan multas y retrasos.
+— Validar documentos cruzando pedimento, factura y orden.
+— Clasificar regímenes y asignar costos sin intervención manual.
+— Generar expediente digital auditable en tiempo real.
 
-Esa experiencia, sumada a nuestro trabajo, nos ha permitido desarrollar avances medibles que podrían adaptarse a cualquier contexto. Por eso me gustaría invitarte a una sesión breve con nuestro equipo para que los conozcas de primera mano. 
+Con esto, varias empresas redujeron más del 80% el tiempo de procesamiento y eliminaron errores que causaban multas o retrasos.
 
-Podemos coordinarla en el momento que te resulte más cómodo de acuerdo a la disponibilidad tuya o de tu equipo. ¿Cuándo te vendría bien que lo agendemos?
+Me encantaría poder enseñarte esto en una sesión rápida, para revisar de manera práctica qué ideas o enfoques podrían ser útiles para ti y tu equipo.  
+
+¿Te gustaría que agendemos un espacio entre nuestros equipos esta o la próxima semana?
 """
 
 plantillas_john_mejorado = {
@@ -350,6 +357,7 @@ plantillas_john_mejorado = {
     "Plantilla JohnMejorado P2P": plantilla_p2p_john_mejorado,
     "Plantilla JohnMejorado O2C": plantilla_o2c_john_mejorado,
     "Plantilla JohnMejorado General": plantilla_general_john_mejorado,
-    "Plantilla JohnMejorado TI (Alternativa)": plantilla_ti_john_mejorado,
-    "Plantilla JohnMejorado Aduanas (Alternativa)": plantilla_aduanas_john_mejorado,
+    "Plantilla JohnMejorado TI": plantilla_ti_john_mejorado,
+    "Plantilla JohnMejorado Aduanas": plantilla_aduanas_john_mejorado,
 }
+
