@@ -1,4 +1,4 @@
-# mensajes/mensajes.py
+# Archivo: mensajes/mensajes.py
 
 # ==============================================================================
 # ===== SET DE PLANTILLAS "JOHN" ===============================================
@@ -100,14 +100,17 @@ Cuando esto se implementa bien, el tiempo de procesamiento baja más de un 80% y
 Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
 """
 
+# --- INICIO DEL CÓDIGO CORREGIDO ---
 plantillas_john = {
     "Plantilla John H2R": plantilla_h2r_john,
     "Plantilla John P2P": plantilla_p2p_john,
     "Plantilla John O2C": plantilla_o2c_john,
     "Plantilla John General": plantilla_general_john,
-    "Plantilla John TI": plantilla_ti_john,
-    "Plantilla John Aduanas": plantilla_aduanas_john,
+    # Se añade el sufijo "(Alternativa)" para que coincida con la lógica de búsqueda
+    "Plantilla John TI (Alternativa)": plantilla_ti_john,
+    "Plantilla John Aduanas (Alternativa)": plantilla_aduanas_john,
 }
+# --- FIN DEL CÓDIGO CORREGIDO ---
 
 # ===============================================================================
 # ===== SET DE PLANTILLAS "KAREN CH" ============================================
@@ -301,9 +304,9 @@ Me encantaría poder enseñarte esto en una sesión rápida, para revisar de man
 
 plantilla_general_john_mejorado = """Hola {nombre}, qué gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Somos una empresa certificada ISO 27001 y hemos generado más de $250M en ahorros para marcas como Nestlé, Walmart y Heineken, combinando IA y automatización inteligente.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Nos especializamos en Inteligent Process Automation, desarrollamos agentes digitales de IA para optimizar procesos clave en las organizaciones, en los procesos de Hire to Retire (H2R), Order to Cash (O2C) y Procure-to-Pay (P2P).
 
-En distintas áreas, no siempre es rediseñar todo, sino sumar inteligencia que potencie procesos. Por ejemplo:
+No siempre es rediseñar todo, sino sumar inteligencia que potencie procesos. Por ejemplo: 
 
 — Procurement: Cruce automático de facturas y órdenes.
 — Finanzas: Conciliaciones, pagos y trazabilidad.
@@ -327,6 +330,7 @@ En TI, muchas veces la clave no es más personal, sino más inteligencia. Por ej
 — Gestionan y resuelven tickets recurrentes.
 — Ejecutan rutinas de mantenimiento y respaldos.
 — Integran sistemas legacy con entornos cloud.
+— Entre muchas aplicaciones empresariales que quieran aplicar.  
 
 Esto ha permitido automatizar más del 60% del soporte Nivel 1 y reducir tiempos de resolución a la mitad.
 
@@ -352,12 +356,14 @@ Me encantaría poder enseñarte esto en una sesión rápida, para revisar de man
 ¿Te gustaría que agendemos un espacio entre nuestros equipos esta o la próxima semana?
 """
 
+# --- INICIO DEL CÓDIGO CORREGIDO ---
 plantillas_john_mejorado = {
     "Plantilla JohnMejorado H2R": plantilla_h2r_john_mejorado,
     "Plantilla JohnMejorado P2P": plantilla_p2p_john_mejorado,
     "Plantilla JohnMejorado O2C": plantilla_o2c_john_mejorado,
     "Plantilla JohnMejorado General": plantilla_general_john_mejorado,
-    "Plantilla JohnMejorado TI": plantilla_ti_john_mejorado,
-    "Plantilla JohnMejorado Aduanas": plantilla_aduanas_john_mejorado,
+    # Se añade el sufijo "(Alternativa)" para que coincida con la lógica de búsqueda
+    "Plantilla JohnMejorado TI (Alternativa)": plantilla_ti_john_mejorado,
+    "Plantilla JohnMejorado Aduanas (Alternativa)": plantilla_aduanas_john_mejorado,
 }
-
+# --- FIN DEL CÓDIGO CORREGIDO ---
