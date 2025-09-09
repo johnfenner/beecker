@@ -277,15 +277,11 @@ Me pareció valioso compartirte lo que hacemos en Beecker, donde ayudamos a opti
 
 En el ciclo Procure-to-Pay integramos agentes que apoyan en tareas clave como:
 
-— ELSA: automatiza el alta y validación de proveedores.
-— RICHARD: calcula necesidades de materiales y genera requisiciones.
-— OLIVIA: crea órdenes de compra con base en contratos y presupuestos.
-— CHRIS: extrae y registra la información de recepciones de mercancía.
-— TONY: concilia datos de ventas y compras en CRM y ERP.
-— RYAN: gestiona devoluciones y recomienda reemplazos o reembolsos.
-— PEDRO: revisa manifiestos aduanales y determina impuestos.
-— DANIEL: valida facturas contra órdenes de compra y recepciones.
-— DAVID: programa y ejecuta pagos conforme a términos contractuales.
+— Dar de alta y validar proveedores sin errores.
+— Generar órdenes de compra precisas y a tiempo, para que tu flujo de compras sea más confiable.
+— Registrar recepciones y cruzarlas con facturas al instante.
+— Gestionar devoluciones y reembolsos de manera automática.
+— Programar y ejecutar pagos según la trazabilidad acordada. 
 
 Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo algunos líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
 
@@ -300,16 +296,10 @@ Me pareció valioso compartirte lo que hacemos en Beecker, donde ayudamos a opti
 
 En el ciclo Order-to-Cash integramos agentes que apoyan en tareas clave como:
 
-— ADRIAN: automatiza el alta de clientes B2B.
-— NICO: procesa y valida órdenes de compra de múltiples canales.
-— DIANA: planifica las entregas determinando el cubicaje y peso.
-— JAMES: planifica el transporte y los tiempos de entrega con IA.
-— JULIA: optimiza las rutas de logística de salida.
-— RYAN: gestiona devoluciones, reembolsos y reemplazos.
-— MIA: analiza y gestiona solicitudes de crédito.
-— ALICE: gestiona el inventario para evitar quiebres de stock.
-— NINA: monitorea y gestiona las cuentas por cobrar.
-— AARON: genera facturas a partir de órdenes de compra.
+— Alta de clientes, pedidos y crédito. 
+— Gestión de entregas y transporte con total visibilidad. 
+— Administración de cuentas por cobrar y facturación automática.  
+— Prevención de quiebres de stock en tiempo real.
 
 Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo algunos líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
 
@@ -324,13 +314,11 @@ Me pareció valioso compartirte lo que hacemos en Beecker, donde ayudamos a opti
 
 Nuestros agentes se especializan en distintas líneas de negocio para potenciar sus procesos. Por ejemplo:
 
-— Procure-to-Pay: optimizamos el ciclo de compras, desde el proveedor hasta el pago.
-— Order-to-Cash: agilizamos el flujo de ingresos, desde el pedido hasta el cobro.
-— Hire-to-Retire: cubrimos el ciclo de vida del empleado, desde la contratación hasta la jubilación.
-— Finanzas y Contabilidad: automatizamos conciliaciones, facturación y trazabilidad.
-— Aduanas: agilizamos la validación de manifiestos y la gestión de impuestos.
-— Soporte de TI: gestionamos tickets y rutinas de mantenimiento de forma automática.
-— Cadena de Suministro: optimizamos inventarios, pedidos y logística.
+— Procurement: Valida facturas automáticamente contra órdenes de compra, detecta discrepancias, analiza el desempeño de proveedores y agiliza todo el ciclo Procure-to-Pay (P2P).
+— Finanzas y Contabilidad: Conciliaciones bancarias, procesamiento de facturas y seguimiento de pagos hechos automáticamente. 
+— Recursos Humanos: Gestiona nóminas, selecciona personal y administra beneficios de forma eficiente con ayuda de IA.
+— Atención al Cliente: Agentes virtuales inteligentes que responden rápido, mejoran la experiencia del cliente y alivian la carga del equipo.
+— Cadena de Suministro: Optimiza inventarios, automatiza pedidos y controla la logística con mayor precisión y visibilidad.
 
 Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo algunos líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
 
@@ -345,8 +333,10 @@ Me pareció valioso compartirte lo que hacemos en Beecker, donde ayudamos a opti
 
 En el área de TI, integramos agentes que asumen tareas de soporte y son un socio estratégico para el negocio:
 
-— Soporte a Operaciones de TI: gestionan y resuelven tickets recurrentes, ejecutan respaldos y monitorean sistemas de forma proactiva.
-— Apoyo a Procesos de Negocio: facilitan la automatización en áreas críticas como Procure-to-Pay, Order-to-Cash y Hire-to-Retire, asegurando integraciones fluidas y un alto retorno de la inversión tecnológica.
+— Gestionan y resuelven tickets recurrentes, ejecutan respaldos y monitorean sistemas de forma proactiva.
+— Reducen tiempos de respuesta en soporte técnico.
+— Automatizan procesos críticos y se integran a cualquier sistema, simplificando operaciones y evitando errores.
+— Entrenados que se adaptan a cualquier plataforma, flujo o desafío específico de tu negocio.
 
 Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo algunos líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
 
