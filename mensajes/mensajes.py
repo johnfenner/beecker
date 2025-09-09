@@ -244,12 +244,12 @@ plantillas_karen = {
 }
 
 # =======================================================================================
-# ===== SET DE PLANTILLAS "JOHN MEJORADO" (VERSIÓN EMPRESARIAL DIRECTA) =================
+# ===== SET DE PLANTILLAS "JOHN MEJORADO" (VERSIÓN FINAL ASERTIVA) ======================
 # =======================================================================================
 
 plantilla_h2r_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/hire-to-retire/. Te escribo directamente porque he estado analizando cómo empresas líderes están optimizando sus ciclos de talento, y veo una gran oportunidad para potenciar el área de RRHH en {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Te escribo directamente porque he estado analizando las estrategias que empresas líderes utilizan para optimizar sus ciclos de talento, y veo una gran oportunidad para potenciar el área de RRHH en {empresa}.
 
 En Beecker, ayudamos a optimizar estos procesos con soluciones de automatización y agentes de IA. En el ciclo Hire-to-Retire, por ejemplo, nuestros agentes asumen tareas clave como:
 
@@ -262,14 +262,14 @@ En Beecker, ayudamos a optimizar estos procesos con soluciones de automatizació
 — LUKE: responde consultas frecuentes de empleados por chat.
 — CLEO: administra el offboarding con documentación y compensaciones finales.
 
-Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, también para las personas clave de tu organización.  
+Me gustaría proponerte una breve sesión para presentarte los casos de éxito y los resultados que líderes de tu sector están obteniendo con estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
 
 ¿Tendrías disponibilidad esta o la próxima semana para coordinarlo?
 """
 
 plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/procure-to-pay-automation/. Mi motivo para contactarte es presentarte una forma de fortalecer el ciclo de compras y proveedores de {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Mi motivo para contactarte es presentarte una forma de fortalecer el ciclo de compras y proveedores de {empresa}.
 
 En Beecker, nos especializamos en optimizar procesos de negocio con automatización y agentes de inteligencia artificial. En el ciclo Procure-to-Pay, nuestros agentes apoyan en tareas clave como:
 
@@ -279,14 +279,14 @@ En Beecker, nos especializamos en optimizar procesos de negocio con automatizaci
 — Gestionar devoluciones y reembolsos de manera automática.
 — Programar y ejecutar pagos según la trazabilidad acordada. 
 
-Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, también para las personas clave de tu organización.  
+Me gustaría proponerte una breve sesión para presentarte los casos de éxito y los resultados que líderes de tu sector están obteniendo con estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
 
 ¿Tendrías disponibilidad esta o la próxima semana para coordinarlo?
 """
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/order-to-cash/. Te escribo porque nuestro equipo se especializa en acelerar el flujo de ingresos, y me gustaría mostrarte cómo podríamos aplicarlo al ciclo Order-to-Cash de {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Te escribo porque nuestro equipo se especializa en acelerar el flujo de ingresos, y me gustaría presentarte el impacto que nuestra tecnología puede generar en el ciclo Order-to-Cash de {empresa}.
 
 En Beecker, ayudamos a optimizar procesos de negocio con soluciones de automatización y agentes de inteligencia artificial. En este ciclo, nuestros agentes apoyan en tareas clave como:
 
@@ -295,14 +295,14 @@ En Beecker, ayudamos a optimizar procesos de negocio con soluciones de automatiz
 — Administración de cuentas por cobrar y facturación automática.  
 — Prevención de quiebres de stock en tiempo real.
 
-Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, también para las personas clave de tu organización.  
+Me gustaría proponerte una breve sesión para presentarte los casos de éxito y los resultados que líderes de tu sector están obteniendo con estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
 
 ¿Tendrías disponibilidad esta o la próxima semana para coordinarlo?
 """
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/ai-automation-dashboard/. El motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. El motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
 
 En Beecker, implementamos soluciones de automatización y agentes de IA que potencian distintas líneas de negocio. Por ejemplo:
 
@@ -312,30 +312,30 @@ En Beecker, implementamos soluciones de automatización y agentes de IA que pote
 — Atención al Cliente: Agentes virtuales inteligentes que responden rápido, mejoran la experiencia del cliente y alivian la carga del equipo.
 — Cadena de Suministro: Optimiza inventarios, automatiza pedidos y controla la logística con mayor precisión y visibilidad.
 
-Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, también para las personas clave de tu organización.  
+Me gustaría proponerte una breve sesión para presentarte los casos de éxito y los resultados que líderes de tu sector están obteniendo con estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
 
 ¿Tendrías disponibilidad esta o la próxima semana para coordinarlo?
 """
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai-solutions/. Te contacto porque ayudamos a los departamentos de TI a convertirse en un socio estratégico del negocio, y me gustaría explorar cómo podríamos colaborar con el equipo de {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Te contacto porque ayudamos a los equipos de TI a convertirse en socios estratégicos del negocio, y me gustaría explorar oportunidades de colaboración concretas con el equipo de {empresa}.
 
-En Beecker, integramos agentes de inteligencia artificial que asumen tareas de soporte y liberan a tu equipo para enfocarse en proyectos de mayor valor:
+En Beecker, integramos agentes de inteligencia artificial que asumen tareas de soporte y liberan a tu equipo del trabajo tedioso, por ejemplo: 
 
 — Gestionan y resuelven tickets recurrentes, ejecutan respaldos y monitorean sistemas de forma proactiva.
 — Reducen tiempos de respuesta en soporte técnico.
 — Automatizan procesos críticos y se integran a cualquier sistema, simplificando operaciones y evitando errores.
 — Entrenados que se adaptan a cualquier plataforma, flujo o desafío específico de tu negocio.
 
-Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, también para las personas clave de tu organización.  
+Me gustaría proponerte una breve sesión para presentarte los casos de éxito y los resultados que líderes de tu sector están obteniendo con estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
 
 ¿Tendrías disponibilidad esta o la próxima semana para coordinarlo?
 """
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai-solutions/. Te escribo específicamente para mostrarte cómo podemos reducir drásticamente los tiempos y errores en las operaciones aduanales de {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Te escribo específicamente para presentarte nuestra solución, capaz de reducir drásticamente los tiempos y errores en las operaciones aduanales de {empresa}.
 
 En Beecker, hemos desarrollado agentes de IA especializados para optimizar procesos complejos. En Aduanas, nuestro agente PEDRO asume tareas críticas como:
 
@@ -344,7 +344,7 @@ En Beecker, hemos desarrollado agentes de IA especializados para optimizar proce
 — Clasificar regímenes y asignar costos sin intervención manual.
 — Generar expedientes digitales auditables en tiempo real.
 
-Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, también para las personas clave de tu organización.  
+Me gustaría proponerte una breve sesión para presentarte los casos de éxito y los resultados que líderes de tu sector están obteniendo con estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
 
 ¿Tendrías disponibilidad esta o la próxima semana para coordinarlo?
 """
