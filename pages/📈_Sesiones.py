@@ -613,6 +613,69 @@ def display_evolucion_sql(df_filtered, time_agg_col, display_label_col_name, cha
         st.plotly_chart(fig_evol_sql, use_container_width=True)
     except Exception as e_evol_sql: st.warning(f"No se pudo generar gráfico de evolución para {x_axis_label}: {e_evol_sql}")
 
+# ==============================================================================
+# ========= INICIO: NUEVA FUNCIÓN PARA TRAZABILIDAD DE ASIGNACIONES AE =========
+# ==============================================================================
+def display_ae_monthly_assignments(df_filtered):
+    st.markdown("### 📅 Trazabilidad Mensual de Asignaciones por AE")
+    
+    # 1. Validar que los datos y columnas necesarias existan
+    if df_filtered.empty or 'AE' not in df_filtered.columns or 'AñoMes' not in df_filtered.columns:
+        st.info("No hay datos suficientes para mostrar la trazabilidad de asignaciones por AE y mes.")
+        return
+
+    # 2. Preparar datos y contar sesiones por mes y AE
+    df_assignments = df_filtered.copy()
+    df_assignments.dropna(subset=['AñoMes', 'AE'], inplace=True)
+    if df_assignments.empty:
+        st.info("No hay datos con 'AñoMes' y 'AE' válidos para mostrar.")
+        return
+
+    monthly_assignments = df_assignments.groupby(['AñoMes', 'AE']).size().reset_index(name='Cantidad de Sesiones')
+    monthly_assignments = monthly_assignments.sort_values('AñoMes')
+
+    # 3. Crear y mostrar el gráfico de líneas
+    st.markdown("##### Evolución de Sesiones Asignadas por AE")
+    
+    # Limitar a los 15 AEs con más sesiones para no saturar el gráfico
+    ae_total_counts = df_assignments['AE'].value_counts()
+    top_aes = ae_total_counts.head(15).index.tolist()
+    df_chart = monthly_assignments[monthly_assignments['AE'].isin(top_aes)]
+
+    if not df_chart.empty:
+        fig_evol_ae = px.line(df_chart,
+                              x='AñoMes',
+                              y='Cantidad de Sesiones',
+                              color='AE',
+                              title='Evolución Mensual de Sesiones por Account Executive (Top 15)',
+                              markers=True,
+                              labels={'Cantidad de Sesiones': 'Nº de Sesiones Asignadas', 'AñoMes': 'Mes'})
+        fig_evol_ae.update_layout(yaxis_title="Número de Sesiones",
+                                  xaxis_title="Mes",
+                                  legend_title="Account Executive")
+        st.plotly_chart(fig_evol_ae, use_container_width=True)
+    else:
+        st.info("No hay datos para graficar la evolución de asignaciones a AEs.")
+
+    # 4. Crear la tabla pivote para una vista detallada
+    st.markdown("##### Tabla de Trazabilidad: Sesiones por AE y Mes")
+    pivot_table_ae = monthly_assignments.pivot_table(index='AE',
+                                                     columns='AñoMes',
+                                                     values='Cantidad de Sesiones',
+                                                     fill_value=0,
+                                                     aggfunc='sum')
+
+    # 5. Añadir totales y ordenar la tabla
+    pivot_table_ae['Total General'] = pivot_table_ae.sum(axis=1)
+    pivot_table_ae = pivot_table_ae.sort_values(by='Total General', ascending=False)
+
+    # 6. Mostrar la tabla
+    st.dataframe(pivot_table_ae.style.format("{:,.0f}"), use_container_width=True)
+
+# ============================================================================
+# ========= FIN: NUEVA FUNCIÓN PARA TRAZABILIDAD DE ASIGNACIONES AE ==========
+# ============================================================================
+
 def display_tabla_sesiones_detalle(df_filtered):
     st.markdown("### 📝 Tabla Detallada de Sesiones")
     if df_filtered.empty: st.info("No hay sesiones detalladas para mostrar con los filtros aplicados."); return
@@ -661,7 +724,13 @@ display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="
 st.markdown("---")
 display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="Proceso", dimension_label="Proceso", top_n=10)
 st.markdown("---")
-# Las siguientes dos líneas estaban comentadas en tu código original que me pasaste, las mantengo comentadas.
+
+# === LLAMADA A LA NUEVA SECCIÓN DE TRAZABILIDAD POR AE ===
+display_ae_monthly_assignments(df_sesiones_filtered)
+st.markdown("---")
+# ========================================================
+
+# Las siguientes dos líneas estaban comentadas en tu código original, las mantengo comentadas.
 # display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="Puesto", dimension_label="Cargo (Puesto)", top_n=10)
 # st.markdown("---")
 # display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="Empresa", dimension_label="Empresa", top_n=10)
