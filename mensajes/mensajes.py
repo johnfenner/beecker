@@ -249,7 +249,7 @@ plantillas_karen = {
 
 plantilla_h2r_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Te escribo directamente porque he estado analizando cómo empresas líderes están optimizando sus ciclos de talento, y veo una gran oportunidad para potenciar el área de RRHH en {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/hire-to-retire/. Te escribo directamente porque he estado analizando cómo empresas líderes están optimizando sus ciclos de talento, y veo una gran oportunidad para potenciar el área de RRHH en {empresa}.
 
 En Beecker, ayudamos a optimizar estos procesos con soluciones de automatización y agentes de IA. En el ciclo Hire-to-Retire, por ejemplo, nuestros agentes asumen tareas clave como:
 
@@ -269,7 +269,7 @@ Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo l�
 
 plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Mi motivo para contactarte es presentarte una forma de fortalecer el ciclo de compras y proveedores de {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/procure-to-pay-automation/. Mi motivo para contactarte es presentarte una forma de fortalecer el ciclo de compras y proveedores de {empresa}.
 
 En Beecker, nos especializamos en optimizar procesos de negocio con automatización y agentes de inteligencia artificial. En el ciclo Procure-to-Pay, nuestros agentes apoyan en tareas clave como:
 
@@ -286,7 +286,7 @@ Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo l�
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Te escribo porque nuestro equipo se especializa en acelerar el flujo de ingresos, y me gustaría mostrarte cómo podríamos aplicarlo al ciclo Order-to-Cash de {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/order-to-cash/. Te escribo porque nuestro equipo se especializa en acelerar el flujo de ingresos, y me gustaría mostrarte cómo podríamos aplicarlo al ciclo Order-to-Cash de {empresa}.
 
 En Beecker, ayudamos a optimizar procesos de negocio con soluciones de automatización y agentes de inteligencia artificial. En este ciclo, nuestros agentes apoyan en tareas clave como:
 
@@ -302,7 +302,7 @@ Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo l�
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. El motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/ai-automation-dashboard/. El motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
 
 En Beecker, implementamos soluciones de automatización y agentes de IA que potencian distintas líneas de negocio. Por ejemplo:
 
@@ -319,7 +319,7 @@ Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo l�
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Te contacto porque ayudamos a los departamentos de TI a convertirse en un socio estratégico del negocio, y me gustaría explorar cómo podríamos colaborar con el equipo de {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai-solutions/. Te contacto porque ayudamos a los departamentos de TI a convertirse en un socio estratégico del negocio, y me gustaría explorar cómo podríamos colaborar con el equipo de {empresa}.
 
 En Beecker, integramos agentes de inteligencia artificial que asumen tareas de soporte y liberan a tu equipo para enfocarse en proyectos de mayor valor:
 
@@ -335,7 +335,7 @@ Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo l�
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Te escribo específicamente para mostrarte cómo podemos reducir drásticamente los tiempos y errores en las operaciones aduanales de {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai-solutions/. Te escribo específicamente para mostrarte cómo podemos reducir drásticamente los tiempos y errores en las operaciones aduanales de {empresa}.
 
 En Beecker, hemos desarrollado agentes de IA especializados para optimizar procesos complejos. En Aduanas, nuestro agente PEDRO asume tareas críticas como:
 
