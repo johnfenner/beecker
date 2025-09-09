@@ -262,7 +262,7 @@ En Beecker, ayudamos a optimizar estos procesos con soluciones de automatizació
 — LUKE: responde consultas frecuentes de empleados por chat.
 — CLEO: administra el offboarding con documentación y compensaciones finales.
 
-Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
+Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, también para las personas clave de tu organización.  
 
 ¿Tendrías disponibilidad esta o la próxima semana para coordinarlo?
 """
@@ -279,7 +279,7 @@ En Beecker, nos especializamos en optimizar procesos de negocio con automatizaci
 — Gestionar devoluciones y reembolsos de manera automática.
 — Programar y ejecutar pagos según la trazabilidad acordada. 
 
-Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
+Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, también para las personas clave de tu organización.  
 
 ¿Tendrías disponibilidad esta o la próxima semana para coordinarlo?
 """
@@ -295,7 +295,7 @@ En Beecker, ayudamos a optimizar procesos de negocio con soluciones de automatiz
 — Administración de cuentas por cobrar y facturación automática.  
 — Prevención de quiebres de stock en tiempo real.
 
-Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
+Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, también para las personas clave de tu organización.  
 
 ¿Tendrías disponibilidad esta o la próxima semana para coordinarlo?
 """
@@ -312,7 +312,7 @@ En Beecker, implementamos soluciones de automatización y agentes de IA que pote
 — Atención al Cliente: Agentes virtuales inteligentes que responden rápido, mejoran la experiencia del cliente y alivian la carga del equipo.
 — Cadena de Suministro: Optimiza inventarios, automatiza pedidos y controla la logística con mayor precisión y visibilidad.
 
-Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
+Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, también para las personas clave de tu organización.  
 
 ¿Tendrías disponibilidad esta o la próxima semana para coordinarlo?
 """
@@ -328,7 +328,7 @@ En Beecker, integramos agentes de inteligencia artificial que asumen tareas de s
 — Automatizan procesos críticos y se integran a cualquier sistema, simplificando operaciones y evitando errores.
 — Entrenados que se adaptan a cualquier plataforma, flujo o desafío específico de tu negocio.
 
-Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
+Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, también para las personas clave de tu organización.  
 
 ¿Tendrías disponibilidad esta o la próxima semana para coordinarlo?
 """
@@ -344,7 +344,7 @@ En Beecker, hemos desarrollado agentes de IA especializados para optimizar proce
 — Clasificar regímenes y asignar costos sin intervención manual.
 — Generar expedientes digitales auditables en tiempo real.
 
-Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
+Me gustaría proponerte una breve sesión de intercambio para mostrarte cómo líderes de tu sector están aplicando estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, también para las personas clave de tu organización.  
 
 ¿Tendrías disponibilidad esta o la próxima semana para coordinarlo?
 """
