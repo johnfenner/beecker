@@ -614,7 +614,7 @@ def display_evolucion_sql(df_filtered, time_agg_col, display_label_col_name, cha
     except Exception as e_evol_sql: st.warning(f"No se pudo generar gráfico de evolución para {x_axis_label}: {e_evol_sql}")
 
 # ==============================================================================
-# ========= FUNCIÓN CORREGIDA Y MEJORADA PARA TRAZABILIDAD DE AE =========
+# ========= INICIO: FUNCIÓN DE TRAZABILIDAD DE AE (COMPLETAMENTE REDISEÑADA) =========
 # ==============================================================================
 def display_ae_monthly_assignments(df_filtered):
     st.markdown("### 📅 Trazabilidad Mensual de Asignaciones por AE")
@@ -629,13 +629,29 @@ def display_ae_monthly_assignments(df_filtered):
         st.info("No hay datos con 'AñoMes' y 'AE' válidos para mostrar.")
         return
 
+    # --- 1. GRÁFICO DE BARRAS CON TOTALES (NUEVO) ---
+    st.markdown("##### Total de Sesiones por AE (Periodo Filtrado)")
+    total_ae_counts = df_assignments['AE'].value_counts().reset_index()
+    total_ae_counts.columns = ['AE', 'Total de Sesiones']
+    total_ae_counts = total_ae_counts.sort_values('Total de Sesiones', ascending=True) # Ascendente para gráfico horizontal
+
+    fig_total_ae = px.bar(total_ae_counts,
+                          x='Total de Sesiones',
+                          y='AE',
+                          orientation='h',
+                          title='Ranking de Sesiones Totales por Account Executive',
+                          text='Total de Sesiones')
+    fig_total_ae.update_layout(yaxis_title="Account Executive", xaxis_title="Número Total de Sesiones")
+    st.plotly_chart(fig_total_ae, use_container_width=True)
+
+
+    # --- 2. GRÁFICO DE LÍNEAS DE TENDENCIA (EXISTENTE) ---
+    st.markdown("##### Evolución Mensual de Sesiones Asignadas por AE")
     monthly_assignments = df_assignments.groupby(['AñoMes', 'AE']).size().reset_index(name='Cantidad de Sesiones')
     monthly_assignments = monthly_assignments.sort_values('AñoMes')
-
-    st.markdown("##### Evolución de Sesiones Asignadas por AE")
     
-    ae_total_counts = df_assignments['AE'].value_counts()
-    top_aes = ae_total_counts.head(15).index.tolist()
+    ae_total_counts_for_legend = df_assignments['AE'].value_counts()
+    top_aes = ae_total_counts_for_legend.head(15).index.tolist()
     df_chart = monthly_assignments[monthly_assignments['AE'].isin(top_aes)]
 
     if not df_chart.empty:
@@ -643,7 +659,7 @@ def display_ae_monthly_assignments(df_filtered):
                               x='AñoMes',
                               y='Cantidad de Sesiones',
                               color='AE',
-                              title='Evolución Mensual de Sesiones por Account Executive (Top 15)',
+                              title='Tendencia Mensual de Sesiones (Top 15 AEs)',
                               markers=True,
                               labels={'Cantidad de Sesiones': 'Nº de Sesiones Asignadas', 'AñoMes': 'Mes'})
         fig_evol_ae.update_layout(yaxis_title="Número de Sesiones",
@@ -653,6 +669,7 @@ def display_ae_monthly_assignments(df_filtered):
     else:
         st.info("No hay datos para graficar la evolución de asignaciones a AEs.")
 
+    # --- 3. TABLA DE DATOS DETALLADA (CORREGIDA) ---
     st.markdown("##### Tabla de Trazabilidad: Sesiones por AE y Mes")
     pivot_table_ae = monthly_assignments.pivot_table(index='AE',
                                                      columns='AñoMes',
@@ -660,23 +677,26 @@ def display_ae_monthly_assignments(df_filtered):
                                                      fill_value=0,
                                                      aggfunc='sum')
 
-    # ===== INICIO DE LA CORRECCIÓN DE ORDEN =====
-    # 1. Asegurarse que las columnas de meses estén ordenadas cronológicamente
     if not pivot_table_ae.empty:
-        sorted_months = sorted(monthly_assignments['AñoMes'].unique())
-        # Filtrar solo los meses que existen en la tabla pivote (por si acaso)
+        # ===== INICIO DE LA CORRECCIÓN DE ORDEN (INVERSO) =====
+        # Ordenar meses del más reciente al más antiguo
+        sorted_months = sorted(monthly_assignments['AñoMes'].unique(), reverse=True)
+        
         existing_months_in_pivot = [m for m in sorted_months if m in pivot_table_ae.columns]
         pivot_table_ae = pivot_table_ae[existing_months_in_pivot]
-    # ===== FIN DE LA CORRECCIÓN DE ORDEN =====
+        # ===== FIN DE LA CORRECCIÓN DE ORDEN =====
 
-    pivot_table_ae['Total General'] = pivot_table_ae.sum(axis=1)
-    pivot_table_ae = pivot_table_ae.sort_values(by='Total General', ascending=False)
-    
-    # Aplicar formato y el mapa de calor para mejor visualización
-    st.dataframe(
-        pivot_table_ae.style.format("{:,.0f}").background_gradient(cmap='Blues', axis=1),
-        use_container_width=True
-    )
+        pivot_table_ae['Total General'] = pivot_table_ae.sum(axis=1)
+        pivot_table_ae = pivot_table_ae.sort_values(by='Total General', ascending=False)
+        
+        # Mostrar la tabla con formato simple, sin mapa de calor
+        st.dataframe(pivot_table_ae.style.format("{:,.0f}"), use_container_width=True)
+    else:
+        st.info("No hay datos para construir la tabla de trazabilidad.")
+
+# ============================================================================
+# ========= FIN: FUNCIÓN DE TRAZABILIDAD DE AE (COMPLETAMENTE REDISEÑADA) ==========
+# ============================================================================
 
 def display_tabla_sesiones_detalle(df_filtered):
     st.markdown("### 📝 Tabla Detallada de Sesiones")
@@ -746,4 +766,5 @@ display_tabla_sesiones_detalle(df_sesiones_filtered)
 
 st.markdown("---")
 st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")
+
 
