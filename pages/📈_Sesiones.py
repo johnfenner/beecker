@@ -614,17 +614,15 @@ def display_evolucion_sql(df_filtered, time_agg_col, display_label_col_name, cha
     except Exception as e_evol_sql: st.warning(f"No se pudo generar gráfico de evolución para {x_axis_label}: {e_evol_sql}")
 
 # ==============================================================================
-# ========= INICIO: NUEVA FUNCIÓN PARA TRAZABILIDAD DE ASIGNACIONES AE =========
+# ========= FUNCIÓN CORREGIDA Y MEJORADA PARA TRAZABILIDAD DE AE =========
 # ==============================================================================
 def display_ae_monthly_assignments(df_filtered):
     st.markdown("### 📅 Trazabilidad Mensual de Asignaciones por AE")
     
-    # 1. Validar que los datos y columnas necesarias existan
     if df_filtered.empty or 'AE' not in df_filtered.columns or 'AñoMes' not in df_filtered.columns:
         st.info("No hay datos suficientes para mostrar la trazabilidad de asignaciones por AE y mes.")
         return
 
-    # 2. Preparar datos y contar sesiones por mes y AE
     df_assignments = df_filtered.copy()
     df_assignments.dropna(subset=['AñoMes', 'AE'], inplace=True)
     if df_assignments.empty:
@@ -634,10 +632,8 @@ def display_ae_monthly_assignments(df_filtered):
     monthly_assignments = df_assignments.groupby(['AñoMes', 'AE']).size().reset_index(name='Cantidad de Sesiones')
     monthly_assignments = monthly_assignments.sort_values('AñoMes')
 
-    # 3. Crear y mostrar el gráfico de líneas
     st.markdown("##### Evolución de Sesiones Asignadas por AE")
     
-    # Limitar a los 15 AEs con más sesiones para no saturar el gráfico
     ae_total_counts = df_assignments['AE'].value_counts()
     top_aes = ae_total_counts.head(15).index.tolist()
     df_chart = monthly_assignments[monthly_assignments['AE'].isin(top_aes)]
@@ -657,7 +653,6 @@ def display_ae_monthly_assignments(df_filtered):
     else:
         st.info("No hay datos para graficar la evolución de asignaciones a AEs.")
 
-    # 4. Crear la tabla pivote para una vista detallada
     st.markdown("##### Tabla de Trazabilidad: Sesiones por AE y Mes")
     pivot_table_ae = monthly_assignments.pivot_table(index='AE',
                                                      columns='AñoMes',
@@ -665,16 +660,23 @@ def display_ae_monthly_assignments(df_filtered):
                                                      fill_value=0,
                                                      aggfunc='sum')
 
-    # 5. Añadir totales y ordenar la tabla
+    # ===== INICIO DE LA CORRECCIÓN DE ORDEN =====
+    # 1. Asegurarse que las columnas de meses estén ordenadas cronológicamente
+    if not pivot_table_ae.empty:
+        sorted_months = sorted(monthly_assignments['AñoMes'].unique())
+        # Filtrar solo los meses que existen en la tabla pivote (por si acaso)
+        existing_months_in_pivot = [m for m in sorted_months if m in pivot_table_ae.columns]
+        pivot_table_ae = pivot_table_ae[existing_months_in_pivot]
+    # ===== FIN DE LA CORRECCIÓN DE ORDEN =====
+
     pivot_table_ae['Total General'] = pivot_table_ae.sum(axis=1)
     pivot_table_ae = pivot_table_ae.sort_values(by='Total General', ascending=False)
-
-    # 6. Mostrar la tabla
-    st.dataframe(pivot_table_ae.style.format("{:,.0f}"), use_container_width=True)
-
-# ============================================================================
-# ========= FIN: NUEVA FUNCIÓN PARA TRAZABILIDAD DE ASIGNACIONES AE ==========
-# ============================================================================
+    
+    # Aplicar formato y el mapa de calor para mejor visualización
+    st.dataframe(
+        pivot_table_ae.style.format("{:,.0f}").background_gradient(cmap='Blues', axis=1),
+        use_container_width=True
+    )
 
 def display_tabla_sesiones_detalle(df_filtered):
     st.markdown("### 📝 Tabla Detallada de Sesiones")
@@ -744,3 +746,4 @@ display_tabla_sesiones_detalle(df_sesiones_filtered)
 
 st.markdown("---")
 st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")
+
