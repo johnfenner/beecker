@@ -302,7 +302,7 @@ Me gustaría proponerte una breve sesión para presentarte los casos de éxito y
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. El motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/ai-automation-dashboard/. El motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
 
 En Beecker, implementamos soluciones de automatización y agentes de IA que potencian distintas líneas de negocio. Por ejemplo:
 
@@ -319,7 +319,7 @@ Me gustaría proponerte una breve sesión para presentarte los casos de éxito y
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Te contacto porque ayudamos a los equipos de TI a convertirse en socios estratégicos del negocio, y me gustaría explorar oportunidades de colaboración concretas con el equipo de {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/ai-automation-dashboard/. Te contacto porque ayudamos a los equipos de TI a convertirse en socios estratégicos del negocio, y me gustaría explorar oportunidades de colaboración concretas con el equipo de {empresa}.
 
 En Beecker, integramos agentes de inteligencia artificial que asumen tareas de soporte y liberan a tu equipo del trabajo tedioso, por ejemplo: 
 
@@ -335,7 +335,7 @@ Me gustaría proponerte una breve sesión para presentarte los casos de éxito y
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/. Te escribo específicamente para presentarte nuestra solución, capaz de reducir drásticamente los tiempos y errores en las operaciones aduanales de {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/ai-automation-dashboard/. Te escribo específicamente para presentarte nuestra solución, capaz de reducir drásticamente los tiempos y errores en las operaciones aduanales de {empresa}.
 
 En Beecker, hemos desarrollado agentes de IA especializados para optimizar procesos complejos. En Aduanas, nuestro agente PEDRO asume tareas críticas como:
 
