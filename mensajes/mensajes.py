@@ -319,7 +319,7 @@ Me gustaría proponerte una breve sesión para presentarte los casos de éxito y
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/ai-automation-dashboard/. Te contacto porque ayudamos a los equipos de TI a convertirse en socios estratégicos del negocio, y me gustaría explorar oportunidades de colaboración concretas con el equipo de {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/ai-automation-dashboard/. Te contacto porque me gustaría explorar oportunidades de colaboración concretas con el equipo de {empresa}.
 
 En Beecker, integramos agentes de inteligencia artificial que asumen tareas de soporte y liberan a tu equipo del trabajo tedioso, por ejemplo: 
 
