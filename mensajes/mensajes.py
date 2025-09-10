@@ -249,9 +249,9 @@ plantillas_karen = {
 
 plantilla_h2r_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/hire-to-retire/. Te escribo directamente porque he estado analizando las estrategias que empresas líderes utilizan para optimizar sus ciclos de talento, y veo una gran oportunidad para potenciar el área de RRHH en {empresa}.
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/hire-to-retire/. Me pareció interesante acercarme a ti porque varias empresas líderes en tu sector están impulsando sus ciclos de talento con agentes de IA, y pensé que podría ser útil explorar cómo estas prácticas podrían aplicarse también en {empresa}.
 
-En Beecker, ayudamos a optimizar estos procesos con soluciones de automatización y agentes de IA. En el ciclo Hire-to-Retire, por ejemplo, nuestros agentes asumen tareas clave como:
+En Beecker, ayudamos a optimizar procesos de RRHH a lo largo del ciclo Hire-to-Retire. Por ejemplo, nuestros agentes de IA apoyan en tareas como:
 
 — FER: publica vacantes automáticamente en portales de empleo.
 — LUCAS: recibe solicitudes y digitaliza documentos.
@@ -262,7 +262,9 @@ En Beecker, ayudamos a optimizar estos procesos con soluciones de automatizació
 — LUKE: responde consultas frecuentes de empleados por chat.
 — CLEO: administra el offboarding con documentación y compensaciones finales.
 
-Me gustaría proponerte una breve sesión para presentarte los casos de éxito y los resultados que líderes de tu sector están obteniendo con estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, también para las personas clave de tu organización.
+Me gustaría proponerte una breve sesión para presentarte casos de éxito, podríamos explorar puntos clave como, por ejemplo, si ya cuentan con iniciativas de automatización en despliegue y qué sistemas de gestión de nómina o personal utilizan actualmente.
+
+La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, también para las personas clave de tu organización.
 
 ¿Tendrías disponibilidad esta o la próxima semana para coordinarlo?
 """
@@ -306,11 +308,11 @@ Soy {avatar}, Digital Transformation Manager en https://beecker.ai/ai-automation
 
 En Beecker, implementamos soluciones de automatización y agentes de IA que potencian distintas líneas de negocio. Por ejemplo:
 
-— Procurement: Valida facturas automáticamente contra órdenes de compra, detecta discrepancias, analiza el desempeño de proveedores y agiliza todo el ciclo Procure-to-Pay (P2P).
-— Finanzas y Contabilidad: Conciliaciones bancarias, procesamiento de facturas y seguimiento de pagos hechos automáticamente. 
-— Recursos Humanos: Gestiona nóminas, selecciona personal y administra beneficios de forma eficiente con ayuda de IA.
-— Atención al Cliente: Agentes virtuales inteligentes que responden rápido, mejoran la experiencia del cliente y alivian la carga del equipo.
-— Cadena de Suministro: Optimiza inventarios, automatiza pedidos y controla la logística con mayor precisión y visibilidad.
+— Procurement: Agentes de IA que validan facturas contra órdenes de compra, detectan discrepancias y optimizan todo el ciclo Procure-to-Pay (P2P).
+— Finanzas y Contabilidad: Conciliaciones bancarias, facturación y seguimiento de pagos gestionados de manera automática y precisa.
+— Recursos Humanos: Selección de personal, gestión de nómina y beneficios administrados con mayor agilidad gracias a IA.
+— Atención al Cliente: Agentes virtuales inteligentes que responden consultas, mejoran la experiencia y reducen carga al equipo.
+— Cadena de Suministro: Control de inventarios, pedidos y logística con mayor eficiencia y visibilidad en tiempo real.
 
 Me gustaría proponerte una breve sesión para presentarte los casos de éxito y los resultados que líderes de tu sector están obteniendo con estas soluciones. La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, también para las personas clave de tu organización.
 
