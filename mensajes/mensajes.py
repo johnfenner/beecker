@@ -100,20 +100,38 @@ Cuando esto se implementa bien, el tiempo de procesamiento baja más de un 80% y
 Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
 """
 
-# --- INICIO DEL CÓDIGO CORREGIDO ---
+# ===== NUEVA PLANTILLA FINANZAS - ESTILO JOHN =====
+plantilla_finanzas_john = """Hola {nombre}, un gusto saludarte.
+
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/agentic-ai/, donde ayudamos a equipos financieros a ganar precisión y agilidad con IA avanzada y automatización multimodal.
+
+En Finanzas, no siempre se trata de cambiar el ERP, sino de sumar inteligencia para que los procesos de planificación y reporte fluyan sin fricción. Por eso integramos agentes de IA que asumen tareas clave como:
+
+— Automatizar la generación y consolidación de presupuestos.
+— Realizar proyecciones (forecasts) precisos en tiempo real.
+— Detectar desviaciones y riesgos antes de que impacten la operación.
+— Generar dashboards y reportes completos al instante.
+
+Cuando esto se implementa bien, los cierres mensuales se aceleran y la precisión del forecast mejora notablemente, liberando al equipo para enfocarse en el análisis estratégico. Me encantaría invitarte a que lo revisemos junto con tu equipo, para que puedan evaluar su aplicación real y basados en datos concretos.
+
+Si te parece que vale la pena, podemos coordinar una breve sesión en el momento que les resulte más cómodo. Solo dime el día y la hora, y reservo un espacio con nuestro equipo, sin ningún compromiso.
+"""
+
+
 plantillas_john = {
     "Plantilla John H2R": plantilla_h2r_john,
     "Plantilla John P2P": plantilla_p2p_john,
     "Plantilla John O2C": plantilla_o2c_john,
     "Plantilla John General": plantilla_general_john,
-    # Se añade el sufijo "(Alternativa)" para que coincida con la lógica de búsqueda
     "Plantilla John TI (Alternativa)": plantilla_ti_john,
     "Plantilla John Aduanas (Alternativa)": plantilla_aduanas_john,
+    # Se añade la nueva plantilla de Finanzas
+    "Plantilla John Finanzas (Alternativa)": plantilla_finanzas_john,
 }
-# --- FIN DEL CÓDIGO CORREGIDO ---
+
 
 # ===============================================================================
-# ===== SET DE PLANTILLAS "KAREN CH" ============================================
+# ===== SET DE PLANTILLAS "KAREN CH" (CONTENIDO ACTUALIZADO) =====================
 # ===============================================================================
 
 plantilla_general_karen = """Hola {nombre}, un gusto saludarte.
@@ -130,90 +148,88 @@ Me gustaría mostrarte cómo nuestras soluciones pueden mejorar la eficiencia en
 
 Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso, también tenemos soluciones que se pueden adecuar a las necesidades que tengas en tu área.
 
-Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
-
-¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
+Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido. ¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
-plantilla_h2r_karen = """Hola {nombre}, un gusto saludarte.
+# ===== CONTENIDO ACTUALIZADO PARA KAREN H2R =====
+plantilla_h2r_karen = """¡Hola {nombre}, un gusto saludarte!
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/hire-to-retire/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
 
 Nos centramos en nuestros agentes digitales de IA diseñados para los procesos Hire to Retire (H2R) entre otros para diferentes áreas.
 
-- Fer: Agente de Publicación de Vacantes
-- Lucas: Agente de Reclutamiento
-- Isa: Agente de Onboarding
-- Ben: Agente de Desempeño del empleado
-- Lily: Agente de Remuneración y Prestaciones
-- Lisa: Agente de Gestión de viáticos
-- Cleo: Agente de Jubilación.
+— Fer: Agente de Publicación de Vacantes
+— Lucas: Agente de Reclutamiento 
+— Isa: Agente de Onboarding 
+— Luke: Gestión de dudas y tickets
+— Ben: Agente de Desempeño del empleado
+— Lily: Agente de Remuneración y Prestaciones
+— Lisa: Agente de Gestión de viáticos
+— Cleo: Agente de Jubilación
 
 Estos agentes reducen significativamente errores y tiempos de operación, también podemos integrar diferentes automatizaciones que se adecuan a tus necesidades.
+Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido. 
 
-Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
-
-¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
+¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
+# ===== CONTENIDO ACTUALIZADO PARA KAREN P2P =====
 plantilla_p2p_karen = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/procure-to-pay-automation/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
 
 Nos centramos principalmente en nuestros agentes digitales de IA diseñados para el proceso Procure-to-Pay (P2P) entre otros para diferentes áreas.
 
-- Jessica: Agente de Selección de proveedores.
-- Elsa: Agente de alta de proveedores.
-- Olivia: Agente de procesamiento de órdenes de compra.
-- Daniel: Agente de procesamiento de facturas.
-- David: Agente de procesamiento de órdenes de pago.
+— Elsa: Agente de alta de proveedores.
+— Richard: Coordinación de Forecasting
+— Olivia: Agente de procesamiento de órdenes de compra.
+— Chris: Recepción de mercancía.
+— Tony: Gestión de inventario.
+— Ryan: Gestión de devoluciones.
+— Pedro: Gestión de Aduanas.
+— Daniel: Agente de procesamiento de facturas.
+— David: Agente de procesamiento de órdenes de pago.
 
 Estos agentes automatizan todo el ciclo de compras, desde la selección de proveedor hasta el pago, asegurando el cumplimiento de políticas empresariales en cada transacción y reduciendo significativamente errores y tiempos de operación.
 
-Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
+Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido con empresas de la misma industria.
 
-¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
+¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
+# ===== CONTENIDO ACTUALIZADO PARA KAREN O2C =====
 plantilla_o2c_karen = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/order-to-cash/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
 
 Nos centramos principalmente en agentes digitales de IA diseñados para los procesos Order to Cash (O2C) entre otros para diferentes áreas.
 
-- Adrian: Agente de alta de clientes
-- Nico: Agente de Procesamiento de pedidos
-- Diana: Agente de Planificación de entregas
-- James: Agente de Planificación del transporte
-- Julia: Agente de Logística de salida
-- Ryan: Agente de Gestión de devoluciones
-- Mia: Agente de Gestión del crédito
-- Alice: Agente de Gestión de existencias en Inventario
-- Nina: Agente de Cuentas por cobrar
-- Aaron: Agente de facturación.
+— Adrián: Agente de alta de clientes
+— Nico: Agente de Procesamiento de pedidos
+— Diana: Agente de Planificación de entregas
+— James: Agente de Planificación del transporte
+— Julia: Agente de Logística de salida
+— Ryan: Agente de Gestión de devoluciones
+— Mía: Agente de Gestión del crédito
+— Alice: Agente de Gestión de existencias en Inventario
+— Nina: Agente de Cuentas por cobrar
+— Aarón: Agente de facturación
 
 Estos agentes optimizan cada etapa del proceso, garantizando la satisfacción del cliente, reduciendo significativamente errores, mejorando los tiempos de operación y ofreciendo una trazabilidad completa.
 
-Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
+Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido con empresas de la misma industria.
 
-¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
+¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
-# La plantilla de TI no se encontró en el documento de Word y se ha mantenido sin cambios.
+# ===== CONTENIDO ACTUALIZADO PARA KAREN TI =====
 plantilla_ti_karen = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y, como partners Platinum de UiPath, nuestro foco es aplicar esta tecnología para que los equipos de TI puedan escalar su eficiencia en empresas como #Empresa.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/. Me gustaría presentarte a nuestra empresa, con más de 12 años de experiencia en automatización inteligente e inteligencia artificial. A diferencia de muchos consultores que solo diseñan estrategias, en Beecker acompañamos a nuestros clientes en todo el ciclo: diagnóstico, implementación y escalamiento, asegurando resultados medibles en semanas.
 
-Ayudamos a equipos como el tuyo a:
+Contamos con un equipo de más de 200 expertos certificados y hemos apoyado a empresas de distintas industrias en la identificación de millones de dólares en oportunidades ocultas de automatización, además de construir soluciones que realmente generan valor y escalan con el tiempo.
 
-- Automatizar la gestión de tickets y solicitudes.
-- Ejecutar rutinas de mantenimiento y monitoreo sin intervención.
-- Reducir tiempos de respuesta en soporte técnico.
-- Facilitar la integración entre sistemas legacy y nuevos entornos.
-
-Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos que podrían hacerte sentido por lo que suelen enfrentar perfiles como el tuyo, y podríamos ver si algo de eso aplica al contexto actual de tu equipo.
-
-¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
+¿Te parecería bien coordinar una llamada de 30 minutos para explorar qué oportunidades podríamos detectar en {empresa}? Quedo pendiente a tu respuesta.
 """
 
 plantilla_aduanas_karen = """Hola {nombre}, un gusto saludarte.
@@ -234,6 +250,21 @@ Justo por eso me gustaría agendar una sesión breve contigo. Hay algunos casos 
 ¿Tendrías disponibilidad esta o la próxima semana para que coordinemos esta sesión?
 """
 
+# ===== NUEVA PLANTILLA FINANZAS - ESTILO KAREN =====
+plantilla_finanzas_karen = """Hola {nombre}, gracias por conectar.
+
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/. En Planeación Financiera, los procesos manuales de presupuesto y forecast consumen mucho tiempo y están sujetos a errores humanos. Con nuestros agentes digitales de IA, tu equipo puede:
+
+✅ Automatizar la generación y consolidación de presupuestos.
+✅ Hacer forecastings precisos en tiempo real.
+✅ Detectar desviaciones y riesgos antes de que afecten la operación.
+✅ Obtener dashboards y reportes completos al instante.
+
+Me encantaría coordinar una demo de 30 minutos para mostrar cómo estas soluciones pueden optimizar la planeación financiera en {empresa}.
+
+¿Tienes algún espacio esta semana o la próxima?
+"""
+
 plantillas_karen = {
     "Plantilla Karen H2R": plantilla_h2r_karen,
     "Plantilla Karen P2P": plantilla_p2p_karen,
@@ -241,6 +272,8 @@ plantillas_karen = {
     "Plantilla Karen General": plantilla_general_karen,
     "Plantilla Karen TI (Alternativa)": plantilla_ti_karen,
     "Plantilla Karen Aduanas (Alternativa)": plantilla_aduanas_karen,
+    # Se añade la nueva plantilla de Finanzas
+    "Plantilla Karen Finanzas (Alternativa)": plantilla_finanzas_karen,
 }
 
 # =======================================================================================
@@ -356,7 +389,25 @@ Por eso pensé que podríamos tener una charla breve para conocer cómo lo está
 ¿Te parecería bien si coordinamos este espacio para esta o la próxima semana?
 """
 
-# --- INICIO DEL CÓDIGO CORREGIDO Y ACTUALIZADO ---
+# ===== NUEVA PLANTILLA FINANZAS - ESTILO JOHN MEJORADO =====
+plantilla_finanzas_john_mejorado = """Hola {nombre}, un gusto saludarte.
+
+Soy {avatar}, Digital Transformation Manager en https://beecker.ai/ai-automation-dashboard/. Me pareció interesante acercarme a ti porque en Finanzas la precisión y agilidad son clave, y pensé que podría ser útil explorar cómo optimizar estos factores en {empresa}.
+
+En Beecker, implementamos agentes de IA que potencian la planeación financiera. Por ejemplo:
+
+— 📊 Automatizan la generación y consolidación de presupuestos.
+— 📈 Realizan forecastings precisos y dinámicos en tiempo real.
+— ⚠️ Detectan desviaciones y riesgos antes de que se conviertan en un problema.
+— 📋 Generan dashboards y reportes completos al instante, listos para análisis.
+— Y cualquier aplicación dentro de tu proceso que quieras mejorar en efectividad, se pueden adaptar fácilmente.
+
+Por eso pensé que podríamos tener una charla breve para conocer cómo lo están manejando actualmente. Así contrastamos experiencias sobre cómo otras organizaciones han resuelto los cuellos de botella más comunes en sus ciclos de planificación, con el apoyo de la IA.
+
+¿Te parecería bien si coordinamos este espacio para esta o la próxima semana?
+"""
+
+
 plantillas_john_mejorado = {
     "Plantilla JohnMejorado H2R": plantilla_h2r_john_mejorado,
     "Plantilla JohnMejorado P2P": plantilla_p2p_john_mejorado,
@@ -364,5 +415,6 @@ plantillas_john_mejorado = {
     "Plantilla JohnMejorado General": plantilla_general_john_mejorado,
     "Plantilla JohnMejorado TI (Alternativa)": plantilla_ti_john_mejorado,
     "Plantilla JohnMejorado Aduanas (Alternativa)": plantilla_aduanas_john_mejorado,
+    # Se añade la nueva plantilla de Finanzas
+    "Plantilla JohnMejorado Finanzas (Alternativa)": plantilla_finanzas_john_mejorado,
 }
-# --- FIN DEL CÓDIGO CORREGIDO Y ACTUALIZADO ---
