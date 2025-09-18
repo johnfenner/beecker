@@ -266,15 +266,18 @@ if st.session_state.mostrar_tabla_mensajes:
             else:
                 st.warning(f"No se encontró una plantilla principal para la categoría '{categoria_prospecto}' en el set de '{nombre_set}'.")
 
-            # ---- Lógica para Mensaje Alternativo ----
+           # ---- Lógica para Mensaje Alternativo ----
             key_plantilla_alternativa = None
             nombre_alternativa = ""
             if categoria_prospecto == "General":
-                # --- LÍNEA MODIFICADA ---
                 key_plantilla_alternativa = f"Plantilla {nombre_set} TI (Alternativa)"
                 nombre_alternativa = "TI"
             elif categoria_prospecto == "P2P":
-                # --- LÍNEA MODIFICADA ---
+                # --- LÍNEA CORREGIDA ---
+                key_plantilla_alternativa = f"Plantilla {nombre_set} Finanzas (Alternativa)"
+                nombre_alternativa = "Finanzas"
+            elif categoria_prospecto == "O2C":
+                # --- NUEVA LÍNEA AÑADIDA ---
                 key_plantilla_alternativa = f"Plantilla {nombre_set} Aduanas (Alternativa)"
                 nombre_alternativa = "Aduanas"
             
