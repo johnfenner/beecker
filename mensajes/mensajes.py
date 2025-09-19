@@ -342,7 +342,7 @@ plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
 Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/. Tenemos más de 12 años de experiencia en automatización inteligente e inteligencia artificial, y a diferencia de muchos consultores que solo diseñan estrategias, en Beecker acompañamos a nuestros clientes en todo el ciclo: diagnóstico, implementación y escalamiento, asegurando resultados medibles en semanas.
 
-En el área de TI, integramos agentes que resuelven retos muy específicos:  
+Impulsamos la eficiencia de toda la organización con soluciones que integran consultoría, automatización inteligente, sistemas y agentes de IA en procesos clave de negocio:
 
 — 🛠️ Atienden tickets y reducen drásticamente tiempos de respuesta.  
 — 🔄 Monitorean sistemas de forma proactiva y generan respaldos automáticos.  
