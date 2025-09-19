@@ -267,25 +267,32 @@ if st.session_state.mostrar_tabla_mensajes:
                 st.warning(f"No se encontró una plantilla principal para la categoría '{categoria_prospecto}' en el set de '{nombre_set}'.")
 
            # ---- Lógica para Mensaje Alternativo ----
-            key_plantilla_alternativa = None
-            nombre_alternativa = ""
+            mensajes_alternativos = []
             if categoria_prospecto == "General":
-                key_plantilla_alternativa = f"Plantilla {nombre_set} TI (Alternativa)"
-                nombre_alternativa = "TI"
+                mensajes_alternativos.append({
+                    "nombre": "TI",
+                    "key": f"Plantilla {nombre_set} TI (Alternativa)"
+                })
             elif categoria_prospecto == "P2P":
-                # --- LÍNEA CORREGIDA ---
-                key_plantilla_alternativa = f"Plantilla {nombre_set} Finanzas (Alternativa)"
-                nombre_alternativa = "Finanzas"
-                key_plantilla_alternativa = f"Plantilla {nombre_set} Aduanas (Alternativa)"
-                nombre_alternativa = "Aduanas"
-            
-            if key_plantilla_alternativa:
-                plantilla_alternativa_str = opciones_mensajes_base.get(key_plantilla_alternativa)
-                if plantilla_alternativa_str:
-                    mensaje_alternativo = generar_mensaje_para_fila(row, plantilla_alternativa_str)
-                    expander_title = f"Ver Mensaje Alternativo para '{nombre_alternativa}'"
-                    with st.expander(expander_title):
-                        st.code(mensaje_alternativo, language=None)
+                # Ahora agregamos ambas plantillas a una lista
+                mensajes_alternativos.append({
+                    "nombre": "Finanzas",
+                    "key": f"Plantilla {nombre_set} Finanzas (Alternativa)"
+                })
+                mensajes_alternativos.append({
+                    "nombre": "Aduanas",
+                    "key": f"Plantilla {nombre_set} Aduanas (Alternativa)"
+                })
+
+            # Recorremos la lista para mostrar cada mensaje alternativo
+            if mensajes_alternativos:
+                for alt in mensajes_alternativos:
+                    plantilla_alternativa_str = opciones_mensajes_base.get(alt["key"])
+                    if plantilla_alternativa_str:
+                        mensaje_alternativo = generar_mensaje_para_fila(row, plantilla_alternativa_str)
+                        expander_title = f"Ver Mensaje Alternativo para '{alt['nombre']}'"
+                        with st.expander(expander_title):
+                            st.code(mensaje_alternativo, language=None)
 
 st.markdown("---")
 st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")
