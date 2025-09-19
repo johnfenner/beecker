@@ -276,8 +276,6 @@ if st.session_state.mostrar_tabla_mensajes:
                 # --- LÍNEA CORREGIDA ---
                 key_plantilla_alternativa = f"Plantilla {nombre_set} Finanzas (Alternativa)"
                 nombre_alternativa = "Finanzas"
-            elif categoria_prospecto == "O2C":
-                # --- NUEVA LÍNEA AÑADIDA ---
                 key_plantilla_alternativa = f"Plantilla {nombre_set} Aduanas (Alternativa)"
                 nombre_alternativa = "Aduanas"
             
