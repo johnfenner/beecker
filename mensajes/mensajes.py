@@ -277,7 +277,7 @@ plantillas_karen = {
 }
 
 # =======================================================================================
-# ===== SET DE PLANTILLAS "JOHN MEJORADO" (VERSIÓN CON AGENTES INDIVIDUALIZADOS) =======
+# ===== SET DE PLANTILLAS "JOHN MEJORADO" (VERSIÓN CON AGENTES AGRUPADOS) ==============
 # =======================================================================================
 
 plantilla_h2r_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -286,14 +286,10 @@ Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/hire-to-r
 
 En el ciclo Hire-to-Retire, contamos con agentes que apoyan en distintas etapas, por ejemplo:
 
-— 🚀 Fer: detecta vacantes y publica en diferentes medios para atraer talento.  
-— 📄 Lucas: digitaliza solicitudes y organiza documentación en sistemas.  
-— 🎓 Isa: automatiza onboarding, contratos y capacitación de nuevos empleados.  
-— 📊 Ben: supervisa desempeño y recomienda programas de desarrollo.  
-— 💰 Lily: procesa nómina completa con precisión y puntualidad.  
-— 🧾 Lisa: valida y gestiona solicitudes de reembolsos de forma transparente.  
-— 💬 Luke: responde consultas de empleados en tiempo real vía chat.  
-— 📁 Cleo: gestiona bajas y jubilaciones con cumplimiento normativo.  
+— 🚀 Fer, 📄 Lucas e 🎓 Isa: desde la publicación de vacantes hasta el onboarding y gestión documental de nuevos empleados.  
+— 📊 Ben y 💰 Lily: supervisan desempeño y automatizan nómina completa.  
+— 🧾 Lisa y 💬 Luke: gestionan reembolsos y responden consultas de empleados en tiempo real.  
+— 📁 Cleo: administra bajas y jubilaciones con cumplimiento normativo.  
 
 Me gustaría proponerte una charla breve para conocer cómo lo están manejando actualmente.  Podríamos partir de dos preguntas sencillas:  
 — ¿Ya cuentan con iniciativas de automatización en RH en despliegue?  
@@ -310,14 +306,10 @@ Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/procure-t
 
 En Procure-to-Pay, contamos con agentes que apoyan en distintas etapas, por ejemplo:  
 
-— 👤 Elsa: automatiza el alta de proveedores y valida su información.  
-— 📦 Olivia: genera órdenes de compra alineadas a contratos y presupuestos.  
-— 🧾 Daniel: coteja facturas con pedidos y recibos para garantizar precisión.  
-— 🔄 Chris: digitaliza información y registra movimientos de mercancías en SAP.  
-— 📊 Tony: concilia datos de ventas, compras e inventarios y emite alertas.  
-— 💳 David: programa y ejecuta pagos de forma automática y segura.  
-— 🔁 Ryan: gestiona devoluciones y propone reemplazos o reembolsos.  
-— 📈 Richard: cruza demanda, inventarios y órdenes para generar forecastings.  
+— 👤 Elsa y 📦 Olivia: automatizan alta de proveedores y generación de órdenes de compra.  
+— 🧾 Daniel y 🔄 Chris: validan facturas y registran movimientos en SAP.  
+— 📊 Tony y 💳 David: realizan conciliaciones y ejecutan pagos automáticos.  
+— 🔁 Ryan y 📈 Richard: gestionan devoluciones y generan forecastings precisos.  
 — 🛃 Pedro: revisa pedimentos y determina impuestos en operaciones aduanales.  
 
 Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso. Además, como nuestros agentes se adaptan fácilmente, podemos potenciar cualquier otra área que necesites.
@@ -333,16 +325,11 @@ Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/order-to-
 
 En este ciclo, contamos con agentes que apoyan en distintas etapas, por ejemplo:
 
-— 🆕 Adrian: automatiza el alta de clientes B2B y contratos.  
-— 📄 Aaron: genera facturas automáticas a partir de órdenes de compra.  
-— 🛒 Nico: recibe y valida pedidos en los canales oficiales.  
-— 🚚 James: programa entregas optimizando tiempos y costos.  
-— 📍 Julia: traza rutas de transporte eficientes considerando tráfico y distancias.  
-— 📦 Diana: calcula cubicajes para entregas seguras y rentables.  
-— 💳 Mia: evalúa y aprueba solicitudes de crédito con IA.  
-— 📊 Nina: monitorea cuentas por cobrar y envía recordatorios automáticos.  
-— 🗂️ Alice: ajusta inventarios para evitar faltantes o excesos.  
-— 🔁 Ryan: gestiona devoluciones y recomienda reemplazos antes de reembolsar.  
+— 🆕 Adrian y 📄 Aaron: automatizan alta de clientes y facturación.  
+— 🛒 Nico, 🚚 James y 📍 Julia: reciben pedidos y planifican entregas optimizando rutas y tiempos.  
+— 📦 Diana y 🗂️ Alice: calculan cubicajes y ajustan inventarios para evitar faltantes o excesos.  
+— 💳 Mia y 📊 Nina: evalúan créditos y monitorean cuentas por cobrar con recordatorios automáticos.  
+— 🔁 Ryan: gestiona devoluciones y propone reemplazos antes de reembolsar.  
 
 Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso. Además, como nuestros agentes se adaptan fácilmente, podemos potenciar cualquier otra área que necesites.
 
