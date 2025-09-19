@@ -277,136 +277,154 @@ plantillas_karen = {
 }
 
 # =======================================================================================
-# ===== SET DE PLANTILLAS "JOHN MEJORADO" (VERSIÓN CON NUEVOS TEXTOS) ==================
+# ===== SET DE PLANTILLAS "JOHN MEJORADO" (VERSIÓN CON AGENTES INDIVIDUALIZADOS) =======
 # =======================================================================================
 
 plantilla_h2r_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/hire-to-retire/. Me pareció interesante acercarme a ti porque varias empresas están impulsando sus ciclos de talento con agentes de IA, y pensé que podría ser útil explorar contigo cómo estas prácticas podrían aplicarse también en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/hire-to-retire/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
 
 En el ciclo Hire-to-Retire, contamos con agentes que apoyan en distintas etapas, por ejemplo:
 
-— 🚀 FER, 📄 LUCAS e 🎓 ISA: apoyan en reclutamiento y onboarding.  
-— 📊 BEN, 💰 LILY y 🧾 LISA: fortalecen desempeño, nómina y reembolsos.  
-— 💬 LUKE y 📁 CLEO: resuelven dudas y gestionan el offboarding.  
-— Y cualquier aplicación dentro de tu proceso que quieras mejorar en efectividad, nuestros agentes se pueden adaptar fácilmente.
+— 🚀 Fer: detecta vacantes y publica en diferentes medios para atraer talento.  
+— 📄 Lucas: digitaliza solicitudes y organiza documentación en sistemas.  
+— 🎓 Isa: automatiza onboarding, contratos y capacitación de nuevos empleados.  
+— 📊 Ben: supervisa desempeño y recomienda programas de desarrollo.  
+— 💰 Lily: procesa nómina completa con precisión y puntualidad.  
+— 🧾 Lisa: valida y gestiona solicitudes de reembolsos de forma transparente.  
+— 💬 Luke: responde consultas de empleados en tiempo real vía chat.  
+— 📁 Cleo: gestiona bajas y jubilaciones con cumplimiento normativo.  
 
 Me gustaría proponerte una charla breve para conocer cómo lo están manejando actualmente.  Podríamos partir de dos preguntas sencillas:  
 — ¿Ya cuentan con iniciativas de automatización en RH en despliegue?  
 — ¿Qué sistemas usan hoy para nómina o gestión de personal?  
 
-Así contrastamos experiencias en cómo otras organizaciones han resuelto los inconvenientes más comunes de este ciclo, con el apoyo de la inteligencia artificial.
-  
-¿Te parecería bien si coordinamos este espacio para esta o la próxima semana?   
+Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso. Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido.  
+
+¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
 plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/procure-to-pay-automation/. Me pareció interesante acercarme a ti para presentarte una forma de fortalecer el ciclo de compras y proveedores de {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/procure-to-pay-automation/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
 
-En Beecker, nos especializamos en optimizar procesos de negocio con automatización y agentes de inteligencia artificial. En Procure-to-Pay, contamos con agentes que apoyan en distintas etapas, por ejemplo: 
+En Procure-to-Pay, contamos con agentes que apoyan en distintas etapas, por ejemplo:  
 
-— 👤 ELSA, 📦 OLIVIA y 🧾 DANIEL: alta de proveedores, órdenes de compra y validación de facturas.  
-— 🔄 CHRIS, 📊 TONY y 💳 DAVID: recepciones de mercancía, conciliaciones y pagos automáticos.  
-— 🔁 RYAN y 📈 RICHARD: gestionan devoluciones y forecasting de demanda.  
-— Y cualquier aplicación dentro de tu proceso que quieras mejorar en efectividad, nuestros agentes se pueden adaptar fácilmente.
+— 👤 Elsa: automatiza el alta de proveedores y valida su información.  
+— 📦 Olivia: genera órdenes de compra alineadas a contratos y presupuestos.  
+— 🧾 Daniel: coteja facturas con pedidos y recibos para garantizar precisión.  
+— 🔄 Chris: digitaliza información y registra movimientos de mercancías en SAP.  
+— 📊 Tony: concilia datos de ventas, compras e inventarios y emite alertas.  
+— 💳 David: programa y ejecuta pagos de forma automática y segura.  
+— 🔁 Ryan: gestiona devoluciones y propone reemplazos o reembolsos.  
+— 📈 Richard: cruza demanda, inventarios y órdenes para generar forecastings.  
+— 🛃 Pedro: revisa pedimentos y determina impuestos en operaciones aduanales.  
 
-Al automatizar estas tareas, organizaciones del sector han reducido hasta 85% el tiempo de ciclo de compras y 60% los costos por factura.  
+Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso. Además, como nuestros agentes se adaptan fácilmente, podemos potenciar cualquier otra área que necesites.
 
-Por eso pensé que podríamos tener una charla breve para conocer cómo lo están manejando actualmente y contrastar experiencias con lo que hemos visto en otras organizaciones.  
+Me encantaría coordinar una breve sesión contigo para compartir algunos casos de uso y éxito que hemos tenido.  
 
-¿Te parecería bien si coordinamos este espacio para esta o la próxima semana? 
+¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/order-to-cash/. Me pareció interesante acercarme a ti porque muchas organizaciones están buscando acelerar sus flujos de ingresos y reducir fricciones en la relación con clientes, y pensé que podría ser útil explorar cómo hacerlo también en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/order-to-cash/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
 
 En este ciclo, contamos con agentes que apoyan en distintas etapas, por ejemplo:
 
-— 🆕 ADRIAN, 📄 AARON y 🛒 NICO: alta de clientes, facturación y recepción de pedidos.  
-— 🚚 JAMES, 📍 JULIA y 📦 DIANA: gestión de entregas, transporte y cubicaje de mercancía.  
-— 💳 MIA, 📊 NINA y 🗂️ ALICE: crédito, cuentas por cobrar y control de inventarios.  
-— Y cualquier aplicación dentro de tu proceso que quieras mejorar en efectividad, nuestros agentes se pueden adaptar fácilmente.
+— 🆕 Adrian: automatiza el alta de clientes B2B y contratos.  
+— 📄 Aaron: genera facturas automáticas a partir de órdenes de compra.  
+— 🛒 Nico: recibe y valida pedidos en los canales oficiales.  
+— 🚚 James: programa entregas optimizando tiempos y costos.  
+— 📍 Julia: traza rutas de transporte eficientes considerando tráfico y distancias.  
+— 📦 Diana: calcula cubicajes para entregas seguras y rentables.  
+— 💳 Mia: evalúa y aprueba solicitudes de crédito con IA.  
+— 📊 Nina: monitorea cuentas por cobrar y envía recordatorios automáticos.  
+— 🗂️ Alice: ajusta inventarios para evitar faltantes o excesos.  
+— 🔁 Ryan: gestiona devoluciones y recomienda reemplazos antes de reembolsar.  
 
-Con este tipo de soluciones, empresas de distintos sectores han logrado acelerar tiempos de cobro y reducir disputas de facturación de forma significativa.  
+Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso. Además, como nuestros agentes se adaptan fácilmente, podemos potenciar cualquier otra área que necesites.
 
-Por eso pensé que podríamos tener una charla breve para conocer cómo lo están gestionando actualmente y contrastar experiencias con lo que hemos visto en otras organizaciones.  
+Me encantaría coordinar una breve sesión contigo para compartir algunos casos de uso y éxito que hemos tenido.  
 
-¿Te parecería bien si coordinamos este espacio para esta o la próxima semana? 
+¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/ai-automation-dashboard/. Me pareció interesante acercarme a ti porque en muchas organizaciones el área de TI carga con tareas repetitivas que consumen tiempo y pensé que podría ser útil explorar cómo optimizarlo también en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/. Tenemos más de 12 años de experiencia en automatización inteligente e inteligencia artificial, y a diferencia de muchos consultores que solo diseñan estrategias, en Beecker acompañamos a nuestros clientes en todo el ciclo: diagnóstico, implementación y escalamiento, asegurando resultados medibles en semanas.
 
-En Beecker, integramos agentes de IA que apoyan en distintas actividades, por ejemplo: 
+En el área de TI, integramos agentes que resuelven retos muy específicos:  
 
-— 🛠️ Gestión de tickets, ⏱️ reducción de tiempos de respuesta y 🤖 automatización de procesos críticos.  
-— 🔄 Monitoreo proactivo, 💾 respaldos automáticos y 🎯 integración con plataformas internas.  
-— 📡 Entrenamiento de agentes para adaptarse a sistemas y flujos específicos, ya sea en RH, compras, finanzas o cadena de suministro.  
-— Y cualquier aplicación dentro de tu proceso que quieras mejorar en efectividad, nuestros agentes se pueden adaptar fácilmente.
+— 🛠️ Atienden tickets y reducen drásticamente tiempos de respuesta.  
+— 🔄 Monitorean sistemas de forma proactiva y generan respaldos automáticos.  
+— 💬 Atención al cliente: gestión de consultas y soporte en tiempo real.  
+— 🎯 Se integran con plataformas internas para liberar carga operativa.  
+— 📡 Se entrenan para adaptarse a los flujos críticos de cada empresa.  
 
-Con este tipo de soluciones, organizaciones de distintos sectores han reducido más del 50% la carga de tickets repetitivos, por eso pensé que podríamos tener una charla breve para conocer cómo lo están manejando actualmente  y contrastar experiencias con lo que hemos visto en otras organizaciones.   
+Con un equipo de más de 200 expertos certificados, hemos ayudado a empresas de distintas industrias a identificar millones de dólares en oportunidades ocultas de automatización y a construir soluciones que escalan con el tiempo.
 
-¿Te parecería bien si coordinamos este espacio para esta o la próxima semana?
+¿Te parecería bien coordinar una llamada de 30 minutos para explorar qué oportunidades podríamos detectar en {empresa}? 
+
+Quedo pendiente a tu respuesta, saludos. 
 """
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/ai-automation-dashboard/. Me pareció interesante acercarme a ti porque las operaciones aduanales suelen implicar procesos complejos y riesgo de retrasos, y pensé que podría ser útil explorar cómo optimizarlas en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
 
 En aduanas, contamos con agentes que apoyan en distintas etapas, por ejemplo:
 
-— 📋 Revisión de manifiestos aduanales y determinación de impuestos.
-— 🧾 Validación de facturas contra órdenes de compra y pedimentos. 
-— 🏷️ Clasificación de regímenes y asignación de costos.
-— 📂 Generación de expedientes digitales auditables en tiempo real.
-— Y cualquier aplicación dentro de tu proceso que quieras mejorar en efectividad, nuestros agentes se pueden adaptar fácilmente.
+— 📋 Revisión de manifiestos: verifican documentos y determinan impuestos.  
+— 🧾 Validación: cotejan facturas contra órdenes de compra y pedimentos.  
+— 🏷️ Clasificación: asignan regímenes y costos cumpliendo normativas.  
+— 📂 Expedientes digitales: generan archivos auditables en tiempo real.  
 
-Por eso pensé que podríamos tener una charla breve para conocer cómo lo están manejando actualmente. Así contrastamos experiencias en cómo otras organizaciones han resuelto los inconvenientes más comunes de este ciclo , con el apoyo de la inteligencia artificial.
+Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso. Además, como nuestros agentes se adaptan fácilmente, podemos potenciar cualquier otra área que necesites.
 
-¿Te parecería bien si coordinamos este espacio para esta o la próxima semana?
+Me encantaría coordinar una breve sesión contigo para compartir algunos casos de uso y éxito que hemos tenido.  
+
+¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/ai-automation-dashboard/. El motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
 
 En Beecker, implementamos soluciones de automatización y agentes de IA que potencian distintas líneas de negocio. Por ejemplo:
 
-— 🛒 Compras y proveedores: validación de facturas, órdenes de compra y conciliaciones.  
-— 💼 Finanzas: conciliaciones bancarias, facturación y seguimiento de pagos automáticos.
-— 👥 Recursos Humanos: gestión de nómina, reclutamiento, onboarding y atención interna.  
-— 💬 Atención al cliente: gestión de consultas y soporte.  
-— 📦 Cadena de suministro: control de inventarios, pedidos y logística.  
-— Y cualquier aplicación dentro de tu proceso que quieras mejorar en efectividad, los agentes se pueden adaptar fácilmente.
+— 🛒 Compras y proveedores: alta de proveedores, órdenes de compra y conciliaciones.  
+— 💼 Finanzas: conciliaciones bancarias, facturación y pagos automáticos.  
+— 👥 Recursos Humanos: reclutamiento, onboarding, nómina y atención interna.  
+— 💬 Atención al cliente: gestión de consultas y soporte en tiempo real.  
+— 📦 Cadena de suministro: pedidos, inventarios y logística optimizada.  
+— 🎯 Personalización: cualquier aplicación que quieras mejorar, los agentes se adaptan fácilmente.  
 
 En diferentes industrias, estas iniciativas han reducido errores hasta en 90% y mejorado la productividad en más del 40%.  
 
-Por eso pensé que podríamos tener una charla breve para conocer cómo lo están manejando actualmente. Así contrastamos experiencias en cómo otras organizaciones han resuelto los inconvenientes más comunes que suelen aparecer en procesos de negocio complejos, con el apoyo de la inteligencia artificial.
+Me encantaría coordinar una breve sesión contigo para compartir algunos casos de uso y éxito que hemos tenido.  
 
-¿Te parecería bien si coordinamos este espacio para esta o la próxima semana?
+¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
 
-# ===== NUEVA PLANTILLA FINANZAS - ESTILO JOHN MEJORADO =====
 plantilla_finanzas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Digital Transformation Manager en https://beecker.ai/ai-automation-dashboard/. Me pareció interesante acercarme a ti porque en Finanzas la precisión y agilidad son clave, y pensé que podría ser útil explorar cómo optimizar estos factores en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
 
 En Beecker, implementamos agentes de IA que potencian la planeación financiera. Por ejemplo:
 
-— 📊 Automatizan la generación y consolidación de presupuestos.
-— 📈 Realizan forecastings precisos y dinámicos en tiempo real.
-— ⚠️ Detectan desviaciones y riesgos antes de que se conviertan en un problema.
-— 📋 Generan dashboards y reportes completos al instante, listos para análisis.
-— Y cualquier aplicación dentro de tu proceso que quieras mejorar en efectividad, se pueden adaptar fácilmente.
+— 📊 Presupuestos: automatizan la generación y consolidación de cifras.  
+— 📈 Forecastings: generan proyecciones dinámicas y precisas en tiempo real.  
+— ⚠️ Alertas: detectan desviaciones y riesgos antes de que escalen.  
+— 📋 Dashboards: producen reportes completos y listos para análisis inmediato.  
 
-Por eso pensé que podríamos tener una charla breve para conocer cómo lo están manejando actualmente. Así contrastamos experiencias sobre cómo otras organizaciones han resuelto los cuellos de botella más comunes en sus ciclos de planificación, con el apoyo de la IA.
+Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso. Además, como nuestros agentes se adaptan fácilmente, podemos potenciar cualquier otra área que necesites.
 
-¿Te parecería bien si coordinamos este espacio para esta o la próxima semana?
+Me encantaría coordinar una breve sesión contigo para compartir algunos casos de uso y éxito que hemos tenido.  
+
+¿Te parece si nos reunimos 30 minutos la próxima semana?
 """
-
 
 plantillas_john_mejorado = {
     "Plantilla JohnMejorado H2R": plantilla_h2r_john_mejorado,
@@ -415,6 +433,5 @@ plantillas_john_mejorado = {
     "Plantilla JohnMejorado General": plantilla_general_john_mejorado,
     "Plantilla JohnMejorado TI (Alternativa)": plantilla_ti_john_mejorado,
     "Plantilla JohnMejorado Aduanas (Alternativa)": plantilla_aduanas_john_mejorado,
-    # Se añade la nueva plantilla de Finanzas
     "Plantilla JohnMejorado Finanzas (Alternativa)": plantilla_finanzas_john_mejorado,
 }
