@@ -301,11 +301,11 @@ Y finalmente los que aseguran un cierre ordenado:
 — 💬 LUKE: responde dudas frecuentes. 
 — 📁 CLEO: gestiona el offboarding y compensaciones. 
 
-Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso. 
+Nuestras soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. Además, gracias a su flexibilidad, los agentes pueden adaptarse y potenciar distintas áreas estratégicas según las prioridades que tengan. 
 
-Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido.  
+Me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
 
-¿Te parece si coordinamos una reunión entre nuestros equipos esta semana o la próxima?
+¿Te resultaría interesante que conversemos brevemente y exploremos si alguno de estos casos puede aplicarse a tus iniciativas actuales?
 """
 
 plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -320,11 +320,11 @@ En Procure-to-Pay, contamos con agentes que apoyan en distintas etapas, por ejem
 — 🔁 Ryan y 📈 Richard: gestionan devoluciones y generan forecastings precisos.  
 — 🛃 Pedro: revisa pedimentos y determina impuestos en operaciones aduanales.  
 
-Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso. Además, como nuestros agentes se adaptan fácilmente, podemos potenciar cualquier otra área que necesites.
+Nuestras soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. Además, gracias a su flexibilidad, los agentes pueden adaptarse y potenciar distintas áreas estratégicas según las prioridades que tengan. 
 
-Me encantaría coordinar una breve sesión contigo para compartir algunos casos de uso y éxito que hemos tenido.  
+Me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
 
-¿Te parece si coordinamos una reunión entre nuestros equipos esta semana o la próxima?
+¿Te resultaría interesante que conversemos brevemente y exploremos si alguno de estos casos puede aplicarse a tus iniciativas actuales?
 """
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -339,11 +339,11 @@ En este ciclo, contamos con agentes que apoyan en distintas etapas, por ejemplo:
 — 💳 Mia y 📊 Nina: evalúan créditos y monitorean cuentas por cobrar con recordatorios automáticos.  
 — 🔁 Ryan: gestiona devoluciones y propone reemplazos antes de reembolsar.  
 
-Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso. Además, como nuestros agentes se adaptan fácilmente, podemos potenciar cualquier otra área que necesites.
+Nuestras soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. Además, gracias a su flexibilidad, los agentes pueden adaptarse y potenciar distintas áreas estratégicas según las prioridades que tengan. 
 
-Me encantaría coordinar una breve sesión contigo para compartir algunos casos de uso y éxito que hemos tenido.  
+Me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
 
-¿Te parece si coordinamos una reunión entre nuestros equipos esta semana o la próxima?
+¿Te resultaría interesante que conversemos brevemente y exploremos si alguno de estos casos puede aplicarse a tus iniciativas actuales?
 """
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -358,9 +358,11 @@ Impulsamos la eficiencia de toda la organización con soluciones que integran co
 — 🎯 Integrando soluciones junto con las plataformas internas ya existentes.    
 — 📡 Adaptando los flujos críticos de cada empresa, ya sea en RRHH, compras, finanzas o cadena de suministro. 
 
-Con este tipo de soluciones, organizaciones de distintos sectores han reducido más del 50% la carga de tickets repetitivos, por eso pensé que podríamos tener una charla breve para conocer cómo lo están manejando actualmente y contrastar experiencias con lo que hemos visto en otras organizaciones. 
+Con este tipo de soluciones, organizaciones de distintos sectores han reducido más del 50% la carga de tickets repetitivos. Además, se pueden adptar y potenciar distintas áreas estratégicas según las prioridades que tengan. 
 
-¿Te parece si coordinamos una reunión entre nuestros equipos esta semana o la próxima?
+Me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
+
+¿Te resultaría interesante que conversemos brevemente y exploremos si alguno de estos casos puede aplicarse a tus iniciativas actuales?
 """
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -374,11 +376,11 @@ En aduanas, contamos con agentes que apoyan en distintas etapas, por ejemplo:
 — 🏷️ Clasificación: asignan regímenes y costos cumpliendo normativas.  
 — 📂 Expedientes digitales: generan archivos auditables en tiempo real.  
 
-Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso. Además, como nuestros agentes se adaptan fácilmente, podemos potenciar cualquier otra área que necesites.
+Nuestras soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. Además, gracias a su flexibilidad, los agentes pueden adaptarse y potenciar distintas áreas estratégicas según las prioridades que tengan. 
 
-Me encantaría coordinar una breve sesión contigo para compartir algunos casos de uso y éxito que hemos tenido.  
+Me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
 
-¿Te parece si coordinamos una reunión entre nuestros equipos esta semana o la próxima?
+¿Te resultaría interesante que conversemos brevemente y exploremos si alguno de estos casos puede aplicarse a tus iniciativas actuales?
 """
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -394,11 +396,11 @@ En Beecker, implementamos soluciones de automatización y agentes de IA que pote
 — 📦 Cadena de suministro: pedidos, inventarios y logística optimizada.  
 — 🎯 Personalización: cualquier aplicación que quieras mejorar, los agentes se adaptan fácilmente.  
 
-En diferentes industrias, estas iniciativas han reducido errores hasta en 90% y mejorado la productividad en más del 40%.  
+Nuestras soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. Además, gracias a su flexibilidad, los agentes pueden adaptarse y potenciar distintas áreas estratégicas según las prioridades que tengan. 
 
-Me encantaría coordinar una breve sesión contigo para compartir algunos casos de uso y éxito que hemos tenido.  
+Me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
 
-¿Te parece si coordinamos una reunión entre nuestros equipos esta semana o la próxima?
+¿Te resultaría interesante que conversemos brevemente y exploremos si alguno de estos casos puede aplicarse a tus iniciativas actuales?
 """
 
 plantilla_finanzas_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -412,11 +414,11 @@ En Beecker, implementamos agentes de IA que potencian la planeación financiera.
 — ⚠️ Alertas: detectan desviaciones y riesgos antes de que escalen.  
 — 📋 Dashboards: producen reportes completos y listos para análisis inmediato.  
 
-Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso. Además, como nuestros agentes se adaptan fácilmente, podemos potenciar cualquier otra área que necesites.
+Nuestras soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. Además, gracias a su flexibilidad, los agentes pueden adaptarse y potenciar distintas áreas estratégicas según las prioridades que tengan. 
 
-Me encantaría coordinar una breve sesión contigo para compartir algunos casos de uso y éxito que hemos tenido.  
+Me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
 
-¿Te parece si coordinamos una reunión entre nuestros equipos esta semana o la próxima?
+¿Te resultaría interesante que conversemos brevemente y exploremos si alguno de estos casos puede aplicarse a tus iniciativas actuales?
 """
 
 plantillas_john_mejorado = {
