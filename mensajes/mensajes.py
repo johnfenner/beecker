@@ -286,18 +286,26 @@ Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/hire-to-r
 
 En el ciclo Hire-to-Retire, contamos con agentes que apoyan en distintas etapas, por ejemplo:
 
-— 🚀 Fer, 📄 Lucas e 🎓 Isa: desde la publicación de vacantes hasta el onboarding y gestión documental de nuevos empleados.  
-— 📊 Ben y 💰 Lily: supervisan desempeño y automatizan nómina completa.  
-— 🧾 Lisa y 💬 Luke: gestionan reembolsos y responden consultas de empleados en tiempo real.  
-— 📁 Cleo: administra bajas y jubilaciones con cumplimiento normativo.  
+— 🚀 FER: publica vacantes automáticamente. 
+— 📄 LUCAS: recibe solicitudes y digitaliza documentos. 
+— 🎓 ISA: gestiona el onboarding y capacitaciones. 
 
-Me gustaría proponerte una charla breve para conocer cómo lo están manejando actualmente.  Podríamos partir de dos preguntas sencillas:  
-— ¿Ya cuentan con iniciativas de automatización en RH en despliegue?  
-— ¿Qué sistemas usan hoy para nómina o gestión de personal?  
+También otros que apoyan en la gestión interna: 
 
-Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso. Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido.  
+— 📊 BEN: supervisa desempeño y recomienda entrenamientos. 
+— 💰 LILY: calcula y dispersa nómina. 
+— 🧾 LISA: administra solicitudes de reembolso. 
 
-¿Te parece si nos reunimos 30 minutos la próxima semana?
+Y finalmente los que aseguran un cierre ordenado: 
+
+— 💬 LUKE: responde dudas frecuentes. 
+— 📁 CLEO: gestiona el offboarding y compensaciones. 
+
+Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y ofrecer una visibilidad completa sobre cada proceso. 
+
+Me encantaría coordinar una breve sesión contigo, para compartir algunos casos de uso y éxito que hemos tenido.  
+
+¿Te parece si coordinamos una reunión entre nuestros equipos esta semana o la próxima?
 """
 
 plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -316,7 +324,7 @@ Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia op
 
 Me encantaría coordinar una breve sesión contigo para compartir algunos casos de uso y éxito que hemos tenido.  
 
-¿Te parece si nos reunimos 30 minutos la próxima semana?
+¿Te parece si coordinamos una reunión entre nuestros equipos esta semana o la próxima?
 """
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -335,26 +343,24 @@ Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia op
 
 Me encantaría coordinar una breve sesión contigo para compartir algunos casos de uso y éxito que hemos tenido.  
 
-¿Te parece si nos reunimos 30 minutos la próxima semana?
+¿Te parece si coordinamos una reunión entre nuestros equipos esta semana o la próxima?
 """
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/. Tenemos más de 12 años de experiencia en automatización inteligente e inteligencia artificial, y a diferencia de muchos consultores que solo diseñan estrategias, en Beecker acompañamos a nuestros clientes en todo el ciclo: diagnóstico, implementación y escalamiento, asegurando resultados medibles en semanas.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/. Tenemos más de 12 años de experiencia en automatización inteligente e inteligencia artificial.
 
 Impulsamos la eficiencia de toda la organización con soluciones que integran consultoría, automatización inteligente, sistemas y agentes de IA en procesos clave de negocio:
 
-— 🛠️ Atienden tickets y reducen drásticamente tiempos de respuesta.  
-— 🔄 Monitorean sistemas de forma proactiva y generan respaldos automáticos.  
-— 💬 Atención al cliente: gestión de consultas y soporte en tiempo real.  
-— 🎯 Se integran con plataformas internas para liberar carga operativa.  
-— 📡 Se entrenan para adaptarse a los flujos críticos de cada empresa.  
+— 🛠️ Atendiendo tickets y reduciendo drásticamente los tiempos de respuesta.   
+— 🔄 Monitoreando sistemas de forma proactiva y generando respaldos automáticos.  
+— 💬 Gestionando consultas de los clientes y dando soporte en tiempo real.     
+— 🎯 Integrando soluciones junto con las plataformas internas ya existentes.    
+— 📡 Adaptando los flujos críticos de cada empresa, ya sea en RRHH, compras, finanzas o cadena de suministro. 
 
-Con un equipo de más de 200 expertos certificados, hemos ayudado a empresas de distintas industrias a identificar millones de dólares en oportunidades ocultas de automatización y a construir soluciones que escalan con el tiempo.
+Con este tipo de soluciones, organizaciones de distintos sectores han reducido más del 50% la carga de tickets repetitivos, por eso pensé que podríamos tener una charla breve para conocer cómo lo están manejando actualmente y contrastar experiencias con lo que hemos visto en otras organizaciones. 
 
-¿Te parecería bien coordinar una llamada de 30 minutos para explorar qué oportunidades podríamos detectar en {empresa}? 
-
-Quedo pendiente a tu respuesta, saludos. 
+¿Te parece si coordinamos una reunión entre nuestros equipos esta semana o la próxima?
 """
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -372,7 +378,7 @@ Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia op
 
 Me encantaría coordinar una breve sesión contigo para compartir algunos casos de uso y éxito que hemos tenido.  
 
-¿Te parece si nos reunimos 30 minutos la próxima semana?
+¿Te parece si coordinamos una reunión entre nuestros equipos esta semana o la próxima?
 """
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -392,7 +398,7 @@ En diferentes industrias, estas iniciativas han reducido errores hasta en 90% y 
 
 Me encantaría coordinar una breve sesión contigo para compartir algunos casos de uso y éxito que hemos tenido.  
 
-¿Te parece si nos reunimos 30 minutos la próxima semana?
+¿Te parece si coordinamos una reunión entre nuestros equipos esta semana o la próxima?
 """
 
 plantilla_finanzas_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -410,7 +416,7 @@ Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia op
 
 Me encantaría coordinar una breve sesión contigo para compartir algunos casos de uso y éxito que hemos tenido.  
 
-¿Te parece si nos reunimos 30 minutos la próxima semana?
+¿Te parece si coordinamos una reunión entre nuestros equipos esta semana o la próxima?
 """
 
 plantillas_john_mejorado = {
