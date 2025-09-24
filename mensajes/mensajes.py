@@ -277,148 +277,148 @@ plantillas_karen = {
 }
 
 # =======================================================================================
-# ===== SET DE PLANTILLAS "JOHN MEJORADO" (VERSIÓN CON AGENTES AGRUPADOS) ==============
+# ===== SET DE PLANTILLAS "JOHN MEJORADO" (VERSIÓN CON PUENTE OPTIMIZADO) ==============
 # =======================================================================================
 
 plantilla_h2r_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/hire-to-retire/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/hire-to-retire/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta sobre cómo la Inteligencia Artificial puede transformar la eficiencia operativa en {empresa}.
 
-En el ciclo Hire-to-Retire, contamos con agentes que apoyan en distintas etapas, por ejemplo:
+Actualmente, implementamos soluciones de automatización y agentes de IA que potencian distintas líneas de negocio. Por ejemplo, en el ciclo Hire-to-Retire:
 
-— 🚀 FER: publica vacantes automáticamente. 
-— 📄 LUCAS: recibe solicitudes y digitaliza documentos. 
-— 🎓 ISA: gestiona el onboarding y capacitaciones. 
+— 🚀 FER: publica vacantes automáticamente. 
+— 📄 LUCAS: recibe solicitudes y digitaliza documentos. 
+— 🎓 ISA: gestiona el onboarding y capacitaciones. 
+— 📊 BEN: supervisa desempeño y recomienda entrenamientos. 
+— 💰 LILY: calcula y dispersa nómina. 
+— 🧾 LISA: administra solicitudes de reembolso. 
+— 💬 LUKE: responde dudas frecuentes. 
+— 📁 CLEO: gestiona el offboarding y compensaciones. 
+— 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
 
-También otros que apoyan en la gestión interna: 
+Estas soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. 
 
-— 📊 BEN: supervisa desempeño y recomienda entrenamientos. 
-— 💰 LILY: calcula y dispersa nómina. 
-— 🧾 LISA: administra solicitudes de reembolso. 
+Precisamente por eso, me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
 
-Y finalmente los que aseguran un cierre ordenado: 
-
-— 💬 LUKE: responde dudas frecuentes. 
-— 📁 CLEO: gestiona el offboarding y compensaciones. 
-
-Nuestras soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. Además, gracias a su flexibilidad, los agentes pueden adaptarse y potenciar distintas áreas estratégicas según las prioridades que tengan. 
-
-Me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
-
-¿Te resultaría interesante que conversemos brevemente y exploremos si alguno de estos casos puede aplicarse a tus iniciativas actuales?
+¿Tendrías un espacio esta o la próxima semana para coordinarlo?
 """
 
 plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/procure-to-pay-automation/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/procure-to-pay-automation/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta sobre cómo la Inteligencia Artificial puede transformar la eficiencia operativa en {empresa}.
 
-En Procure-to-Pay, contamos con agentes que apoyan en distintas etapas, por ejemplo:  
+Actualmente, implementamos soluciones de automatización y agentes de IA que potencian distintas líneas de negocio. Por ejemplo, en Procure-to-Pay:
 
-— 👤 Elsa y 📦 Olivia: automatizan alta de proveedores y generación de órdenes de compra.  
-— 🧾 Daniel y 🔄 Chris: validan facturas y registran movimientos en SAP.  
-— 📊 Tony y 💳 David: realizan conciliaciones y ejecutan pagos automáticos.  
-— 🔁 Ryan y 📈 Richard: gestionan devoluciones y generan forecastings precisos.  
-— 🛃 Pedro: revisa pedimentos y determina impuestos en operaciones aduanales.  
+— 👤 Elsa y 📦 Olivia: automatizan alta de proveedores y generación de órdenes de compra.  
+— 🧾 Daniel y 🔄 Chris: validan facturas y registran movimientos en SAP.  
+— 📊 Tony y 💳 David: realizan conciliaciones y ejecutan pagos automáticos.  
+— 🔁 Ryan y 📈 Richard: gestionan devoluciones y generan forecastings precisos.  
+— 🛃 Pedro: revisa pedimentos y determina impuestos en operaciones aduanales.  
+— 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
 
-Nuestras soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. Además, gracias a su flexibilidad, los agentes pueden adaptarse y potenciar distintas áreas estratégicas según las prioridades que tengan. 
+Estas soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. 
 
-Me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
+Precisamente por eso, me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
 
-¿Te resultaría interesante que conversemos brevemente y exploremos si alguno de estos casos puede aplicarse a tus iniciativas actuales?
+¿Tendrías un espacio esta o la próxima semana para coordinarlo?
 """
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/order-to-cash/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/order-to-cash/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta sobre cómo la Inteligencia Artificial puede transformar la eficiencia operativa en {empresa}.
 
-En este ciclo, contamos con agentes que apoyan en distintas etapas, por ejemplo:
+Actualmente, implementamos soluciones de automatización y agentes de IA que potencian distintas líneas de negocio. Por ejemplo, en Order-to-Cash:
 
-— 🆕 Adrian y 📄 Aaron: automatizan alta de clientes y facturación.  
-— 🛒 Nico, 🚚 James y 📍 Julia: reciben pedidos y planifican entregas optimizando rutas y tiempos.  
-— 📦 Diana y 🗂️ Alice: calculan cubicajes y ajustan inventarios para evitar faltantes o excesos.  
-— 💳 Mia y 📊 Nina: evalúan créditos y monitorean cuentas por cobrar con recordatorios automáticos.  
-— 🔁 Ryan: gestiona devoluciones y propone reemplazos antes de reembolsar.  
+— 🆕 Adrian y 📄 Aaron: automatizan alta de clientes y facturación.  
+— 🛒 Nico, 🚚 James y 📍 Julia: reciben pedidos y planifican entregas optimizando rutas y tiempos.  
+— 📦 Diana y 🗂️ Alice: calculan cubicajes y ajustan inventarios para evitar faltantes o excesos.  
+— 💳 Mia y 📊 Nina: evalúan créditos y monitorean cuentas por cobrar con recordatorios automáticos.  
+— 🔁 Ryan: gestiona devoluciones y propone reemplazos antes de reembolsar.  
+— 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
 
-Nuestras soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. Además, gracias a su flexibilidad, los agentes pueden adaptarse y potenciar distintas áreas estratégicas según las prioridades que tengan. 
+Estas soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. 
 
-Me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
+Precisamente por eso, me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
 
-¿Te resultaría interesante que conversemos brevemente y exploremos si alguno de estos casos puede aplicarse a tus iniciativas actuales?
+¿Tendrías un espacio esta o la próxima semana para coordinarlo?
 """
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/. Tenemos más de 12 años de experiencia en automatización inteligente e inteligencia artificial.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta sobre cómo la Inteligencia Artificial puede transformar la eficiencia operativa en {empresa}.
 
-Impulsamos la eficiencia de toda la organización con soluciones que integran consultoría, automatización inteligente, sistemas y agentes de IA en procesos clave de negocio:
+Actualmente, implementamos soluciones de automatización y agentes de IA que potencian distintas líneas de negocio. Por ejemplo:
 
-— 🛠️ Atendiendo tickets y reduciendo drásticamente los tiempos de respuesta.   
-— 🔄 Monitoreando sistemas de forma proactiva y generando respaldos automáticos.  
-— 💬 Gestionando consultas de los clientes y dando soporte en tiempo real.     
-— 🎯 Integrando soluciones junto con las plataformas internas ya existentes.    
-— 📡 Adaptando los flujos críticos de cada empresa, ya sea en RRHH, compras, finanzas o cadena de suministro. 
+— 🛠️ Atendiendo tickets y reduciendo drásticamente los tiempos de respuesta.   
+— 🔄 Monitoreando sistemas de forma proactiva y generando respaldos automáticos.  
+— 💬 Gestionando consultas de los clientes y dando soporte en tiempo real.     
+— 🎯 Integrando soluciones junto con las plataformas internas ya existentes.    
+— 📡 Adaptando flujos críticos en RRHH, compras, finanzas o cadena de suministro.  
+— 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
 
-Con este tipo de soluciones, organizaciones de distintos sectores han reducido más del 50% la carga de tickets repetitivos. Además, se pueden adptar y potenciar distintas áreas estratégicas según las prioridades que tengan. 
+Estas soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. 
 
-Me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
+Precisamente por eso, me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
 
-¿Te resultaría interesante que conversemos brevemente y exploremos si alguno de estos casos puede aplicarse a tus iniciativas actuales?
+¿Tendrías un espacio esta o la próxima semana para coordinarlo?
 """
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta sobre cómo la Inteligencia Artificial puede transformar la eficiencia operativa en {empresa}.
 
-En aduanas, contamos con agentes que apoyan en distintas etapas, por ejemplo:
+Actualmente, implementamos soluciones de automatización y agentes de IA que potencian distintas líneas de negocio. Por ejemplo, en aduanas:
 
-— 📋 Revisión de manifiestos: verifican documentos y determinan impuestos.  
-— 🧾 Validación: cotejan facturas contra órdenes de compra y pedimentos.  
-— 🏷️ Clasificación: asignan regímenes y costos cumpliendo normativas.  
-— 📂 Expedientes digitales: generan archivos auditables en tiempo real.  
+— 📋 Revisión de manifiestos: verifican documentos y determinan impuestos.  
+— 🧾 Validación: cotejan facturas contra órdenes de compra y pedimentos.  
+— 🏷️ Clasificación: asignan regímenes y costos cumpliendo normativas.  
+— 📂 Expedientes digitales: generan archivos auditables en tiempo real.  
+— 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
 
-Nuestras soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. Además, gracias a su flexibilidad, los agentes pueden adaptarse y potenciar distintas áreas estratégicas según las prioridades que tengan. 
+Estas soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. 
 
-Me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
+Precisamente por eso, me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
 
-¿Te resultaría interesante que conversemos brevemente y exploremos si alguno de estos casos puede aplicarse a tus iniciativas actuales?
+¿Tendrías un espacio esta o la próxima semana para coordinarlo?
 """
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta sobre cómo la Inteligencia Artificial puede transformar la eficiencia operativa en {empresa}.
 
-En Beecker, implementamos soluciones de automatización y agentes de IA que potencian distintas líneas de negocio. Por ejemplo:
+Actualmente, implementamos soluciones de automatización y agentes de IA que potencian distintas líneas de negocio. Por ejemplo:
 
-— 🛒 Compras y proveedores: alta de proveedores, órdenes de compra y conciliaciones.  
-— 💼 Finanzas: conciliaciones bancarias, facturación y pagos automáticos.  
-— 👥 Recursos Humanos: reclutamiento, onboarding, nómina y atención interna.  
-— 💬 Atención al cliente: gestión de consultas y soporte en tiempo real.  
-— 📦 Cadena de suministro: pedidos, inventarios y logística optimizada.  
-— 🎯 Personalización: cualquier aplicación que quieras mejorar, los agentes se adaptan fácilmente.  
+— 🛒 Compras y proveedores: alta de proveedores, órdenes de compra y conciliaciones.  
+— 💼 Finanzas: conciliaciones bancarias, facturación y pagos automáticos.  
+— 👥 Recursos Humanos: reclutamiento, onboarding, nómina y atención interna.  
+— 💬 Atención al cliente: gestión de consultas y soporte en tiempo real.  
+— 📦 Cadena de suministro: pedidos, inventarios y logística optimizada.  
+— 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
 
-Nuestras soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. Además, gracias a su flexibilidad, los agentes pueden adaptarse y potenciar distintas áreas estratégicas según las prioridades que tengan. 
+Estas soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. 
 
-Me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
+Precisamente por eso, me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
 
-¿Te resultaría interesante que conversemos brevemente y exploremos si alguno de estos casos puede aplicarse a tus iniciativas actuales?
+¿Tendrías un espacio esta o la próxima semana para coordinarlo?
 """
 
 plantilla_finanzas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta sobre cómo la Inteligencia Artificial puede transformar la eficiencia operativa en {empresa}.
 
-En Beecker, implementamos agentes de IA que potencian la planeación financiera. Por ejemplo:
+Actualmente, implementamos soluciones de automatización y agentes de IA que potencian distintas líneas de negocio. Por ejemplo, en Finanzas:
 
-— 📊 Presupuestos: automatizan la generación y consolidación de cifras.  
-— 📈 Forecastings: generan proyecciones dinámicas y precisas en tiempo real.  
-— ⚠️ Alertas: detectan desviaciones y riesgos antes de que escalen.  
-— 📋 Dashboards: producen reportes completos y listos para análisis inmediato.  
+— 📊 Presupuestos: automatizan la generación y consolidación de cifras.  
+— 📈 Forecastings: generan proyecciones dinámicas y precisas en tiempo real.  
+— ⚠️ Alertas: detectan desviaciones y riesgos antes de que escalen.  
+— 📋 Dashboards: producen reportes completos y listos para análisis inmediato.  
+— 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
 
-Nuestras soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. Además, gracias a su flexibilidad, los agentes pueden adaptarse y potenciar distintas áreas estratégicas según las prioridades que tengan. 
+Estas soluciones están diseñadas para reducir costos, optimizar la eficiencia operativa y brindar una visibilidad integral de los procesos. 
 
-Me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
+Precisamente por eso, me gustaría coordinar un espacio contigo o con tu equipo para compartir casos de uso y experiencias de éxito que han generado resultados concretos en organizaciones de tu sector.
 
-¿Te resultaría interesante que conversemos brevemente y exploremos si alguno de estos casos puede aplicarse a tus iniciativas actuales?
+¿Tendrías un espacio esta o la próxima semana para coordinarlo?
 """
 
 plantillas_john_mejorado = {
