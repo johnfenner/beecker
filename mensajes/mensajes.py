@@ -282,9 +282,11 @@ plantillas_karen = {
 
 plantilla_h2r_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/hire-to-retire/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/hire-to-retire/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
 
-Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. Por ejemplo, en el ciclo Hire-to-Retire:
+Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. 
+
+Por ejemplo, en tu caso para el ciclo Hire-to-Retire:
 
 — 🚀 Fer: Agente de Publicación de Vacantes
 — 📄 Lucas: Agente de Reclutamiento 
@@ -295,18 +297,20 @@ Actualmente, desarrollamos agentes digitales de IA que potencian distintas líne
 — 🧾 Lisa: Agente de Gestión de viáticos
 — 📁 Cleo: Agente de Jubilación
 
-En diferentes industrias, estas iniciativas han reducido errores hasta en un 90% y han mejorado la productividad en más del 40%. 
+Precisamente por eso, me gustaría invitarte a una breve sesión para compartir casos de éxito aplicados a empresas de tu sector y mostrar, con ejemplos concretos, el impacto y retorno de inversión que hemos logrado. 
 
-Precisamente por eso, pensé que podríamos tener una charla breve para conocer cómo lo están gestionando actualmente y contrastar experiencias con lo que hemos visto en otras organizaciones.
+La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
 
 ¿Tendrías un espacio esta o la próxima semana para coordinarlo?
 """
 
 plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/procure-to-pay-automation/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/procure-to-pay-automation/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
 
-Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. Por ejemplo, en Procure-to-Pay:
+Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. 
+
+Por ejemplo, en tu caso:
 
 — 👤 Elsa: Agente de alta de proveedores.
 — 📈 Richard: Coordinación de Forecasting.
@@ -318,18 +322,20 @@ Actualmente, desarrollamos agentes digitales de IA que potencian distintas líne
 — 🧾 Daniel: Agente de procesamiento de facturas.
 — 💳 David: Agente de procesamiento de órdenes de pago.
 
-En diferentes industrias, estas iniciativas han reducido errores hasta en un 90% y han mejorado la productividad en más del 40%. 
+Precisamente por eso, me gustaría invitarte a una breve sesión para compartir casos de éxito aplicados a empresas de tu sector y mostrar, con ejemplos concretos, el impacto y retorno de inversión que hemos logrado. 
 
-Precisamente por eso, pensé que podríamos tener una charla breve para conocer cómo lo están gestionando actualmente y contrastar experiencias con lo que hemos visto en otras organizaciones.
+La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
 
 ¿Tendrías un espacio esta o la próxima semana para coordinarlo?
 """
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/order-to-cash/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/order-to-cash/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
 
-Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. Por ejemplo, en Order-to-Cash:
+Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. 
+
+Por ejemplo, en tu caso:
 
 — 🆕 Adrián: Agente de alta de clientes.
 — 🛒 Nico: Agente de Procesamiento de pedidos.
@@ -342,18 +348,20 @@ Actualmente, desarrollamos agentes digitales de IA que potencian distintas líne
 — 📊 Nina: Agente de Cuentas por cobrar.
 — 📄 Aaron: Agente de facturación.
 
-En diferentes industrias, estas iniciativas han reducido errores hasta en un 90% y han mejorado la productividad en más del 40%. 
+Precisamente por eso, me gustaría invitarte a una breve sesión para compartir casos de éxito aplicados a empresas de tu sector y mostrar, con ejemplos concretos, el impacto y retorno de inversión que hemos logrado. 
 
-Precisamente por eso, pensé que podríamos tener una charla breve para conocer cómo lo están gestionando actualmente y contrastar experiencias con lo que hemos visto en otras organizaciones.
+La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
 
 ¿Tendrías un espacio esta o la próxima semana para coordinarlo?
 """
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
 
-Actualmente, implementamos soluciones que potencian distintas líneas de negocio. Por ejemplo:
+Actualmente, implementamos soluciones que potencian distintas líneas de negocio. 
+
+Por ejemplo, en tu caso para:
 
 — 🛠️ Atendiendo tickets y reduciendo drásticamente los tiempos de respuesta.   
 — 🔄 Monitoreando sistemas de forma proactiva y generando respaldos automáticos.  
@@ -370,26 +378,28 @@ Precisamente por eso, pensé que podríamos tener una charla breve para conocer 
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
 
-Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. Por ejemplo, en aduanas:
+Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. 
 
+Por ejemplo, en tu caso para el control de aduanas:
+ 
 — 📋 Revisión de manifiestos: verifican documentos y determinan impuestos.  
 — 🧾 Validación: cotejan facturas contra órdenes de compra y pedimentos.  
 — 🏷️ Clasificación: asignan regímenes y costos cumpliendo normativas.  
 — 📂 Expedientes digitales: generan archivos auditables en tiempo real.  
 — 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
 
-En diferentes industrias, estas iniciativas han reducido errores hasta en un 90% y han mejorado la productividad en más del 40%. 
+Precisamente por eso, me gustaría invitarte a una breve sesión para compartir casos de éxito aplicados a empresas de tu sector y mostrar, con ejemplos concretos, el impacto y retorno de inversión que hemos logrado. 
 
-Precisamente por eso, pensé que podríamos tener una charla breve para conocer cómo lo están gestionando actualmente y contrastar experiencias con lo que hemos visto en otras organizaciones.
+La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
 
 ¿Tendrías un espacio esta o la próxima semana para coordinarlo?
 """
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
 
 Actualmente, implementamos soluciones que potencian distintas líneas de negocio. Por ejemplo:
 
@@ -400,18 +410,20 @@ Actualmente, implementamos soluciones que potencian distintas líneas de negocio
 — 📦 Cadena de suministro: pedidos, inventarios y logística optimizada.  
 — 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
 
-En diferentes industrias, estas iniciativas han reducido errores hasta en un 90% y han mejorado la productividad en más del 40%. 
+Precisamente por eso, me gustaría invitarte a una breve sesión para compartir casos de éxito aplicados a empresas de tu sector y mostrar, con ejemplos concretos, el impacto y retorno de inversión que hemos logrado. 
 
-Precisamente por eso, pensé que podríamos tener una charla breve para conocer cómo lo están gestionando actualmente y contrastar experiencias con lo que hemos visto en otras organizaciones.
+La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
 
 ¿Tendrías un espacio esta o la próxima semana para coordinarlo?
 """
 
 plantilla_finanzas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
 
-Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. Por ejemplo, en Finanzas:
+Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. 
+
+Por ejemplo, en tu caso para Finanzas:
 
 — 📊 Presupuestos: automatizan la generación y consolidación de cifras.  
 — 📈 Forecastings: generan proyecciones dinámicas y precisas en tiempo real.  
@@ -419,9 +431,9 @@ Actualmente, desarrollamos agentes digitales de IA que potencian distintas líne
 — 📋 Dashboards: producen reportes completos y listos para análisis inmediato.  
 — 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
 
-En diferentes industrias, estas iniciativas han reducido errores hasta en un 90% y han mejorado la productividad en más del 40%. 
+Precisamente por eso, me gustaría invitarte a una breve sesión para compartir casos de éxito aplicados a empresas de tu sector y mostrar, con ejemplos concretos, el impacto y retorno de inversión que hemos logrado. 
 
-Precisamente por eso, pensé que podríamos tener una charla breve para conocer cómo lo están gestionando actualmente y contrastar experiencias con lo que hemos visto en otras organizaciones.
+La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
 
 ¿Tendrías un espacio esta o la próxima semana para coordinarlo?
 """
