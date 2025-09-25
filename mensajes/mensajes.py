@@ -286,15 +286,14 @@ Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/hire-to-r
 
 Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. Por ejemplo, en el ciclo Hire-to-Retire:
 
-— 🚀 FER: publica vacantes automáticamente. 
-— 📄 LUCAS: recibe solicitudes y digitaliza documentos. 
-— 🎓 ISA: gestiona el onboarding y capacitaciones. 
-— 📊 BEN: supervisa desempeño y recomienda entrenamientos. 
-— 💰 LILY: calcula y dispersa nómina. 
-— 🧾 LISA: administra solicitudes de reembolso. 
-— 💬 LUKE: responde dudas frecuentes. 
-— 📁 CLEO: gestiona el offboarding y compensaciones. 
-— 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
+— 🚀 Fer: Agente de Publicación de Vacantes
+— 📄 Lucas: Agente de Reclutamiento 
+— 🎓 Isa: Agente de Onboarding 
+— 💬 Luke: Gestión de dudas y tickets
+— 📊 Ben: Agente de Desempeño del empleado
+— 💰 Lily: Agente de Remuneración y Prestaciones
+— 🧾 Lisa: Agente de Gestión de viáticos
+— 📁 Cleo: Agente de Jubilación
 
 En diferentes industrias, estas iniciativas han reducido errores hasta en un 90% y han mejorado la productividad en más del 40%. 
 
@@ -309,12 +308,15 @@ Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/procure-t
 
 Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. Por ejemplo, en Procure-to-Pay:
 
-— 👤 Elsa y 📦 Olivia: automatizan alta de proveedores y generación de órdenes de compra.  
-— 🧾 Daniel y 🔄 Chris: validan facturas y registran movimientos en SAP.  
-— 📊 Tony y 💳 David: realizan conciliaciones y ejecutan pagos automáticos.  
-— 🔁 Ryan y 📈 Richard: gestionan devoluciones y generan forecastings precisos.  
-— 🛃 Pedro: revisa pedimentos y determina impuestos en operaciones aduanales.  
-— 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
+— 👤 Elsa: Agente de alta de proveedores.
+— 📈 Richard: Coordinación de Forecasting.
+— 📦 Olivia: Agente de procesamiento de órdenes de compra.
+— 🔄 Chris: Recepción de mercancía.
+— 📊 Tony: Gestión de inventario.
+— 🔁 Ryan: Gestión de devoluciones.
+— 🛃 Pedro: Gestión de Aduanas.
+— 🧾 Daniel: Agente de procesamiento de facturas.
+— 💳 David: Agente de procesamiento de órdenes de pago.
 
 En diferentes industrias, estas iniciativas han reducido errores hasta en un 90% y han mejorado la productividad en más del 40%. 
 
@@ -329,12 +331,16 @@ Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/order-to-
 
 Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. Por ejemplo, en Order-to-Cash:
 
-— 🆕 Adrian y 📄 Aaron: automatizan alta de clientes y facturación.  
-— 🛒 Nico, 🚚 James y 📍 Julia: reciben pedidos y planifican entregas optimizando rutas y tiempos.  
-— 📦 Diana y 🗂️ Alice: calculan cubicajes y ajustan inventarios para evitar faltantes o excesos.  
-— 💳 Mia y 📊 Nina: evalúan créditos y monitorean cuentas por cobrar con recordatorios automáticos.  
-— 🔁 Ryan: gestiona devoluciones y propone reemplazos antes de reembolsar.  
-— 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
+— 🆕 Adrián: Agente de alta de clientes.
+— 🛒 Nico: Agente de Procesamiento de pedidos.
+— 📦 Diana: Agente de Planificación de entregas.
+— 🚚 James: Agente de Planificación del transporte.
+— 📍 Julia: Agente de Logística de salida.
+— 🔁 Ryan: Agente de Gestión de devoluciones.
+— 💳 Mia: Agente de Gestión del crédito.
+— 🗂️ Alice: Agente de Gestión de existencias en Inventario.
+— 📊 Nina: Agente de Cuentas por cobrar.
+— 📄 Aaron: Agente de facturación.
 
 En diferentes industrias, estas iniciativas han reducido errores hasta en un 90% y han mejorado la productividad en más del 40%. 
 
@@ -354,7 +360,6 @@ Actualmente, implementamos soluciones que potencian distintas líneas de negocio
 — 💬 Gestionando consultas de los clientes y dando soporte en tiempo real.     
 — 🎯 Integrando soluciones junto con las plataformas internas ya existentes.    
 — 📡 Adaptando flujos críticos en RRHH, compras, finanzas o cadena de suministro.  
-— 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
 
 Cuando esto se implementa bien, el soporte Nivel 1 se automatiza en más de un 60% y los tiempos de resolución se reducen a la mitad, como ha ocurrido en varios de nuestros proyectos. 
 
