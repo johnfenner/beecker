@@ -60,8 +60,8 @@ def load_sdr_kpi_data():
         st.stop()
 
     sheet_url_kpis = st.secrets.get(
-        "main_prostraction_sheet_url",
-        "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0"
+    "main_prostraction_sheet_url",
+    "https://docs.google.com/spreadsheets/d/1_J_WLYf2cjiKp2JTxsFj1KYoGTzPA730Bw3YP4-q7Fs/edit?gid=0#gid=0"
     )
     
     try:
