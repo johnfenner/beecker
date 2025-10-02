@@ -17,7 +17,7 @@ st.markdown(
 
 # --- Constantes y Claves de Estado de Sesión ---
 SHEET_URL_SECRET_KEY = "main_prostraction_sheet_url"
-DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0"
+DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1_J_WLYf2cjiKp2JTxsFj1KYoGTzPA730Bw3YP4-q7Fs/edit?gid=0#gid=0"
 NO_CAMPAIGN_VALUES = ["Sin Campaña Asignada", "N/D", ""]
 
 # Columnas
