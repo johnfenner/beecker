@@ -37,7 +37,7 @@ def cargar_y_limpiar_datos():
 
     # 1. Cargar Hoja Principal (Equipo)
     try:
-        sheet_url = st.secrets.get("main_prostraction_sheet_url", "https://docs.google.com/spreadsheets/d/1h-hNu0cH0W_CnGx4qd3JvF-Fg9Z18ZyI9lQ7wVhROkE/edit#gid=0")
+        sheet_url = st.secrets.get("main_prostraction_sheet_url", "https://docs.google.com/spreadsheets/d/1_J_WLYf2cjiKp2JTxsFj1KYoGTzPA730Bw3YP4-q7Fs/edit?gid=0#gid=0")
         sheet = client.open_by_url(sheet_url).sheet1
         raw_data = sheet.get_all_values()
         if raw_data:
