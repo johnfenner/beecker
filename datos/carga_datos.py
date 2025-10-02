@@ -1,75 +1,75 @@
-# Prospe/datos/carga_datos.py
+# Archivo: datos/carga_datos.py
+
 import pandas as pd
 import gspread
 import streamlit as st
 from collections import Counter
 from utils.limpieza import calcular_dias_respuesta
 
-def cargar_y_limpiar_datos():
+# -----------------------------------------------------------------------------
+# ESTA ES LA NUEVA FUNCIÓN "MAESTRA" QUE CARGARÁ TODO
+# -----------------------------------------------------------------------------
+@st.cache_data(ttl=600)  # Guarda los datos en caché por 10 minutos
+def cargar_todas_las_fuentes():
     """
-    Función principal que carga y unifica datos de la hoja del equipo y de Evelyn.
-    Mantenemos el nombre original por compatibilidad con el dashboard.
+    Carga todas las hojas de Google Sheets necesarias para la aplicación una sola vez.
     """
     try:
         creds_dict = st.secrets["gcp_service_account"]
         client = gspread.service_account_from_dict(creds_dict)
-    except KeyError:
-        st.error("Error de Configuración (Secrets): Falta [gcp_service_account].")
-        st.stop()
     except Exception as e:
-        st.error(f"Error al cargar las credenciales de Google Sheets: {e}")
-        st.stop()
+        st.error(f"Error fatal al autenticar con Google Sheets: {e}")
+        return None # Devuelve None si falla la autenticación
 
-    def make_unique(headers_list):
-        counts = Counter()
-        new_headers = []
-        for h in headers_list:
-            h_stripped = str(h).strip() if pd.notna(h) else "Columna_Vacia"
-            if not h_stripped: h_stripped = "Columna_Vacia"
-            counts[h_stripped] += 1
-            if counts[h_stripped] == 1:
-                new_headers.append(h_stripped)
-            else:
-                new_headers.append(f"{h_stripped}_{counts[h_stripped]-1}")
-        return new_headers
+    # Un diccionario para guardar todos nuestros DataFrames
+    fuentes_de_datos = {
+        "principal": cargar_y_limpiar_datos(client), # Llama a tu función original
+        "kpis_semanales": cargar_hoja_individual(client, st.secrets["kpis_sheet_url"]),
+        "kpis_sdr": cargar_hoja_individual(client, st.secrets["main_prostraction_sheet_url"], "KPI´s SDR"),
+        "sesiones_principal": cargar_hoja_individual(client, "https://docs.google.com/spreadsheets/d/1Cejc7xfxd62qqsbzBOMRSI9HiJjHe_JSFnjf3lrXai4/edit?gid=1354854902#gid=1354854902", "Sesiones 2024-2025"),
+        "sesiones_suramerica": cargar_hoja_individual(client, "https://docs.google.com/spreadsheets/d/1MoTUg0sZ76168k4VNajzyrxAa5hUHdWNtGNu9t0Nqnc/edit?gid=278542854#gid=278542854", "SesionesSA 2024-2025"),
+        "email_stats": cargar_hoja_individual(client, st.secrets["email_stats_sheet_url"])
+    }
 
-    dataframes = []
+    return fuentes_de_datos
 
-    # 1. Cargar Hoja Principal (Equipo)
+# -----------------------------------------------------------------------------
+# FUNCIÓN AUXILIAR PARA NO REPETIR CÓDIGO (NO LA TIENES QUE USAR DIRECTAMENTE)
+# -----------------------------------------------------------------------------
+def cargar_hoja_individual(client, url, nombre_hoja=None):
     try:
-        sheet_url = st.secrets.get("main_prostraction_sheet_url", "https://docs.google.com/spreadsheets/d/1_J_WLYf2cjiKp2JTxsFj1KYoGTzPA730Bw3YP4-q7Fs/edit?gid=0#gid=0")
-        sheet = client.open_by_url(sheet_url).sheet1
+        workbook = client.open_by_url(url)
+        sheet = workbook.worksheet(nombre_hoja) if nombre_hoja else workbook.sheet1
         raw_data = sheet.get_all_values()
-        if raw_data:
-            headers = make_unique(raw_data[0])
-            df_main = pd.DataFrame(raw_data[1:], columns=headers)
-            df_main['Fuente_Analista'] = 'Equipo Principal'
-            dataframes.append(df_main)
+        if not raw_data or len(raw_data) < 2:
+            st.warning(f"Hoja en {url} está vacía o no tiene datos.")
+            return pd.DataFrame()
+
+        headers = make_unique(raw_data[0])
+        df = pd.DataFrame(raw_data[1:], columns=headers)
+        return df
     except Exception as e:
-        st.warning(f"No se pudo cargar la hoja principal. Error: {e}")
+        st.warning(f"No se pudo cargar la hoja desde {url}. Error: {e}")
+        return pd.DataFrame()
 
-    # 2. Cargar Hoja de Evelyn (SECCIÓN COMENTADA)
-    # try:
-    #     sheet_url_evelyn = "https://docs.google.com/spreadsheets/d/1eV-wLbzbVRa68Kb-H8UvIvN7VEo5B5ONCOaIQ66mT9Y/edit?gid=0#gid=0"
-    #     sheet_evelyn = client.open_by_url(sheet_url_evelyn).sheet1
-    #     raw_data_evelyn = sheet_evelyn.get_all_values()
-    #     if raw_data_evelyn:
-    #         headers_evelyn = make_unique(raw_data_evelyn[0])
-    #         df_evelyn = pd.DataFrame(raw_data_evelyn[1:], columns=headers_evelyn)
-    #         df_evelyn['Fuente_Analista'] = 'Evelyn'
-    #         if '¿Quién Prospecto?' not in df_evelyn.columns or df_evelyn['¿Quién Prospecto?'].isnull().all():
-    #              df_evelyn['¿Quién Prospecto?'] = 'Evelyn'
-    #         else:
-    #              df_evelyn['¿Quién Prospecto?'].fillna('Evelyn', inplace=True)
-    #         dataframes.append(df_evelyn)
-    # except Exception as e:
-    #     st.warning(f"No se pudo cargar la hoja de Evelyn. Error: {e}")
+# -----------------------------------------------------------------------------
+# TU FUNCIÓN ORIGINAL (MODIFICADA LIGERAMENTE PARA QUE ACEPTE EL "CLIENTE")
+# -----------------------------------------------------------------------------
+def cargar_y_limpiar_datos(client): # Añadimos "client" como argumento
+    """
+    Función que carga y unifica datos de la hoja principal del equipo.
+    """
+    # La autenticación ya no se hace aquí, se recibe el cliente ya autenticado.
 
-    if not dataframes:
-        st.error("No se pudieron cargar datos de ninguna fuente. El dashboard no puede continuar.")
+    df_main = cargar_hoja_individual(client, st.secrets["main_prostraction_sheet_url"]) # Usamos la nueva función auxiliar
+
+    if df_main.empty:
+        st.error("No se pudo cargar la hoja principal. El dashboard no puede continuar.")
         st.stop()
     
-    df_unificado = pd.concat(dataframes, ignore_index=True, sort=False)
+    # El resto de tu lógica de limpieza es idéntico
+    df_unificado = df_main # Como ya no cargas la de Evelyn, solo hay una.
+    df_unificado['Fuente_Analista'] = 'Equipo Principal'
 
     nombre_columna_fecha_invite = "Fecha de Invite"
     if nombre_columna_fecha_invite not in df_unificado.columns:
@@ -109,10 +109,23 @@ def cargar_y_limpiar_datos():
     return df_base
 
 
-def cargar_y_procesar_datos(df): 
-    df_procesado = df.copy() 
+def cargar_y_procesar_datos(df):
+    df_procesado = df.copy()
     try:
         df_procesado = calcular_dias_respuesta(df_procesado)
     except Exception as e:
         st.warning(f"Error al ejecutar calcular_dias_respuesta: {e}")
     return df_procesado
+
+def make_unique(headers_list):
+    counts = Counter()
+    new_headers = []
+    for h in headers_list:
+        h_stripped = str(h).strip() if pd.notna(h) else "Columna_Vacia"
+        if not h_stripped: h_stripped = "Columna_Vacia"
+        counts[h_stripped] += 1
+        if counts[h_stripped] == 1:
+            new_headers.append(h_stripped)
+        else:
+            new_headers.append(f"{h_stripped}_{counts[h_stripped]-1}")
+    return new_headers
