@@ -22,7 +22,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # --- IMPORTS MODULARES ---
-from datos.carga_datos import cargar_todas_las_fuentes, cargar_y_procesar_datos
+from datos.carga_datos import cargar_y_limpiar_datos, cargar_y_procesar_datos
 from filtros.filtros_sidebar import mostrar_filtros_sidebar
 from filtros.aplicar_filtros import aplicar_filtros
 from componentes.tabla_prospectos import mostrar_tabla_filtrada
@@ -68,19 +68,20 @@ Explora métricas clave y gestiona tus leads.
 """)
 
 # --- CARGA DE DATOS ---
-# --- CARGA DE DATOS CENTRALIZADA ---
-if 'fuentes_de_datos' not in st.session_state:
-    with st.spinner('Cargando todos los datos de Google Sheets... Esto puede tardar un momento.'):
-        st.session_state.fuentes_de_datos = cargar_todas_las_fuentes()
+@st.cache_data
+def get_processed_data():
+    df_base_loaded = cargar_y_limpiar_datos()
+    if df_base_loaded is None or df_base_loaded.empty:
+        return pd.DataFrame()
+    df_processed_loaded = cargar_y_procesar_datos(df_base_loaded.copy())
+    return df_processed_loaded
 
-# Verificar si la carga falló
-if not st.session_state.fuentes_de_datos or st.session_state.fuentes_de_datos['principal'].empty:
-    st.error("Error crítico al cargar la hoja principal. La aplicación no puede continuar.")
+
+df_global = get_processed_data()
+
+if df_global.empty:
+    st.error("No se pudieron cargar datos. El dashboard no puede continuar.")
     st.stop()
-
-# Usamos los datos ya cargados en la sesión
-df_base_cargada = st.session_state.fuentes_de_datos['principal']
-df_global = cargar_y_procesar_datos(df_base_cargada.copy())
 
 # --- CÁLCULO DE MÉTRICAS BASE ---
 total_base = len(df_global)
