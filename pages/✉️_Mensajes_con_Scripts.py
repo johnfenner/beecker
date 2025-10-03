@@ -63,28 +63,25 @@ def reset_mensaje_filtros_state():
     st.session_state.mostrar_tabla_mensajes = False
     st.toast("Filtros de mensajes reiniciados ✅")
 
-# >>> PEGA ESTE NUEVO BLOQUE DE CÓDIGO EN SU LUGAR <<<
-
 st.title("💌 Generador de Mensajes Personalizados")
 st.markdown("Filtra prospectos que aceptaron tu invitación y genera mensajes personalizados.")
 
-# --- Carga de datos desde la sesión ---
-if 'fuentes_de_datos' in st.session_state and not st.session_state.fuentes_de_datos['principal'].empty:
-    # Usamos los datos ya cargados y procesados por la página principal
-    df = st.session_state.fuentes_de_datos['principal'].copy()
-
-    # Realizamos las conversiones de fecha específicas para esta página si no se han hecho
+@st.cache_data
+def get_base_data():
+    df_base = cargar_y_limpiar_datos()
     col_fecha_ppal = "Fecha Primer Mensaje"
-    if col_fecha_ppal in df.columns and not pd.api.types.is_datetime64_any_dtype(df[col_fecha_ppal]):
-        df[col_fecha_ppal] = pd.to_datetime(df[col_fecha_ppal], format='%d/%m/%Y', errors='coerce')
-    if "Fecha de Invite" in df.columns and not pd.api.types.is_datetime64_any_dtype(df["Fecha de Invite"]):
-        df["Fecha de Invite"] = pd.to_datetime(df["Fecha de Invite"], errors='coerce')
+    if col_fecha_ppal in df_base.columns and not pd.api.types.is_datetime64_any_dtype(df_base[col_fecha_ppal]):
+        df_base[col_fecha_ppal] = pd.to_datetime(df_base[col_fecha_ppal], format='%d/%m/%Y', errors='coerce')
+    if "Fecha de Invite" in df_base.columns and not pd.api.types.is_datetime64_any_dtype(df_base["Fecha de Invite"]):
+        df_base["Fecha de Invite"] = pd.to_datetime(df_base["Fecha de Invite"], errors='coerce')
+    if "Avatar" in df_base.columns: df_base["Avatar"] = df_base["Avatar"].apply(estandarizar_avatar)
+    return df_base
 
-else:
-    st.error("Por favor, carga primero la página principal (🏠 Dashboard Principal) para inicializar los datos.")
+df = get_base_data()
+
+if df is None or df.empty:
+    st.warning("No se pudieron cargar datos o el DataFrame base está vacío.")
     st.stop()
-
-# >>> FIN DEL NUEVO BLOQUE <<<
 
 if 'mensaje_filtros' not in st.session_state: reset_mensaje_filtros_state()
 if 'mostrar_tabla_mensajes' not in st.session_state: st.session_state.mostrar_tabla_mensajes = False
@@ -299,3 +296,4 @@ if st.session_state.mostrar_tabla_mensajes:
 
 st.markdown("---")
 st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")
+
