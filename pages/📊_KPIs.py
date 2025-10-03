@@ -38,18 +38,81 @@ def parse_kpi_value(value_str, column_name=""):
         except ValueError:
             return 0.0
 
+@st.cache_data(ttl=300)
+def load_weekly_kpis_data():
+    try:
+        creds_from_secrets = st.secrets["gcp_service_account"] 
+        client = gspread.service_account_from_dict(creds_from_secrets)
+    except KeyError:
+        st.error("Error de Configuración (Secrets): Falta la sección [gcp_service_account] o alguna de sus claves en los 'Secrets' de Streamlit (KPIs Semanales).")
+        st.stop()
+    except Exception as e:
+        st.error(f"Error al autenticar con Google Sheets para KPIs Semanales vía Secrets: {e}")
+        st.stop()
+
+    sheet_url_kpis = st.secrets.get(
+        "kpis_sheet_url", 
+        "https://docs.google.com/spreadsheets/d/1vaJ2lPK7hbWsuikjmycPePKRrFXiOrlwXMXOdoXRY60/edit?gid=0#gid=0"
+    )
+    try:
+        sheet = client.open_by_url(sheet_url_kpis).sheet1
+        raw_data = sheet.get_all_values()
+        if not raw_data or len(raw_data) <= 1:
+            st.error(f"No se pudieron obtener datos suficientes de Google Sheets para KPIs Semanales (URL: {sheet_url_kpis}).")
+            return pd.DataFrame() 
+        headers = raw_data[0]
+        rows = raw_data[1:]
+    except gspread.exceptions.SpreadsheetNotFound:
+        st.error(f"Error: No se encontró la hoja de KPIs Semanales en la URL: {sheet_url_kpis}")
+        st.stop()
+    except Exception as e:
+        st.error(f"Error al leer la hoja de Google Sheets para KPIs Semanales (URL: {sheet_url_kpis}): {e}")
+        st.stop()
+
+    cleaned_headers = [str(h).strip() for h in headers]
+    df = pd.DataFrame(rows, columns=cleaned_headers)
+
+    if "Fecha" in df.columns:
+        df["Fecha"] = pd.to_datetime(df["Fecha"], format='%d/%m/%Y', errors='coerce')
+        df.dropna(subset=["Fecha"], inplace=True)
+        if not df.empty:
+            df['Año'] = df['Fecha'].dt.year
+            df['NumSemana'] = df['Fecha'].dt.isocalendar().week.astype(int)
+            df['MesNum'] = df['Fecha'].dt.month
+            df['AñoMes'] = df['Fecha'].dt.strftime('%Y-%m')
+        else:
+            for col_time in ['Año', 'NumSemana', 'MesNum']: df[col_time] = pd.Series(dtype='int')
+            df['AñoMes'] = pd.Series(dtype='str')
+    else:
+        st.warning("Columna 'Fecha' no encontrada (KPIs Semanales). No se podrán aplicar filtros de fecha.")
+        for col_time in ['Año', 'NumSemana', 'MesNum']: df[col_time] = pd.Series(dtype='int')
+        df['AñoMes'] = pd.Series(dtype='str')
+
+    # Orden de KPIs deseado para el procesamiento y como referencia
+    # (Aunque el orden de parseo no impacta, las columnas deben existir)
+    kpi_columns_ordered = ["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]
+    for col_name in kpi_columns_ordered: # Usar el orden definido para asegurar que se procesan si existen
+        if col_name not in df.columns:
+            st.warning(f"Columna KPI '{col_name}' no encontrada (KPIs Semanales). Se creará con ceros.")
+            df[col_name] = 0
+        else:
+            # Asegurarse que la columna se procesa correctamente incluso si ya existe
+            df[col_name] = df[col_name].apply(lambda x: parse_kpi_value(x, column_name=col_name)).astype(int)
+
+
+    string_cols_kpis = ["Mes", "Semana", "Analista", "Región"]
+    for col_str in string_cols_kpis:
+        if col_str not in df.columns:
+            df[col_str] = pd.Series(dtype='str')
+        else:
+            df[col_str] = df[col_str].astype(str).str.strip().fillna("N/D")
+    return df
+
 def calculate_rate(numerator, denominator, round_to=1):
     if denominator == 0: return 0.0
     return round((numerator / denominator) * 100, round_to)
 
-
-
-# --- Carga de datos desde la sesión ---
-if 'fuentes_de_datos' in st.session_state:
-    df_kpis_semanales_raw = st.session_state.fuentes_de_datos.get('kpis_semanales', pd.DataFrame())
-else:
-    st.error("Por favor, carga primero la página principal (🏠 Dashboard Principal) para inicializar los datos.")
-    st.stop()
+df_kpis_semanales_raw = load_weekly_kpis_data()
 
 if df_kpis_semanales_raw.empty:
     st.error("El DataFrame de KPIs Semanales está vacío después de la carga. No se puede continuar.")
@@ -605,4 +668,5 @@ st.markdown("---")
 st.info(
     "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊"
 )
+
 
