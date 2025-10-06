@@ -228,11 +228,15 @@ Me encantaría coordinar una breve sesión contigo, para compartir algunos casos
 # ===== CONTENIDO ACTUALIZADO PARA KAREN TI =====
 plantilla_ti_karen = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/. Me gustaría presentarte a nuestra empresa, con más de 12 años de experiencia en automatización inteligente e inteligencia artificial. A diferencia de muchos consultores que solo diseñan estrategias, en Beecker acompañamos a nuestros clientes en todo el ciclo: diagnóstico, implementación y escalamiento, asegurando resultados medibles en semanas.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/robots-as-a-service-raas/. Me gustaría presentarte a nuestra empresa, con más de 12 años de experiencia en automatización inteligente e inteligencia artificial.
 
-Contamos con un equipo de más de 200 expertos certificados y hemos apoyado a empresas de distintas industrias en la identificación de millones de dólares en oportunidades ocultas de automatización, además de construir soluciones que realmente generan valor y escalan con el tiempo.
+Contamos con un equipo de más de 200 expertos certificados que acompañan a nuestros clientes en todo el ciclo: diagnóstico, implementación y escalamiento. Este enfoque nos ha permitido ayudar a empresas de distintas industrias a identificar y capitalizar oportunidades de optimización que se traducen en mejoras tangibles en cuestión de semanas. 
 
-¿Te parecería bien coordinar una llamada de 30 minutos para explorar qué oportunidades podríamos detectar en {empresa}? Quedo pendiente a tu respuesta.
+Con base en esa experiencia, vemos posible aplicar el mismo enfoque para detectar oportunidades similares en {empresa}. 
+
+¿Tendrías disponibilidad para explorarlo en una breve sesión con nuestro equipo?
+
+Quedo atenta a tu respuesta, saludos. 
 """
 
 plantilla_aduanas_karen = """Hola {nombre}, un gusto saludarte.
@@ -240,6 +244,7 @@ plantilla_aduanas_karen = """Hola {nombre}, un gusto saludarte.
 Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia de {empresa} en el proceso aduanal:
 
 Nos centramos principalmente en nuestro Agente Digital Pedro de IA que procesan todo el flujo de aduanas en minutos te ayuda a:
+
 - Extraer y validar archivos y datos desde correo
 - Clasificar clientes y régimen
 - Generar reportes automáticos
