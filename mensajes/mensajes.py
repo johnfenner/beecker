@@ -365,23 +365,15 @@ La idea es que sea un punto de contraste útil para ti y, si lo consideras relev
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/robots-as-a-service-raas/. Me gustaría presentarte a nuestra empresa, con más de 12 años de experiencia en automatización inteligente e inteligencia artificial.
 
-Actualmente, implementamos soluciones que potencian distintas líneas de negocio. 
+Contamos con un equipo de más de 200 expertos certificados que acompañan a nuestros clientes en todo el ciclo: diagnóstico, implementación y escalamiento. Este enfoque nos ha permitido ayudar a empresas de distintas industrias a identificar y capitalizar oportunidades de optimización que se traducen en mejoras tangibles en cuestión de semanas. 
 
-Por ejemplo, en tu caso para:
+Con base en esa experiencia, vemos posible aplicar el mismo enfoque para detectar oportunidades similares en {empresa}. 
 
-— 🛠️ Atendiendo tickets y reduciendo drásticamente los tiempos de respuesta.   
-— 🔄 Monitoreando sistemas de forma proactiva y generando respaldos automáticos.  
-— 💬 Gestionando consultas de los clientes y dando soporte en tiempo real.     
-— 🎯 Integrando soluciones junto con las plataformas internas ya existentes.    
-— 📡 Adaptando flujos críticos en RRHH, compras, finanzas o cadena de suministro.  
+¿Tendrías disponibilidad para explorarlo en una breve sesión con nuestro equipo?
 
-Cuando esto se implementa bien, el soporte Nivel 1 se automatiza en más de un 60% y los tiempos de resolución se reducen a la mitad, como ha ocurrido en varios de nuestros proyectos. 
-
-Precisamente por eso, pensé que podríamos tener una charla breve para conocer cómo lo están gestionando actualmente y contrastar experiencias con lo que hemos visto en otras organizaciones.
-
-¿Tendrías un espacio esta o la próxima semana para coordinarlo?
+Quedo atenta a tu respuesta, saludos. 
 """
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
