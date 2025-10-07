@@ -305,11 +305,11 @@ Por ejemplo, en tu caso para el ciclo Hire-to-Retire:
 — 🧾 Lisa: Agente de Gestión de viáticos
 — 📁 Cleo: Agente de Jubilación
 
-Precisamente por eso, me gustaría invitarte a una breve sesión para compartir casos de éxito aplicados a empresas de tu sector y mostrar, con ejemplos concretos, el impacto y retorno de inversión que hemos logrado. 
+Nuestros agentes reducen significativamente los errores y los tiempos de operación, automatizando tareas clave y adaptándose con facilidad a las necesidades de cada equipo.
 
-La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
+Me encantaría agendar una breve sesión contigo para mostrarte algunos casos de éxito recientes y explorar si algo de eso podría aplicarse a tu operación.
 
-¿Tendrías un espacio esta o la próxima semana para coordinarlo?
+¿Tendrías disponibilidad esta o la próxima semana para conversarlo con nuestro equipo?
 """
 
 plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -330,11 +330,11 @@ Por ejemplo, en tu caso:
 — 🧾 Daniel: Agente de procesamiento de facturas.
 — 💳 David: Agente de procesamiento de órdenes de pago.
 
-Precisamente por eso, me gustaría invitarte a una breve sesión para compartir casos de éxito aplicados a empresas de tu sector y mostrar, con ejemplos concretos, el impacto y retorno de inversión que hemos logrado. 
+Nuestros agentes reducen significativamente los errores y los tiempos de operación, automatizando tareas clave y adaptándose con facilidad a las necesidades de cada equipo.
 
-La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
+Me encantaría agendar una breve sesión contigo para mostrarte algunos casos de éxito recientes y explorar si algo de eso podría aplicarse a tu operación.
 
-¿Tendrías un espacio esta o la próxima semana para coordinarlo?
+¿Tendrías disponibilidad esta o la próxima semana para conversarlo con nuestro equipo?
 """
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -356,11 +356,11 @@ Por ejemplo, en tu caso:
 — 📊 Nina: Agente de Cuentas por cobrar.
 — 📄 Aaron: Agente de facturación.
 
-Precisamente por eso, me gustaría invitarte a una breve sesión para compartir casos de éxito aplicados a empresas de tu sector y mostrar, con ejemplos concretos, el impacto y retorno de inversión que hemos logrado. 
+Nuestros agentes reducen significativamente los errores y los tiempos de operación, automatizando tareas clave y adaptándose con facilidad a las necesidades de cada equipo.
 
-La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
+Me encantaría agendar una breve sesión contigo para mostrarte algunos casos de éxito recientes y explorar si algo de eso podría aplicarse a tu operación.
 
-¿Tendrías un espacio esta o la próxima semana para coordinarlo?
+¿Tendrías disponibilidad esta o la próxima semana para conversarlo con nuestro equipo?
 """
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -378,23 +378,22 @@ Quedo atenta a tu respuesta, saludos.
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Intelligent Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para transformar la eficiencia de {empresa} en el proceso aduanal:
 
 Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. 
 
-Por ejemplo, en tu caso para el control de aduanas:
- 
+Por ejemplo, en tu caso, para el control de aduanas, nuestro Agente Digital Pedro, procesa todo el flujo aduanero en minutos: 
+
 — 📋 Revisión de manifiestos: verifican documentos y determinan impuestos.  
 — 🧾 Validación: cotejan facturas contra órdenes de compra y pedimentos.  
 — 🏷️ Clasificación: asignan regímenes y costos cumpliendo normativas.  
 — 📂 Expedientes digitales: generan archivos auditables en tiempo real.  
-— 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
 
-Precisamente por eso, me gustaría invitarte a una breve sesión para compartir casos de éxito aplicados a empresas de tu sector y mostrar, con ejemplos concretos, el impacto y retorno de inversión que hemos logrado. 
+Este agente no sólo extrae y clasifica datos desde documentos, sino que también detecta inconsistencias, valida cuentas internas y genera reportes contables en minutos.
 
-La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
+Me gustaría coordinar una breve sesión contigo para mostrarte casos de éxito y explorar oportunidades que podrían ser útiles para tu equipo.
 
-¿Tendrías un espacio esta o la próxima semana para coordinarlo?
+¿Tendrías disponibilidad esta o la próxima semana para conversarlo con nuestro equipo?
 """
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -408,13 +407,12 @@ Actualmente, implementamos soluciones que potencian distintas líneas de negocio
 — 👥 Recursos Humanos: reclutamiento, onboarding, nómina y atención interna.  
 — 💬 Atención al cliente: gestión de consultas y soporte en tiempo real.  
 — 📦 Cadena de suministro: pedidos, inventarios y logística optimizada.  
-— 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
 
-Precisamente por eso, me gustaría invitarte a una breve sesión para compartir casos de éxito aplicados a empresas de tu sector y mostrar, con ejemplos concretos, el impacto y retorno de inversión que hemos logrado. 
+Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y brindar una visibilidad completa de cada proceso. Además, podemos adaptarlas fácilmente a las necesidades específicas de tu área.
 
-La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
+Me encantaría coordinar una breve sesión contigo para mostrarte algunos casos de éxito recientes y explorar cómo podrían aplicarse a tu operación.
 
-¿Tendrías un espacio esta o la próxima semana para coordinarlo?
+¿Tendrías disponibilidad esta o la próxima semana para conversarlo con nuestro equipo?
 """
 
 plantilla_finanzas_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -429,13 +427,12 @@ Por ejemplo, en tu caso para Finanzas:
 — 📈 Forecastings: generan proyecciones dinámicas y precisas en tiempo real.  
 — ⚠️ Alertas: detectan desviaciones y riesgos antes de que escalen.  
 — 📋 Dashboards: producen reportes completos y listos para análisis inmediato.  
-— 🎯 En general: se adaptan con facilidad para optimizar los procesos según las prioridades.
 
-Precisamente por eso, me gustaría invitarte a una breve sesión para compartir casos de éxito aplicados a empresas de tu sector y mostrar, con ejemplos concretos, el impacto y retorno de inversión que hemos logrado. 
+Nuestros agentes reducen significativamente los errores y los tiempos de operación, automatizando tareas clave y adaptándose con facilidad a las necesidades de cada equipo.
 
-La idea es que sea un punto de contraste útil para ti y, si lo consideras relevante, para las personas clave de tu organización.
+Me encantaría agendar una breve sesión contigo para mostrarte algunos casos de éxito recientes y explorar si algo de eso podría aplicarse a tu operación.
 
-¿Tendrías un espacio esta o la próxima semana para coordinarlo?
+¿Tendrías disponibilidad esta o la próxima semana para conversarlo con nuestro equipo?
 """
 
 plantillas_john_mejorado = {
