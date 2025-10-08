@@ -296,14 +296,14 @@ Actualmente, desarrollamos agentes digitales de IA que potencian distintas líne
 
 Por ejemplo, en tu caso para el ciclo Hire-to-Retire:
 
-— 🚀 Fer: Agente de Publicación de Vacantes
-— 📄 Lucas: Agente de Reclutamiento 
-— 🎓 Isa: Agente de Onboarding 
-— 💬 Luke: Gestión de dudas y tickets
-— 📊 Ben: Agente de Desempeño del empleado
-— 💰 Lily: Agente de Remuneración y Prestaciones
-— 🧾 Lisa: Agente de Gestión de viáticos
-— 📁 Cleo: Agente de Jubilación
+— Fer: Agente de Publicación de Vacantes
+— Lucas: Agente de Reclutamiento 
+— Isa: Agente de Onboarding 
+— Luke: Gestión de dudas y tickets
+— Ben: Agente de Desempeño del empleado
+— Lily: Agente de Remuneración y Prestaciones
+— Lisa: Agente de Gestión de viáticos
+— Cleo: Agente de Jubilación
 
 Nuestros agentes reducen significativamente los errores y los tiempos de operación, automatizando tareas clave y adaptándose con facilidad a las necesidades de cada equipo.
 
@@ -320,15 +320,15 @@ Actualmente, desarrollamos agentes digitales de IA que potencian distintas líne
 
 Por ejemplo, en tu caso:
 
-— 👤 Elsa: Agente de alta de proveedores.
-— 📈 Richard: Coordinación de Forecasting.
-— 📦 Olivia: Agente de procesamiento de órdenes de compra.
-— 🔄 Chris: Recepción de mercancía.
-— 📊 Tony: Gestión de inventario.
-— 🔁 Ryan: Gestión de devoluciones.
-— 🛃 Pedro: Gestión de Aduanas.
-— 🧾 Daniel: Agente de procesamiento de facturas.
-— 💳 David: Agente de procesamiento de órdenes de pago.
+— Elsa: Agente de alta de proveedores.
+— Richard: Coordinación de Forecasting.
+— Olivia: Agente de procesamiento de órdenes de compra.
+— Chris: Recepción de mercancía.
+— Tony: Gestión de inventario.
+— Ryan: Gestión de devoluciones.
+— Pedro: Gestión de Aduanas.
+— Daniel: Agente de procesamiento de facturas.
+— David: Agente de procesamiento de órdenes de pago.
 
 Nuestros agentes reducen significativamente los errores y los tiempos de operación, automatizando tareas clave y adaptándose con facilidad a las necesidades de cada equipo.
 
@@ -345,16 +345,16 @@ Actualmente, desarrollamos agentes digitales de IA que potencian distintas líne
 
 Por ejemplo, en tu caso:
 
-— 🆕 Adrián: Agente de alta de clientes.
-— 🛒 Nico: Agente de Procesamiento de pedidos.
-— 📦 Diana: Agente de Planificación de entregas.
-— 🚚 James: Agente de Planificación del transporte.
-— 📍 Julia: Agente de Logística de salida.
-— 🔁 Ryan: Agente de Gestión de devoluciones.
-— 💳 Mia: Agente de Gestión del crédito.
-— 🗂️ Alice: Agente de Gestión de existencias en Inventario.
-— 📊 Nina: Agente de Cuentas por cobrar.
-— 📄 Aaron: Agente de facturación.
+— Adrián: Agente de alta de clientes.
+— Nico: Agente de Procesamiento de pedidos.
+— Diana: Agente de Planificación de entregas.
+— James: Agente de Planificación del transporte.
+— Julia: Agente de Logística de salida.
+— Ryan: Agente de Gestión de devoluciones.
+— Mia: Agente de Gestión del crédito.
+— Alice: Agente de Gestión de existencias en Inventario.
+— Nina: Agente de Cuentas por cobrar.
+— Aaron: Agente de facturación.
 
 Nuestros agentes reducen significativamente los errores y los tiempos de operación, automatizando tareas clave y adaptándose con facilidad a las necesidades de cada equipo.
 
@@ -384,10 +384,10 @@ Actualmente, desarrollamos agentes digitales de IA que potencian distintas líne
 
 Por ejemplo, en tu caso, para el control de aduanas, nuestro Agente Digital Pedro, procesa todo el flujo aduanero en minutos: 
 
-— 📋 Revisión de manifiestos: verifican documentos y determinan impuestos.  
-— 🧾 Validación: cotejan facturas contra órdenes de compra y pedimentos.  
-— 🏷️ Clasificación: asignan regímenes y costos cumpliendo normativas.  
-— 📂 Expedientes digitales: generan archivos auditables en tiempo real.  
+— Revisión de manifiestos: verifican documentos y determinan impuestos.  
+— Validación: cotejan facturas contra órdenes de compra y pedimentos.  
+— Clasificación: asignan regímenes y costos cumpliendo normativas.  
+— Expedientes digitales: generan archivos auditables en tiempo real.  
 
 Este agente no sólo extrae y clasifica datos desde documentos, sino que también detecta inconsistencias, valida cuentas internas y genera reportes contables en minutos.
 
@@ -402,11 +402,11 @@ Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-a
 
 Actualmente, implementamos soluciones que potencian distintas líneas de negocio. Por ejemplo:
 
-— 🛒 Compras y proveedores: alta de proveedores, órdenes de compra y conciliaciones.  
-— 💼 Finanzas: conciliaciones bancarias, facturación y pagos automáticos.  
-— 👥 Recursos Humanos: reclutamiento, onboarding, nómina y atención interna.  
-— 💬 Atención al cliente: gestión de consultas y soporte en tiempo real.  
-— 📦 Cadena de suministro: pedidos, inventarios y logística optimizada.  
+— Compras y proveedores: alta de proveedores, órdenes de compra y conciliaciones.  
+— Finanzas: conciliaciones bancarias, facturación y pagos automáticos.  
+— Recursos Humanos: reclutamiento, onboarding, nómina y atención interna.  
+— Atención al cliente: gestión de consultas y soporte en tiempo real.  
+— Cadena de suministro: pedidos, inventarios y logística optimizada.  
 
 Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y brindar una visibilidad completa de cada proceso. Además, podemos adaptarlas fácilmente a las necesidades específicas de tu área.
 
@@ -423,10 +423,10 @@ Actualmente, desarrollamos agentes digitales de IA que potencian distintas líne
 
 Por ejemplo, en tu caso para Finanzas:
 
-— 📊 Presupuestos: automatizan la generación y consolidación de cifras.  
-— 📈 Forecastings: generan proyecciones dinámicas y precisas en tiempo real.  
-— ⚠️ Alertas: detectan desviaciones y riesgos antes de que escalen.  
-— 📋 Dashboards: producen reportes completos y listos para análisis inmediato.  
+— Presupuestos: automatizan la generación y consolidación de cifras.  
+— Forecastings: generan proyecciones dinámicas y precisas en tiempo real.  
+— Alertas: detectan desviaciones y riesgos antes de que escalen.  
+— Dashboards: producen reportes completos y listos para análisis inmediato.  
 
 Nuestros agentes reducen significativamente los errores y los tiempos de operación, automatizando tareas clave y adaptándose con facilidad a las necesidades de cada equipo.
 
@@ -443,4 +443,32 @@ plantillas_john_mejorado = {
     "Plantilla JohnMejorado TI (Alternativa)": plantilla_ti_john_mejorado,
     "Plantilla JohnMejorado Aduanas (Alternativa)": plantilla_aduanas_john_mejorado,
     "Plantilla JohnMejorado Finanzas (Alternativa)": plantilla_finanzas_john_mejorado,
+}
+
+# =======================================================================================
+# ===== SET DE PLANTILLAS "LARISSA" (NUEVO) =============================================
+# =======================================================================================
+
+# Se define una única plantilla genérica ya que el texto es el mismo para todas las categorías.
+# Se reemplazan los placeholders #nombre, #nombre_avatar y #el_área_que_maneja por el formato del sistema.
+plantilla_larissa_generica = """Hola {nombre}, un gusto saludarte.
+Soy {avatar}, del equipo de Beecker ( https://beecker.ai/robots-as-a-service-raas/), líderes en Automatización Inteligente e Inteligencia Artificial con más de 12 años de experiencia en el sector.
+
+Te contacto para compartirte cómo hemos ayudado a empresas del área de {categoria} a reducir costos y optimizar procesos mediante Intelligent Process Automation (IPA), integrando IA Generativa, Agentes Autónomos y Chatbots con capacidades de Machine Learning y NLP.
+
+Me gustaría agendar una breve sesión (30 min) para mostrarte algunos casos de éxito en tu industria.
+
+¿Qué día y hora te resultaría más conveniente?
+"""
+
+# Se crea el diccionario de plantillas para Larissa.
+# Todas las claves apuntan a la misma plantilla genérica.
+plantillas_larissa = {
+    "Plantilla Larissa H2R": plantilla_larissa_generica,
+    "Plantilla Larissa P2P": plantilla_larissa_generica,
+    "Plantilla Larissa O2C": plantilla_larissa_generica,
+    "Plantilla Larissa General": plantilla_larissa_generica,
+    "Plantilla Larissa TI (Alternativa)": plantilla_larissa_generica,
+    "Plantilla Larissa Aduanas (Alternativa)": plantilla_larissa_generica,
+    "Plantilla Larissa Finanzas (Alternativa)": plantilla_larissa_generica,
 }
