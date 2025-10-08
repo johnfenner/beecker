@@ -15,7 +15,7 @@ if project_root not in sys.path:
 from datos.carga_datos import cargar_y_limpiar_datos
 from filtros.aplicar_filtros import aplicar_filtros
 # --- LÍNEA MODIFICADA ---
-from mensajes.mensajes import plantillas_john, plantillas_karen, plantillas_john_mejorado
+from mensajes.mensajes import plantillas_john, plantillas_karen, plantillas_john_mejorado, plantillas_larissa
 from mensajes.mensajes_streamlit import clasificar_por_proceso
 from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar, limpiar_nombre_completo
 
@@ -202,10 +202,11 @@ if st.session_state.mostrar_tabla_mensajes:
         
         st.markdown("### 📬️ Vista de Mensajes Automáticos")
         st.markdown("#### **Elige el Estilo del Mensaje**")
+        
         # --- BLOQUE MODIFICADO ---
         set_plantillas_seleccionado = st.radio(
             "Selecciona el estilo:",
-            ("Mensajes John Mejorado", "Mensajes John", "Mensajes Karen CH"), # "John Mejorado" es ahora la primera opción
+            ("Mensajes John Mejorado", "Mensajes John", "Mensajes Karen CH", "Mensajes Larissa"), # Opción "Mensajes Larissa" añadida
             key="set_plantillas_selector",
             horizontal=True
         )
@@ -218,6 +219,9 @@ if st.session_state.mostrar_tabla_mensajes:
         elif set_plantillas_seleccionado == "Mensajes Karen CH":
             opciones_mensajes_base = plantillas_karen
             nombre_set = "Karen"
+        elif set_plantillas_seleccionado == "Mensajes Larissa": # Condición añadida para Larissa
+            opciones_mensajes_base = plantillas_larissa
+            nombre_set = "Larissa"
         else: # Por defecto o si es "Mensajes John Mejorado"
             opciones_mensajes_base = plantillas_john_mejorado
             nombre_set = "JohnMejorado"
@@ -226,7 +230,8 @@ if st.session_state.mostrar_tabla_mensajes:
         num_prospectos = len(df_mensajes_final_display)
         st.info(f"Se encontraron **{num_prospectos}** prospectos. A continuación se muestran los mensajes generados para cada uno.")
         
-        def generar_mensaje_para_fila(row, plantilla_str):
+        # --- FUNCIÓN MODIFICADA ---
+        def generar_mensaje_para_fila(row, plantilla_str, categoria):
             nombre_prospecto = str(row.get("Nombre", "")).split()[0] if pd.notna(row.get("Nombre")) and str(row.get("Nombre")).strip() else "[Nombre]"
             avatar_prospectador = str(row.get("Avatar", "Tu Nombre"))
             empresa_prospecto = str(row.get("Empresa", "[Empresa]"))
@@ -235,8 +240,10 @@ if st.session_state.mostrar_tabla_mensajes:
             mensaje = mensaje.replace("{nombre}", nombre_prospecto).replace("#Lead", nombre_prospecto)
             mensaje = mensaje.replace("{empresa}", empresa_prospecto).replace("#Empresa", empresa_prospecto)
             mensaje = mensaje.replace("{avatar}", avatar_prospectador)
+            mensaje = mensaje.replace("{categoria}", categoria) # Línea añadida para el área
             
             return mensaje
+        # --- FIN DE LA FUNCIÓN MODIFICADA ---
 
         for index, row in df_mensajes_final_display.iterrows():
             st.markdown("---")
@@ -254,19 +261,19 @@ if st.session_state.mostrar_tabla_mensajes:
                  with link_col:
                     st.markdown(f"[🔗 Perfil LinkedIn]({row[linkedin_col_nombre]})")
 
-            # ---- Lógica para Mensaje Principal ----
-            # --- LÍNEA MODIFICADA ---
+            # ---- Lógica para Mensaje Principal (MODIFICADA) ----
             key_plantilla_principal = f"Plantilla {nombre_set} {categoria_prospecto}"
             plantilla_principal_str = opciones_mensajes_base.get(key_plantilla_principal)
             
             if plantilla_principal_str:
-                mensaje_principal = generar_mensaje_para_fila(row, plantilla_principal_str)
+                # Se pasa la categoría a la función
+                mensaje_principal = generar_mensaje_para_fila(row, plantilla_principal_str, categoria_prospecto)
                 st.markdown("**Mensaje Principal Sugerido:**")
                 st.code(mensaje_principal, language=None)
             else:
                 st.warning(f"No se encontró una plantilla principal para la categoría '{categoria_prospecto}' en el set de '{nombre_set}'.")
 
-           # ---- Lógica para Mensaje Alternativo ----
+            # ---- Lógica para Mensaje Alternativo (MODIFICADA) ----
             mensajes_alternativos = []
             if categoria_prospecto == "General":
                 mensajes_alternativos.append({
@@ -274,7 +281,6 @@ if st.session_state.mostrar_tabla_mensajes:
                     "key": f"Plantilla {nombre_set} TI (Alternativa)"
                 })
             elif categoria_prospecto == "P2P":
-                # Ahora agregamos ambas plantillas a una lista
                 mensajes_alternativos.append({
                     "nombre": "Finanzas",
                     "key": f"Plantilla {nombre_set} Finanzas (Alternativa)"
@@ -284,12 +290,12 @@ if st.session_state.mostrar_tabla_mensajes:
                     "key": f"Plantilla {nombre_set} Aduanas (Alternativa)"
                 })
 
-            # Recorremos la lista para mostrar cada mensaje alternativo
             if mensajes_alternativos:
                 for alt in mensajes_alternativos:
                     plantilla_alternativa_str = opciones_mensajes_base.get(alt["key"])
                     if plantilla_alternativa_str:
-                        mensaje_alternativo = generar_mensaje_para_fila(row, plantilla_alternativa_str)
+                        # Se pasa la categoría alternativa a la función
+                        mensaje_alternativo = generar_mensaje_para_fila(row, plantilla_alternativa_str, alt["nombre"])
                         expander_title = f"Ver Mensaje Alternativo para '{alt['nombre']}'"
                         with st.expander(expander_title):
                             st.code(mensaje_alternativo, language=None)
