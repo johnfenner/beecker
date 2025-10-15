@@ -305,9 +305,7 @@ Por ejemplo, en tu caso para el ciclo Hire-to-Retire:
 — Lisa: Agente de Gestión de viáticos
 — Cleo: Agente de Jubilación
 
-Nuestros agentes reducen significativamente los errores y los tiempos de operación, automatizando tareas clave y adaptándose con facilidad a las necesidades de cada equipo.
-
-Me encantaría agendar una breve sesión contigo para mostrarte algunos casos de éxito recientes y explorar si algo de eso podría aplicarse a tu operación.
+Nuestros agentes reducen significativamente los errores y se adaptan con facilidad a las necesidades de cada equipo. Si te suena interesante, me gustaría invitarte a una breve sesión para mostrarte ejemplos concretos de resultados y explorar cómo este enfoque podría beneficiar tu operación.
 
 ¿Tendrías disponibilidad esta o la próxima semana para conversarlo con nuestro equipo?
 """
@@ -330,9 +328,7 @@ Por ejemplo, en tu caso:
 — Daniel: Agente de procesamiento de facturas.
 — David: Agente de procesamiento de órdenes de pago.
 
-Nuestros agentes reducen significativamente los errores y los tiempos de operación, automatizando tareas clave y adaptándose con facilidad a las necesidades de cada equipo.
-
-Me encantaría agendar una breve sesión contigo para mostrarte algunos casos de éxito recientes y explorar si algo de eso podría aplicarse a tu operación.
+Nuestros agentes reducen significativamente los errores y se adaptan con facilidad a las necesidades de cada equipo. Si te suena interesante, me gustaría invitarte a una breve sesión para mostrarte ejemplos concretos de resultados y explorar cómo este enfoque podría beneficiar tu operación.
 
 ¿Tendrías disponibilidad esta o la próxima semana para conversarlo con nuestro equipo?
 """
@@ -356,9 +352,7 @@ Por ejemplo, en tu caso:
 — Nina: Agente de Cuentas por cobrar.
 — Aaron: Agente de facturación.
 
-Nuestros agentes reducen significativamente los errores y los tiempos de operación, automatizando tareas clave y adaptándose con facilidad a las necesidades de cada equipo.
-
-Me encantaría agendar una breve sesión contigo para mostrarte algunos casos de éxito recientes y explorar si algo de eso podría aplicarse a tu operación.
+Nuestros agentes reducen significativamente los errores y se adaptan con facilidad a las necesidades de cada equipo. Si te suena interesante, me gustaría invitarte a una breve sesión para mostrarte ejemplos concretos de resultados y explorar cómo este enfoque podría beneficiar tu operación.
 
 ¿Tendrías disponibilidad esta o la próxima semana para conversarlo con nuestro equipo?
 """
@@ -428,9 +422,7 @@ Por ejemplo, en tu caso para Finanzas:
 — Alertas: detectan desviaciones y riesgos antes de que escalen.  
 — Dashboards: producen reportes completos y listos para análisis inmediato.  
 
-Nuestros agentes reducen significativamente los errores y los tiempos de operación, automatizando tareas clave y adaptándose con facilidad a las necesidades de cada equipo.
-
-Me encantaría agendar una breve sesión contigo para mostrarte algunos casos de éxito recientes y explorar si algo de eso podría aplicarse a tu operación.
+Nuestros agentes reducen significativamente los errores y se adaptan con facilidad a las necesidades de cada equipo. Si te suena interesante, me gustaría invitarte a una breve sesión para mostrarte ejemplos concretos de resultados y explorar cómo este enfoque podría beneficiar tu operación.
 
 ¿Tendrías disponibilidad esta o la próxima semana para conversarlo con nuestro equipo?
 """
