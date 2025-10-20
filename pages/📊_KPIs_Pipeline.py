@@ -563,6 +563,3 @@ else:
             st.dataframe(df_display, hide_index=True)
     else:
         st.info("No se encontraron datos que coincidan con los filtros seleccionados.")
-
-st.markdown("---")
-st.info("Dashboard del Pipeline con análisis mejorado.")
