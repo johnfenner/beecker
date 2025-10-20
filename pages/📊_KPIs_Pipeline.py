@@ -9,80 +9,94 @@ from collections import Counter
 import re
 import numpy as np
 
-st.set_page_config(layout="wide", page_title="Pipeline de Prospección Detallado")
-st.title("📈 Pipeline de Prospección Detallado (Oct 2025)")
-st.markdown("Análisis avanzado del embudo, tiempos de conversión y segmentación.")
+# --- Configuración y Constantes ---
+st.set_page_config(layout="wide", page_title="Pipeline Prospección Válido")
+st.title("📈 Pipeline de Prospección (Datos Validados)")
+st.markdown("Análisis del embudo basado en la hoja 'Prospects'.")
 
-# --- Constantes ---
 PIPELINE_SHEET_URL_KEY = "pipeline_october_2025"
-DEFAULT_PIPELINE_URL = "https://docs.google.com/spreadsheets/d/..."
 PIPELINE_SHEET_NAME = "Prospects"
 
+# Nombres EXACTOS de columnas clave
 COL_LEAD_GEN_DATE = "Lead Generated (Date)"
 COL_FIRST_CONTACT_DATE = "First Contact Date"
 COL_MEETING_DATE = "Meeting Date"
 COL_INDUSTRY = "Industry"
 COL_MANAGEMENT = "Management Level"
 COL_CHANNEL = "Response Channel"
-COL_CONTACTED = "Contacted?"
+# COL_CONTACTED = "Contacted?" # No la usaremos directamente, derivaremos de fecha
 COL_RESPONDED = "Responded?"
 COL_MEETING = "Meeting?"
 
-SES_START_DATE_KEY = "pipeline_page_start_date_v5" # Incrementar versión
-SES_END_DATE_KEY = "pipeline_page_end_date_v5"
-SES_INDUSTRY_KEY = "pipeline_page_industry_v5"
-SES_MANAGEMENT_KEY = "pipeline_page_management_v5"
-SES_MEETING_KEY = "pipeline_page_meeting_v5"
+# Claves de Sesión (usar nombres únicos para evitar conflictos)
+SES_PREFIX = "pipe_valido_v1_"
+SES_START_DATE_KEY = f"{SES_PREFIX}start_date"
+SES_END_DATE_KEY = f"{SES_PREFIX}end_date"
+SES_INDUSTRY_KEY = f"{SES_PREFIX}industry"
+SES_MANAGEMENT_KEY = f"{SES_PREFIX}management"
+SES_MEETING_KEY = f"{SES_PREFIX}meeting"
 
 # --- Funciones de Utilidad ---
-def parse_date_robustly(date_val):
-    if pd.isna(date_val): return pd.NaT
-    if isinstance(date_val, (datetime.datetime, datetime.date)):
+@st.cache_data # Cachear la función de parseo
+def parse_date_optimized(date_input):
+    if pd.isna(date_input): return pd.NaT
+    if isinstance(date_input, (datetime.datetime, datetime.date)):
+        # Si ya es fecha/datetime, solo normalizar (quitar hora)
         try:
-             dt = pd.to_datetime(date_val)
-             if dt.tzinfo is not None: dt = dt.tz_localize(None)
-             return dt.normalize()
-        except: return pd.to_datetime(date_val, errors='coerce')
+            dt = pd.to_datetime(date_input)
+            # Quitar timezone si existe para evitar problemas de comparación
+            if dt.tzinfo is not None: dt = dt.tz_localize(None)
+            return dt.normalize()
+        except Exception:
+            return pd.NaT # Si falla, marcar como inválida
 
-    date_str = str(date_val).strip()
+    date_str = str(date_input).strip()
     if not date_str: return pd.NaT
 
-    # Priorizar YYYY-MM-DD (visto en CSV) y D/M/YYYY
-    formats_to_try = [
-        "%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y", "%m-%d-%Y",
-        "%Y-%m-%d %H:%M", "%d/%m/%Y %H:%M", "%m/%d/%Y %H:%M",
-        "%Y-%m-%d %H:%M:%S", "%d/%m/%Y %H:%M:%S", "%m/%d/%Y %H:%M:%S",
-        "%d-%b-%Y", "%b %d, %Y", "%Y%m%d"
-    ]
+    # Intentar formatos específicos primero (más rápido)
+    # Prioridad AAAA-MM-DD y DD/MM/AAAA
+    formats_to_try = ["%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y"]
     for fmt in formats_to_try:
-        try: return pd.to_datetime(date_str, format=fmt).normalize()
-        except (ValueError, TypeError): continue
+        try:
+            # Añadir manejo explícito de hora si existe
+            if ' ' in date_str:
+                 return pd.to_datetime(date_str.split(' ')[0], format=fmt).normalize()
+            else:
+                 return pd.to_datetime(date_str, format=fmt).normalize()
+        except (ValueError, TypeError):
+            continue
 
-    # Intentos genéricos
+    # Si formatos específicos fallan, intentar conversión genérica (más lenta)
     try:
-        parsed_date_dayfirst = pd.to_datetime(date_str, errors='coerce', dayfirst=True)
-        if pd.notna(parsed_date_dayfirst): return parsed_date_dayfirst.normalize()
-        parsed_date_monthfirst = pd.to_datetime(date_str, errors='coerce', dayfirst=False)
-        if pd.notna(parsed_date_monthfirst): return parsed_date_monthfirst.normalize()
-
-        # Manejo de números de Excel
-        if re.fullmatch(r'\d+(\.\d+)?', date_str):
-             excel_date_num = float(date_str)
-             if 30000 < excel_date_num < 60000:
-                 origin = pd.Timestamp('1899-12-30')
-                 parsed_excel_date = origin + pd.to_timedelta(excel_date_num, unit='D')
-                 if pd.Timestamp('1980-01-01') <= parsed_excel_date <= pd.Timestamp('2050-12-31'):
-                      return parsed_excel_date.normalize()
-        return pd.NaT
+        # errors='coerce' devuelve NaT si no puede parsear
+        parsed_date = pd.to_datetime(date_str, errors='coerce', dayfirst=True) # Asumir día primero si ambiguo
+        if pd.notna(parsed_date):
+            return parsed_date.normalize()
+        else: # Probar monthfirst si dayfirst falló
+            parsed_date_mf = pd.to_datetime(date_str, errors='coerce', dayfirst=False)
+            if pd.notna(parsed_date_mf):
+                return parsed_date_mf.normalize()
+            else: # Intentar como número de serie Excel como último recurso
+                 if re.fullmatch(r'\d+(\.\d+)?', date_str):
+                     excel_date_num = float(date_str)
+                     if 30000 < excel_date_num < 60000: # Rango típico
+                         origin = pd.Timestamp('1899-12-30')
+                         parsed_excel = origin + pd.to_timedelta(excel_date_num, unit='D')
+                         if pd.Timestamp('1980-01-01') <= parsed_excel <= pd.Timestamp('2050-12-31'):
+                             return parsed_excel.normalize()
+                 return pd.NaT # Si todo falla
     except Exception:
         return pd.NaT
 
-# CORREGIDO para manejar True/False del CSV
-def clean_yes_no(val):
-    cleaned_val = str(val).strip().lower()
-    if cleaned_val in ['yes', 'sí', 'si', '1', 'true', 'verdadero', 'agendada', 'ok', 'realizada', 'hecho', 'completo', 'listo']:
+def clean_yes_no_optimized(val):
+    # Manejar directamente booleanos si pandas los interpreta así
+    if isinstance(val, bool):
+        return "Si" if val else "No"
+    # Convertir a string y limpiar para el resto
+    cleaned = str(val).strip().lower()
+    if cleaned in ['yes', 'sí', 'si', '1', 'true', 'verdadero', 'agendada', 'ok', 'realizada', 'hecho', 'completo', 'listo']:
         return "Si"
-    # Cualquier otra cosa (incluyendo 'no', 'false', '', 'nan', etc.) es No
+    # Todo lo demás (incluyendo '', 'no', 'false', '0', 'nan', etc.) es No
     return "No"
 
 def calculate_rate(numerator, denominator, round_to=1):
@@ -110,117 +124,127 @@ def make_unique_headers(headers_list):
         else: new_headers.append(f"{h_stripped}_{counts[h_stripped]-1}")
     return new_headers
 
+# --- Carga y Procesamiento de Datos ---
 @st.cache_data(ttl=300)
-def load_pipeline_data():
+def load_and_process_data():
     sheet_url = st.secrets.get(PIPELINE_SHEET_URL_KEY, DEFAULT_PIPELINE_URL)
-    df = pd.DataFrame()
-    debug_messages = []
+    all_data_loaded = [] # Para depuración
+    processing_warnings = []
 
     try:
         creds = st.secrets["gcp_service_account"]
         client = gspread.service_account_from_dict(creds)
         workbook = client.open_by_url(sheet_url)
         sheet = workbook.worksheet(PIPELINE_SHEET_NAME)
-        raw_data = sheet.get_all_values()
-        if not raw_data or len(raw_data) <= 1: raise ValueError("Hoja vacía o sin encabezados.")
+        # Fetch all values as strings initially to prevent type guessing issues
+        all_data_loaded = sheet.get_all_values(value_render_option='UNFORMATTED_VALUE') # Leer valores crudos
+        
+        if not all_data_loaded or len(all_data_loaded) <= 1:
+            raise ValueError("La hoja está vacía o no tiene encabezados.")
 
-        headers = make_unique_headers(raw_data[0])
-        # Leer especificando tipos para evitar problemas (opcional pero ayuda)
-        # Especificar 'str' ayuda a que pandas no intente adivinar tipos incorrectamente
-        dtype_map = {h: str for h in headers} 
-        df = pd.DataFrame(raw_data[1:], columns=headers).astype(dtype=dtype_map, errors='ignore')
+        headers = make_unique_headers(all_data_loaded[0])
+        df = pd.DataFrame(all_data_loaded[1:], columns=headers)
+        
+        # Guardar columnas originales para depuración si es necesario
+        # st.session_state['original_columns'] = df.columns.tolist()
 
-    except Exception as e_gspread:
-        st.error(f"❌ Error crítico al cargar datos desde Google Sheet: {e_gspread}")
-        st.info(f"Verifica URL ('{PIPELINE_SHEET_URL_KEY}'), nombre pestaña ('{PIPELINE_SHEET_NAME}') y permisos de '{st.secrets.get('gcp_service_account',{}).get('client_email','EMAIL_NO_ENCONTRADO')}'.")
+    except Exception as e:
+        st.error(f"❌ Error crítico al cargar datos desde Google Sheet: {e}")
+        st.info(f"Verifica URL ('{PIPELINE_SHEET_URL_KEY}'), nombre pestaña ('{PIPELINE_SHEET_NAME}') y permisos.")
         st.stop()
 
-    essential_cols = [COL_LEAD_GEN_DATE, COL_FIRST_CONTACT_DATE, COL_MEETING_DATE, COL_RESPONDED, COL_MEETING, COL_INDUSTRY, COL_MANAGEMENT]
+    # --- Procesamiento Post-Carga ---
+    
+    # Verificar columnas clave
+    essential_cols = [COL_LEAD_GEN_DATE, COL_FIRST_CONTACT_DATE, COL_RESPONDED, COL_MEETING]
     missing_essentials = [col for col in essential_cols if col not in df.columns]
     if missing_essentials:
-        st.error(f"Faltan columnas esenciales: {', '.join(missing_essentials)}. Verifica nombres.")
+        st.error(f"Faltan columnas esenciales: {', '.join(missing_essentials)}. Verifica nombres exactos.")
+        # Rellenar con N/A para intentar continuar
         for col in missing_essentials: df[col] = pd.NA
 
-    date_cols_to_parse = [COL_LEAD_GEN_DATE, COL_FIRST_CONTACT_DATE, COL_MEETING_DATE]
-    parse_errors = {col: 0 for col in date_cols_to_parse}
-
-    for col in date_cols_to_parse:
+    # Convertir fechas (más robusto)
+    date_cols = [COL_LEAD_GEN_DATE, COL_FIRST_CONTACT_DATE, COL_MEETING_DATE]
+    date_parse_fail_counts = {col: 0 for col in date_cols}
+    for col in date_cols:
         if col in df.columns:
-            original_dates_copy = df[col].copy() # Copia para comparación
-            df[col] = df[col].apply(parse_date_robustly)
-            # Contar errores comparando NAs nuevos vs originales
-            original_nas = original_dates_copy.isna() | (original_dates_copy == '')
+            # Guardar NAs originales para comparar
+            original_nas = df[col].isna() | (df[col] == '')
+            df[col] = df[col].apply(parse_date_optimized)
             new_nas = df[col].isna()
-            parse_errors[col] = (new_nas & ~original_nas).sum()
+            # Contar solo los que NO eran NA antes pero AHORA sí lo son
+            date_parse_fail_counts[col] = (new_nas & ~original_nas).sum()
         else:
-             df[col] = pd.NaT
+            df[col] = pd.NaT # Crear columna NaT si falta
 
     df.rename(columns={COL_LEAD_GEN_DATE: 'Fecha_Principal'}, inplace=True)
     initial_rows = len(df)
-    fecha_principal_na_count_before_drop = df['Fecha_Principal'].isna().sum()
-    df.dropna(subset=['Fecha_Principal'], inplace=True)
-    rows_dropped = initial_rows - len(df)
+    df.dropna(subset=['Fecha_Principal'], inplace=True) # Eliminar filas sin fecha principal válida
+    rows_dropped_no_lead_date = initial_rows - len(df)
 
-    if rows_dropped > 0:
-         debug_messages.append(f"⚠️ {rows_dropped} filas eliminadas por fecha inválida/vacía en '{COL_LEAD_GEN_DATE}'.")
-    for col, errors in parse_errors.items():
-         if errors > 0 and col != COL_LEAD_GEN_DATE :
-             debug_messages.append(f"⚠️ {errors} fechas no pudieron interpretarse en '{col}' (se marcaron como inválidas).")
-    st.session_state['data_load_debug_messages'] = debug_messages
-
-    status_cols = [COL_CONTACTED, COL_RESPONDED, COL_MEETING]
+    if rows_dropped_no_lead_date > 0:
+        processing_warnings.append(f"⚠️ {rows_dropped_no_lead_date} filas eliminadas por fecha inválida/vacía en '{COL_LEAD_GEN_DATE}'.")
+    for col, count in date_parse_fail_counts.items():
+        if count > 0 and col != COL_LEAD_GEN_DATE:
+            processing_warnings.append(f"⚠️ {count} fechas no pudieron interpretarse en '{col}'.")
+            
+    # Limpiar Sí/No
+    status_cols = [COL_RESPONDED, COL_MEETING] # Añadir COL_CONTACTED si existe y lo necesitas
     for col in status_cols:
-        if col in df.columns: df[col] = df[col].apply(clean_yes_no)
-        else: df[col] = "No"
+        if col in df.columns:
+            df[col] = df[col].apply(clean_yes_no_optimized)
+        else:
+            df[col] = "No" # Asumir No si la columna falta
 
+    # Derivar estado de contacto desde la fecha
     if COL_FIRST_CONTACT_DATE in df.columns:
         df['FirstContactStatus'] = df[COL_FIRST_CONTACT_DATE].apply(lambda x: 'Si' if pd.notna(x) else 'No')
-    else: df['FirstContactStatus'] = 'No'
+    else:
+        df['FirstContactStatus'] = 'No'
 
+    # Limpiar categóricas
     cat_cols = [COL_INDUSTRY, COL_MANAGEMENT, COL_CHANNEL]
     for col in cat_cols:
         if col in df.columns:
             df[col] = df[col].fillna('No Definido')
+            # Asegurar que sea string antes de limpiar
             df[col] = df[col].astype(str).str.strip().replace('', 'No Definido').str.title()
-            df[col] = df[col].replace({'N/D': 'No Definido', 'Na': 'No Definido'})
-        else: df[col] = "No Definido"
+            df[col] = df[col].replace({'N/D': 'No Definido', 'Na': 'No Definido', '-':'No Definido'}) # Limpiar más
+        else:
+            df[col] = "No Definido"
 
-    if not df.empty:
+    # Crear columnas de tiempo
+    if not df.empty and 'Fecha_Principal' in df.columns and pd.api.types.is_datetime64_any_dtype(df['Fecha_Principal']):
         df['Año'] = df['Fecha_Principal'].dt.year.astype('Int64', errors='ignore')
         df['NumSemana'] = df['Fecha_Principal'].dt.isocalendar().week.astype('Int64', errors='ignore')
         df['AñoMes'] = df['Fecha_Principal'].dt.strftime('%Y-%m')
     else:
         for col in ['Año', 'NumSemana', 'AñoMes']: df[col] = pd.NA
 
-    df['Dias_Gen_a_Contacto'] = df.apply(lambda row: calculate_time_diff(row['Fecha_Principal'], row.get(COL_FIRST_CONTACT_DATE)), axis=1)
+    # Calcular diferencias de tiempo
+    df['Dias_Gen_a_Contacto'] = df.apply(lambda row: calculate_time_diff(row.get('Fecha_Principal'), row.get(COL_FIRST_CONTACT_DATE)), axis=1)
     df['Dias_Contacto_a_Reunion'] = df.apply(lambda row: calculate_time_diff(row.get(COL_FIRST_CONTACT_DATE), row.get(COL_MEETING_DATE)), axis=1)
-    df['Dias_Gen_a_Reunion'] = df.apply(lambda row: calculate_time_diff(row['Fecha_Principal'], row.get(COL_MEETING_DATE)), axis=1)
+    df['Dias_Gen_a_Reunion'] = df.apply(lambda row: calculate_time_diff(row.get('Fecha_Principal'), row.get(COL_MEETING_DATE)), axis=1)
+
+    # Guardar advertencias para mostrar después
+    st.session_state['data_load_warnings'] = processing_warnings
 
     return df
 
 # --- Filtros (Sin cambios) ---
 def sidebar_filters_pipeline(df_options):
     st.sidebar.header("🔍 Filtros del Pipeline")
-    default_filters = {
-        SES_START_DATE_KEY: None, SES_END_DATE_KEY: None,
-        SES_INDUSTRY_KEY: ["– Todos –"], SES_MANAGEMENT_KEY: ["– Todos –"],
-        SES_MEETING_KEY: "– Todos –"
-    }
+    default_filters = {SES_START_DATE_KEY: None, SES_END_DATE_KEY: None, SES_INDUSTRY_KEY: ["– Todos –"], SES_MANAGEMENT_KEY: ["– Todos –"], SES_MEETING_KEY: "– Todos –"}
     for key, val in default_filters.items():
         if key not in st.session_state: st.session_state[key] = val
-
     st.sidebar.subheader("🗓️ Por Fecha de Lead Generado")
     min_date, max_date = None, None
     if "Fecha_Principal" in df_options.columns and not df_options["Fecha_Principal"].dropna().empty:
-        try:
-            min_date = df_options["Fecha_Principal"].min().date()
-            max_date = df_options["Fecha_Principal"].max().date()
-        except: min_date, max_date = None, None
-
+        try: min_date, max_date = df_options["Fecha_Principal"].min().date(), df_options["Fecha_Principal"].max().date()
+        except: pass
     c1, c2 = st.sidebar.columns(2)
     c1.date_input("Desde", key=SES_START_DATE_KEY, min_value=min_date, max_value=max_date, format="DD/MM/YYYY")
     c2.date_input("Hasta", key=SES_END_DATE_KEY, min_value=min_date, max_value=max_date, format="DD/MM/YYYY")
-
     st.sidebar.subheader("👥 Por Atributo de Lead")
     def create_multiselect(col_name, label, key):
         options = ["– Todos –"]
@@ -233,19 +257,14 @@ def sidebar_filters_pipeline(df_options):
         if not valid_state or not options: valid_state = ["– Todos –"]
         st.session_state[key] = valid_state
         st.sidebar.multiselect(label, options, key=key)
-
     create_multiselect(COL_INDUSTRY, "Industria", SES_INDUSTRY_KEY)
     create_multiselect(COL_MANAGEMENT, "Nivel de Management", SES_MANAGEMENT_KEY)
     st.sidebar.selectbox("¿Tiene Reunión?", ["– Todos –", "Si", "No"], key=SES_MEETING_KEY)
-
     def clear_pipeline_filters():
         for key, val in default_filters.items(): st.session_state[key] = val
-        st.toast("Filtros del Pipeline reiniciados ✅", icon="🧹")
+        st.toast("Filtros reiniciados ✅", icon="🧹")
     st.sidebar.button("🧹 Limpiar Filtros", on_click=clear_pipeline_filters, use_container_width=True)
-
-    return (st.session_state[SES_START_DATE_KEY], st.session_state[SES_END_DATE_KEY],
-            st.session_state[SES_INDUSTRY_KEY], st.session_state[SES_MANAGEMENT_KEY],
-            st.session_state[SES_MEETING_KEY])
+    return (st.session_state[SES_START_DATE_KEY], st.session_state[SES_END_DATE_KEY], st.session_state[SES_INDUSTRY_KEY], st.session_state[SES_MANAGEMENT_KEY], st.session_state[SES_MEETING_KEY])
 
 # --- Aplicar Filtros (Sin cambios) ---
 def apply_pipeline_filters(df, start_dt, end_dt, industries, managements, meeting_status):
@@ -255,12 +274,10 @@ def apply_pipeline_filters(df, start_dt, end_dt, industries, managements, meetin
         start_dt_norm = pd.to_datetime(start_dt).normalize() if start_dt else None
         end_dt_norm = pd.to_datetime(end_dt).normalize() if end_dt else None
         mask = pd.Series(True, index=df_f.index)
-        # Asegurarse que solo filtramos fechas válidas
         valid_dates_mask = df_f['Fecha_Principal'].notna()
         if start_dt_norm: mask &= (df_f['Fecha_Principal'] >= start_dt_norm) & valid_dates_mask
         if end_dt_norm: mask &= (df_f['Fecha_Principal'] <= end_dt_norm) & valid_dates_mask
         df_f = df_f[mask]
-
     if industries and "– Todos –" not in industries and COL_INDUSTRY in df_f.columns:
         df_f = df_f[df_f[COL_INDUSTRY].isin(industries)]
     if managements and "– Todos –" not in managements and COL_MANAGEMENT in df_f.columns:
@@ -269,10 +286,10 @@ def apply_pipeline_filters(df, start_dt, end_dt, industries, managements, meetin
         df_f = df_f[df_f[COL_MEETING] == meeting_status]
     return df_f
 
-# --- Componentes de Visualización (Sin cambios) ---
+# --- Componentes de Visualización (Sin cambios, deberían funcionar mejor ahora) ---
 def display_enhanced_funnel(df_filtered):
     st.markdown("###  funnel Embudo de Conversión Detallado")
-    st.caption("Muestra cuántos leads avanzan en cada etapa clave del proceso.")
+    st.caption("Muestra cuántos leads avanzan en cada etapa clave.")
     if df_filtered.empty: st.info("No hay datos filtrados."); return
     total_leads = len(df_filtered)
     total_first_contact = len(df_filtered[df_filtered['FirstContactStatus'] == "Si"])
@@ -280,7 +297,7 @@ def display_enhanced_funnel(df_filtered):
     total_meetings = len(df_filtered[df_filtered[COL_MEETING] == "Si"])
     funnel_stages = ["Total Leads Generados", "Primer Contacto Realizado", "Respuesta Recibida", "Reunión Agendada"]
     funnel_values = [total_leads, total_first_contact, total_responded, total_meetings]
-    fig = go.Figure(go.Funnel(y=funnel_stages, x=funnel_values, textposition="inside", textinfo="value+percent previous+percent initial", opacity=0.7, marker={"color": ["#8A2BE2", "#5A639C", "#7B8FA1", "#9BABB8"], "line": {"width": [4, 2, 2, 1], "color": ["#6A1B9A", "#4A528A", "#6B7F91", "#8B9AAA"]}}, connector={"line": {"color": "grey", "dash": "dot", "width": 2}}))
+    fig = go.Figure(go.Funnel(y=funnel_stages, x=funnel_values, textposition="inside", textinfo="value+percent previous+percent initial", opacity=0.7, marker={"color": ["#636EFA", "#FECB52", "#EF553B", "#00CC96"], "line": {"width": [4, 2, 2, 1], "color": ["#4048A5", "#DDAA3F", "#C9452F", "#00A078"]}}, connector={"line": {"color": "grey", "dash": "dot", "width": 2}}))
     fig.update_layout(title_text="Embudo Detallado: Leads a Reuniones", title_x=0.5, margin=dict(t=50, b=10))
     st.plotly_chart(fig, use_container_width=True)
     st.markdown("#### Tasas de Conversión por Etapa")
@@ -289,10 +306,10 @@ def display_enhanced_funnel(df_filtered):
     rate_response_to_meeting = calculate_rate(total_meetings, total_responded)
     rate_global_lead_to_meeting = calculate_rate(total_meetings, total_leads)
     r1, r2, r3, r4 = st.columns(4)
-    r1.metric("Lead → Contacto", f"{rate_lead_to_contact:.1f}%", help="Porcentaje de leads totales a los que se les registró un primer contacto.")
-    r2.metric("Contacto → Respuesta", f"{rate_contact_to_response:.1f}%", help="De los leads contactados, porcentaje que respondieron.")
-    r3.metric("Respuesta → Reunión", f"{rate_response_to_meeting:.1f}%", help="De los leads que respondieron, porcentaje que agendó reunión.")
-    r4.metric("Lead → Reunión (Global)", f"{rate_global_lead_to_meeting:.1f}%", help="Porcentaje de leads totales que terminaron en una reunión agendada.")
+    r1.metric("Lead → Contacto", f"{rate_lead_to_contact:.1f}%", help="Leads con fecha de primer contacto / Total Leads")
+    r2.metric("Contacto → Respuesta", f"{rate_contact_to_response:.1f}%", help="Leads con respuesta 'Si' / Leads con fecha de primer contacto")
+    r3.metric("Respuesta → Reunión", f"{rate_response_to_meeting:.1f}%", help="Leads con reunión 'Si' / Leads con respuesta 'Si'")
+    r4.metric("Lead → Reunión (Global)", f"{rate_global_lead_to_meeting:.1f}%", help="Leads con reunión 'Si' / Total Leads")
 
 def display_time_lag_analysis(df_filtered):
     st.markdown("---"); st.markdown("### ⏱️ Tiempos Promedio del Ciclo (en días)"); st.caption("Calcula el tiempo promedio entre etapas clave.")
@@ -323,7 +340,7 @@ def display_segmentation_analysis(df_filtered):
         else:
             segment_summary_filtered = segment_summary_filtered.sort_values('Tasa_Conversion_Global (%)', ascending=False)
             fig = px.bar(segment_summary_filtered.head(10), x=group_col, y='Tasa_Conversion_Global (%)', title=f"Top 10 {title_suffix} por Tasa Conversión", text='Tasa_Conversion_Global (%)', color='Tasa_Conversion_Global (%)', color_continuous_scale=px.colors.sequential.YlGnBu)
-            fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside'); fig.update_layout(yaxis_title="Tasa (%)", yaxis_ticksuffix="%", xaxis_title=title_suffix, title_x=0.5, yaxis_range=[0,max(10, segment_summary_filtered['Tasa_Conversion_Global (%)'].max() * 1.1)]) # Ajuste dinámico del eje Y
+            fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside'); fig.update_layout(yaxis_title="Tasa (%)", yaxis_ticksuffix="%", xaxis_title=title_suffix, title_x=0.5, yaxis_range=[0,max(10, segment_summary_filtered['Tasa_Conversion_Global (%)'].max() * 1.1 + 5)]) # Añadir +5 para espacio
             st.plotly_chart(fig, use_container_width=True)
         if show_table:
             with st.expander(f"Ver datos por {title_suffix} (todos)"): st.dataframe(segment_summary.sort_values('Total_Leads', ascending=False).style.format({'Total_Leads': '{:,}', 'Total_Reuniones': '{:,}', 'Tasa_Conversion_Global (%)': '{:.1f}%'}), hide_index=True, use_container_width=True)
@@ -346,7 +363,7 @@ def display_channel_analysis(df_filtered):
     with col_chart2:
         if channel_summary['Total_Reuniones'].sum() > 0:
             fig_rate = px.bar(channel_summary.sort_values('Tasa_Reunion_por_Respuesta (%)', ascending=False), x=COL_CHANNEL, y='Tasa_Reunion_por_Respuesta (%)', title="Tasa Respuesta -> Reunión por Canal", text='Tasa_Reunion_por_Respuesta (%)', color='Tasa_Reunion_por_Respuesta (%)', color_continuous_scale=px.colors.sequential.OrRd)
-            fig_rate.update_traces(texttemplate='%{text:.1f}%', textposition='outside'); fig_rate.update_layout(yaxis_title="Tasa (%)", yaxis_ticksuffix="%", title_x=0.5, yaxis_range=[0,max(10, channel_summary['Tasa_Reunion_por_Respuesta (%)'].max() * 1.1)]); st.plotly_chart(fig_rate, use_container_width=True)
+            fig_rate.update_traces(texttemplate='%{text:.1f}%', textposition='outside'); fig_rate.update_layout(yaxis_title="Tasa (%)", yaxis_ticksuffix="%", title_x=0.5, yaxis_range=[0,max(10, channel_summary['Tasa_Reunion_por_Respuesta (%)'].max() * 1.1 + 5)]); st.plotly_chart(fig_rate, use_container_width=True)
         else: st.caption("No hay reuniones para calcular tasa por canal.")
     with st.expander("Ver datos por Canal"): st.dataframe(channel_summary.style.format({'Total_Respuestas': '{:,}', 'Total_Reuniones': '{:,}', 'Tasa_Reunion_por_Respuesta (%)': '{:.1f}%'}), hide_index=True, use_container_width=True)
 
@@ -362,12 +379,13 @@ def display_enhanced_time_evolution(df_filtered):
     else: st.caption("No hay datos agregados por mes.")
 
 # --- Flujo Principal ---
-df_pipeline_base = load_pipeline_data()
+df_pipeline_base = load_and_process_data()
 
-debug_msgs = st.session_state.get('data_load_debug_messages', [])
-if debug_msgs:
-    with st.expander("⚠️ Avisos durante la carga/procesamiento de datos"):
-        for msg in debug_msgs: st.warning(msg)
+# Mostrar advertencias de procesamiento si existen
+processing_warnings = st.session_state.get('data_load_warnings', [])
+if processing_warnings:
+    with st.expander("⚠️ Avisos durante la carga/procesamiento"):
+        for msg in processing_warnings: st.warning(msg)
 
 if df_pipeline_base.empty:
     st.error("Fallo: El DataFrame está vacío tras la carga.")
