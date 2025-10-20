@@ -1,4 +1,4 @@
-# pages/📈_Pipeline.py
+# pages/📈_KPIs_Pipeline.py
 import streamlit as st
 import pandas as pd
 import gspread
@@ -16,7 +16,8 @@ st.markdown("Métricas de conversión y seguimiento del embudo de prospección."
 # --- Constantes y Claves de Sesión ---
 PIPELINE_SHEET_URL_KEY = "pipeline_october_2025"
 DEFAULT_PIPELINE_URL = "https://docs.google.com/spreadsheets/d/1Qd0ekzNwfHuUEGoqkCYCv6i6TM0X3jmK/edit?gid=971436223#gid=971436223"
-SHEET_GID = "971436223" # Extraído de tu URL
+# --- MODIFICADO: Usaremos el nombre de la pestaña que nos diste ---
+PIPELINE_SHEET_NAME = "Prospects" 
 
 # Columnas Clave del Pipeline
 COL_PRIMARY_DATE = "Lead Generated (Date)" # Usaremos esta como la fecha principal
@@ -36,26 +37,6 @@ SES_MANAGEMENT_KEY = "pipeline_page_management_v1"
 SES_MEETING_KEY = "pipeline_page_meeting_v1"
 
 # --- Funciones de Utilidad ---
-
-def get_worksheet_by_gid(workbook, gid):
-    """
-    Encuentra una hoja de trabajo por su GID en un workbook de gspread.
-    """
-    gid = str(gid)
-    try:
-        worksheets = workbook.worksheets()
-        for worksheet in worksheets:
-            if str(worksheet.id) == gid:
-                return worksheet
-    except Exception as e:
-        st.error(f"Error buscando GID {gid}: {e}")
-    
-    # Fallback si no se encuentra por GID (intenta con la primera)
-    st.warning(f"No se encontró la hoja con GID {gid}. Usando la primera hoja por defecto.")
-    try:
-        return workbook.sheet1
-    except Exception:
-        return None
 
 def parse_date_robustly(date_val):
     """Parsea fechas en varios formatos comunes."""
@@ -122,13 +103,18 @@ def load_pipeline_data():
     
     try:
         workbook = client.open_by_url(sheet_url)
-        # Extraer GID de la URL para asegurar que abrimos la hoja correcta
-        gid_match = re.search(r'gid=(\d+)', sheet_url)
-        gid_to_use = gid_match.group(1) if gid_match else SHEET_GID
         
-        sheet = get_worksheet_by_gid(workbook, gid_to_use)
-        if sheet is None:
-            st.error(f"No se pudo encontrar la hoja con GID {gid_to_use}.")
+        # --- MODIFICACIÓN: Buscar la hoja por el nombre "Prospects" ---
+        try:
+            sheet = workbook.worksheet(PIPELINE_SHEET_NAME)
+        except gspread.exceptions.WorksheetNotFound:
+            st.error(f"Error: No se pudo encontrar la pestaña (hoja) llamada '{PIPELINE_SHEET_NAME}' en tu Google Sheet.")
+            st.info("Por favor, asegúrate de que la pestaña se llame exactamente 'Prospects'.")
+            st.stop()
+        # --- FIN MODIFICACIÓN ---
+
+        if sheet is None: # Doble chequeo
+            st.error(f"No se pudo abrir la pestaña '{PIPELINE_SHEET_NAME}'.")
             st.stop()
             
         raw_data = sheet.get_all_values()
@@ -139,6 +125,15 @@ def load_pipeline_data():
         headers = make_unique_headers(raw_data[0])
         df = pd.DataFrame(raw_data[1:], columns=headers)
         
+    except gspread.exceptions.APIError as e:
+        # Capturar el error 400 específico
+        if "This operation is not supported for this document" in str(e):
+            st.error(f"Error al leer la hoja: [400] This operation is not supported for this document.")
+            st.warning("Esto casi siempre significa que el archivo es un Excel (.xlsx) y no una Hoja de Google nativa.")
+            st.info("Solución: Abre el archivo en Drive, haz clic en 'Archivo' > 'Guardar como Hoja de Google', comparte la *nueva* hoja con el email de servicio y actualiza la URL en 'secrets.toml'.")
+        else:
+            st.error(f"Error de API al leer la hoja de Google Sheets (Pipeline): {e}")
+        st.stop()
     except Exception as e:
         st.error(f"Error al leer la hoja de Google Sheets (Pipeline): {e}")
         st.stop()
@@ -422,5 +417,3 @@ if not df_pipeline_filtered.empty:
 else:
     st.info("No se encontraron datos que coincidan con los filtros seleccionados.")
 
-st.markdown("---")
-st.info("Esta página ha sido generada siguiendo el patrón de KPIs SDR.")
