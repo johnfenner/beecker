@@ -387,6 +387,3 @@ if not df_pipeline_filtered.empty:
         st.dataframe(df_display[cols_exist_final], hide_index=True)
 else:
     st.info("No se encontraron datos que coincidan con los filtros seleccionados.")
-
-st.markdown("---")
-st.info("Esta página ha sido generada siguiendo el patrón de KPIs SDR.")
