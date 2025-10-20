@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
-import gspread # Mantener por si se vuelve a Hoja de Google
+import gspread # Mantenido por si acaso
 import datetime
 import plotly.express as px
 import plotly.graph_objects as go
 from collections import Counter
 import re
+import numpy as np # Necesario para manejar NA en promedios
 
 st.set_page_config(layout="wide", page_title="Pipeline de Prospección Detallado")
 st.title("📈 Pipeline de Prospección Detallado (Oct 2025)")
@@ -13,81 +14,119 @@ st.markdown("Análisis avanzado del embudo, tiempos de conversión y segmentaci�
 
 # --- Constantes ---
 PIPELINE_SHEET_URL_KEY = "pipeline_october_2025"
-DEFAULT_PIPELINE_URL = "https://docs.google.com/spreadsheets/d/..." # URL por defecto si no está en secrets
+DEFAULT_PIPELINE_URL = "https://docs.google.com/spreadsheets/d/..." 
 PIPELINE_SHEET_NAME = "Prospects" 
 
-# Columnas Clave (asegúrate que los nombres coincidan EXACTAMENTE con tu hoja)
+# Nombres EXACTOS de columnas en tu hoja
 COL_LEAD_GEN_DATE = "Lead Generated (Date)"
 COL_FIRST_CONTACT_DATE = "First Contact Date"
 COL_MEETING_DATE = "Meeting Date"
 COL_INDUSTRY = "Industry"
 COL_MANAGEMENT = "Management Level"
 COL_CHANNEL = "Response Channel"
-COL_CONTACTED = "Contacted?" # ¿Se usa? First Contact Date podría ser mejor
+COL_CONTACTED = "Contacted?" # Posiblemente redundante si usamos fecha
 COL_RESPONDED = "Responded?"
 COL_MEETING = "Meeting?"
 
-# Claves de Sesión (mantener las mismas para filtros)
-SES_START_DATE_KEY = "pipeline_page_start_date_v1"
-SES_END_DATE_KEY = "pipeline_page_end_date_v1"
-SES_INDUSTRY_KEY = "pipeline_page_industry_v1"
-SES_MANAGEMENT_KEY = "pipeline_page_management_v1"
-SES_MEETING_KEY = "pipeline_page_meeting_v1"
+# Claves de Sesión
+SES_START_DATE_KEY = "pipeline_page_start_date_v2" # v2 para evitar conflictos
+SES_END_DATE_KEY = "pipeline_page_end_date_v2"
+SES_INDUSTRY_KEY = "pipeline_page_industry_v2"
+SES_MANAGEMENT_KEY = "pipeline_page_management_v2"
+SES_MEETING_KEY = "pipeline_page_meeting_v2"
 
-# --- Funciones de Utilidad (sin cambios, excepto añadir parse_date) ---
+# --- Funciones de Utilidad ---
 def parse_date_robustly(date_val):
-    if pd.isna(date_val) or str(date_val).strip() == "":
-        return pd.NaT
-    # Intentar con formatos comunes primero
-    common_formats = ["%d/%m/%Y", "%m/%d/%Y", "%Y-%m-%d", "%d-%b-%Y", "%b %d, %Y"]
+    if pd.isna(date_val): return pd.NaT
+    if isinstance(date_val, (datetime.datetime, datetime.date)): return pd.to_datetime(date_val)
+    
+    date_str = str(date_val).strip()
+    if not date_str: return pd.NaT
+
+    # Formatos comunes (añadir más si es necesario)
+    common_formats = [
+        "%d/%m/%Y", "%m/%d/%Y", "%Y-%m-%d", "%d-%m-%Y", "%m-%d-%Y",
+        "%d/%m/%Y %H:%M", "%m/%d/%Y %H:%M", "%Y-%m-%d %H:%M",
+        "%d/%m/%Y %H:%M:%S", "%m/%d/%Y %H:%M:%S", "%Y-%m-%d %H:%M:%S",
+        "%d-%b-%Y", "%b %d, %Y" # Formatos con mes abreviado
+    ]
     for fmt in common_formats:
-        try:
-            return pd.to_datetime(date_val, format=fmt)
-        except (ValueError, TypeError):
-            pass
-    # Intentar conversión genérica si los formatos comunes fallan
+        try: return pd.to_datetime(date_str, format=fmt)
+        except (ValueError, TypeError): continue
+    
+    # Intento final genérico y manejo de números de serie de Excel
     try:
-        return pd.to_datetime(date_val, errors='coerce')
+        # Primero intentar conversión directa
+        parsed_date = pd.to_datetime(date_str, errors='coerce')
+        if pd.notna(parsed_date): return parsed_date
+        
+        # Si falla y parece número, intentar como número de serie de Excel
+        if re.fullmatch(r'\d+(\.\d+)?', date_str):
+             # Origen de fecha de Excel (puede ser 1900 o 1904)
+             return pd.to_datetime('1899-12-30') + pd.to_timedelta(float(date_str), 'D')
+        return pd.NaT # Si todo falla
     except Exception:
         return pd.NaT
 
 def clean_yes_no(val):
-    cleaned = str(val).strip().lower()
-    if cleaned in ['yes', 'sí', 'si', '1', 'true', 'agendada', 'ok']: # Ampliar positivos
+    # Primero verificar el valor original (ignorando espacios) antes de convertir a minúsculas
+    # para capturar casos como 'Si' o 'Yes'
+    original_cleaned = str(val).strip()
+    
+    # Comprobaciones explícitas de valores positivos
+    if original_cleaned.lower() in ['yes', 'sí', 'si', '1', 'true', 'agendada', 'ok', 'realizada', 'hecho']:
         return "Si"
-    # Considerar vacíos y otros como 'No'
-    if cleaned in ['no', '0', 'false', '', 'nan', 'na', '<na>', 'cancelada']:
+        
+    # Comprobaciones explícitas de valores negativos (incluir vacío y 'nan')
+    if original_cleaned.lower() in ['no', '0', 'false', '', 'nan', 'na', '<na>', 'cancelada', 'pendiente']:
         return "No"
-    return "No" # Default a No
+        
+    # Si no coincide con nada conocido, asumir No por seguridad
+    return "No"
 
 def calculate_rate(numerator, denominator, round_to=1):
-    if denominator == 0 or pd.isna(denominator): return 0.0
+    numerator = pd.to_numeric(numerator, errors='coerce')
+    denominator = pd.to_numeric(denominator, errors='coerce')
+    if pd.isna(denominator) or denominator == 0 or pd.isna(numerator):
+        return 0.0
     rate = (numerator / denominator) * 100
     return round(rate, round_to)
 
 def calculate_time_diff(date1, date2):
-    # Calcula diferencia en días solo si ambas fechas son válidas
-    if pd.notna(date1) and pd.notna(date2) and date2 >= date1:
-        return (date2 - date1).days
-    return pd.NA # Devolver NA si no se puede calcular
+    # Convertir a datetime por si acaso vienen como objetos
+    d1 = pd.to_datetime(date1, errors='coerce')
+    d2 = pd.to_datetime(date2, errors='coerce')
+    if pd.notna(d1) and pd.notna(d2) and d2 >= d1:
+        return (d2 - d1).days
+    return np.nan # Usar np.nan para cálculos numéricos posteriores
 
-# --- Carga y Procesamiento de Datos (MODIFICADO para más columnas y limpieza) ---
+# --- Carga y Procesamiento de Datos ---
 @st.cache_data(ttl=300)
 def load_pipeline_data():
     sheet_url = st.secrets.get(PIPELINE_SHEET_URL_KEY, DEFAULT_PIPELINE_URL)
+    df = pd.DataFrame() # Inicializar df vacío
     
+    # Intentar leer como Excel primero (parece ser el formato actual)
     try:
-        # Intentar leer como Hoja de Google primero (si se convirtió)
+        file_id_match = re.search(r'/d/([a-zA-Z0-9_-]+)', sheet_url)
+        if not file_id_match: raise ValueError("URL no parece ser de Google Drive.")
+        file_id = file_id_match.group(1)
+        download_url = f"https://drive.google.com/u/0/uc?id={file_id}&export=download&format=xlsx"
+        
+        df = pd.read_excel(download_url, sheet_name=PIPELINE_SHEET_NAME, engine="openpyxl")
+        st.success(f"✔️ Datos cargados desde archivo Excel '{PIPELINE_SHEET_NAME}'.")
+
+    except Exception as e_excel:
+        st.warning(f"⚠️ Fallo al leer como Excel ({e_excel}). Intentando leer como Google Sheet...")
+        # Si falla como Excel, intentar como Hoja de Google
         try:
             creds = st.secrets["gcp_service_account"]
             client = gspread.service_account_from_dict(creds)
             workbook = client.open_by_url(sheet_url)
             sheet = workbook.worksheet(PIPELINE_SHEET_NAME)
             raw_data = sheet.get_all_values()
-            if not raw_data or len(raw_data) <= 1:
-                raise ValueError("Hoja vacía o sin encabezados.")
+            if not raw_data or len(raw_data) <= 1: raise ValueError("Hoja vacía o sin encabezados.")
             
-            # Limpiar encabezados duplicados (copiado de tu código anterior)
             counts = Counter()
             headers = []
             for h in raw_data[0]:
@@ -98,83 +137,72 @@ def load_pipeline_data():
                 else: headers.append(f"{h_stripped}_{counts[h_stripped]-1}")
                 
             df = pd.DataFrame(raw_data[1:], columns=headers)
-            st.success(f"Datos cargados desde Google Sheet '{PIPELINE_SHEET_NAME}'.")
-
+            st.success(f"✔️ Datos cargados desde Google Sheet '{PIPELINE_SHEET_NAME}'.")
+        
         except Exception as e_gspread:
-            st.warning(f"Fallo al leer como Google Sheet ({e_gspread}). Intentando leer como Excel...")
-            # Si falla como Hoja de Google, intentar como Excel
-            file_id_match = re.search(r'/d/([a-zA-Z0-9_-]+)', sheet_url)
-            if not file_id_match: raise ValueError("URL no parece ser de Google Drive.")
-            file_id = file_id_match.group(1)
-            download_url = f"https://drive.google.com/u/0/uc?id={file_id}&export=download&format=xlsx"
-            
-            df = pd.read_excel(download_url, sheet_name=PIPELINE_SHEET_NAME, engine="openpyxl")
-            st.success(f"Datos cargados desde archivo Excel '{PIPELINE_SHEET_NAME}'.")
-
-    except Exception as e:
-        st.error(f"Error crítico al cargar datos desde '{sheet_url}': {e}")
-        st.info("Verifica la URL, el nombre de la pestaña ('Prospects'), los permisos ('Cualquier persona con el enlace puede ver' si es Excel) y las credenciales si es Hoja de Google.")
-        st.stop()
+            st.error(f"❌ Error crítico al cargar datos: No se pudo leer ni como Excel ni como Google Sheet.")
+            st.error(f"Detalle Excel: {e_excel}")
+            st.error(f"Detalle GSheet: {e_gspread}")
+            st.info("Verifica la URL, el nombre de la pestaña ('Prospects'), los permisos y las credenciales.")
+            st.stop()
 
     # --- Procesamiento Post-Carga ---
-    
-    # 1. Parsear TODAS las fechas relevantes
+    essential_cols = [COL_LEAD_GEN_DATE, COL_FIRST_CONTACT_DATE, COL_MEETING_DATE, COL_RESPONDED, COL_MEETING]
+    missing_essentials = [col for col in essential_cols if col not in df.columns]
+    if missing_essentials:
+        st.error(f"Faltan columnas esenciales: {', '.join(missing_essentials)}. Verifica los nombres exactos en la hoja.")
+        # Decidir si parar o continuar con advertencias
+        # st.stop() 
+        for col in missing_essentials: df[col] = pd.NA # Añadir como NA para evitar errores
+
     date_cols_to_parse = [COL_LEAD_GEN_DATE, COL_FIRST_CONTACT_DATE, COL_MEETING_DATE]
     for col in date_cols_to_parse:
         if col in df.columns:
             df[col] = df[col].apply(parse_date_robustly)
         else:
-            st.error(f"Columna de fecha esencial '{col}' NO encontrada. Verifica el nombre exacto.")
-            # Podrías decidir parar st.stop() o continuar con datos parciales
-            df[col] = pd.NaT # Crear columna vacía para evitar errores posteriores
+             df[col] = pd.NaT 
 
-    # Usar COL_LEAD_GEN_DATE como la fecha principal para filtros y tiempo
     df.rename(columns={COL_LEAD_GEN_DATE: 'Fecha_Principal'}, inplace=True)
-    df.dropna(subset=['Fecha_Principal'], inplace=True) # Leads sin fecha de generación no son útiles aquí
+    initial_rows = len(df)
+    df.dropna(subset=['Fecha_Principal'], inplace=True)
+    if len(df) < initial_rows:
+        st.warning(f"Se eliminaron {initial_rows - len(df)} filas sin fecha válida en '{COL_LEAD_GEN_DATE}'.")
 
-    # 2. Limpiar columnas de estado (Sí/No)
-    status_cols = [COL_CONTACTED, COL_RESPONDED, COL_MEETING] # Podrías quitar COL_CONTACTED si First Contact Date es más fiable
+    status_cols = [COL_CONTACTED, COL_RESPONDED, COL_MEETING] 
     for col in status_cols:
         if col in df.columns:
             df[col] = df[col].apply(clean_yes_no)
         else:
-            st.warning(f"Columna de estado '{col}' no encontrada. Se asumirá 'No'.")
             df[col] = "No"
             
-    # DERIVAR estado de 'Primer Contacto' si la fecha existe
     if COL_FIRST_CONTACT_DATE in df.columns:
         df['FirstContactStatus'] = df[COL_FIRST_CONTACT_DATE].apply(lambda x: 'Si' if pd.notna(x) else 'No')
     else:
-        df['FirstContactStatus'] = 'No' # Si no hay columna de fecha, nadie fue contactado
+        df['FirstContactStatus'] = 'No' 
 
-    # 3. Limpiar columnas categóricas
     cat_cols = [COL_INDUSTRY, COL_MANAGEMENT, COL_CHANNEL]
     for col in cat_cols:
         if col in df.columns:
-            df[col] = df[col].fillna('N/D')
-            df[col] = df[col].astype(str).str.strip().replace('', 'N/D').str.title() # Poner en Title Case
-            # Corregir casos comunes si es necesario, ej: "N/D" -> "No Definido"
+            df[col] = df[col].fillna('No Definido')
+            df[col] = df[col].astype(str).str.strip().replace('', 'No Definido').str.title()
             df[col] = df[col].replace({'N/D': 'No Definido'})
         else:
             df[col] = "No Definido"
 
-    # 4. Crear columnas de tiempo para agrupar
     if not df.empty:
-        df['Año'] = df['Fecha_Principal'].dt.year
+        df['Año'] = df['Fecha_Principal'].dt.year.astype('Int64', errors='ignore')
         df['NumSemana'] = df['Fecha_Principal'].dt.isocalendar().week.astype('Int64', errors='ignore')
         df['AñoMes'] = df['Fecha_Principal'].dt.strftime('%Y-%m')
-    else: # Crear columnas vacías si el df quedó vacío
+    else: 
         for col in ['Año', 'NumSemana', 'AñoMes']: df[col] = pd.NA
 
-    # 5. Calcular diferencias de tiempo (¡NUEVO!)
-    df['Dias_Gen_a_Contacto'] = df.apply(lambda row: calculate_time_diff(row['Fecha_Principal'], row[COL_FIRST_CONTACT_DATE]), axis=1)
-    # Para calcular Contacto a Respuesta, necesitaríamos la fecha de respuesta. Usaremos Contacto a Reunión por ahora.
-    df['Dias_Contacto_a_Reunion'] = df.apply(lambda row: calculate_time_diff(row[COL_FIRST_CONTACT_DATE], row[COL_MEETING_DATE]), axis=1)
-    df['Dias_Gen_a_Reunion'] = df.apply(lambda row: calculate_time_diff(row['Fecha_Principal'], row[COL_MEETING_DATE]), axis=1)
+    df['Dias_Gen_a_Contacto'] = df.apply(lambda row: calculate_time_diff(row['Fecha_Principal'], row.get(COL_FIRST_CONTACT_DATE)), axis=1)
+    df['Dias_Contacto_a_Reunion'] = df.apply(lambda row: calculate_time_diff(row.get(COL_FIRST_CONTACT_DATE), row.get(COL_MEETING_DATE)), axis=1)
+    df['Dias_Gen_a_Reunion'] = df.apply(lambda row: calculate_time_diff(row['Fecha_Principal'], row.get(COL_MEETING_DATE)), axis=1)
             
     return df
 
-# --- Filtros de Barra Lateral (Sin cambios, ya son robustos) ---
+# --- Filtros de Barra Lateral (Sin cambios) ---
 def sidebar_filters_pipeline(df_options):
     st.sidebar.header("🔍 Filtros del Pipeline")
     
@@ -190,11 +218,10 @@ def sidebar_filters_pipeline(df_options):
     st.sidebar.subheader("🗓️ Por Fecha de Lead Generado")
     min_date, max_date = None, None
     if "Fecha_Principal" in df_options.columns and not df_options["Fecha_Principal"].dropna().empty:
-        try: # Añadir try-except por si hay fechas inválidas residuales
+        try: 
             min_date = df_options["Fecha_Principal"].min().date()
             max_date = df_options["Fecha_Principal"].max().date()
-        except:
-            min_date, max_date = None, None # Resetear si hay error
+        except: min_date, max_date = None, None 
     
     c1, c2 = st.sidebar.columns(2)
     c1.date_input("Desde", key=SES_START_DATE_KEY, min_value=min_date, max_value=max_date, format="DD/MM/YYYY")
@@ -205,13 +232,15 @@ def sidebar_filters_pipeline(df_options):
     def create_multiselect(col_name, label, key):
         options = ["– Todos –"]
         if col_name in df_options.columns and not df_options[col_name].dropna().empty:
-            # Usar .astype(str) para manejar posibles tipos mixtos antes de unique()
             unique_vals = sorted(df_options[col_name].astype(str).unique())
-            # Asegurarse que 'No Definido' (nuevo valor limpio) esté al final si existe
             options.extend([val for val in unique_vals if val != "No Definido"])
-            if "No Definido" in unique_vals:
-                options.append("No Definido")
-        st.sidebar.multiselect(label, options, key=key)
+            if "No Definido" in unique_vals: options.append("No Definido")
+        # Asegurar que el estado actual sea válido antes de renderizar
+        current_state = st.session_state.get(key, ["– Todos –"])
+        valid_state = [s for s in current_state if s in options]
+        if not valid_state: valid_state = ["– Todos –"]
+        st.session_state[key] = valid_state # Actualizar estado si es necesario
+        st.sidebar.multiselect(label, options, key=key) # Renderizar con estado validado
 
     create_multiselect(COL_INDUSTRY, "Industria", SES_INDUSTRY_KEY)
     create_multiselect(COL_MANAGEMENT, "Nivel de Management", SES_MANAGEMENT_KEY)
@@ -219,8 +248,7 @@ def sidebar_filters_pipeline(df_options):
     st.sidebar.selectbox("¿Tiene Reunión?", ["– Todos –", "Si", "No"], key=SES_MEETING_KEY)
 
     def clear_pipeline_filters():
-        for key, val in default_filters.items():
-            st.session_state[key] = val
+        for key, val in default_filters.items(): st.session_state[key] = val
         st.toast("Filtros del Pipeline reiniciados ✅", icon="🧹")
         
     st.sidebar.button("🧹 Limpiar Filtros", on_click=clear_pipeline_filters, use_container_width=True)
@@ -231,71 +259,61 @@ def sidebar_filters_pipeline(df_options):
         st.session_state[SES_MEETING_KEY]
     )
 
-# --- Aplicación de Filtros (Sin cambios, ya funciona bien) ---
+# --- Aplicación de Filtros (Sin cambios) ---
 def apply_pipeline_filters(df, start_dt, end_dt, industries, managements, meeting_status):
     df_f = df.copy()
-    if df_f.empty: return df_f # Evitar errores si el df base ya estaba vacío
+    if df_f.empty: return df_f
 
-    # Filtro de Fecha
     if "Fecha_Principal" in df_f.columns and pd.api.types.is_datetime64_any_dtype(df_f['Fecha_Principal']):
-        start_dt_date = pd.to_datetime(start_dt).normalize() if start_dt else None
-        end_dt_date = pd.to_datetime(end_dt).normalize() if end_dt else None
+        start_dt_norm = pd.to_datetime(start_dt).normalize() if start_dt else None
+        end_dt_norm = pd.to_datetime(end_dt).normalize() if end_dt else None
         
-        # Filtrar solo si las fechas son válidas
-        if start_dt_date and end_dt_date:
-            df_f = df_f[df_f['Fecha_Principal'].between(start_dt_date, end_dt_date, inclusive='both')]
-        elif start_dt_date:
-            df_f = df_f[df_f['Fecha_Principal'] >= start_dt_date]
-        elif end_dt_date:
-             df_f = df_f[df_f['Fecha_Principal'] <= end_dt_date]
+        if start_dt_norm and end_dt_norm:
+            df_f = df_f[df_f['Fecha_Principal'].between(start_dt_norm, end_dt_norm, inclusive='both')]
+        elif start_dt_norm:
+            df_f = df_f[df_f['Fecha_Principal'] >= start_dt_norm]
+        elif end_dt_norm:
+             df_f = df_f[df_f['Fecha_Principal'] <= end_dt_norm]
     
-    # Filtros Categóricos
-    if industries and "– Todos –" not in industries:
-        # Asegurarse que la columna existe antes de filtrar
-        if COL_INDUSTRY in df_f.columns:
-            df_f = df_f[df_f[COL_INDUSTRY].isin(industries)]
+    if industries and "– Todos –" not in industries and COL_INDUSTRY in df_f.columns:
+        df_f = df_f[df_f[COL_INDUSTRY].isin(industries)]
         
-    if managements and "– Todos –" not in managements:
-        if COL_MANAGEMENT in df_f.columns:
-            df_f = df_f[df_f[COL_MANAGEMENT].isin(managements)]
+    if managements and "– Todos –" not in managements and COL_MANAGEMENT in df_f.columns:
+        df_f = df_f[df_f[COL_MANAGEMENT].isin(managements)]
 
-    # Filtro de Estado
-    if meeting_status != "– Todos –":
-        if COL_MEETING in df_f.columns:
-            df_f = df_f[df_f[COL_MEETING] == meeting_status]
+    if meeting_status != "– Todos –" and COL_MEETING in df_f.columns:
+        df_f = df_f[df_f[COL_MEETING] == meeting_status]
             
     return df_f
 
-# --- Componentes de Visualización (¡TODOS NUEVOS O MEJORADOS!) ---
+# --- Componentes de Visualización (Revisados y con ayudas) ---
 
 def display_enhanced_funnel(df_filtered):
     st.markdown("###  funnel Embudo de Conversión Detallado")
+    st.caption("Muestra cuántos leads avanzan en cada etapa clave del proceso.")
 
     total_leads = len(df_filtered)
-    # Usar el estado derivado de la fecha de primer contacto
     total_first_contact = len(df_filtered[df_filtered['FirstContactStatus'] == "Si"])
     total_responded = len(df_filtered[df_filtered[COL_RESPONDED] == "Si"])
     total_meetings = len(df_filtered[df_filtered[COL_MEETING] == "Si"])
     
-    # Crear datos para el gráfico Plotly
-    funnel_stages = ["Total Leads", "Primer Contacto", "Respondieron", "Reuniones"]
+    funnel_stages = ["Total Leads Generados", "Primer Contacto Realizado", "Respuesta Recibida", "Reunión Agendada"]
     funnel_values = [total_leads, total_first_contact, total_responded, total_meetings]
 
     fig = go.Figure(go.Funnel(
         y=funnel_stages,
         x=funnel_values,
         textposition="inside",
-        textinfo="value+percent previous+percent initial", # Mostrar más info
-        opacity=0.65,
-        marker={"color": ["#8A2BE2", "#5A639C", "#7B8FA1", "#9BABB8"], # Colores violeta/azulados
+        textinfo="value+percent previous+percent initial",
+        opacity=0.7,
+        marker={"color": ["#8A2BE2", "#5A639C", "#7B8FA1", "#9BABB8"],
                "line": {"width": [4, 2, 2, 1], "color": ["#6A1B9A", "#4A528A", "#6B7F91", "#8B9AAA"]}},
-        connector={"line": {"color": "royalblue", "dash": "dot", "width": 3}}
+        connector={"line": {"color": "grey", "dash": "dot", "width": 2}}
         ))
 
-    fig.update_layout(title="Embudo Detallado: Leads a Reuniones")
+    fig.update_layout(title_text="Embudo Detallado: Leads a Reuniones", title_x=0.5)
     st.plotly_chart(fig, use_container_width=True)
 
-    # Mostrar Tasas de Conversión entre etapas
     st.markdown("#### Tasas de Conversión por Etapa")
     rate_lead_to_contact = calculate_rate(total_first_contact, total_leads)
     rate_contact_to_response = calculate_rate(total_responded, total_first_contact)
@@ -303,117 +321,112 @@ def display_enhanced_funnel(df_filtered):
     rate_global_lead_to_meeting = calculate_rate(total_meetings, total_leads)
 
     r1, r2, r3, r4 = st.columns(4)
-    r1.metric("Lead -> Contacto", f"{rate_lead_to_contact:.1f}%", help="Primer Contacto / Total Leads")
-    r2.metric("Contacto -> Respuesta", f"{rate_contact_to_response:.1f}%", help="Respondieron / Primer Contacto")
-    r3.metric("Respuesta -> Reunión", f"{rate_response_to_meeting:.1f}%", help="Reuniones / Respondieron")
-    r4.metric("Lead -> Reunión (Global)", f"{rate_global_lead_to_meeting:.1f}%", help="Reuniones / Total Leads")
+    r1.metric("Lead → Contacto", f"{rate_lead_to_contact:.1f}%", help="Porcentaje de leads totales a los que se les registró un primer contacto.")
+    r2.metric("Contacto → Respuesta", f"{rate_contact_to_response:.1f}%", help="De los leads contactados, porcentaje que respondieron.")
+    r3.metric("Respuesta → Reunión", f"{rate_response_to_meeting:.1f}%", help="De los leads que respondieron, porcentaje que agendó reunión.")
+    r4.metric("Lead → Reunión (Global)", f"{rate_global_lead_to_meeting:.1f}%", help="Porcentaje de leads totales que terminaron en una reunión agendada.")
 
 def display_time_lag_analysis(df_filtered):
     st.markdown("---")
-    st.markdown("### ⏱️ Tiempos Promedio del Ciclo")
+    st.markdown("### ⏱️ Tiempos Promedio del Ciclo (en días)")
+    st.caption("Calcula el tiempo promedio entre etapas clave para los leads que completaron esas etapas.")
 
     if df_filtered.empty:
-        st.info("No hay datos suficientes para calcular los tiempos del ciclo.")
+        st.info("No hay datos suficientes.")
         return
 
-    # Calcular promedios ignorando NA
-    avg_gen_to_contact = df_filtered['Dias_Gen_a_Contacto'].mean()
-    avg_contact_to_meeting = df_filtered['Dias_Contacto_a_Reunion'].mean()
-    avg_gen_to_meeting = df_filtered['Dias_Gen_a_Reunion'].mean()
+    # Usar numpy.nanmean para ignorar NAs en el promedio
+    avg_gen_to_contact = np.nanmean(df_filtered['Dias_Gen_a_Contacto'])
+    avg_contact_to_meeting = np.nanmean(df_filtered['Dias_Contacto_a_Reunion'])
+    avg_gen_to_meeting = np.nanmean(df_filtered['Dias_Gen_a_Reunion'])
 
-    # Contar cuántos tienen reunión para dar contexto
-    count_meetings_for_time = len(df_filtered[df_filtered[COL_MEETING] == "Si"].dropna(subset=['Dias_Gen_a_Reunion']))
+    # Contar cuántos tienen datos válidos para cada cálculo
+    count_gen_contact = df_filtered['Dias_Gen_a_Contacto'].count() # count() ignora NA
+    count_contact_meeting = df_filtered['Dias_Contacto_a_Reunion'].count()
+    count_gen_meeting = df_filtered['Dias_Gen_a_Reunion'].count()
 
     t1, t2, t3 = st.columns(3)
-    t1.metric("Lead Gen → 1er Contacto (días)",
-              f"{avg_gen_to_contact:.1f}" if pd.notna(avg_gen_to_contact) else "N/A",
-              help="Promedio de días desde la generación del lead hasta el primer contacto registrado.")
-    t2.metric("1er Contacto → Reunión (días)",
-              f"{avg_contact_to_meeting:.1f}" if pd.notna(avg_contact_to_meeting) else "N/A",
-              help="Promedio de días desde el primer contacto hasta la reunión (para los que tuvieron reunión).")
-    t3.metric("Lead Gen → Reunión (Total, días)",
-              f"{avg_gen_to_meeting:.1f}" if pd.notna(avg_gen_to_meeting) else "N/A",
-              help=f"Promedio de días desde la generación hasta la reunión (calculado sobre {count_meetings_for_time:,} reuniones con fechas válidas).")
-
-    # Opcional: Mostrar distribución con histograma o boxplot si hay suficientes datos
-    # fig_time_dist = px.histogram(df_filtered.dropna(subset=['Dias_Gen_a_Reunion']), x='Dias_Gen_a_Reunion', title="Distribución: Días de Lead a Reunión")
-    # st.plotly_chart(fig_time_dist, use_container_width=True)
+    t1.metric("Lead Gen → 1er Contacto",
+              f"{avg_gen_to_contact:.1f}" if not np.isnan(avg_gen_to_contact) else "N/A",
+              help=f"Promedio calculado sobre {count_gen_contact:,} leads con fecha de contacto.")
+    t2.metric("1er Contacto → Reunión",
+              f"{avg_contact_to_meeting:.1f}" if not np.isnan(avg_contact_to_meeting) else "N/A",
+              help=f"Promedio calculado sobre {count_contact_meeting:,} reuniones con fecha de contacto y reunión.")
+    t3.metric("Lead Gen → Reunión (Total)",
+              f"{avg_gen_to_meeting:.1f}" if not np.isnan(avg_gen_to_meeting) else "N/A",
+              help=f"Promedio calculado sobre {count_gen_meeting:,} reuniones con fecha de lead y reunión.")
 
 def display_segmentation_analysis(df_filtered):
     st.markdown("---")
     st.markdown("### 📊 Desempeño por Segmento (Industria y Nivel)")
+    st.caption("Compara la Tasa de Conversión Global (Leads Generados a Reuniones Agendadas) entre los principales segmentos.")
 
     if df_filtered.empty:
         st.info("No hay datos para analizar por segmento.")
         return
 
-    # Preparar función para reutilizar en Industria y Nivel
     def create_segment_chart(group_col, title_suffix):
-        if group_col not in df_filtered.columns:
-            st.caption(f"Columna '{group_col}' no encontrada para análisis.")
+        if group_col not in df_filtered.columns or df_filtered[group_col].nunique() < 2:
+            st.caption(f"No hay suficientes datos o variaciones en '{group_col}' para análisis.")
             return
 
-        # Calcular totales y reuniones por segmento
         segment_summary = df_filtered.groupby(group_col).agg(
             Total_Leads=(group_col, 'count'),
             Total_Reuniones=(COL_MEETING, lambda x: (x == 'Si').sum())
         ).reset_index()
 
-        # Calcular tasa de conversión global (Lead a Reunión) por segmento
         segment_summary['Tasa_Conversion_Global (%)'] = segment_summary.apply(
             lambda row: calculate_rate(row['Total_Reuniones'], row['Total_Leads']), axis=1
         )
-
-        # Filtrar segmentos con pocos leads para que las tasas sean más significativas
-        segment_summary_filtered = segment_summary[segment_summary['Total_Leads'] >= 3].copy() # Umbral de 3 leads
+        
+        # Filtrar para mostrar solo grupos con >= N leads (ej. 3)
+        min_leads_threshold = 3
+        segment_summary_filtered = segment_summary[segment_summary['Total_Leads'] >= min_leads_threshold].copy()
         
         if segment_summary_filtered.empty:
-             st.caption(f"No hay suficientes datos por '{group_col}' (mínimo 3 leads por grupo) para mostrar gráfico de tasas.")
+             st.caption(f"No hay grupos en '{group_col}' con al menos {min_leads_threshold} leads para mostrar gráfico.")
              return
 
         segment_summary_filtered = segment_summary_filtered.sort_values('Tasa_Conversion_Global (%)', ascending=False)
 
         fig = px.bar(
-            segment_summary_filtered.head(10), # Top 10 por tasa
+            segment_summary_filtered.head(10), 
             x=group_col,
             y='Tasa_Conversion_Global (%)',
             title=f"Top 10 {title_suffix} por Tasa de Conversión (Lead a Reunión)",
             text='Tasa_Conversion_Global (%)',
-            color='Tasa_Conversion_Global (%)', # Colorear por la tasa
-            color_continuous_scale=px.colors.sequential.YlGnBu # Escala de color
+            color='Tasa_Conversion_Global (%)', 
+            color_continuous_scale=px.colors.sequential.Tealgrn # Nueva escala de color
         )
         fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
-        fig.update_layout(yaxis_title="Tasa de Conversión (%)", yaxis_ticksuffix="%")
+        fig.update_layout(yaxis_title="Tasa Conversión Global (%)", yaxis_ticksuffix="%", xaxis_title=title_suffix, title_x=0.5)
         st.plotly_chart(fig, use_container_width=True)
 
-        # Mostrar tabla con datos
-        with st.expander(f"Ver datos detallados por {title_suffix}"):
+        with st.expander(f"Ver datos detallados por {title_suffix} (todos los grupos)"):
             st.dataframe(
                 segment_summary.sort_values('Total_Leads', ascending=False).style.format({
                     'Total_Leads': '{:,}',
                     'Total_Reuniones': '{:,}',
                     'Tasa_Conversion_Global (%)': '{:.1f}%'
                 }),
-                hide_index=True
+                hide_index=True, use_container_width=True
             )
 
-    # Crear gráficos para Industria y Nivel de Management
     col1, col2 = st.columns(2)
     with col1:
-        create_segment_chart(COL_INDUSTRY, "Industrias")
+        create_segment_chart(COL_INDUSTRY, "Industria")
     with col2:
-        create_segment_chart(COL_MANAGEMENT, "Niveles de Management")
-
+        create_segment_chart(COL_MANAGEMENT, "Nivel de Management")
 
 def display_channel_analysis(df_filtered):
     st.markdown("---")
     st.markdown(f"### 📣 Efectividad por Canal de Respuesta ({COL_CHANNEL})")
+    st.caption("Analiza qué canales generan más respuestas y cuál convierte mejor esas respuestas en reuniones.")
 
-    if df_filtered.empty or COL_CHANNEL not in df_filtered.columns:
+    if df_filtered.empty or COL_CHANNEL not in df_filtered.columns or df_filtered[COL_CHANNEL].nunique() < 1:
         st.info(f"No hay datos suficientes o falta la columna '{COL_CHANNEL}'.")
         return
 
-    # Filtrar solo leads que respondieron para analizar el canal
     df_responded = df_filtered[df_filtered[COL_RESPONDED] == "Si"].copy()
 
     if df_responded.empty:
@@ -431,133 +444,125 @@ def display_channel_analysis(df_filtered):
 
     channel_summary = channel_summary.sort_values('Total_Respuestas', ascending=False)
 
-    # Gráfico de Volumen de Respuestas y Reuniones por Canal
-    fig_volume = px.bar(
-        channel_summary,
-        x=COL_CHANNEL,
-        y=['Total_Respuestas', 'Total_Reuniones'],
-        title="Volumen de Respuestas y Reuniones por Canal",
-        labels={"value": "Cantidad", "variable": "Métrica"},
-        barmode='group', # Barras agrupadas
-        text_auto=True
-    )
-    st.plotly_chart(fig_volume, use_container_width=True)
+    col_chart1, col_chart2 = st.columns(2)
+    with col_chart1:
+        fig_volume = px.bar(
+            channel_summary, x=COL_CHANNEL, y='Total_Respuestas',
+            title="Volumen de Respuestas por Canal", text_auto=True
+        )
+        fig_volume.update_layout(yaxis_title="Número de Respuestas", title_x=0.5)
+        st.plotly_chart(fig_volume, use_container_width=True)
 
-    # Gráfico de Tasa de Reunión por Canal (para los que respondieron)
-    fig_rate = px.bar(
-        channel_summary.sort_values('Tasa_Reunion_por_Respuesta (%)', ascending=False),
-        x=COL_CHANNEL,
-        y='Tasa_Reunion_por_Respuesta (%)',
-        title="Tasa de Reunión por Canal (Reuniones / Respuestas)",
-        text='Tasa_Reunion_por_Respuesta (%)',
-        color='Tasa_Reunion_por_Respuesta (%)',
-        color_continuous_scale=px.colors.sequential.Purples
-    )
-    fig_rate.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
-    fig_rate.update_layout(yaxis_title="Tasa de Reunión (%)", yaxis_ticksuffix="%")
-    st.plotly_chart(fig_rate, use_container_width=True)
+    with col_chart2:
+        fig_rate = px.bar(
+            channel_summary.sort_values('Tasa_Reunion_por_Respuesta (%)', ascending=False),
+            x=COL_CHANNEL, y='Tasa_Reunion_por_Respuesta (%)',
+            title="Tasa de Conversión Respuesta -> Reunión por Canal",
+            text='Tasa_Reunion_por_Respuesta (%)',
+            color='Tasa_Reunion_por_Respuesta (%)',
+            color_continuous_scale=px.colors.sequential.OrRd
+        )
+        fig_rate.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+        fig_rate.update_layout(yaxis_title="Tasa Reunión/Respuesta (%)", yaxis_ticksuffix="%", title_x=0.5)
+        st.plotly_chart(fig_rate, use_container_width=True)
 
-    with st.expander("Ver datos detallados por Canal"):
+    with st.expander("Ver datos detallados por Canal de Respuesta"):
         st.dataframe(
             channel_summary.style.format({
                 'Total_Respuestas': '{:,}',
                 'Total_Reuniones': '{:,}',
                 'Tasa_Reunion_por_Respuesta (%)': '{:.1f}%'
             }),
-            hide_index=True
+            hide_index=True, use_container_width=True
         )
 
 def display_enhanced_time_evolution(df_filtered):
     st.markdown("---")
-    st.markdown("### 📈 Evolución Temporal Detallada (por Mes)")
+    st.markdown("### 📈 Evolución Temporal Detallada del Embudo (por Mes)")
+    st.caption("Compara la generación de leads con el avance en las etapas clave mes a mes.")
     
     if df_filtered.empty or 'AñoMes' not in df_filtered.columns:
         st.info("No hay datos suficientes para mostrar la evolución temporal.")
         return
 
-    # Agrupar por mes y contar leads, contactos, respuestas y reuniones
     time_summary = df_filtered.groupby('AñoMes').agg(
-        Total_Leads=('AñoMes', 'count'),
+        Leads_Generados=('AñoMes', 'count'),
         Primer_Contacto=( 'FirstContactStatus', lambda x: (x == 'Si').sum()),
-        Respondieron=(COL_RESPONDED, lambda x: (x == 'Si').sum()),
+        Respuestas=(COL_RESPONDED, lambda x: (x == 'Si').sum()),
         Reuniones=(COL_MEETING, lambda x: (x == 'Si').sum())
     ).reset_index().sort_values('AñoMes')
     
     if not time_summary.empty:
-        # Usar melt para formato largo adecuado para plotly line chart con múltiples líneas
         time_summary_melted = time_summary.melt(
             id_vars=['AñoMes'],
-            value_vars=['Total_Leads', 'Primer_Contacto', 'Respondieron', 'Reuniones'],
-            var_name='Etapa',
-            value_name='Cantidad'
+            value_vars=['Leads_Generados', 'Primer_Contacto', 'Respuestas', 'Reuniones'],
+            var_name='Etapa', value_name='Cantidad'
         )
         
         fig = px.line(
-            time_summary_melted,
-            x='AñoMes',
-            y='Cantidad',
-            color='Etapa', # Una línea por cada etapa del embudo
-            title="Evolución Mensual del Embudo",
-            markers=True,
-            labels={"Cantidad": "Número de Leads", "AñoMes": "Mes"}
+            time_summary_melted, x='AñoMes', y='Cantidad', color='Etapa',
+            title="Evolución Mensual del Embudo", markers=True,
+            labels={"Cantidad": "Número de Leads / Eventos", "AñoMes": "Mes"}
         )
-        # Ordenar leyenda
-        fig.update_layout(legend_traceorder="reversed") 
+        fig.update_layout(legend_title_text='Etapa del Embudo', title_x=0.5) 
         st.plotly_chart(fig, use_container_width=True)
         
         with st.expander("Ver datos de evolución mensual"):
-            st.dataframe(time_summary.set_index('AñoMes'), use_container_width=True)
+            st.dataframe(time_summary.set_index('AñoMes').style.format("{:,}"), use_container_width=True)
             
     else:
         st.caption("No hay datos agregados por mes.")
 
-
-# --- Flujo Principal de la Página ---
+# --- Flujo Principal ---
 df_pipeline_base = load_pipeline_data()
+
+# --- Expander para Depuración ---
+with st.expander("🔍 Ver datos crudos procesados (primeras 50 filas) - Para depuración"):
+    if not df_pipeline_base.empty:
+        st.dataframe(df_pipeline_base.head(50))
+    else:
+        st.warning("No se cargaron datos base.")
+# --- Fin Expander ---
 
 if df_pipeline_base.empty:
     st.error("Fallo crítico: El DataFrame del Pipeline está vacío tras la carga.")
-    st.stop()
-
-start_date, end_date, industries, managements, meeting_status = sidebar_filters_pipeline(df_pipeline_base.copy()) # Pasar copia para evitar modificar cache
-
-df_pipeline_filtered = apply_pipeline_filters(
-    df_pipeline_base, start_date, end_date, industries, managements, meeting_status
-)
-
-# --- Presentación del Dashboard Mejorado ---
-if not df_pipeline_filtered.empty:
-    
-    display_enhanced_funnel(df_pipeline_filtered)
-    
-    display_time_lag_analysis(df_pipeline_filtered)
-    
-    display_segmentation_analysis(df_pipeline_filtered)
-    
-    display_channel_analysis(df_pipeline_filtered)
-
-    display_enhanced_time_evolution(df_pipeline_filtered)
-
-    # Tabla detallada (opcional, como antes)
-    with st.expander("Ver tabla de datos detallados del pipeline (filtrada)"):
-        cols_to_show = [
-            "Full Name", "Company", "Role/Title", COL_INDUSTRY, COL_MANAGEMENT,
-            'Fecha_Principal', # Usar la columna parseada
-            COL_FIRST_CONTACT_DATE, COL_RESPONDED, COL_MEETING, COL_MEETING_DATE,
-            COL_CHANNEL, "LinkedIn URL",
-            # Columnas de tiempo calculado:
-            'Dias_Gen_a_Contacto', 'Dias_Contacto_a_Reunion', 'Dias_Gen_a_Reunion'
-        ]
-        cols_exist = [col for col in cols_to_show if col in df_pipeline_filtered.columns]
-        
-        df_display = df_pipeline_filtered[cols_exist].copy()
-        
-        # Formatear fechas para display
-        for date_col in ['Fecha_Principal', COL_FIRST_CONTACT_DATE, COL_MEETING_DATE]:
-            if date_col in df_display.columns:
-                 df_display[date_col] = df_display[date_col].dt.strftime('%Y-%m-%d').fillna('N/A')
-
-        st.dataframe(df_display, hide_index=True)
+    # No usamos st.stop() aquí para permitir ver el expander si hubo error de carga antes
 else:
-    st.info("No se encontraron datos que coincidan con los filtros seleccionados.")
+    start_date, end_date, industries, managements, meeting_status = sidebar_filters_pipeline(df_pipeline_base.copy()) 
 
+    df_pipeline_filtered = apply_pipeline_filters(
+        df_pipeline_base, start_date, end_date, industries, managements, meeting_status
+    )
+
+    if not df_pipeline_filtered.empty:
+        display_enhanced_funnel(df_pipeline_filtered)
+        display_time_lag_analysis(df_pipeline_filtered)
+        display_segmentation_analysis(df_pipeline_filtered)
+        display_channel_analysis(df_pipeline_filtered)
+        display_enhanced_time_evolution(df_pipeline_filtered)
+
+        with st.expander("Ver tabla detallada de leads filtrados"):
+            cols_to_show = [
+                "Full Name", "Company", "Role/Title", COL_INDUSTRY, COL_MANAGEMENT,
+                'Fecha_Principal', COL_FIRST_CONTACT_DATE, COL_RESPONDED, COL_MEETING, COL_MEETING_DATE,
+                COL_CHANNEL, "LinkedIn URL",
+                'Dias_Gen_a_Contacto', 'Dias_Contacto_a_Reunion', 'Dias_Gen_a_Reunion'
+            ]
+            cols_exist = [col for col in cols_to_show if col in df_pipeline_filtered.columns]
+            df_display = df_pipeline_filtered[cols_exist].copy()
+            
+            for date_col in ['Fecha_Principal', COL_FIRST_CONTACT_DATE, COL_MEETING_DATE]:
+                if date_col in df_display.columns:
+                     df_display[date_col] = df_display[date_col].dt.strftime('%Y-%m-%d').fillna('N/A')
+            
+            # Formatear columnas de días como números con 1 decimal o N/A
+            for time_col in ['Dias_Gen_a_Contacto', 'Dias_Contacto_a_Reunion', 'Dias_Gen_a_Reunion']:
+                 if time_col in df_display.columns:
+                     df_display[time_col] = df_display[time_col].apply(lambda x: f"{x:.1f}" if pd.notna(x) else 'N/A')
+
+            st.dataframe(df_display, hide_index=True)
+    else:
+        st.info("No se encontraron datos que coincidan con los filtros seleccionados.")
+
+st.markdown("---")
+st.info("Dashboard del Pipeline con análisis mejorado.")
