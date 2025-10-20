@@ -15,6 +15,8 @@ st.title("📈 Pipeline de Prospección (Datos Validados)")
 st.markdown("Análisis del embudo basado en la hoja 'Prospects'.")
 
 PIPELINE_SHEET_URL_KEY = "pipeline_october_2025"
+# Asegúrate que la URL en secrets.toml sea la de la Hoja de Google convertida
+DEFAULT_PIPELINE_URL = "URL_POR_DEFECTO_SI_NO_ESTA_EN_SECRETS" 
 PIPELINE_SHEET_NAME = "Prospects"
 
 # Nombres EXACTOS de columnas clave
@@ -24,12 +26,11 @@ COL_MEETING_DATE = "Meeting Date"
 COL_INDUSTRY = "Industry"
 COL_MANAGEMENT = "Management Level"
 COL_CHANNEL = "Response Channel"
-# COL_CONTACTED = "Contacted?" # No la usaremos directamente, derivaremos de fecha
 COL_RESPONDED = "Responded?"
 COL_MEETING = "Meeting?"
 
 # Claves de Sesión (usar nombres únicos para evitar conflictos)
-SES_PREFIX = "pipe_valido_v1_"
+SES_PREFIX = "pipe_final_v1_"
 SES_START_DATE_KEY = f"{SES_PREFIX}start_date"
 SES_END_DATE_KEY = f"{SES_PREFIX}end_date"
 SES_INDUSTRY_KEY = f"{SES_PREFIX}industry"
@@ -41,63 +42,59 @@ SES_MEETING_KEY = f"{SES_PREFIX}meeting"
 def parse_date_optimized(date_input):
     if pd.isna(date_input): return pd.NaT
     if isinstance(date_input, (datetime.datetime, datetime.date)):
-        # Si ya es fecha/datetime, solo normalizar (quitar hora)
         try:
-            dt = pd.to_datetime(date_input)
-            # Quitar timezone si existe para evitar problemas de comparación
-            if dt.tzinfo is not None: dt = dt.tz_localize(None)
-            return dt.normalize()
-        except Exception:
-            return pd.NaT # Si falla, marcar como inválida
+             dt = pd.to_datetime(date_input)
+             if dt.tzinfo is not None: dt = dt.tz_localize(None)
+             return dt.normalize()
+        except: return pd.to_datetime(date_input, errors='coerce')
 
     date_str = str(date_input).strip()
     if not date_str: return pd.NaT
 
-    # Intentar formatos específicos primero (más rápido)
-    # Prioridad AAAA-MM-DD y DD/MM/AAAA
-    formats_to_try = ["%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y"]
+    # *** PRIORIDAD: Formato AAAA-MM-DD visto en CSV ***
+    try:
+        # Intentar parsear directamente como AAAA-MM-DD (con o sin hora)
+        if ' ' in date_str:
+             parsed = pd.to_datetime(date_str.split(' ')[0], format="%Y-%m-%d", errors='coerce')
+        else:
+             parsed = pd.to_datetime(date_str, format="%Y-%m-%d", errors='coerce')
+        if pd.notna(parsed): return parsed.normalize()
+    except (ValueError, TypeError):
+        pass # Continuar si este formato falla
+
+    # Intentar otros formatos comunes si el principal falla
+    formats_to_try = ["%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y", "%m-%d-%Y"]
     for fmt in formats_to_try:
         try:
-            # Añadir manejo explícito de hora si existe
-            if ' ' in date_str:
-                 return pd.to_datetime(date_str.split(' ')[0], format=fmt).normalize()
-            else:
-                 return pd.to_datetime(date_str, format=fmt).normalize()
-        except (ValueError, TypeError):
-            continue
+            if ' ' in date_str: return pd.to_datetime(date_str.split(' ')[0], format=fmt).normalize()
+            else: return pd.to_datetime(date_str, format=fmt).normalize()
+        except (ValueError, TypeError): continue
 
-    # Si formatos específicos fallan, intentar conversión genérica (más lenta)
+    # Intentos genéricos y número Excel como último recurso
     try:
-        # errors='coerce' devuelve NaT si no puede parsear
-        parsed_date = pd.to_datetime(date_str, errors='coerce', dayfirst=True) # Asumir día primero si ambiguo
-        if pd.notna(parsed_date):
-            return parsed_date.normalize()
-        else: # Probar monthfirst si dayfirst falló
-            parsed_date_mf = pd.to_datetime(date_str, errors='coerce', dayfirst=False)
-            if pd.notna(parsed_date_mf):
-                return parsed_date_mf.normalize()
-            else: # Intentar como número de serie Excel como último recurso
-                 if re.fullmatch(r'\d+(\.\d+)?', date_str):
-                     excel_date_num = float(date_str)
-                     if 30000 < excel_date_num < 60000: # Rango típico
-                         origin = pd.Timestamp('1899-12-30')
-                         parsed_excel = origin + pd.to_timedelta(excel_date_num, unit='D')
-                         if pd.Timestamp('1980-01-01') <= parsed_excel <= pd.Timestamp('2050-12-31'):
-                             return parsed_excel.normalize()
-                 return pd.NaT # Si todo falla
+        parsed_generic = pd.to_datetime(date_str, errors='coerce', dayfirst=True) # Probar día primero
+        if pd.notna(parsed_generic): return parsed_generic.normalize()
+        parsed_generic_mf = pd.to_datetime(date_str, errors='coerce', dayfirst=False) # Probar mes primero
+        if pd.notna(parsed_generic_mf): return parsed_generic_mf.normalize()
+        
+        if re.fullmatch(r'\d+(\.\d+)?', date_str):
+             excel_date_num = float(date_str)
+             if 30000 < excel_date_num < 60000:
+                 origin = pd.Timestamp('1899-12-30')
+                 parsed_excel = origin + pd.to_timedelta(excel_date_num, unit='D')
+                 if pd.Timestamp('1980-01-01') <= parsed_excel <= pd.Timestamp('2050-12-31'):
+                      return parsed_excel.normalize()
+        return pd.NaT
     except Exception:
         return pd.NaT
 
+# Optimizado para TRUE/FALSE y texto
 def clean_yes_no_optimized(val):
-    # Manejar directamente booleanos si pandas los interpreta así
-    if isinstance(val, bool):
-        return "Si" if val else "No"
-    # Convertir a string y limpiar para el resto
+    if isinstance(val, bool): return "Si" if val else "No"
     cleaned = str(val).strip().lower()
     if cleaned in ['yes', 'sí', 'si', '1', 'true', 'verdadero', 'agendada', 'ok', 'realizada', 'hecho', 'completo', 'listo']:
         return "Si"
-    # Todo lo demás (incluyendo '', 'no', 'false', '0', 'nan', etc.) es No
-    return "No"
+    return "No" # Todo lo demás es No
 
 def calculate_rate(numerator, denominator, round_to=1):
     num = pd.to_numeric(numerator, errors='coerce')
@@ -110,8 +107,7 @@ def calculate_rate(numerator, denominator, round_to=1):
 def calculate_time_diff(date1, date2):
     d1 = pd.to_datetime(date1, errors='coerce')
     d2 = pd.to_datetime(date2, errors='coerce')
-    if pd.notna(d1) and pd.notna(d2) and d2 >= d1:
-        return (d2 - d1).days
+    if pd.notna(d1) and pd.notna(d2) and d2 >= d1: return (d2 - d1).days
     return np.nan
 
 def make_unique_headers(headers_list):
@@ -124,11 +120,10 @@ def make_unique_headers(headers_list):
         else: new_headers.append(f"{h_stripped}_{counts[h_stripped]-1}")
     return new_headers
 
-# --- Carga y Procesamiento de Datos ---
+# --- Carga y Procesamiento de Datos (Solo gspread) ---
 @st.cache_data(ttl=300)
 def load_and_process_data():
     sheet_url = st.secrets.get(PIPELINE_SHEET_URL_KEY, DEFAULT_PIPELINE_URL)
-    all_data_loaded = [] # Para depuración
     processing_warnings = []
 
     try:
@@ -136,84 +131,75 @@ def load_and_process_data():
         client = gspread.service_account_from_dict(creds)
         workbook = client.open_by_url(sheet_url)
         sheet = workbook.worksheet(PIPELINE_SHEET_NAME)
-        # Fetch all values as strings initially to prevent type guessing issues
-        all_data_loaded = sheet.get_all_values(value_render_option='UNFORMATTED_VALUE') # Leer valores crudos
+        # Leer valores crudos (ayuda con fechas y booleanos)
+        all_data_loaded = sheet.get_all_values(value_render_option='UNFORMATTED_VALUE') 
         
         if not all_data_loaded or len(all_data_loaded) <= 1:
             raise ValueError("La hoja está vacía o no tiene encabezados.")
 
         headers = make_unique_headers(all_data_loaded[0])
+        # Crear DataFrame, pandas intentará inferir tipos (incluyendo fechas si son números)
         df = pd.DataFrame(all_data_loaded[1:], columns=headers)
-        
-        # Guardar columnas originales para depuración si es necesario
-        # st.session_state['original_columns'] = df.columns.tolist()
 
+    except gspread.exceptions.APIError as e:
+         if "This operation is not supported for this document" in str(e):
+             st.error("❌ Error: El archivo en la URL sigue siendo formato Excel (.xlsx).")
+             st.warning("Debes 'Guardar como Hoja de Google', compartir la *nueva* hoja y actualizar la URL en secrets.toml.")
+             st.stop()
+         else:
+             st.error(f"❌ Error de API Google: {e}")
+             st.info("Verifica permisos de la cuenta de servicio.")
+             st.stop()
     except Exception as e:
-        st.error(f"❌ Error crítico al cargar datos desde Google Sheet: {e}")
+        st.error(f"❌ Error crítico al cargar datos: {e}")
         st.info(f"Verifica URL ('{PIPELINE_SHEET_URL_KEY}'), nombre pestaña ('{PIPELINE_SHEET_NAME}') y permisos.")
         st.stop()
 
     # --- Procesamiento Post-Carga ---
-    
-    # Verificar columnas clave
-    essential_cols = [COL_LEAD_GEN_DATE, COL_FIRST_CONTACT_DATE, COL_RESPONDED, COL_MEETING]
+    essential_cols = [COL_LEAD_GEN_DATE, COL_FIRST_CONTACT_DATE, COL_RESPONDED, COL_MEETING] # Quitar Meeting Date si no es vital
     missing_essentials = [col for col in essential_cols if col not in df.columns]
     if missing_essentials:
-        st.error(f"Faltan columnas esenciales: {', '.join(missing_essentials)}. Verifica nombres exactos.")
-        # Rellenar con N/A para intentar continuar
+        st.error(f"Faltan columnas esenciales: {', '.join(missing_essentials)}. Verifica nombres.")
         for col in missing_essentials: df[col] = pd.NA
 
-    # Convertir fechas (más robusto)
     date_cols = [COL_LEAD_GEN_DATE, COL_FIRST_CONTACT_DATE, COL_MEETING_DATE]
     date_parse_fail_counts = {col: 0 for col in date_cols}
     for col in date_cols:
         if col in df.columns:
-            # Guardar NAs originales para comparar
             original_nas = df[col].isna() | (df[col] == '')
-            df[col] = df[col].apply(parse_date_optimized)
+            df[col] = df[col].apply(parse_date_optimized) # Usar la función optimizada
             new_nas = df[col].isna()
-            # Contar solo los que NO eran NA antes pero AHORA sí lo son
             date_parse_fail_counts[col] = (new_nas & ~original_nas).sum()
-        else:
-            df[col] = pd.NaT # Crear columna NaT si falta
+        else: df[col] = pd.NaT
 
     df.rename(columns={COL_LEAD_GEN_DATE: 'Fecha_Principal'}, inplace=True)
     initial_rows = len(df)
-    df.dropna(subset=['Fecha_Principal'], inplace=True) # Eliminar filas sin fecha principal válida
+    df.dropna(subset=['Fecha_Principal'], inplace=True)
     rows_dropped_no_lead_date = initial_rows - len(df)
 
     if rows_dropped_no_lead_date > 0:
         processing_warnings.append(f"⚠️ {rows_dropped_no_lead_date} filas eliminadas por fecha inválida/vacía en '{COL_LEAD_GEN_DATE}'.")
     for col, count in date_parse_fail_counts.items():
-        if count > 0 and col != COL_LEAD_GEN_DATE:
-            processing_warnings.append(f"⚠️ {count} fechas no pudieron interpretarse en '{col}'.")
-            
-    # Limpiar Sí/No
-    status_cols = [COL_RESPONDED, COL_MEETING] # Añadir COL_CONTACTED si existe y lo necesitas
-    for col in status_cols:
-        if col in df.columns:
-            df[col] = df[col].apply(clean_yes_no_optimized)
-        else:
-            df[col] = "No" # Asumir No si la columna falta
+        if count > 0 : processing_warnings.append(f"⚠️ {count} fechas no se interpretaron en '{col}'.")
+    st.session_state['data_load_warnings'] = processing_warnings
 
-    # Derivar estado de contacto desde la fecha
+    status_cols = [COL_RESPONDED, COL_MEETING] # Añadir COL_CONTACTED si lo usas
+    for col in status_cols:
+        if col in df.columns: df[col] = df[col].apply(clean_yes_no_optimized)
+        else: df[col] = "No"
+
     if COL_FIRST_CONTACT_DATE in df.columns:
         df['FirstContactStatus'] = df[COL_FIRST_CONTACT_DATE].apply(lambda x: 'Si' if pd.notna(x) else 'No')
-    else:
-        df['FirstContactStatus'] = 'No'
+    else: df['FirstContactStatus'] = 'No'
 
-    # Limpiar categóricas
     cat_cols = [COL_INDUSTRY, COL_MANAGEMENT, COL_CHANNEL]
     for col in cat_cols:
         if col in df.columns:
             df[col] = df[col].fillna('No Definido')
-            # Asegurar que sea string antes de limpiar
             df[col] = df[col].astype(str).str.strip().replace('', 'No Definido').str.title()
-            df[col] = df[col].replace({'N/D': 'No Definido', 'Na': 'No Definido', '-':'No Definido'}) # Limpiar más
-        else:
-            df[col] = "No Definido"
+            df[col] = df[col].replace({'N/D': 'No Definido', 'Na': 'No Definido', '-':'No Definido', 'False':'No Definido', 'True':'No Definido'}) # Limpiar más
+        else: df[col] = "No Definido"
 
-    # Crear columnas de tiempo
     if not df.empty and 'Fecha_Principal' in df.columns and pd.api.types.is_datetime64_any_dtype(df['Fecha_Principal']):
         df['Año'] = df['Fecha_Principal'].dt.year.astype('Int64', errors='ignore')
         df['NumSemana'] = df['Fecha_Principal'].dt.isocalendar().week.astype('Int64', errors='ignore')
@@ -221,13 +207,9 @@ def load_and_process_data():
     else:
         for col in ['Año', 'NumSemana', 'AñoMes']: df[col] = pd.NA
 
-    # Calcular diferencias de tiempo
     df['Dias_Gen_a_Contacto'] = df.apply(lambda row: calculate_time_diff(row.get('Fecha_Principal'), row.get(COL_FIRST_CONTACT_DATE)), axis=1)
     df['Dias_Contacto_a_Reunion'] = df.apply(lambda row: calculate_time_diff(row.get(COL_FIRST_CONTACT_DATE), row.get(COL_MEETING_DATE)), axis=1)
     df['Dias_Gen_a_Reunion'] = df.apply(lambda row: calculate_time_diff(row.get('Fecha_Principal'), row.get(COL_MEETING_DATE)), axis=1)
-
-    # Guardar advertencias para mostrar después
-    st.session_state['data_load_warnings'] = processing_warnings
 
     return df
 
@@ -286,7 +268,7 @@ def apply_pipeline_filters(df, start_dt, end_dt, industries, managements, meetin
         df_f = df_f[df_f[COL_MEETING] == meeting_status]
     return df_f
 
-# --- Componentes de Visualización (Sin cambios, deberían funcionar mejor ahora) ---
+# --- Componentes de Visualización (Sin cambios) ---
 def display_enhanced_funnel(df_filtered):
     st.markdown("###  funnel Embudo de Conversión Detallado")
     st.caption("Muestra cuántos leads avanzan en cada etapa clave.")
@@ -340,7 +322,7 @@ def display_segmentation_analysis(df_filtered):
         else:
             segment_summary_filtered = segment_summary_filtered.sort_values('Tasa_Conversion_Global (%)', ascending=False)
             fig = px.bar(segment_summary_filtered.head(10), x=group_col, y='Tasa_Conversion_Global (%)', title=f"Top 10 {title_suffix} por Tasa Conversión", text='Tasa_Conversion_Global (%)', color='Tasa_Conversion_Global (%)', color_continuous_scale=px.colors.sequential.YlGnBu)
-            fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside'); fig.update_layout(yaxis_title="Tasa (%)", yaxis_ticksuffix="%", xaxis_title=title_suffix, title_x=0.5, yaxis_range=[0,max(10, segment_summary_filtered['Tasa_Conversion_Global (%)'].max() * 1.1 + 5)]) # Añadir +5 para espacio
+            fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside'); fig.update_layout(yaxis_title="Tasa (%)", yaxis_ticksuffix="%", xaxis_title=title_suffix, title_x=0.5, yaxis_range=[0,max(10, segment_summary_filtered['Tasa_Conversion_Global (%)'].max() * 1.1 + 5)])
             st.plotly_chart(fig, use_container_width=True)
         if show_table:
             with st.expander(f"Ver datos por {title_suffix} (todos)"): st.dataframe(segment_summary.sort_values('Total_Leads', ascending=False).style.format({'Total_Leads': '{:,}', 'Total_Reuniones': '{:,}', 'Tasa_Conversion_Global (%)': '{:.1f}%'}), hide_index=True, use_container_width=True)
@@ -381,14 +363,15 @@ def display_enhanced_time_evolution(df_filtered):
 # --- Flujo Principal ---
 df_pipeline_base = load_and_process_data()
 
-# Mostrar advertencias de procesamiento si existen
 processing_warnings = st.session_state.get('data_load_warnings', [])
 if processing_warnings:
     with st.expander("⚠️ Avisos durante la carga/procesamiento"):
         for msg in processing_warnings: st.warning(msg)
 
 if df_pipeline_base.empty:
-    st.error("Fallo: El DataFrame está vacío tras la carga.")
+    # El error crítico ya se mostró en load_and_process_data si falló la carga
+    if not processing_warnings: # Si no hubo error de carga pero sí de procesamiento (ej. 0 filas válidas)
+        st.error("Fallo: El DataFrame está vacío tras el procesamiento inicial (posiblemente por fechas inválidas).")
 else:
     start_date, end_date, industries, managements, meeting_status = sidebar_filters_pipeline(df_pipeline_base.copy())
     df_pipeline_filtered = apply_pipeline_filters(df_pipeline_base, start_date, end_date, industries, managements, meeting_status)
