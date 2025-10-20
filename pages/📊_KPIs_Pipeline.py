@@ -1,12 +1,12 @@
 import streamlit as st
 import pandas as pd
-import gspread # Mantenido por si acaso
+import gspread # Necesario para leer Google Sheets
 import datetime
 import plotly.express as px
 import plotly.graph_objects as go
 from collections import Counter
 import re
-import numpy as np # Necesario para manejar NA en promedios
+import numpy as np # Para manejar NAs
 
 st.set_page_config(layout="wide", page_title="Pipeline de Prospección Detallado")
 st.title("📈 Pipeline de Prospección Detallado (Oct 2025)")
@@ -14,147 +14,147 @@ st.markdown("Análisis avanzado del embudo, tiempos de conversión y segmentaci�
 
 # --- Constantes ---
 PIPELINE_SHEET_URL_KEY = "pipeline_october_2025"
-DEFAULT_PIPELINE_URL = "https://docs.google.com/spreadsheets/d/..." 
-PIPELINE_SHEET_NAME = "Prospects" 
+DEFAULT_PIPELINE_URL = "https://docs.google.com/spreadsheets/d/..." # URL por defecto si no está en secrets
+PIPELINE_SHEET_NAME = "Prospects"
 
-# Nombres EXACTOS de columnas en tu hoja
 COL_LEAD_GEN_DATE = "Lead Generated (Date)"
 COL_FIRST_CONTACT_DATE = "First Contact Date"
 COL_MEETING_DATE = "Meeting Date"
 COL_INDUSTRY = "Industry"
 COL_MANAGEMENT = "Management Level"
 COL_CHANNEL = "Response Channel"
-COL_CONTACTED = "Contacted?" # Posiblemente redundante si usamos fecha
+COL_CONTACTED = "Contacted?"
 COL_RESPONDED = "Responded?"
 COL_MEETING = "Meeting?"
 
-# Claves de Sesión
-SES_START_DATE_KEY = "pipeline_page_start_date_v2" # v2 para evitar conflictos
-SES_END_DATE_KEY = "pipeline_page_end_date_v2"
-SES_INDUSTRY_KEY = "pipeline_page_industry_v2"
-SES_MANAGEMENT_KEY = "pipeline_page_management_v2"
-SES_MEETING_KEY = "pipeline_page_meeting_v2"
+SES_START_DATE_KEY = "pipeline_page_start_date_v3" # v3 para refrescar estado
+SES_END_DATE_KEY = "pipeline_page_end_date_v3"
+SES_INDUSTRY_KEY = "pipeline_page_industry_v3"
+SES_MANAGEMENT_KEY = "pipeline_page_management_v3"
+SES_MEETING_KEY = "pipeline_page_meeting_v3"
 
 # --- Funciones de Utilidad ---
 def parse_date_robustly(date_val):
     if pd.isna(date_val): return pd.NaT
-    if isinstance(date_val, (datetime.datetime, datetime.date)): return pd.to_datetime(date_val)
-    
+    # Primero intentar si ya es fecha
+    if isinstance(date_val, (datetime.datetime, datetime.date)):
+        # Si tiene timezone, quitarlo para consistencia
+        try:
+             if date_val.tzinfo is not None:
+                 return pd.to_datetime(date_val).tz_localize(None).normalize()
+             else:
+                 return pd.to_datetime(date_val).normalize()
+        except: # Si falla la normalización (raro), devolver como está
+             return pd.to_datetime(date_val)
+
     date_str = str(date_val).strip()
     if not date_str: return pd.NaT
 
-    # Formatos comunes (añadir más si es necesario)
+    # Formatos comunes a probar en orden
     common_formats = [
         "%d/%m/%Y", "%m/%d/%Y", "%Y-%m-%d", "%d-%m-%Y", "%m-%d-%Y",
         "%d/%m/%Y %H:%M", "%m/%d/%Y %H:%M", "%Y-%m-%d %H:%M",
         "%d/%m/%Y %H:%M:%S", "%m/%d/%Y %H:%M:%S", "%Y-%m-%d %H:%M:%S",
-        "%d-%b-%Y", "%b %d, %Y" # Formatos con mes abreviado
+        "%d-%b-%Y", "%b %d, %Y", "%Y%m%d" # Añadido YYYYMMDD
     ]
     for fmt in common_formats:
-        try: return pd.to_datetime(date_str, format=fmt)
+        try: return pd.to_datetime(date_str, format=fmt).normalize()
         except (ValueError, TypeError): continue
-    
-    # Intento final genérico y manejo de números de serie de Excel
+
+    # Intento final genérico (más lento pero cubre más casos)
     try:
-        # Primero intentar conversión directa
-        parsed_date = pd.to_datetime(date_str, errors='coerce')
-        if pd.notna(parsed_date): return parsed_date
-        
-        # Si falla y parece número, intentar como número de serie de Excel
+        parsed_date = pd.to_datetime(date_str, errors='coerce', dayfirst=True) # Asumir día primero si es ambiguo
+        if pd.notna(parsed_date): return parsed_date.normalize()
+
+        # Si aún falla y parece número (fecha de Excel)
         if re.fullmatch(r'\d+(\.\d+)?', date_str):
-             # Origen de fecha de Excel (puede ser 1900 o 1904)
-             return pd.to_datetime('1899-12-30') + pd.to_timedelta(float(date_str), 'D')
-        return pd.NaT # Si todo falla
+             excel_date_num = float(date_str)
+             # Evitar números muy grandes que no son fechas
+             if excel_date_num < 300000: # Umbral arbitrario
+                 # Origen común es 1899-12-30
+                 origin = pd.Timestamp('1899-12-30')
+                 parsed_excel_date = origin + pd.to_timedelta(excel_date_num, unit='D')
+                 # Validar si la fecha resultante es razonable
+                 if pd.Timestamp('1980-01-01') <= parsed_excel_date <= pd.Timestamp('2050-12-31'):
+                      return parsed_excel_date.normalize()
+        return pd.NaT
     except Exception:
         return pd.NaT
 
 def clean_yes_no(val):
-    # Primero verificar el valor original (ignorando espacios) antes de convertir a minúsculas
-    # para capturar casos como 'Si' o 'Yes'
     original_cleaned = str(val).strip()
-    
-    # Comprobaciones explícitas de valores positivos
-    if original_cleaned.lower() in ['yes', 'sí', 'si', '1', 'true', 'agendada', 'ok', 'realizada', 'hecho']:
+    if not original_cleaned: return "No" # Vacío es No
+
+    # Priorizar positivos claros
+    if original_cleaned.lower() in ['yes', 'sí', 'si', '1', 'true', 'agendada', 'ok', 'realizada', 'hecho', 'completo', 'listo']:
         return "Si"
         
-    # Comprobaciones explícitas de valores negativos (incluir vacío y 'nan')
-    if original_cleaned.lower() in ['no', '0', 'false', '', 'nan', 'na', '<na>', 'cancelada', 'pendiente']:
-        return "No"
-        
-    # Si no coincide con nada conocido, asumir No por seguridad
+    # Otros casos (incluyendo 'No', 'nan', etc.) se tratan como No
     return "No"
 
 def calculate_rate(numerator, denominator, round_to=1):
-    numerator = pd.to_numeric(numerator, errors='coerce')
-    denominator = pd.to_numeric(denominator, errors='coerce')
-    if pd.isna(denominator) or denominator == 0 or pd.isna(numerator):
-        return 0.0
-    rate = (numerator / denominator) * 100
+    # Asegurar que sean números antes de dividir
+    num = pd.to_numeric(numerator, errors='coerce')
+    den = pd.to_numeric(denominator, errors='coerce')
+    if pd.isna(den) or den == 0 or pd.isna(num): return 0.0
+    rate = (num / den) * 100
+    # Evitar retornar NaN si el resultado es infinito o indefinido
+    if np.isinf(rate) or np.isnan(rate): return 0.0
     return round(rate, round_to)
 
 def calculate_time_diff(date1, date2):
-    # Convertir a datetime por si acaso vienen como objetos
     d1 = pd.to_datetime(date1, errors='coerce')
     d2 = pd.to_datetime(date2, errors='coerce')
+    # Solo calcular si ambas son fechas válidas y d2 es posterior o igual a d1
     if pd.notna(d1) and pd.notna(d2) and d2 >= d1:
         return (d2 - d1).days
-    return np.nan # Usar np.nan para cálculos numéricos posteriores
+    return np.nan # Usar NaN de numpy para promedios
+
+def make_unique_headers(headers_list):
+    counts = Counter()
+    new_headers = []
+    for h in headers_list:
+        h_stripped = str(h).strip() if pd.notna(h) else "Columna_Vacia"
+        if not h_stripped: h_stripped = "Columna_Vacia"
+        counts[h_stripped] += 1
+        if counts[h_stripped] == 1: new_headers.append(h_stripped)
+        else: new_headers.append(f"{h_stripped}_{counts[h_stripped]-1}")
+    return new_headers
 
 # --- Carga y Procesamiento de Datos ---
 @st.cache_data(ttl=300)
 def load_pipeline_data():
     sheet_url = st.secrets.get(PIPELINE_SHEET_URL_KEY, DEFAULT_PIPELINE_URL)
-    df = pd.DataFrame() # Inicializar df vacío
+    df = pd.DataFrame()
     
-    # Intentar leer como Excel primero (parece ser el formato actual)
+    # Intentar leer SIEMPRE como Hoja de Google primero
     try:
-        file_id_match = re.search(r'/d/([a-zA-Z0-9_-]+)', sheet_url)
-        if not file_id_match: raise ValueError("URL no parece ser de Google Drive.")
-        file_id = file_id_match.group(1)
-        download_url = f"https://drive.google.com/u/0/uc?id={file_id}&export=download&format=xlsx"
+        creds = st.secrets["gcp_service_account"]
+        client = gspread.service_account_from_dict(creds)
+        workbook = client.open_by_url(sheet_url)
+        sheet = workbook.worksheet(PIPELINE_SHEET_NAME)
+        raw_data = sheet.get_all_values()
+        if not raw_data or len(raw_data) <= 1: raise ValueError("Hoja vacía o sin encabezados.")
         
-        df = pd.read_excel(download_url, sheet_name=PIPELINE_SHEET_NAME, engine="openpyxl")
-        st.success(f"✔️ Datos cargados desde archivo Excel '{PIPELINE_SHEET_NAME}'.")
+        headers = make_unique_headers(raw_data[0])
+        df = pd.DataFrame(raw_data[1:], columns=headers)
+        st.success(f"✔️ Datos cargados desde Google Sheet '{PIPELINE_SHEET_NAME}'.")
 
-    except Exception as e_excel:
-        st.warning(f"⚠️ Fallo al leer como Excel ({e_excel}). Intentando leer como Google Sheet...")
-        # Si falla como Excel, intentar como Hoja de Google
-        try:
-            creds = st.secrets["gcp_service_account"]
-            client = gspread.service_account_from_dict(creds)
-            workbook = client.open_by_url(sheet_url)
-            sheet = workbook.worksheet(PIPELINE_SHEET_NAME)
-            raw_data = sheet.get_all_values()
-            if not raw_data or len(raw_data) <= 1: raise ValueError("Hoja vacía o sin encabezados.")
-            
-            counts = Counter()
-            headers = []
-            for h in raw_data[0]:
-                h_stripped = str(h).strip() if pd.notna(h) else "Columna_Vacia"
-                if not h_stripped: h_stripped = "Columna_Vacia"
-                counts[h_stripped] += 1
-                if counts[h_stripped] == 1: headers.append(h_stripped)
-                else: headers.append(f"{h_stripped}_{counts[h_stripped]-1}")
-                
-            df = pd.DataFrame(raw_data[1:], columns=headers)
-            st.success(f"✔️ Datos cargados desde Google Sheet '{PIPELINE_SHEET_NAME}'.")
-        
-        except Exception as e_gspread:
-            st.error(f"❌ Error crítico al cargar datos: No se pudo leer ni como Excel ni como Google Sheet.")
-            st.error(f"Detalle Excel: {e_excel}")
-            st.error(f"Detalle GSheet: {e_gspread}")
-            st.info("Verifica la URL, el nombre de la pestaña ('Prospects'), los permisos y las credenciales.")
-            st.stop()
+    except Exception as e_gspread:
+        st.error(f"❌ Error crítico al cargar datos desde Google Sheet: {e_gspread}")
+        st.info(f"Verifica la URL en secrets.toml ('{PIPELINE_SHEET_URL_KEY}'), el nombre de la pestaña ('{PIPELINE_SHEET_NAME}') y que hayas compartido la Hoja con '{st.secrets.get('gcp_service_account',{}).get('client_email','EMAIL_NO_ENCONTRADO')}' con permisos de Editor.")
+        st.stop() # Parar si no se puede leer la Hoja de Google
 
-    # --- Procesamiento Post-Carga ---
-    essential_cols = [COL_LEAD_GEN_DATE, COL_FIRST_CONTACT_DATE, COL_MEETING_DATE, COL_RESPONDED, COL_MEETING]
+    # Verificar existencia de columnas ESENCIALES
+    essential_cols = [COL_LEAD_GEN_DATE, COL_FIRST_CONTACT_DATE, COL_MEETING_DATE, COL_RESPONDED, COL_MEETING, COL_INDUSTRY, COL_MANAGEMENT]
     missing_essentials = [col for col in essential_cols if col not in df.columns]
     if missing_essentials:
-        st.error(f"Faltan columnas esenciales: {', '.join(missing_essentials)}. Verifica los nombres exactos en la hoja.")
-        # Decidir si parar o continuar con advertencias
-        # st.stop() 
-        for col in missing_essentials: df[col] = pd.NA # Añadir como NA para evitar errores
+        st.error(f"Faltan columnas esenciales en la hoja '{PIPELINE_SHEET_NAME}': {', '.join(missing_essentials)}. Verifica los nombres exactos.")
+        # Rellenar con N/A para intentar continuar, pero avisando
+        for col in missing_essentials: df[col] = pd.NA
+        # Considera st.stop() si son críticas
 
+    # Procesamiento robusto
     date_cols_to_parse = [COL_LEAD_GEN_DATE, COL_FIRST_CONTACT_DATE, COL_MEETING_DATE]
     for col in date_cols_to_parse:
         if col in df.columns:
@@ -164,30 +164,35 @@ def load_pipeline_data():
 
     df.rename(columns={COL_LEAD_GEN_DATE: 'Fecha_Principal'}, inplace=True)
     initial_rows = len(df)
+    # Contar inválidas ANTES de eliminar
+    invalid_dates_count = df['Fecha_Principal'].isna().sum()
     df.dropna(subset=['Fecha_Principal'], inplace=True)
-    if len(df) < initial_rows:
-        st.warning(f"Se eliminaron {initial_rows - len(df)} filas sin fecha válida en '{COL_LEAD_GEN_DATE}'.")
+    if invalid_dates_count > 0:
+        st.warning(f"⚠️ Se eliminaron {invalid_dates_count} filas de {initial_rows} porque no se pudo interpretar la fecha en '{COL_LEAD_GEN_DATE}'. Revisa el formato de esas fechas en la hoja.")
 
     status_cols = [COL_CONTACTED, COL_RESPONDED, COL_MEETING] 
     for col in status_cols:
         if col in df.columns:
             df[col] = df[col].apply(clean_yes_no)
-        else:
-            df[col] = "No"
+        else: df[col] = "No"
             
     if COL_FIRST_CONTACT_DATE in df.columns:
         df['FirstContactStatus'] = df[COL_FIRST_CONTACT_DATE].apply(lambda x: 'Si' if pd.notna(x) else 'No')
-    else:
-        df['FirstContactStatus'] = 'No' 
+    else: df['FirstContactStatus'] = 'No' 
 
     cat_cols = [COL_INDUSTRY, COL_MANAGEMENT, COL_CHANNEL]
     for col in cat_cols:
         if col in df.columns:
             df[col] = df[col].fillna('No Definido')
             df[col] = df[col].astype(str).str.strip().replace('', 'No Definido').str.title()
-            df[col] = df[col].replace({'N/D': 'No Definido'})
-        else:
-            df[col] = "No Definido"
+            df[col] = df[col].replace({'N/D': 'No Definido', 'Na': 'No Definido'}) # Limpiar más casos
+        else: df[col] = "No Definido"
+
+    # Convertir columnas numéricas si existen (Ej: para análisis futuros)
+    # num_cols = ["AlgunaColumnaNumericaSiLaHubiera"]
+    # for col in num_cols:
+    #     if col in df.columns:
+    #         df[col] = pd.to_numeric(df[col], errors='coerce')
 
     if not df.empty:
         df['Año'] = df['Fecha_Principal'].dt.year.astype('Int64', errors='ignore')
@@ -202,7 +207,7 @@ def load_pipeline_data():
             
     return df
 
-# --- Filtros de Barra Lateral (Sin cambios) ---
+# --- Filtros de Barra Lateral (Sin cambios, ya son robustos) ---
 def sidebar_filters_pipeline(df_options):
     st.sidebar.header("🔍 Filtros del Pipeline")
     
@@ -212,8 +217,7 @@ def sidebar_filters_pipeline(df_options):
         SES_MEETING_KEY: "– Todos –"
     }
     for key, val in default_filters.items():
-        if key not in st.session_state:
-            st.session_state[key] = val
+        if key not in st.session_state: st.session_state[key] = val
 
     st.sidebar.subheader("🗓️ Por Fecha de Lead Generado")
     min_date, max_date = None, None
@@ -232,15 +236,16 @@ def sidebar_filters_pipeline(df_options):
     def create_multiselect(col_name, label, key):
         options = ["– Todos –"]
         if col_name in df_options.columns and not df_options[col_name].dropna().empty:
+            # Convertir a string ANTES de unique() para evitar errores de tipo mixto
             unique_vals = sorted(df_options[col_name].astype(str).unique())
             options.extend([val for val in unique_vals if val != "No Definido"])
             if "No Definido" in unique_vals: options.append("No Definido")
-        # Asegurar que el estado actual sea válido antes de renderizar
+        
         current_state = st.session_state.get(key, ["– Todos –"])
         valid_state = [s for s in current_state if s in options]
-        if not valid_state: valid_state = ["– Todos –"]
-        st.session_state[key] = valid_state # Actualizar estado si es necesario
-        st.sidebar.multiselect(label, options, key=key) # Renderizar con estado validado
+        if not valid_state or not options: valid_state = ["– Todos –"] # Reset si no hay válidos o no hay opciones
+        st.session_state[key] = valid_state 
+        st.sidebar.multiselect(label, options, key=key)
 
     create_multiselect(COL_INDUSTRY, "Industria", SES_INDUSTRY_KEY)
     create_multiselect(COL_MANAGEMENT, "Nivel de Management", SES_MANAGEMENT_KEY)
@@ -268,12 +273,13 @@ def apply_pipeline_filters(df, start_dt, end_dt, industries, managements, meetin
         start_dt_norm = pd.to_datetime(start_dt).normalize() if start_dt else None
         end_dt_norm = pd.to_datetime(end_dt).normalize() if end_dt else None
         
-        if start_dt_norm and end_dt_norm:
-            df_f = df_f[df_f['Fecha_Principal'].between(start_dt_norm, end_dt_norm, inclusive='both')]
-        elif start_dt_norm:
-            df_f = df_f[df_f['Fecha_Principal'] >= start_dt_norm]
-        elif end_dt_norm:
-             df_f = df_f[df_f['Fecha_Principal'] <= end_dt_norm]
+        # Crear máscara booleana para evitar modificar el df original en cada paso
+        mask = pd.Series(True, index=df_f.index)
+        if start_dt_norm:
+            mask &= (df_f['Fecha_Principal'] >= start_dt_norm)
+        if end_dt_norm:
+             mask &= (df_f['Fecha_Principal'] <= end_dt_norm)
+        df_f = df_f[mask]
     
     if industries and "– Todos –" not in industries and COL_INDUSTRY in df_f.columns:
         df_f = df_f[df_f[COL_INDUSTRY].isin(industries)]
@@ -286,11 +292,15 @@ def apply_pipeline_filters(df, start_dt, end_dt, industries, managements, meetin
             
     return df_f
 
-# --- Componentes de Visualización (Revisados y con ayudas) ---
+# --- Componentes de Visualización (Revisados) ---
 
 def display_enhanced_funnel(df_filtered):
     st.markdown("###  funnel Embudo de Conversión Detallado")
     st.caption("Muestra cuántos leads avanzan en cada etapa clave del proceso.")
+
+    if df_filtered.empty:
+        st.info("No hay datos filtrados para mostrar el embudo.")
+        return
 
     total_leads = len(df_filtered)
     total_first_contact = len(df_filtered[df_filtered['FirstContactStatus'] == "Si"])
@@ -301,17 +311,14 @@ def display_enhanced_funnel(df_filtered):
     funnel_values = [total_leads, total_first_contact, total_responded, total_meetings]
 
     fig = go.Figure(go.Funnel(
-        y=funnel_stages,
-        x=funnel_values,
-        textposition="inside",
-        textinfo="value+percent previous+percent initial",
+        y=funnel_stages, x=funnel_values,
+        textposition="inside", textinfo="value+percent previous+percent initial",
         opacity=0.7,
         marker={"color": ["#8A2BE2", "#5A639C", "#7B8FA1", "#9BABB8"],
                "line": {"width": [4, 2, 2, 1], "color": ["#6A1B9A", "#4A528A", "#6B7F91", "#8B9AAA"]}},
         connector={"line": {"color": "grey", "dash": "dot", "width": 2}}
         ))
-
-    fig.update_layout(title_text="Embudo Detallado: Leads a Reuniones", title_x=0.5)
+    fig.update_layout(title_text="Embudo Detallado: Leads a Reuniones", title_x=0.5, margin=dict(t=50, b=10)) # Ajustar margen
     st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("#### Tasas de Conversión por Etapa")
@@ -332,29 +339,30 @@ def display_time_lag_analysis(df_filtered):
     st.caption("Calcula el tiempo promedio entre etapas clave para los leads que completaron esas etapas.")
 
     if df_filtered.empty:
-        st.info("No hay datos suficientes.")
+        st.info("No hay datos suficientes para calcular los tiempos del ciclo.")
         return
 
-    # Usar numpy.nanmean para ignorar NAs en el promedio
-    avg_gen_to_contact = np.nanmean(df_filtered['Dias_Gen_a_Contacto'])
-    avg_contact_to_meeting = np.nanmean(df_filtered['Dias_Contacto_a_Reunion'])
-    avg_gen_to_meeting = np.nanmean(df_filtered['Dias_Gen_a_Reunion'])
+    # Usar .dropna().mean() para calcular promedio ignorando NAs
+    avg_gen_to_contact = df_filtered['Dias_Gen_a_Contacto'].dropna().mean()
+    avg_contact_to_meeting = df_filtered['Dias_Contacto_a_Reunion'].dropna().mean()
+    avg_gen_to_meeting = df_filtered['Dias_Gen_a_Reunion'].dropna().mean()
 
-    # Contar cuántos tienen datos válidos para cada cálculo
-    count_gen_contact = df_filtered['Dias_Gen_a_Contacto'].count() # count() ignora NA
+    count_gen_contact = df_filtered['Dias_Gen_a_Contacto'].count() 
     count_contact_meeting = df_filtered['Dias_Contacto_a_Reunion'].count()
     count_gen_meeting = df_filtered['Dias_Gen_a_Reunion'].count()
 
+    # Formatear NA como "N/A"
+    f_avg_gen_contact = f"{avg_gen_to_contact:.1f}" if pd.notna(avg_gen_to_contact) else "N/A"
+    f_avg_contact_meeting = f"{avg_contact_to_meeting:.1f}" if pd.notna(avg_contact_to_meeting) else "N/A"
+    f_avg_gen_meeting = f"{avg_gen_to_meeting:.1f}" if pd.notna(avg_gen_to_meeting) else "N/A"
+
     t1, t2, t3 = st.columns(3)
-    t1.metric("Lead Gen → 1er Contacto",
-              f"{avg_gen_to_contact:.1f}" if not np.isnan(avg_gen_to_contact) else "N/A",
-              help=f"Promedio calculado sobre {count_gen_contact:,} leads con fecha de contacto.")
-    t2.metric("1er Contacto → Reunión",
-              f"{avg_contact_to_meeting:.1f}" if not np.isnan(avg_contact_to_meeting) else "N/A",
-              help=f"Promedio calculado sobre {count_contact_meeting:,} reuniones con fecha de contacto y reunión.")
-    t3.metric("Lead Gen → Reunión (Total)",
-              f"{avg_gen_to_meeting:.1f}" if not np.isnan(avg_gen_to_meeting) else "N/A",
-              help=f"Promedio calculado sobre {count_gen_meeting:,} reuniones con fecha de lead y reunión.")
+    t1.metric("Lead Gen → 1er Contacto", f_avg_gen_contact,
+              help=f"Promedio calculado sobre {count_gen_contact:,} leads con fechas válidas.")
+    t2.metric("1er Contacto → Reunión", f_avg_contact_meeting,
+              help=f"Promedio calculado sobre {count_contact_meeting:,} reuniones con fechas válidas.")
+    t3.metric("Lead Gen → Reunión (Total)", f_avg_gen_meeting,
+              help=f"Promedio calculado sobre {count_gen_meeting:,} reuniones con fechas válidas.")
 
 def display_segmentation_analysis(df_filtered):
     st.markdown("---")
@@ -379,37 +387,37 @@ def display_segmentation_analysis(df_filtered):
             lambda row: calculate_rate(row['Total_Reuniones'], row['Total_Leads']), axis=1
         )
         
-        # Filtrar para mostrar solo grupos con >= N leads (ej. 3)
         min_leads_threshold = 3
         segment_summary_filtered = segment_summary[segment_summary['Total_Leads'] >= min_leads_threshold].copy()
         
         if segment_summary_filtered.empty:
              st.caption(f"No hay grupos en '{group_col}' con al menos {min_leads_threshold} leads para mostrar gráfico.")
-             return
+             # Mostrar tabla completa aunque no haya gráfico
+             with st.expander(f"Ver datos detallados por {title_suffix} (todos los grupos)"):
+                 st.dataframe(
+                     segment_summary.sort_values('Total_Leads', ascending=False).style.format({
+                         'Total_Leads': '{:,}', 'Total_Reuniones': '{:,}', 'Tasa_Conversion_Global (%)': '{:.1f}%'
+                     }), hide_index=True, use_container_width=True
+                 )
+             return # Salir si no hay datos para gráfico
 
         segment_summary_filtered = segment_summary_filtered.sort_values('Tasa_Conversion_Global (%)', ascending=False)
 
         fig = px.bar(
-            segment_summary_filtered.head(10), 
-            x=group_col,
-            y='Tasa_Conversion_Global (%)',
+            segment_summary_filtered.head(10), x=group_col, y='Tasa_Conversion_Global (%)',
             title=f"Top 10 {title_suffix} por Tasa de Conversión (Lead a Reunión)",
-            text='Tasa_Conversion_Global (%)',
-            color='Tasa_Conversion_Global (%)', 
-            color_continuous_scale=px.colors.sequential.Tealgrn # Nueva escala de color
+            text='Tasa_Conversion_Global (%)', color='Tasa_Conversion_Global (%)', 
+            color_continuous_scale=px.colors.sequential.YlGnBu
         )
         fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
-        fig.update_layout(yaxis_title="Tasa Conversión Global (%)", yaxis_ticksuffix="%", xaxis_title=title_suffix, title_x=0.5)
+        fig.update_layout(yaxis_title="Tasa Conversión Global (%)", yaxis_ticksuffix="%", xaxis_title=title_suffix, title_x=0.5, yaxis_range=[0,105]) # Rango Y hasta 105%
         st.plotly_chart(fig, use_container_width=True)
 
         with st.expander(f"Ver datos detallados por {title_suffix} (todos los grupos)"):
             st.dataframe(
                 segment_summary.sort_values('Total_Leads', ascending=False).style.format({
-                    'Total_Leads': '{:,}',
-                    'Total_Reuniones': '{:,}',
-                    'Tasa_Conversion_Global (%)': '{:.1f}%'
-                }),
-                hide_index=True, use_container_width=True
+                    'Total_Leads': '{:,}', 'Total_Reuniones': '{:,}', 'Tasa_Conversion_Global (%)': '{:.1f}%'
+                }), hide_index=True, use_container_width=True
             )
 
     col1, col2 = st.columns(2)
@@ -423,14 +431,20 @@ def display_channel_analysis(df_filtered):
     st.markdown(f"### 📣 Efectividad por Canal de Respuesta ({COL_CHANNEL})")
     st.caption("Analiza qué canales generan más respuestas y cuál convierte mejor esas respuestas en reuniones.")
 
-    if df_filtered.empty or COL_CHANNEL not in df_filtered.columns or df_filtered[COL_CHANNEL].nunique() < 1:
-        st.info(f"No hay datos suficientes o falta la columna '{COL_CHANNEL}'.")
+    # Asegurarse que COL_CHANNEL y COL_RESPONDED existan
+    if COL_CHANNEL not in df_filtered.columns or COL_RESPONDED not in df_filtered.columns:
+        st.info(f"Faltan columnas '{COL_CHANNEL}' o '{COL_RESPONDED}' para este análisis.")
         return
-
+        
     df_responded = df_filtered[df_filtered[COL_RESPONDED] == "Si"].copy()
 
     if df_responded.empty:
-        st.info("No hay leads con respuesta registrada para analizar por canal.")
+        st.info("No hay leads con respuesta registrada ('Si') para analizar por canal.")
+        return
+        
+    # Verificar si hay variación en los canales
+    if df_responded[COL_CHANNEL].nunique() < 1:
+        st.info(f"No hay suficientes datos o variación en '{COL_CHANNEL}' entre los que respondieron.")
         return
 
     channel_summary = df_responded.groupby(COL_CHANNEL).agg(
@@ -454,26 +468,27 @@ def display_channel_analysis(df_filtered):
         st.plotly_chart(fig_volume, use_container_width=True)
 
     with col_chart2:
-        fig_rate = px.bar(
-            channel_summary.sort_values('Tasa_Reunion_por_Respuesta (%)', ascending=False),
-            x=COL_CHANNEL, y='Tasa_Reunion_por_Respuesta (%)',
-            title="Tasa de Conversión Respuesta -> Reunión por Canal",
-            text='Tasa_Reunion_por_Respuesta (%)',
-            color='Tasa_Reunion_por_Respuesta (%)',
-            color_continuous_scale=px.colors.sequential.OrRd
-        )
-        fig_rate.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
-        fig_rate.update_layout(yaxis_title="Tasa Reunión/Respuesta (%)", yaxis_ticksuffix="%", title_x=0.5)
-        st.plotly_chart(fig_rate, use_container_width=True)
+        # Solo mostrar gráfico de tasa si hay reuniones
+        if channel_summary['Total_Reuniones'].sum() > 0:
+            fig_rate = px.bar(
+                channel_summary.sort_values('Tasa_Reunion_por_Respuesta (%)', ascending=False),
+                x=COL_CHANNEL, y='Tasa_Reunion_por_Respuesta (%)',
+                title="Tasa de Conversión Respuesta -> Reunión por Canal",
+                text='Tasa_Reunion_por_Respuesta (%)', color='Tasa_Reunion_por_Respuesta (%)',
+                color_continuous_scale=px.colors.sequential.Purples
+            )
+            fig_rate.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+            fig_rate.update_layout(yaxis_title="Tasa Reunión/Respuesta (%)", yaxis_ticksuffix="%", title_x=0.5, yaxis_range=[0,105])
+            st.plotly_chart(fig_rate, use_container_width=True)
+        else:
+            st.caption("No hay reuniones registradas para calcular la tasa de conversión por canal.")
 
     with st.expander("Ver datos detallados por Canal de Respuesta"):
         st.dataframe(
             channel_summary.style.format({
-                'Total_Respuestas': '{:,}',
-                'Total_Reuniones': '{:,}',
+                'Total_Respuestas': '{:,}', 'Total_Reuniones': '{:,}',
                 'Tasa_Reunion_por_Respuesta (%)': '{:.1f}%'
-            }),
-            hide_index=True, use_container_width=True
+            }), hide_index=True, use_container_width=True
         )
 
 def display_enhanced_time_evolution(df_filtered):
@@ -481,8 +496,8 @@ def display_enhanced_time_evolution(df_filtered):
     st.markdown("### 📈 Evolución Temporal Detallada del Embudo (por Mes)")
     st.caption("Compara la generación de leads con el avance en las etapas clave mes a mes.")
     
-    if df_filtered.empty or 'AñoMes' not in df_filtered.columns:
-        st.info("No hay datos suficientes para mostrar la evolución temporal.")
+    if df_filtered.empty or 'AñoMes' not in df_filtered.columns or df_filtered['AñoMes'].nunique() < 1:
+        st.info("No hay suficientes datos para mostrar la evolución temporal mensual.")
         return
 
     time_summary = df_filtered.groupby('AñoMes').agg(
@@ -494,8 +509,7 @@ def display_enhanced_time_evolution(df_filtered):
     
     if not time_summary.empty:
         time_summary_melted = time_summary.melt(
-            id_vars=['AñoMes'],
-            value_vars=['Leads_Generados', 'Primer_Contacto', 'Respuestas', 'Reuniones'],
+            id_vars=['AñoMes'], value_vars=['Leads_Generados', 'Primer_Contacto', 'Respuestas', 'Reuniones'],
             var_name='Etapa', value_name='Cantidad'
         )
         
@@ -504,7 +518,7 @@ def display_enhanced_time_evolution(df_filtered):
             title="Evolución Mensual del Embudo", markers=True,
             labels={"Cantidad": "Número de Leads / Eventos", "AñoMes": "Mes"}
         )
-        fig.update_layout(legend_title_text='Etapa del Embudo', title_x=0.5) 
+        fig.update_layout(legend_title_text='Etapa del Embudo', title_x=0.5, yaxis_rangemode='tozero') 
         st.plotly_chart(fig, use_container_width=True)
         
         with st.expander("Ver datos de evolución mensual"):
@@ -516,17 +530,14 @@ def display_enhanced_time_evolution(df_filtered):
 # --- Flujo Principal ---
 df_pipeline_base = load_pipeline_data()
 
-# --- Expander para Depuración ---
 with st.expander("🔍 Ver datos crudos procesados (primeras 50 filas) - Para depuración"):
     if not df_pipeline_base.empty:
         st.dataframe(df_pipeline_base.head(50))
     else:
         st.warning("No se cargaron datos base.")
-# --- Fin Expander ---
 
 if df_pipeline_base.empty:
     st.error("Fallo crítico: El DataFrame del Pipeline está vacío tras la carga.")
-    # No usamos st.stop() aquí para permitir ver el expander si hubo error de carga antes
 else:
     start_date, end_date, industries, managements, meeting_status = sidebar_filters_pipeline(df_pipeline_base.copy()) 
 
@@ -555,11 +566,12 @@ else:
                 if date_col in df_display.columns:
                      df_display[date_col] = df_display[date_col].dt.strftime('%Y-%m-%d').fillna('N/A')
             
-            # Formatear columnas de días como números con 1 decimal o N/A
             for time_col in ['Dias_Gen_a_Contacto', 'Dias_Contacto_a_Reunion', 'Dias_Gen_a_Reunion']:
                  if time_col in df_display.columns:
-                     df_display[time_col] = df_display[time_col].apply(lambda x: f"{x:.1f}" if pd.notna(x) else 'N/A')
+                     # Mostrar como entero si no es NA, si no 'N/A'
+                     df_display[time_col] = df_display[time_col].apply(lambda x: f"{x:.0f}" if pd.notna(x) else 'N/A')
 
             st.dataframe(df_display, hide_index=True)
     else:
-        st.info("No se encontraron datos que coincidan con los filtros seleccionados.")
+        st.info("ℹ️ No se encontraron datos que coincidan con los filtros seleccionados.")
+
