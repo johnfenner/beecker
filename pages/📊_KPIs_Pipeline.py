@@ -1,24 +1,19 @@
-# pages/📈_KPIs_Pipeline.py
 import streamlit as st
 import pandas as pd
-import gspread # <--- Quitaremos esto
 import datetime
 import plotly.express as px
 import plotly.graph_objects as go
 from collections import Counter
-import re # <-- ¡Este es importante!
+import re
 
-# --- Configuración de Página ---
 st.set_page_config(layout="wide", page_title="Pipeline de Prospección")
 st.title("📈 Pipeline de Prospección (Oct 2025)")
 st.markdown("Métricas de conversión y seguimiento del embudo de prospección.")
 
-# --- Constantes y Claves de Sesión ---
 PIPELINE_SHEET_URL_KEY = "pipeline_october_2025"
 DEFAULT_PIPELINE_URL = "https://docs.google.com/spreadsheets/d/1Qd0ekzNwfHuUEGoqkCYCv6i6TM0X3jmK/edit?gid=971436223#gid=971436223"
-PIPELINE_SHEET_NAME = "Prospects" # El nombre de la pestaña que me diste
+PIPELINE_SHEET_NAME = "Prospects"
 
-# Columnas Clave del Pipeline
 COL_PRIMARY_DATE = "Lead Generated (Date)"
 COL_INDUSTRY = "Industry"
 COL_MANAGEMENT = "Management Level"
@@ -28,14 +23,11 @@ COL_RESPONDED = "Responded?"
 COL_MEETING = "Meeting?"
 COL_MEETING_DATE = "Meeting Date"
 
-# Claves de Sesión para Filtros
 SES_START_DATE_KEY = "pipeline_page_start_date_v1"
 SES_END_DATE_KEY = "pipeline_page_end_date_v1"
 SES_INDUSTRY_KEY = "pipeline_page_industry_v1"
 SES_MANAGEMENT_KEY = "pipeline_page_management_v1"
 SES_MEETING_KEY = "pipeline_page_meeting_v1"
-
-# --- Funciones de Utilidad ---
 
 def parse_date_robustly(date_val):
     if pd.isna(date_val) or str(date_val).strip() == "":
@@ -68,28 +60,11 @@ def calculate_rate(numerator, denominator, round_to=1):
     if denominator == 0: return 0.0
     return round((numerator / denominator) * 100, round_to)
 
-# --- Carga y Procesamiento de Datos (MODIFICADO) ---
-
 @st.cache_data(ttl=300)
 def load_pipeline_data():
-    """
-    Carga y procesa los datos de la hoja del Pipeline.
-    MODIFICADO: Lee un archivo Excel (.xlsx) directamente desde Google Drive.
-    """
-    
-    # Ya no necesitamos credenciales de gspread si el archivo es público
-    # try:
-    #     creds = st.secrets["gcp_service_account"]
-    #     client = gspread.service_account_from_dict(creds)
-    # except Exception as e:
-    #     st.error(f"Error de credenciales [gcp_service_account]: {e}")
-    #     st.stop()
-
     sheet_url = st.secrets.get(PIPELINE_SHEET_URL_KEY, DEFAULT_PIPELINE_URL)
     
     try:
-        # 1. Extraer el FILE_ID de la URL de Google Drive
-        # (Ej: .../d/FILE_ID/edit)
         file_id_match = re.search(r'/d/([a-zA-Z0-9_-]+)', sheet_url)
         if not file_id_match:
             st.error(f"No se pudo extraer el FILE_ID de la URL: {sheet_url}")
@@ -97,15 +72,13 @@ def load_pipeline_data():
         
         file_id = file_id_match.group(1)
         
-        # 2. Construir la URL de descarga directa de Excel
-        download_url = f"https://docs.google.com/uc?export=download&id={file_id}"
+        # --- NUEVA URL DE DESCARGA ---
+        download_url = f"https://drive.google.com/u/0/uc?id={file_id}&export=download&format=xlsx"
         
-        # 3. Usar pandas para leer el archivo Excel desde la URL de descarga
-        # Usamos la pestaña "Prospects" que nos indicaste
         df = pd.read_excel(
             download_url, 
             sheet_name=PIPELINE_SHEET_NAME,
-            engine="openpyxl" # Usamos el motor que ya tienes en requirements.txt
+            engine="openpyxl" 
         )
         
     except Exception as e:
@@ -114,31 +87,24 @@ def load_pipeline_data():
         st.info(f"También verifica que la pestaña se llame exactamente: '{PIPELINE_SHEET_NAME}'")
         st.stop()
 
-    # --- Procesamiento Específico del Pipeline (Esta parte sigue igual) ---
-    
-    # 1. Limpiar columnas de KPI (Sí/No)
     kpi_cols = [COL_CONTACTED, COL_RESPONDED, COL_MEETING]
     for col in kpi_cols:
         if col in df.columns:
             df[col] = df[col].apply(clean_yes_no)
         else:
-            st.warning(f"Columna KPI '{col}' no encontrada. Se rellenará con 'No'.")
             df[col] = "No"
 
-    # 2. Parsear Fechas
     if COL_PRIMARY_DATE in df.columns:
         df['Fecha_Principal'] = df[COL_PRIMARY_DATE].apply(parse_date_robustly)
     else:
-        st.error(f"Columna de fecha principal '{COL_PRIMARY_DATE}' no encontrada. No se puede continuar.")
+        st.error(f"Columna de fecha principal '{COL_PRIMARY_DATE}' no encontrada.")
         st.stop()
         
     if COL_MEETING_DATE in df.columns:
         df[COL_MEETING_DATE] = df[COL_MEETING_DATE].apply(parse_date_robustly)
 
-    # Quitar filas donde la fecha principal no sea válida
     df.dropna(subset=['Fecha_Principal'], inplace=True)
     
-    # 3. Crear columnas de tiempo para agrupar
     if not df.empty:
         df['Año'] = df['Fecha_Principal'].dt.year
         df['NumSemana'] = df['Fecha_Principal'].dt.isocalendar().week.astype(int)
@@ -148,20 +114,15 @@ def load_pipeline_data():
         df['NumSemana'] = pd.Series(dtype='int')
         df['AñoMes'] = pd.Series(dtype='str')
 
-    # 4. Limpiar columnas categóricas (para filtros)
     cat_cols = [COL_INDUSTRY, COL_MANAGEMENT, COL_CHANNEL]
     for col in cat_cols:
         if col in df.columns:
-            # Rellenar vacíos con 'N/D'
             df[col] = df[col].fillna('N/D')
             df[col] = df[col].astype(str).str.strip().replace('', 'N/D')
         else:
-            st.warning(f"Columna de filtro '{col}' no encontrada. Se rellenará con 'N/D'.")
             df[col] = "N/D"
             
     return df
-
-# --- Filtros de Barra Lateral (Sin cambios) ---
 
 def sidebar_filters_pipeline(df_options):
     st.sidebar.header("🔍 Filtros del Pipeline")
@@ -190,9 +151,9 @@ def sidebar_filters_pipeline(df_options):
     def create_multiselect(col_name, label, key):
         options = ["– Todos –"]
         if col_name in df_options.columns and not df_options[col_name].dropna().empty:
-            unique_vals = sorted(df_options[col_name].unique())
+            unique_vals = sorted(df_options[col_name].astype(str).unique())
             options.extend([val for val in unique_vals if val != "N/D"])
-            if "N/D" in df_options[col_name].unique():
+            if "N/D" in df_options[col_name].astype(str).unique():
                 options.append("N/D")
         st.sidebar.multiselect(label, options, key=key)
 
@@ -214,16 +175,21 @@ def sidebar_filters_pipeline(df_options):
         st.session_state[SES_MEETING_KEY]
     )
 
-# --- Aplicación de Filtros (Sin cambios) ---
-
 def apply_pipeline_filters(df, start_dt, end_dt, industries, managements, meeting_status):
     df_f = df.copy()
 
     if "Fecha_Principal" in df_f.columns:
-        start_dt_date = start_dt.date() if isinstance(start_dt, datetime.datetime) else start_dt
-        end_dt_date = end_dt.date() if isinstance(end_dt, datetime.datetime) else end_dt
+        start_dt_date = pd.to_datetime(start_dt).date() if start_dt else None
+        end_dt_date = pd.to_datetime(end_dt).date() if end_dt else None
+        
+        fecha_series_valid = df_f["Fecha_Principal"].dropna().dt.date
+
         if start_dt_date and end_dt_date:
-            df_f = df_f[(df_f["Fecha_Principal"].dt.date >= start_dt_date) & (df_f["Fecha_Principal"].dt.date <= end_dt_date)]
+            df_f = df_f[fecha_series_valid.between(start_dt_date, end_dt_date, inclusive="both")]
+        elif start_dt_date:
+            df_f = df_f[fecha_series_valid >= start_dt_date]
+        elif end_dt_date:
+             df_f = df_f[fecha_series_valid <= end_dt_date]
     
     if industries and "– Todos –" not in industries:
         df_f = df_f[df_f[COL_INDUSTRY].isin(industries)]
@@ -235,8 +201,6 @@ def apply_pipeline_filters(df, start_dt, end_dt, industries, managements, meetin
         df_f = df_f[df_f[COL_MEETING] == meeting_status]
         
     return df_f
-
-# --- Componentes de Visualización (Sin cambios) ---
 
 def display_pipeline_kpis(df_filtered):
     st.markdown("### 🧮 Resumen del Embudo (Periodo Filtrado)")
@@ -339,8 +303,6 @@ def display_time_evolution(df_filtered):
     else:
         st.caption("No hay datos de evolución temporal.")
 
-
-# --- Flujo Principal de la Página ---
 df_pipeline_base = load_pipeline_data()
 
 if df_pipeline_base.empty:
@@ -368,19 +330,28 @@ if not df_pipeline_filtered.empty:
             COL_PRIMARY_DATE, COL_CONTACTED, COL_RESPONDED, COL_MEETING, COL_MEETING_DATE,
             "Response Channel", "LinkedIn URL"
         ]
-        # Asegurarnos de que solo mostramos columnas que realmente existen
         cols_exist = [col for col in cols_to_show if col in df_pipeline_filtered.columns]
         
-        # Formatear la fecha principal para que se vea bien en la tabla
         df_display = df_pipeline_filtered[cols_exist].copy()
-        if COL_PRIMARY_DATE in df_display.columns:
-             df_display[COL_PRIMARY_DATE] = df_display[COL_PRIMARY_DATE].dt.strftime('%Y-%m-%d')
+        
+        if 'Fecha_Principal' in df_display.columns: # Usar la columna parseada
+            df_display['Fecha_Principal'] = df_display['Fecha_Principal'].dt.strftime('%Y-%m-%d')
+            # Renombrar para mostrar con el nombre original si es necesario
+            if COL_PRIMARY_DATE not in cols_exist:
+                 df_display.rename(columns={'Fecha_Principal': COL_PRIMARY_DATE}, inplace=True)
+            
         if COL_MEETING_DATE in df_display.columns:
              df_display[COL_MEETING_DATE] = df_display[COL_MEETING_DATE].dt.strftime('%Y-%m-%d')
 
-        st.dataframe(df_display, hide_index=True)
+        # Asegurarse que la columna renombrada (si aplica) esté en la lista final
+        cols_exist_final = []
+        for col in cols_to_show:
+             if col in df_display.columns:
+                 cols_exist_final.append(col)
+             elif col == COL_PRIMARY_DATE and 'Fecha_Principal' in df_display.columns: # Caso especial si renombró
+                 cols_exist_final.append(COL_PRIMARY_DATE)
+
+        st.dataframe(df_display[cols_exist_final], hide_index=True)
 else:
     st.info("No se encontraron datos que coincidan con los filtros seleccionados.")
 
-st.markdown("---")
-st.info("Esta página ha sido generada siguiendo el patrón de KPIs SDR.")
