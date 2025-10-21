@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
+import gspread  # Usamos gspread directamente, igual que tu otro archivo
 import plotly.express as px
-from streamlit_gsheets import GSheetsConnection
 
 # --- Configuración de la Página ---
 st.set_page_config(
@@ -11,32 +11,66 @@ st.set_page_config(
 )
 
 # --- Carga de Datos (con caché) ---
-# Usamos st.cache_data para no recargar los datos de Google Sheets
-# en cada interacción del usuario. Se actualiza cada 10 minutos (ttl=600).
+# Adaptado para usar gspread y tu método de secrets
 @st.cache_data(ttl=600)
 def load_data():
-    # URL de la hoja de cálculo (tomada de secrets)
-    SHEET_URL = st.secrets["connections"]["gsheets"]["spreadsheet"]
     
-    # Nombre de la hoja
-    WORKSHEET_NAME = "Prospects" 
+    # 1. Autenticar (Usando el mismo método de tu archivo _KPIs_SDR.py)
+    try:
+        creds_from_secrets = st.secrets["gcp_service_account"]
+        client = gspread.service_account_from_dict(creds_from_secrets)
+    except Exception as e:
+        st.error(f"Error al autenticar con Google (gcp_service_account): {e}")
+        st.stop()
+
+    # 2. Abrir la hoja de Prospects
+    try:
+        # Lee la URL desde el secret que acabamos de agregar
+        sheet_url = st.secrets["prospects_sheet_url"]
+        WORKSHEET_NAME = "Prospects" 
+        
+        workbook = client.open_by_url(sheet_url)
+        sheet = workbook.worksheet(WORKSHEET_NAME)
     
-    # Conectar y leer
-    conn = st.connection("gsheets", type=GSheetsConnection)
-    df = conn.read(
-        spreadsheet=SHEET_URL,
-        worksheet=WORKSHEET_NAME,
-        usecols=list(range(24)) # Basado en las 24 columnas que listaste
-    )
-    
+        # 3. Obtener datos y convertir a DataFrame
+        raw_data = sheet.get_all_values()
+        if not raw_data or len(raw_data) <= 1:
+            st.error(f"No se pudieron obtener datos de la hoja '{WORKSHEET_NAME}'.")
+            return pd.DataFrame()
+            
+        headers = raw_data[0]
+        rows = raw_data[1:]
+        
+        # Filtra filas vacías (donde todas las celdas están vacías)
+        cleaned_rows = [row for row in rows if any(cell.strip() for cell in row)]
+        
+        # Asegurarse de que las filas tengan la misma longitud que los encabezados
+        num_cols = len(headers)
+        cleaned_rows_padded = []
+        for row in cleaned_rows:
+            if len(row) < num_cols:
+                # Añade celdas vacías si la fila es más corta
+                row.extend([''] * (num_cols - len(row)))
+            elif len(row) > num_cols:
+                # Recorta la fila si es más larga
+                row = row[:num_cols]
+            cleaned_rows_padded.append(row)
+
+        df = pd.DataFrame(cleaned_rows_padded, columns=headers)
+
+    except gspread.exceptions.WorksheetNotFound:
+        st.error(f"Error: No se encontró la hoja de cálculo '{WORKSHEET_NAME}' en el Google Sheet.")
+        st.stop()
+    except Exception as e:
+        st.error(f"Error al leer la hoja '{WORKSHEET_NAME}': {e}")
+        st.stop()
+
     # --- Limpieza de Datos Esencial ---
     
     # 1. Convertir columnas de Falso/Verdadero (ej. 'TRUE', 'FALSE', '')
-    # El sample usa 'TRUE' y 'FALSE' en mayúsculas, que deben ser convertidos a Booleanos.
     bool_cols = ['Contacted?', 'Responded?']
     for col in bool_cols:
         if col in df.columns:
-            # Convierte 'TRUE' (string) a True (Bool), y cualquier otra cosa a False
             df[col] = df[col].apply(lambda x: True if str(x).strip().upper() == 'TRUE' else False)
 
     # 2. Limpiar columna 'Meeting?' (para contar 'Yes')
@@ -47,14 +81,13 @@ def load_data():
     date_cols = ['Lead Generated (Date)', 'First Contact Date', 'Next Follow-Up Date', 'Meeting Date']
     for col in date_cols:
         if col in df.columns:
-            # 'dayfirst=True' le dice a pandas que interprete '2/10/2025' como 2 de Octubre
             df[col] = pd.to_datetime(df[col], errors='coerce', dayfirst=True)
             
     return df
 
 # --- Cuerpo Principal de la App ---
 
-st.title("📊 Dashboard de Métricas de Prospección")
+st.title("📊 Dashboard de Métricas de Prospección (Pipeline)")
 st.markdown("Mostrando los KPIs más importantes del proceso de ventas.")
 
 # Cargar los datos
@@ -123,11 +156,12 @@ try:
         with viz2:
             # 2. Gráfico: Industrias
             st.subheader("Leads por Industria")
-            industry_data = df['Industry'].value_counts().reset_index()
-            industry_data.columns = ['Industria', 'Cantidad']
+            # Reemplaza valores vacíos o nulos en 'Industry' con 'N/D' antes de contar
+            industry_counts = df['Industry'].fillna('N/D').replace('', 'N/D').value_counts().reset_index()
+            industry_counts.columns = ['Industria', 'Cantidad']
             
-            if not industry_data.empty:
-                fig_bar = px.bar(industry_data, 
+            if not industry_counts.empty:
+                fig_bar = px.bar(industry_counts, 
                                  x='Industria', 
                                  y='Cantidad', 
                                  title="Volumen de Leads por Industria")
@@ -160,5 +194,4 @@ try:
 
 except Exception as e:
     st.error(f"Ocurrió un error al cargar la aplicación: {e}")
-    st.error("Por favor, verifica que la hoja de Google Sheets esté compartida con el email de la cuenta de servicio (service account) y que el nombre de la hoja ('Prospects') sea correcto.")
-
+    st.exception(e)
