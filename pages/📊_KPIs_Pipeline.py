@@ -19,19 +19,24 @@ st.set_page_config(
 COL_COMPANY = "Company"
 COL_INDUSTRY = "Industry"
 COL_MANAGEMENT_LEVEL = "Management Level"
-COL_LEAD_DATE = "Lead Generated (Date)"
+COL_LEAD_DATE = "Lead Generated (Date)" # Se carga pero no se usa como filtro principal
+COL_CONECTION_SENT = "Conection Sent Date" # <-- NUEVA COLUMNA CLAVE
 COL_CONTACTED = "Contacted?"
 COL_RESPONDED = "Responded?"
 COL_MEETING = "Meeting?"
 COL_MEETING_DATE = "Meeting Date"
 
+# Columna de fecha principal para filtros y análisis temporal
+COL_DATE_FILTER = COL_CONECTION_SENT
+
 # Columnas booleanas internas que crearemos
+COL_CONECTION_SENT_BOOL = "Conection_Sent_Bool" # <-- NUEVA
 COL_CONTACTED_BOOL = "Contacted_Bool"
 COL_RESPONDED_BOOL = "Responded_Bool"
 COL_MEETING_BOOL = "Meeting_Bool"
 
 # Claves de Estado de Sesión para Filtros (con prefijo único)
-FILTER_KEYS_PREFIX = "pipeline_kpi_page_v1_"
+FILTER_KEYS_PREFIX = "pipeline_kpi_page_v2_" # Versión actualizada
 PIPE_START_DATE_KEY = f"{FILTER_KEYS_PREFIX}start_date"
 PIPE_END_DATE_KEY = f"{FILTER_KEYS_PREFIX}end_date"
 PIPE_INDUSTRY_FILTER_KEY = f"{FILTER_KEYS_PREFIX}industry"
@@ -67,7 +72,7 @@ def load_pipeline_data():
         headers = raw_data[0]
         rows = raw_data[1:]
         
-        # Limpieza básica de filas y padding (igual que en tus otros archivos)
+        # Limpieza básica de filas y padding
         cleaned_rows = [row for row in rows if any(cell.strip() for cell in row)]
         num_cols = len(headers)
         cleaned_rows_padded = []
@@ -93,39 +98,47 @@ def load_pipeline_data():
         if original in df.columns:
             df[new] = df[original].apply(lambda x: True if str(x).strip().upper() == 'TRUE' else False)
         else:
-            df[new] = False # Asegura que la columna exista
+            df[new] = False
 
     # 2. Convertir 'Meeting?' (Asumiendo 'Yes'/'No')
     if COL_MEETING in df.columns:
-         # Compara con 'Yes' ignorando mayúsculas/minúsculas y espacios
         df[COL_MEETING_BOOL] = df[COL_MEETING].apply(lambda x: True if str(x).strip().upper() == 'YES' else False)
     else:
-        df[COL_MEETING_BOOL] = False # Asegura que la columna exista
+        df[COL_MEETING_BOOL] = False
 
-    # 3. Convertir fechas
-    if COL_LEAD_DATE in df.columns:
-        # Intenta parsear con dayfirst=True (DD/MM/YYYY)
-        df[COL_LEAD_DATE] = pd.to_datetime(df[COL_LEAD_DATE], errors='coerce', dayfirst=True)
+    # 3. Convertir Connection Sent Date (Primary Date Filter)
+    if COL_CONECTION_SENT in df.columns:
+        df[COL_CONECTION_SENT] = pd.to_datetime(df[COL_CONECTION_SENT], errors='coerce', dayfirst=True)
+        df[COL_CONECTION_SENT_BOOL] = df[COL_CONECTION_SENT].notna()
     else:
-        df[COL_LEAD_DATE] = pd.NaT # Asegura que exista como fecha
+        df[COL_CONECTION_SENT] = pd.NaT
+        df[COL_CONECTION_SENT_BOOL] = False
+
+    # --- FILTRO BASE: Mantener solo leads con fecha de conexión enviada ---
+    # Este es el cambio clave: la base de datos para todo el dashboard
+    # solo incluirá filas con una fecha de conexión válida.
+    df = df[df[COL_CONECTION_SENT_BOOL] == True].copy()
+    if df.empty:
+        st.warning("No se encontraron leads con una 'Conection Sent Date' válida. El dashboard estará vacío.")
+        return pd.DataFrame()
 
     # 4. Limpiar columnas de texto para filtros/desglose
     text_cols_clean = [COL_COMPANY, COL_INDUSTRY, COL_MANAGEMENT_LEVEL]
     for col in text_cols_clean:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().fillna("N/D")
-            df.loc[df[col] == '', col] = "N/D" # Reemplaza vacíos con 'N/D'
+            df.loc[df[col] == '', col] = "N/D"
         else:
-            df[col] = "N/D" # Asegura que existan
+            df[col] = "N/D"
 
-    # 5. Crear columnas de Año/Mes/Semana
-    if pd.api.types.is_datetime64_any_dtype(df[COL_LEAD_DATE]):
-        df_valid_dates = df.dropna(subset=[COL_LEAD_DATE])
+    # 5. Crear columnas de Año/Mes/Semana (basado en COL_DATE_FILTER)
+    if pd.api.types.is_datetime64_any_dtype(df[COL_DATE_FILTER]):
+        df_valid_dates = df.dropna(subset=[COL_DATE_FILTER])
         if not df_valid_dates.empty:
-            df['Año'] = df_valid_dates[COL_LEAD_DATE].dt.year.astype('Int64')
-            df['NumSemana'] = df_valid_dates[COL_LEAD_DATE].dt.isocalendar().week.astype('Int64')
-            df['AñoMes'] = df_valid_dates[COL_LEAD_DATE].dt.strftime('%Y-%m')
-            # Llenar NaNs en las nuevas columnas para filas sin fecha válida
+            df['Año'] = df_valid_dates[COL_DATE_FILTER].dt.year.astype('Int64')
+            df['NumSemana'] = df_valid_dates[COL_DATE_FILTER].dt.isocalendar().week.astype('Int64')
+            df['AñoMes'] = df_valid_dates[COL_DATE_FILTER].dt.strftime('%Y-%m')
+            
             df['Año'] = df['Año'].fillna(0)
             df['NumSemana'] = df['NumSemana'].fillna(0)
             df['AñoMes'] = df['AñoMes'].fillna('N/D')
@@ -187,11 +200,11 @@ def sidebar_filters_pipeline_kpi(df_options):
     crear_multiselect_pipeline_kpi(df_options, COL_COMPANY, "Compañía", PIPE_COMPANY_FILTER_KEY)
     crear_multiselect_pipeline_kpi(df_options, COL_MANAGEMENT_LEVEL, "Management Level", PIPE_MANAGEMENT_FILTER_KEY)
 
-    # Filtros de Fecha (Lead Generated Date)
-    st.sidebar.subheader("🗓️ Por Fecha de Generación")
+    # Filtros de Fecha (Basado en COL_DATE_FILTER)
+    st.sidebar.subheader("🗓️ Por Fecha de Conexión Enviada")
     min_d, max_d = None, None
-    if COL_LEAD_DATE in df_options.columns and pd.api.types.is_datetime64_any_dtype(df_options[COL_LEAD_DATE]):
-        valid_dates = df_options[COL_LEAD_DATE].dropna()
+    if COL_DATE_FILTER in df_options.columns and pd.api.types.is_datetime64_any_dtype(df_options[COL_DATE_FILTER]):
+        valid_dates = df_options[COL_DATE_FILTER].dropna()
         if not valid_dates.empty:
             min_d, max_d = valid_dates.min().date(), valid_dates.max().date()
     
@@ -199,8 +212,8 @@ def sidebar_filters_pipeline_kpi(df_options):
     with col_f1: st.date_input("Desde", format='DD/MM/YYYY', key=PIPE_START_DATE_KEY, min_value=min_d, max_value=max_d)
     with col_f2: st.date_input("Hasta", format='DD/MM/YYYY', key=PIPE_END_DATE_KEY, min_value=min_d, max_value=max_d)
 
-    # Filtros de Año/Semana (basados en la fecha de generación)
-    st.sidebar.subheader("📅 Por Año y Semana (Generación)")
+    # Filtros de Año/Semana (basados en la fecha de conexión)
+    st.sidebar.subheader("📅 Por Año y Semana (Conexión)")
     
     year_options = ["– Todos –"]
     if "Año" in df_options.columns and not df_options["Año"].dropna().empty:
@@ -232,9 +245,9 @@ def apply_pipeline_kpi_filters(df, start_dt, end_dt, year_val, week_list, indust
     """Aplica todos los filtros seleccionados al DataFrame."""
     df_f = df.copy()
     
-    # Filtro de Fecha (Rango)
-    if pd.api.types.is_datetime64_any_dtype(df_f[COL_LEAD_DATE]):
-        date_series = df_f[COL_LEAD_DATE].dt.date
+    # Filtro de Fecha (Rango) - Basado en COL_DATE_FILTER
+    if pd.api.types.is_datetime64_any_dtype(df_f[COL_DATE_FILTER]):
+        date_series = df_f[COL_DATE_FILTER].dt.date
         if start_dt and end_dt:
             df_f = df_f[(date_series >= start_dt) & (date_series <= end_dt)]
         elif start_dt:
@@ -275,6 +288,7 @@ def display_pipeline_kpi_summary_metrics(df_filtered):
         return
 
     # Cálculos usando las columnas booleanas limpias
+    # total_leads ahora es el total después del filtro base + filtros de sidebar
     total_leads = len(df_filtered)
     total_contacted = df_filtered[COL_CONTACTED_BOOL].sum()
     total_responded = df_filtered[COL_RESPONDED_BOOL].sum()
@@ -289,7 +303,7 @@ def display_pipeline_kpi_summary_metrics(df_filtered):
     # Mostrar métricas absolutas
     st.markdown("#### Métricas Absolutas")
     m_col1, m_col2, m_col3, m_col4 = st.columns(4)
-    m_col1.metric("Leads (Filtrados)", f"{total_leads:,.0f}")
+    m_col1.metric("Leads (Conexión Enviada)", f"{total_leads:,.0f}")
     m_col2.metric("Contactados", f"{total_contacted:,.0f}")
     m_col3.metric("Respondieron", f"{total_responded:,.0f}")
     m_col4.metric("Reuniones Agendadas", f"{total_meetings:,.0f}")
@@ -297,10 +311,10 @@ def display_pipeline_kpi_summary_metrics(df_filtered):
     st.markdown("---")
     st.markdown("#### Tasas de Conversión del Embudo")
     r_col1, r_col2, r_col3, r_col4 = st.columns(4)
-    r_col1.metric("Tasa Contacto", f"{contact_rate:.1f}%", help="Contactados / Leads")
+    r_col1.metric("Tasa Contacto", f"{contact_rate:.1f}%", help="Contactados / Leads (Conexión Enviada)")
     r_col2.metric("Tasa Respuesta", f"{response_rate:.1f}%", help="Respondieron / Contactados")
     r_col3.metric("Tasa Reunión (vs Resp.)", f"{meeting_rate_vs_resp:.1f}%", help="Reuniones / Respondieron")
-    r_col4.metric("Tasa Reunión (Global)", f"{meeting_rate_vs_leads:.1f}%", help="Reuniones / Leads")
+    r_col4.metric("Tasa Reunión (Global)", f"{meeting_rate_vs_leads:.1f}%", help="Reuniones / Leads (Conexión Enviada)")
 
 def display_pipeline_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_icon="📊"):
     """Muestra una tabla y gráfico de barras para una dimensión dada."""
@@ -326,10 +340,12 @@ def display_pipeline_grouped_breakdown(df_filtered, group_by_col, title_prefix, 
         COL_MEETING_BOOL: 'Reuniones'
     }
     summary_df.rename(columns=rename_map, inplace=True)
+    summary_df.rename(columns={'Total_Leads': 'Leads (Conexión Enviada)'}, inplace=True)
+
 
     # Calcular tasas para cada grupo
     summary_df['Tasa Reunión (Global %)'] = summary_df.apply(
-        lambda row: calculate_rate(row.get('Reuniones', 0), row.get('Total_Leads', 0)), axis=1
+        lambda row: calculate_rate(row.get('Reuniones', 0), row.get('Leads (Conexión Enviada)', 0)), axis=1
     )
     summary_df['Tasa Respuesta (vs Cont. %)'] = summary_df.apply(
          lambda row: calculate_rate(row.get('Respondieron', 0), row.get('Contactados', 0)), axis=1
@@ -337,12 +353,12 @@ def display_pipeline_grouped_breakdown(df_filtered, group_by_col, title_prefix, 
 
     if not summary_df.empty:
         st.markdown(f"##### Tabla Resumen por {group_by_col}")
-        cols_for_table = [group_by_col, 'Total_Leads'] + list(rename_map.values()) + ['Tasa Respuesta (vs Cont. %)', 'Tasa Reunión (Global %)']
+        cols_for_table = [group_by_col, 'Leads (Conexión Enviada)'] + list(rename_map.values()) + ['Tasa Respuesta (vs Cont. %)', 'Tasa Reunión (Global %)']
         existing_cols_for_table = [c for c in cols_for_table if c in summary_df.columns]
         summary_df_display = summary_df[existing_cols_for_table].copy()
 
         format_dict = {
-            'Total_Leads': '{:,}', 'Contactados': '{:,}', 
+            'Leads (Conexión Enviada)': '{:,}', 'Contactados': '{:,}', 
             'Respondieron': '{:,}', 'Reuniones': '{:,}',
             'Tasa Respuesta (vs Cont. %)': '{:.1f}%', 
             'Tasa Reunión (Global %)': '{:.1f}%'
@@ -355,7 +371,7 @@ def display_pipeline_grouped_breakdown(df_filtered, group_by_col, title_prefix, 
         if 'Reuniones' in summary_df.columns and summary_df['Reuniones'].sum() > 0:
              st.markdown(f"##### Gráfico: Tasa de Reunión Global por {group_by_col} (Top 15)")
              # Filtrar grupos con pocos leads para que la tasa sea significativa
-             summary_df_sorted = summary_df[summary_df['Total_Leads'] >= 3].sort_values(by='Tasa Reunión (Global %)', ascending=False).head(15)
+             summary_df_sorted = summary_df[summary_df['Leads (Conexión Enviada)'] >= 3].sort_values(by='Tasa Reunión (Global %)', ascending=False).head(15)
              if not summary_df_sorted.empty:
                 fig = px.bar(summary_df_sorted, x=group_by_col, y='Tasa Reunión (Global %)',
                              title=f"Tasa de Reunión Global por {group_by_col}",
@@ -372,17 +388,27 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
     """Muestra la evolución temporal de los KPIs clave."""
     st.markdown(f"### {chart_icon} {chart_title}")
     
-    kpi_cols_to_sum = ['Contacted_Bool', 'Responded_Bool', 'Meeting_Bool']
+    kpi_cols_to_sum = [COL_CONTACTED_BOOL, COL_RESPONDED_BOOL, COL_MEETING_BOOL]
     kpi_cols_present = [col for col in kpi_cols_to_sum if col in df_filtered.columns]
     
     if (time_col_agg not in df_filtered.columns) or (not kpi_cols_present):
         st.info(f"Datos insuficientes para la evolución por {x_axis_label.lower()}.")
         return
-
-    df_agg_time = df_filtered.groupby(time_col_agg, as_index=False)[kpi_cols_present].sum()
+        
+    # Contar leads (conexiones enviadas) por período
+    df_agg_time_leads = df_filtered.groupby(time_col_agg, as_index=False).size().rename(columns={'size': 'Leads (Conexión Enviada)'})
+    # Sumar los otros KPIs
+    df_agg_time_kpis = df_filtered.groupby(time_col_agg, as_index=False)[kpi_cols_present].sum()
+    
+    # Unir ambas
+    df_agg_time = pd.merge(df_agg_time_leads, df_agg_time_kpis, on=time_col_agg, how='left')
     
     if time_col_agg == 'NumSemana' and 'Año' in df_filtered.columns:
-        df_agg_time_year = df_filtered.groupby(['Año', 'NumSemana'], as_index=False)[kpi_cols_present].sum()
+        # Repetir agrupación para incluir el Año
+        df_agg_time_leads_yr = df_filtered.groupby(['Año', 'NumSemana'], as_index=False).size().rename(columns={'size': 'Leads (Conexión Enviada)'})
+        df_agg_time_kpis_yr = df_filtered.groupby(['Año', 'NumSemana'], as_index=False)[kpi_cols_present].sum()
+        df_agg_time_year = pd.merge(df_agg_time_leads_yr, df_agg_time_kpis_yr, on=['Año', 'NumSemana'], how='left')
+        
         df_agg_time_year[time_col_label] = df_agg_time_year['Año'].astype(str) + '-S' + df_agg_time_year['NumSemana'].astype(str).str.zfill(2)
         df_agg_time = df_agg_time_year.sort_values(by=['Año', 'NumSemana'])
     else: # Para AñoMes
@@ -396,7 +422,7 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
         'Meeting_Bool': 'Reuniones'
     }, inplace=True)
     
-    kpis_for_chart = [col for col in ['Contactados', 'Respondieron', 'Reuniones'] if col in df_agg_time.columns]
+    kpis_for_chart = [col for col in ['Leads (Conexión Enviada)', 'Contactados', 'Respondieron', 'Reuniones'] if col in df_agg_time.columns]
 
     if df_agg_time.empty:
         st.info(f"No hay datos agregados para la evolución por {x_axis_label.lower()}.")
@@ -412,13 +438,13 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
 
 # --- Flujo Principal de la Página ---
 st.title("📊 KPIs Pipeline (Prospects)")
-st.markdown("Métricas clave del embudo de ventas de la hoja 'Prospects'.")
+st.markdown("Métricas clave del embudo de ventas, comenzando desde 'Conection Sent Date'.")
 
 # Cargar datos
 df_pipeline_base = load_pipeline_data()
 
 if df_pipeline_base.empty:
-    st.error("Fallo Crítico: No se pudieron cargar datos del Pipeline.")
+    st.error("Fallo Crítico: No se pudieron cargar datos del Pipeline con 'Conection Sent Date' válidas.")
     st.stop()
 
 # Mostrar filtros y obtener selecciones
@@ -453,4 +479,5 @@ st.markdown("---")
 # Mostrar Tabla Detallada (Opcional)
 with st.expander("Ver Tabla de Datos Detallados Filtrados"):
     st.dataframe(df_pipeline_filtered, use_container_width=True)
+
 
