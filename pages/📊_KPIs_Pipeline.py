@@ -520,7 +520,5 @@ with st.expander("Ver Tabla de Datos Detallados Filtrados"):
          df_display[f'{COL_DATE_FILTER} (Fmt)'] = df_display[COL_DATE_FILTER].dt.strftime('%d/%m/%Y')
     st.dataframe(df_display, use_container_width=True)
 
-# Pie de página
-st.markdown("---")
-st.info("Dashboard de KPIs del Pipeline (Base: Conection Sent Date).")
+
 
