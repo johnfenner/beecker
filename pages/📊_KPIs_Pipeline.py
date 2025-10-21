@@ -7,57 +7,46 @@ import datetime
 import sys
 import os
 
-# --- Añadir raíz del proyecto al path ---
-try:
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-    if project_root not in sys.path:
-        sys.path.insert(0, project_root)
-except NameError:
-    project_root = os.getcwd()
-    if project_root not in sys.path:
-        sys.path.insert(0, project_root)
-
-# --- IMPORTS DE TU PROYECTO ---
-try:
-    # Reutilizamos tu componente de tabla si lo necesitas al final
-    from componentes.tabla_prospectos import mostrar_tabla_filtrada
-except ImportError as e:
-    st.error(f"Error importando módulos del proyecto: {e}")
-    st.stop()
-
 # --- Configuración de la Página ---
 st.set_page_config(
     page_title="KPIs Pipeline (Prospects)",
-    page_icon=" BPN",
+    page_icon=" BPN", # Puedes cambiar este ícono
     layout="wide"
 )
 
 # --- Constantes y Mapeo de Columnas ---
+# Columnas clave del set de datos proporcionado
 COL_COMPANY = "Company"
 COL_INDUSTRY = "Industry"
+COL_MANAGEMENT_LEVEL = "Management Level"
 COL_LEAD_DATE = "Lead Generated (Date)"
 COL_CONTACTED = "Contacted?"
 COL_RESPONDED = "Responded?"
-COL_RESPONSE_CHANNEL = "Response Channel" # Aunque no sea KPI, útil para desglose
 COL_MEETING = "Meeting?"
-COL_MEETING_DATE = "Meeting Date" # Útil si quieres filtrar por fecha de reunión en el futuro
+COL_MEETING_DATE = "Meeting Date"
+
 # Columnas booleanas internas que crearemos
 COL_CONTACTED_BOOL = "Contacted_Bool"
 COL_RESPONDED_BOOL = "Responded_Bool"
 COL_MEETING_BOOL = "Meeting_Bool"
 
-# Claves de Estado de Sesión para Filtros
-FILTER_KEYS_PREFIX = "pipeline_kpi_page_v2_" # Nueva versión para evitar conflictos
+# Claves de Estado de Sesión para Filtros (con prefijo único)
+FILTER_KEYS_PREFIX = "pipeline_kpi_page_v1_"
 PIPE_START_DATE_KEY = f"{FILTER_KEYS_PREFIX}start_date"
 PIPE_END_DATE_KEY = f"{FILTER_KEYS_PREFIX}end_date"
 PIPE_INDUSTRY_FILTER_KEY = f"{FILTER_KEYS_PREFIX}industry"
 PIPE_COMPANY_FILTER_KEY = f"{FILTER_KEYS_PREFIX}company"
-# (Puedes añadir más filtros si los necesitas, ej. por Role, Management Level)
+PIPE_MANAGEMENT_FILTER_KEY = f"{FILTER_KEYS_PREFIX}management_level"
+PIPE_YEAR_FILTER_KEY = f"{FILTER_KEYS_PREFIX}year"
+PIPE_WEEK_FILTER_KEY = f"{FILTER_KEYS_PREFIX}week"
 
 # --- Carga y Limpieza de Datos ---
 @st.cache_data(ttl=600)
 def load_pipeline_data():
-    WORKSHEET_NAME = "Prospects"
+    """
+    Carga y procesa datos desde la hoja de "Prospects".
+    """
+    WORKSHEET_NAME = "Prospects" # Asume el nombre de la hoja
     try:
         creds_from_secrets = st.secrets["gcp_service_account"]
         client = gspread.service_account_from_dict(creds_from_secrets)
@@ -66,16 +55,19 @@ def load_pipeline_data():
         st.stop()
 
     try:
-        sheet_url = st.secrets["prospects_sheet_url"]
+        # Asume una nueva clave de secret para esta URL
+        sheet_url = st.secrets["prospects_sheet_url"] 
         workbook = client.open_by_url(sheet_url)
         sheet = workbook.worksheet(WORKSHEET_NAME)
         raw_data = sheet.get_all_values()
         if not raw_data or len(raw_data) <= 1:
             st.error(f"No se pudieron obtener datos de la hoja '{WORKSHEET_NAME}'.")
             return pd.DataFrame()
+        
         headers = raw_data[0]
         rows = raw_data[1:]
-        # Limpieza básica de filas y padding (igual que antes)
+        
+        # Limpieza básica de filas y padding (igual que en tus otros archivos)
         cleaned_rows = [row for row in rows if any(cell.strip() for cell in row)]
         num_cols = len(headers)
         cleaned_rows_padded = []
@@ -83,97 +75,117 @@ def load_pipeline_data():
             row_len = len(row)
             if row_len < num_cols: row.extend([''] * (num_cols - row_len))
             cleaned_rows_padded.append(row[:num_cols])
+        
         df = pd.DataFrame(cleaned_rows_padded, columns=headers)
-    except Exception as e: # Captura errores genéricos y específicos
+
+    except Exception as e:
         st.error(f"Error al cargar/leer la hoja '{WORKSHEET_NAME}': {e}")
         st.stop()
 
     # --- Limpieza Específica para KPIs ---
-    # Convertir booleanos (TRUE/FALSE como strings)
-    bool_cols_map = {COL_CONTACTED: COL_CONTACTED_BOOL, COL_RESPONDED: COL_RESPONDED_BOOL}
+    
+    # 1. Convertir booleanos (TRUE/FALSE como strings)
+    bool_cols_map = {
+        COL_CONTACTED: COL_CONTACTED_BOOL, 
+        COL_RESPONDED: COL_RESPONDED_BOOL
+    }
     for original, new in bool_cols_map.items():
         if original in df.columns:
             df[new] = df[original].apply(lambda x: True if str(x).strip().upper() == 'TRUE' else False)
         else:
             df[new] = False # Asegura que la columna exista
 
-    # === CORRECCIÓN CLAVE para Meeting? ===
+    # 2. Convertir 'Meeting?' (Asumiendo 'Yes'/'No')
     if COL_MEETING in df.columns:
          # Compara con 'Yes' ignorando mayúsculas/minúsculas y espacios
         df[COL_MEETING_BOOL] = df[COL_MEETING].apply(lambda x: True if str(x).strip().upper() == 'YES' else False)
     else:
         df[COL_MEETING_BOOL] = False # Asegura que la columna exista
 
-    # Convertir fechas (solo la necesaria para filtros ahora)
+    # 3. Convertir fechas
     if COL_LEAD_DATE in df.columns:
+        # Intenta parsear con dayfirst=True (DD/MM/YYYY)
         df[COL_LEAD_DATE] = pd.to_datetime(df[COL_LEAD_DATE], errors='coerce', dayfirst=True)
     else:
         df[COL_LEAD_DATE] = pd.NaT # Asegura que exista como fecha
 
-    # Limpiar columnas de texto para filtros/desglose
-    text_cols_clean = [COL_COMPANY, COL_INDUSTRY]
+    # 4. Limpiar columnas de texto para filtros/desglose
+    text_cols_clean = [COL_COMPANY, COL_INDUSTRY, COL_MANAGEMENT_LEVEL]
     for col in text_cols_clean:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().fillna("N/D")
-            df.loc[df[col] == '', col] = "N/D"
+            df.loc[df[col] == '', col] = "N/D" # Reemplaza vacíos con 'N/D'
         else:
             df[col] = "N/D" # Asegura que existan
 
-    # Crear columnas Año/Mes si es posible
+    # 5. Crear columnas de Año/Mes/Semana
     if pd.api.types.is_datetime64_any_dtype(df[COL_LEAD_DATE]):
         df_valid_dates = df.dropna(subset=[COL_LEAD_DATE])
         if not df_valid_dates.empty:
-            df['Año'] = df_valid_dates[COL_LEAD_DATE].dt.year
+            df['Año'] = df_valid_dates[COL_LEAD_DATE].dt.year.astype('Int64')
+            df['NumSemana'] = df_valid_dates[COL_LEAD_DATE].dt.isocalendar().week.astype('Int64')
             df['AñoMes'] = df_valid_dates[COL_LEAD_DATE].dt.strftime('%Y-%m')
             # Llenar NaNs en las nuevas columnas para filas sin fecha válida
-            df['Año'] = df['Año'].fillna(0).astype(int)
+            df['Año'] = df['Año'].fillna(0)
+            df['NumSemana'] = df['NumSemana'].fillna(0)
             df['AñoMes'] = df['AñoMes'].fillna('N/D')
-        else: df['Año'], df['AñoMes'] = 0, 'N/D'
-    else: df['Año'], df['AñoMes'] = 0, 'N/D'
-
+        else:
+            df['Año'], df['NumSemana'], df['AñoMes'] = 0, 0, 'N/D'
+    else:
+        df['Año'], df['NumSemana'], df['AñoMes'] = 0, 0, 'N/D'
 
     return df
 
-# --- Funciones de Filtros (Simplificadas para KPIs) ---
+# --- Funciones de Filtros (Sidebar) ---
 def reset_pipeline_kpi_filters_state():
-    # Solo resetea los filtros definidos para esta página
+    """Resetea los filtros de esta página."""
     st.session_state[PIPE_START_DATE_KEY] = None
     st.session_state[PIPE_END_DATE_KEY] = None
     st.session_state[PIPE_INDUSTRY_FILTER_KEY] = ["– Todos –"]
     st.session_state[PIPE_COMPANY_FILTER_KEY] = ["– Todos –"]
+    st.session_state[PIPE_MANAGEMENT_FILTER_KEY] = ["– Todos –"]
+    st.session_state[PIPE_YEAR_FILTER_KEY] = "– Todos –"
+    st.session_state[PIPE_WEEK_FILTER_KEY] = ["– Todas –"]
     st.toast("Filtros de KPIs del Pipeline reiniciados ✅")
 
-# Reutilizamos la función genérica de multiselect que ya tenías
 def crear_multiselect_pipeline_kpi(df, columna, etiqueta, key):
+    """Función genérica para crear un multiselect."""
     if key not in st.session_state: st.session_state[key] = ["– Todos –"]
     options = ["– Todos –"]
     if columna in df.columns and not df[columna].dropna().empty:
-        # Usamos set para eliminar duplicados y luego sort
         options.extend(sorted(list(set(df[columna].astype(str).tolist()))))
 
-    # Validación y corrección del estado antes de renderizar
     current_value = st.session_state[key]
     if not isinstance(current_value, list): current_value = ["– Todos –"]
     valid_selection = [v for v in current_value if v in options]
     if not valid_selection: valid_selection = ["– Todos –"]
-    st.session_state[key] = valid_selection # Actualiza el estado ANTES del widget
+    st.session_state[key] = valid_selection
 
-    return st.multiselect(etiqueta, options, key=key) # Default se toma del estado
+    return st.multiselect(etiqueta, options, key=key)
 
 def sidebar_filters_pipeline_kpi(df_options):
+    """Muestra todos los filtros en la barra lateral."""
     st.sidebar.header("🔍 Filtros de KPIs (Pipeline)")
     st.sidebar.markdown("---")
 
     # Inicializar estado si es necesario
-    for k, v in {PIPE_INDUSTRY_FILTER_KEY: ["– Todos –"], PIPE_COMPANY_FILTER_KEY: ["– Todos –"]}.items():
+    keys_to_init = {
+        PIPE_INDUSTRY_FILTER_KEY: ["– Todos –"],
+        PIPE_COMPANY_FILTER_KEY: ["– Todos –"],
+        PIPE_MANAGEMENT_FILTER_KEY: ["– Todos –"],
+        PIPE_YEAR_FILTER_KEY: "– Todos –",
+        PIPE_WEEK_FILTER_KEY: ["– Todas –"],
+        PIPE_START_DATE_KEY: None,
+        PIPE_END_DATE_KEY: None
+    }
+    for k, v in keys_to_init.items():
         if k not in st.session_state: st.session_state[k] = v
-    if PIPE_START_DATE_KEY not in st.session_state: st.session_state[PIPE_START_DATE_KEY] = None
-    if PIPE_END_DATE_KEY not in st.session_state: st.session_state[PIPE_END_DATE_KEY] = None
 
     # Filtros por Atributo
     st.sidebar.subheader("Por Atributo")
     crear_multiselect_pipeline_kpi(df_options, COL_INDUSTRY, "Industria", PIPE_INDUSTRY_FILTER_KEY)
     crear_multiselect_pipeline_kpi(df_options, COL_COMPANY, "Compañía", PIPE_COMPANY_FILTER_KEY)
+    crear_multiselect_pipeline_kpi(df_options, COL_MANAGEMENT_LEVEL, "Management Level", PIPE_MANAGEMENT_FILTER_KEY)
 
     # Filtros de Fecha (Lead Generated Date)
     st.sidebar.subheader("🗓️ Por Fecha de Generación")
@@ -182,26 +194,45 @@ def sidebar_filters_pipeline_kpi(df_options):
         valid_dates = df_options[COL_LEAD_DATE].dropna()
         if not valid_dates.empty:
             min_d, max_d = valid_dates.min().date(), valid_dates.max().date()
+    
     col_f1, col_f2 = st.sidebar.columns(2)
     with col_f1: st.date_input("Desde", format='DD/MM/YYYY', key=PIPE_START_DATE_KEY, min_value=min_d, max_value=max_d)
     with col_f2: st.date_input("Hasta", format='DD/MM/YYYY', key=PIPE_END_DATE_KEY, min_value=min_d, max_value=max_d)
+
+    # Filtros de Año/Semana (basados en la fecha de generación)
+    st.sidebar.subheader("📅 Por Año y Semana (Generación)")
+    
+    year_options = ["– Todos –"]
+    if "Año" in df_options.columns and not df_options["Año"].dropna().empty:
+        year_options.extend(sorted([str(y) for y in df_options["Año"].unique() if y != 0], reverse=True))
+    
+    selected_year_str = st.sidebar.selectbox("Año", year_options, key=PIPE_YEAR_FILTER_KEY)
+    selected_year_int = int(selected_year_str) if selected_year_str != "– Todos –" else None
+
+    week_options = ["– Todas –"]
+    df_for_week = df_options[df_options["Año"] == selected_year_int] if selected_year_int else df_options
+    if "NumSemana" in df_for_week.columns and not df_for_week["NumSemana"].dropna().empty:
+        week_options.extend(sorted([str(w) for w in df_for_week["NumSemana"].unique() if w != 0]))
+    
+    st.sidebar.multiselect("Semanas", week_options, key=PIPE_WEEK_FILTER_KEY)
 
     # Botón Limpiar
     st.sidebar.markdown("---")
     st.sidebar.button("🧹 Limpiar Filtros", on_click=reset_pipeline_kpi_filters_state, use_container_width=True)
 
     # Devolver valores del estado
-    return (st.session_state[PIPE_START_DATE_KEY], st.session_state[PIPE_END_DATE_KEY],
-            st.session_state[PIPE_INDUSTRY_FILTER_KEY], st.session_state[PIPE_COMPANY_FILTER_KEY])
+    return (
+        st.session_state[PIPE_START_DATE_KEY], st.session_state[PIPE_END_DATE_KEY],
+        selected_year_int, st.session_state[PIPE_WEEK_FILTER_KEY],
+        st.session_state[PIPE_INDUSTRY_FILTER_KEY], st.session_state[PIPE_COMPANY_FILTER_KEY],
+        st.session_state[PIPE_MANAGEMENT_FILTER_KEY]
+    )
 
-def apply_pipeline_kpi_filters(df, start_dt, end_dt, industry_list, company_list):
+def apply_pipeline_kpi_filters(df, start_dt, end_dt, year_val, week_list, industry_list, company_list, management_list):
+    """Aplica todos los filtros seleccionados al DataFrame."""
     df_f = df.copy()
-    # Filtros Multi-select
-    if industry_list and "– Todos –" not in industry_list:
-        df_f = df_f[df_f[COL_INDUSTRY].isin(industry_list)]
-    if company_list and "– Todos –" not in company_list:
-        df_f = df_f[df_f[COL_COMPANY].isin(company_list)]
-    # Filtro de Fecha
+    
+    # Filtro de Fecha (Rango)
     if pd.api.types.is_datetime64_any_dtype(df_f[COL_LEAD_DATE]):
         date_series = df_f[COL_LEAD_DATE].dt.date
         if start_dt and end_dt:
@@ -210,14 +241,34 @@ def apply_pipeline_kpi_filters(df, start_dt, end_dt, industry_list, company_list
             df_f = df_f[date_series >= start_dt]
         elif end_dt:
             df_f = df_f[date_series <= end_dt]
+
+    # Filtro de Año
+    if year_val is not None and "Año" in df_f.columns:
+        df_f = df_f[df_f["Año"] == year_val]
+    
+    # Filtro de Semana
+    if week_list and "– Todas –" not in week_list and "NumSemana" in df_f.columns:
+        selected_weeks_int = [int(w) for w in week_list if w.isdigit()]
+        if selected_weeks_int:
+            df_f = df_f[df_f["NumSemana"].isin(selected_weeks_int)]
+
+    # Filtros Multi-select
+    if industry_list and "– Todos –" not in industry_list:
+        df_f = df_f[df_f[COL_INDUSTRY].isin(industry_list)]
+    if company_list and "– Todos –" not in company_list:
+        df_f = df_f[df_f[COL_COMPANY].isin(company_list)]
+    if management_list and "– Todos –" not in management_list:
+        df_f = df_f[df_f[COL_MANAGEMENT_LEVEL].isin(management_list)]
+        
     return df_f
 
-# --- Funciones de Visualización de KPIs (Similar a tus otras páginas) ---
+# --- Funciones de Visualización de KPIs ---
 def calculate_rate(numerator, denominator, round_to=1):
     if denominator == 0: return 0.0
     return round((numerator / denominator) * 100, round_to)
 
 def display_pipeline_kpi_summary_metrics(df_filtered):
+    """Muestra las métricas KPi y tasas de conversión."""
     st.markdown("### 🧮 Resumen de KPIs Totales (Periodo Filtrado)")
     if df_filtered.empty:
         st.info("No hay datos para mostrar KPIs con los filtros actuales.")
@@ -233,7 +284,6 @@ def display_pipeline_kpi_summary_metrics(df_filtered):
     contact_rate = calculate_rate(total_contacted, total_leads)
     response_rate = calculate_rate(total_responded, total_contacted) # vs Contactados
     meeting_rate_vs_resp = calculate_rate(total_meetings, total_responded) # vs Respondieron
-    meeting_rate_vs_contacted = calculate_rate(total_meetings, total_contacted) # vs Contactados (opcional)
     meeting_rate_vs_leads = calculate_rate(total_meetings, total_leads) # vs Leads (Global)
 
     # Mostrar métricas absolutas
@@ -242,17 +292,18 @@ def display_pipeline_kpi_summary_metrics(df_filtered):
     m_col1.metric("Leads (Filtrados)", f"{total_leads:,.0f}")
     m_col2.metric("Contactados", f"{total_contacted:,.0f}")
     m_col3.metric("Respondieron", f"{total_responded:,.0f}")
-    m_col4.metric("Reuniones Agendadas", f"{total_meetings:,.0f}") # CORREGIDO
+    m_col4.metric("Reuniones Agendadas", f"{total_meetings:,.0f}")
 
     st.markdown("---")
     st.markdown("#### Tasas de Conversión del Embudo")
     r_col1, r_col2, r_col3, r_col4 = st.columns(4)
     r_col1.metric("Tasa Contacto", f"{contact_rate:.1f}%", help="Contactados / Leads")
     r_col2.metric("Tasa Respuesta", f"{response_rate:.1f}%", help="Respondieron / Contactados")
-    r_col3.metric("Tasa Reunión (vs Resp.)", f"{meeting_rate_vs_resp:.1f}%", help="Reuniones / Respondieron") # CORREGIDO
+    r_col3.metric("Tasa Reunión (vs Resp.)", f"{meeting_rate_vs_resp:.1f}%", help="Reuniones / Respondieron")
     r_col4.metric("Tasa Reunión (Global)", f"{meeting_rate_vs_leads:.1f}%", help="Reuniones / Leads")
 
 def display_pipeline_grouped_breakdown(df_filtered, group_by_col, title_prefix, chart_icon="📊"):
+    """Muestra una tabla y gráfico de barras para una dimensión dada."""
     st.markdown(f"### {chart_icon} {title_prefix}")
     if group_by_col not in df_filtered.columns or df_filtered.empty:
         st.warning(f"No hay datos o falta la columna '{group_by_col}'.")
@@ -264,8 +315,8 @@ def display_pipeline_grouped_breakdown(df_filtered, group_by_col, title_prefix, 
 
     # Agrupar y sumar KPIs booleanos (sum() cuenta los True)
     summary_df = df_filtered.groupby(group_by_col, as_index=False).agg(
-        Total_Leads=(group_by_col, 'size'), # Contar leads por grupo
-        **{col: (col, 'sum') for col in present_kpi_cols} # Sumar KPIs booleanos
+        Total_Leads=(group_by_col, 'size'),
+        **{col: (col, 'sum') for col in present_kpi_cols}
     )
 
     # Renombrar columnas sumadas para claridad
@@ -280,22 +331,22 @@ def display_pipeline_grouped_breakdown(df_filtered, group_by_col, title_prefix, 
     summary_df['Tasa Reunión (Global %)'] = summary_df.apply(
         lambda row: calculate_rate(row.get('Reuniones', 0), row.get('Total_Leads', 0)), axis=1
     )
-    # Puedes añadir más tasas si son relevantes (ej. Tasa Respuesta vs Contactados por grupo)
     summary_df['Tasa Respuesta (vs Cont. %)'] = summary_df.apply(
          lambda row: calculate_rate(row.get('Respondieron', 0), row.get('Contactados', 0)), axis=1
     )
 
     if not summary_df.empty:
         st.markdown(f"##### Tabla Resumen por {group_by_col}")
-        # Seleccionar y ordenar columnas para la tabla
         cols_for_table = [group_by_col, 'Total_Leads'] + list(rename_map.values()) + ['Tasa Respuesta (vs Cont. %)', 'Tasa Reunión (Global %)']
         existing_cols_for_table = [c for c in cols_for_table if c in summary_df.columns]
         summary_df_display = summary_df[existing_cols_for_table].copy()
 
-        # Formatear números y porcentajes
-        format_dict = {'Total_Leads': '{:,}', 'Contactados': '{:,}', 'Respondieron': '{:,}', 'Reuniones': '{:,}',
-                       'Tasa Respuesta (vs Cont. %)': '{:.1f}%', 'Tasa Reunión (Global %)': '{:.1f}%'}
-        # Filtrar el diccionario de formato para incluir solo columnas existentes
+        format_dict = {
+            'Total_Leads': '{:,}', 'Contactados': '{:,}', 
+            'Respondieron': '{:,}', 'Reuniones': '{:,}',
+            'Tasa Respuesta (vs Cont. %)': '{:.1f}%', 
+            'Tasa Reunión (Global %)': '{:.1f}%'
+        }
         valid_format_dict = {k: v for k, v in format_dict.items() if k in summary_df_display.columns}
 
         st.dataframe(summary_df_display.set_index(group_by_col).style.format(valid_format_dict), use_container_width=True)
@@ -303,7 +354,8 @@ def display_pipeline_grouped_breakdown(df_filtered, group_by_col, title_prefix, 
         # Gráfico (ej. Tasa de Reunión Global por grupo)
         if 'Reuniones' in summary_df.columns and summary_df['Reuniones'].sum() > 0:
              st.markdown(f"##### Gráfico: Tasa de Reunión Global por {group_by_col} (Top 15)")
-             summary_df_sorted = summary_df[summary_df['Total_Leads'] >= 3].sort_values(by='Tasa Reunión (Global %)', ascending=False).head(15) # Filtrar por mínimo leads y top N
+             # Filtrar grupos con pocos leads para que la tasa sea significativa
+             summary_df_sorted = summary_df[summary_df['Total_Leads'] >= 3].sort_values(by='Tasa Reunión (Global %)', ascending=False).head(15)
              if not summary_df_sorted.empty:
                 fig = px.bar(summary_df_sorted, x=group_by_col, y='Tasa Reunión (Global %)',
                              title=f"Tasa de Reunión Global por {group_by_col}",
@@ -311,11 +363,52 @@ def display_pipeline_grouped_breakdown(df_filtered, group_by_col, title_prefix, 
                 fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
                 fig.update_layout(yaxis_title="Tasa Reunión Global (%)", xaxis_title=group_by_col, yaxis_ticksuffix="%")
                 st.plotly_chart(fig, use_container_width=True)
-             else: st.caption("No hay suficientes datos (>3 leads por grupo) para graficar la tasa de reunión.")
-
+             else:
+                st.caption("No hay suficientes datos (>3 leads por grupo) para graficar la tasa de reunión.")
     else:
         st.info(f"No hay datos suficientes para desglosar por {group_by_col}.")
 
+def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_title, x_axis_label, chart_icon="📈"):
+    """Muestra la evolución temporal de los KPIs clave."""
+    st.markdown(f"### {chart_icon} {chart_title}")
+    
+    kpi_cols_to_sum = ['Contacted_Bool', 'Responded_Bool', 'Meeting_Bool']
+    kpi_cols_present = [col for col in kpi_cols_to_sum if col in df_filtered.columns]
+    
+    if (time_col_agg not in df_filtered.columns) or (not kpi_cols_present):
+        st.info(f"Datos insuficientes para la evolución por {x_axis_label.lower()}.")
+        return
+
+    df_agg_time = df_filtered.groupby(time_col_agg, as_index=False)[kpi_cols_present].sum()
+    
+    if time_col_agg == 'NumSemana' and 'Año' in df_filtered.columns:
+        df_agg_time_year = df_filtered.groupby(['Año', 'NumSemana'], as_index=False)[kpi_cols_present].sum()
+        df_agg_time_year[time_col_label] = df_agg_time_year['Año'].astype(str) + '-S' + df_agg_time_year['NumSemana'].astype(str).str.zfill(2)
+        df_agg_time = df_agg_time_year.sort_values(by=['Año', 'NumSemana'])
+    else: # Para AñoMes
+        df_agg_time[time_col_label] = df_agg_time[time_col_agg]
+        df_agg_time = df_agg_time.sort_values(by=time_col_label)
+
+    # Renombrar para el gráfico
+    df_agg_time.rename(columns={
+        'Contacted_Bool': 'Contactados',
+        'Responded_Bool': 'Respondieron',
+        'Meeting_Bool': 'Reuniones'
+    }, inplace=True)
+    
+    kpis_for_chart = [col for col in ['Contactados', 'Respondieron', 'Reuniones'] if col in df_agg_time.columns]
+
+    if df_agg_time.empty:
+        st.info(f"No hay datos agregados para la evolución por {x_axis_label.lower()}.")
+        return
+
+    # Gráfico de líneas
+    fig_time = px.line(df_agg_time, x=time_col_label, y=kpis_for_chart, 
+                       title=f"Evolución de KPIs por {x_axis_label}",
+                       labels={time_col_label: x_axis_label, 'value': 'Cantidad'},
+                       markers=True)
+    fig_time.update_xaxes(type='category')
+    st.plotly_chart(fig_time, use_container_width=True)
 
 # --- Flujo Principal de la Página ---
 st.title("📊 KPIs Pipeline (Prospects)")
@@ -329,28 +422,35 @@ if df_pipeline_base.empty:
     st.stop()
 
 # Mostrar filtros y obtener selecciones
-start_f, end_f, industry_f, company_f = sidebar_filters_pipeline_kpi(df_pipeline_base.copy())
+(start_f, end_f, year_f, week_f, 
+ industry_f, company_f, management_f) = sidebar_filters_pipeline_kpi(df_pipeline_base.copy())
 
 # Aplicar filtros
 df_pipeline_filtered = apply_pipeline_kpi_filters(
-    df_pipeline_base.copy(), start_f, end_f, industry_f, company_f
+    df_pipeline_base.copy(), start_f, end_f, year_f, week_f,
+    industry_f, company_f, management_f
 )
 
 # Mostrar KPIs y Desgloses
 display_pipeline_kpi_summary_metrics(df_pipeline_filtered)
 st.markdown("---")
 
-# Desgloses por Industria y Compañía (similar a tus otras páginas)
+# Desgloses por Dimensiones
 display_pipeline_grouped_breakdown(df_pipeline_filtered, COL_INDUSTRY, "Desglose por Industria", chart_icon="🏭")
 st.markdown("---")
-display_pipeline_grouped_breakdown(df_pipeline_filtered, COL_COMPANY, "Desglose por Compañía", chart_icon="🏢")
+display_pipeline_grouped_breakdown(df_pipeline_filtered, COL_COMPANY, "Desglose por Compañía (Top 15)", chart_icon="🏢")
+st.markdown("---")
+display_pipeline_grouped_breakdown(df_pipeline_filtered, COL_MANAGEMENT_LEVEL, "Desglose por Management Level", chart_icon="🧑‍💼")
 st.markdown("---")
 
-# Mostrar Tabla Detallada (Opcional, usando tu componente)
+# Evoluciones Temporales
+display_time_evolution(df_pipeline_filtered, 'AñoMes', 'Año-Mes', "Evolución Mensual de KPIs", "Mes")
+st.markdown("---")
+display_time_evolution(df_pipeline_filtered, 'NumSemana', 'Año-Semana', "Evolución Semanal de KPIs", "Semana")
+st.markdown("---")
+
+
+# Mostrar Tabla Detallada (Opcional)
 with st.expander("Ver Tabla de Datos Detallados Filtrados"):
-    mostrar_tabla_filtrada(df_pipeline_filtered.copy(), key_suffix="pipeline_kpi") # Sufijo único
-
-# Pie de página
-st.markdown("---")
-st.info("Dashboard de KPIs del Pipeline.")
+    st.dataframe(df_pipeline_filtered, use_container_width=True)
 
