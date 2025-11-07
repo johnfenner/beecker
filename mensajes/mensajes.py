@@ -359,13 +359,13 @@ Nuestros agentes reducen significativamente los errores y se adaptan con facilid
 
 plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/robots-as-a-service-raas/. Me gustaría presentarte a nuestra empresa, con más de 12 años de experiencia en automatización inteligente e inteligencia artificial.
+Gracias por permitirme ser parte de tu red profesional. Me presento: soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/robots-as-a-service-raas/. 
 
-Contamos con un equipo de más de 200 expertos certificados que acompañan a nuestros clientes en todo el ciclo: diagnóstico, implementación y escalamiento. Este enfoque nos ha permitido ayudar a empresas de distintas industrias a identificar y capitalizar oportunidades de optimización que se traducen en mejoras tangibles en cuestión de semanas. 
+Con más de 12 años de experiencia en automatización inteligente e inteligencia artificial, Contamos con un equipo de más de 200 expertos certificados que acompañan a nuestros clientes a identificar oportunidades reales de mejora y convertirlas en resultados medibles en poco tiempo.
 
-Con base en esa experiencia, vemos posible aplicar el mismo enfoque para detectar oportunidades similares en {empresa}. 
+Con base en esa experiencia, y con el fin de que puedan conocer un poco más sobre nuestro enfoque de Agentic Process Automation, vemos posible aplicar el mismo enfoque para detectar oportunidades similares en {empresa}, explorando cómo este tipo de tecnologías podrían ayudarles a mejorar procesos que hoy generen demoras o dificultades.
 
-¿Tendrías disponibilidad para explorarlo en una breve sesión con nuestro equipo?
+¿Tendrías disponibilidad para conversarlo en una breve sesión con nuestro equipo?
 
 Quedo atenta a tu respuesta, saludos. 
 """
