@@ -363,7 +363,7 @@ Gracias por permitirme ser parte de tu red profesional. Me presento: soy {avatar
 
 Con más de 12 años de experiencia en automatización inteligente e inteligencia artificial, Contamos con un equipo de más de 200 expertos certificados que acompañan a nuestros clientes a identificar oportunidades reales de mejora y optimizar procesos que actualmente les estén generando demoras o dificultades.
 
-Con base en esa experiencia, y para que puedan conocer mejor nuestro enfoque de Agentic Process Automation, vemos posible aplicar el mismo enfoque para detectar oportunidades similares en {empresa}. 
+Con base en la experiencia que ya hemos tenido, y para que puedan conocer mejor nuestro enfoque de Agentic Process Automation, vemos viable aplicar este mismo modelo para identificar oportunidades similares en {empresa}. 
 
 ¿Tendrías disponibilidad para conversarlo en una breve sesión con nuestro equipo?
 
