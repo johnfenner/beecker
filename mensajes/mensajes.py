@@ -54,7 +54,7 @@ Precisamente por eso, me gustaría invitarte a una breve sesión con nuestro equ
 
 plantilla_general_john = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation (APA), y desarrollamos agentes digitales de IA para optimizar procesos clave en las organizaciones.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation, y desarrollamos agentes digitales de IA para optimizar procesos clave en las organizaciones.
 
 Me gustaría mostrarte cómo nuestras soluciones pueden mejorar la eficiencia en áreas de {empresa}, tales como:
 
@@ -91,7 +91,7 @@ Precisamente por eso, me gustaría invitarte a una breve sesión con nuestro equ
 
 plantilla_aduanas_john = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation (APA) para operaciones de comercio exterior y me encantaría mostrarte cómo podemos transformar la eficiencia de {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation para operaciones de comercio exterior y me encantaría mostrarte cómo podemos transformar la eficiencia de {empresa}.
 
 Con nuestros agentes digitales, tu equipo de Aduanas y Logística puede:
 
@@ -108,7 +108,7 @@ Precisamente por eso, me gustaría invitarte a una breve sesión con nuestro equ
 # ===== NUEVA PLANTILLA FINANZAS - ESTILO JOHN =====
 plantilla_finanzas_john = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation (APA), nos especializamos en diseñar agentes digitales de IA que transforman la función financiera.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation, nos especializamos en diseñar agentes digitales de IA que transforman la función financiera.
 
 Para líderes y equipos de Finanzas (FP&A), esto se traduce en la capacidad de:
 
@@ -157,7 +157,7 @@ Me encantaría coordinar una breve sesión contigo, para compartir algunos casos
 # ===== CONTENIDO ACTUALIZADO PARA KAREN H2R =====
 plantilla_h2r_karen = """¡Hola {nombre}, un gusto saludarte!
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/hire-to-retire/. Nos especializamos en Agentic Process Automation (APA) y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/hire-to-retire/. Nos especializamos en Agentic Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
 
 Nos centramos en nuestros agentes digitales de IA diseñados para los procesos Hire to Retire (H2R) entre otros para diferentes áreas.
 
@@ -179,19 +179,15 @@ Me encantaría coordinar una breve sesión contigo, para compartir algunos casos
 # ===== CONTENIDO ACTUALIZADO PARA KAREN P2P =====
 plantilla_p2p_karen = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/procure-to-pay-automation/. Nos especializamos en Agentic Process Automation (APA) y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/procure-to-pay-automation/. Nos especializamos en Agentic Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
 
 Nos centramos principalmente en nuestros agentes digitales de IA diseñados para el proceso Procure-to-Pay (P2P) entre otros para diferentes áreas.
 
-— Elsa: Agente de alta de proveedores.
-— Richard: Coordinación de Forecasting
-— Olivia: Agente de procesamiento de órdenes de compra.
-— Chris: Recepción de mercancía.
-— Tony: Gestión de inventario.
-— Ryan: Gestión de devoluciones.
-— Pedro: Gestión de Aduanas.
-— Daniel: Agente de procesamiento de facturas.
-— David: Agente de procesamiento de órdenes de pago.
+- Jessica: Agente de Selección de proveedor.
+- Elsa: Agente de alta de proveedores.
+- Olivia: Agente de procesamiento de órdenes de compra.
+- Daniel: Agente de procesamiento de facturas.
+- David: Agente de procesamiento de órdenes de pago.
 
 Estos agentes automatizan todo el ciclo de compras, desde la selección de proveedor hasta el pago, asegurando el cumplimiento de políticas empresariales en cada transacción y reduciendo significativamente errores y tiempos de operación.
 
@@ -203,7 +199,7 @@ Me encantaría coordinar una breve sesión contigo, para compartir algunos casos
 # ===== CONTENIDO ACTUALIZADO PARA KAREN O2C =====
 plantilla_o2c_karen = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/order-to-cash/. Nos especializamos en Agentic Process Automation (APA) y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/order-to-cash/. Nos especializamos en Agentic Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia en {empresa}.
 
 Nos centramos principalmente en agentes digitales de IA diseñados para los procesos Order to Cash (O2C) entre otros para diferentes áreas.
 
@@ -241,7 +237,7 @@ Quedo atenta a tu respuesta, saludos.
 
 plantilla_aduanas_karen = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation (APA) y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia de {empresa} en el proceso aduanal:
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation y me encantaría mostrarte cómo nuestras soluciones pueden transformar la eficiencia de {empresa} en el proceso aduanal:
 
 Nos centramos principalmente en nuestro Agente Digital Pedro de IA que procesan todo el flujo de aduanas en minutos te ayuda a:
 
@@ -290,7 +286,7 @@ plantillas_karen = {
 
 plantilla_h2r_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/hire-to-retire/. Nos especializamos en Agentic Process Automation (APA) y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/hire-to-retire/. Nos especializamos en Agentic Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
 
 Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. 
 
@@ -312,21 +308,17 @@ Nuestros agentes reducen significativamente los errores y se adaptan con facilid
 
 plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/procure-to-pay-automation/. Nos especializamos en Agentic Process Automation (APA) y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/procure-to-pay-automation/. Nos especializamos en Agentic Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
 
 Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. 
 
 Por ejemplo, en tu caso:
 
-— Elsa: Agente de alta de proveedores.
-— Richard: Coordinación de Forecasting.
-— Olivia: Agente de procesamiento de órdenes de compra.
-— Chris: Recepción de mercancía.
-— Tony: Gestión de inventario.
-— Ryan: Gestión de devoluciones.
-— Pedro: Gestión de Aduanas.
-— Daniel: Agente de procesamiento de facturas.
-— David: Agente de procesamiento de órdenes de pago.
+- Jessica: Agente de Selección de proveedor.
+- Elsa: Agente de alta de proveedores.
+- Olivia: Agente de procesamiento de órdenes de compra.
+- Daniel: Agente de procesamiento de facturas.
+- David: Agente de procesamiento de órdenes de pago.
 
 Nuestros agentes reducen significativamente los errores y se adaptan con facilidad a las necesidades de cada equipo. Si te suena interesante, me gustaría invitarte a una breve sesión para mostrarte ejemplos concretos de resultados y explorar cómo este enfoque podría beneficiar tu operación.
 
@@ -335,7 +327,7 @@ Nuestros agentes reducen significativamente los errores y se adaptan con facilid
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/order-to-cash/. Nos especializamos en Agentic Process Automation (APA) y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/order-to-cash/. Nos especializamos en Agentic Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
 
 Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. 
 
@@ -372,7 +364,7 @@ Quedo atenta a tu respuesta, saludos.
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation (APA) y el motivo de mi mensaje es presentarte una propuesta de valor concreta para transformar la eficiencia de {empresa} en el proceso aduanal:
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para transformar la eficiencia de {empresa} en el proceso aduanal:
 
 Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. 
 
@@ -392,7 +384,7 @@ Me gustaría coordinar una breve sesión contigo para mostrarte casos de éxito 
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation (APA) y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
 
 Actualmente, implementamos soluciones que potencian distintas líneas de negocio. Por ejemplo:
 
@@ -411,7 +403,7 @@ Me encantaría coordinar una breve sesión contigo para mostrarte algunos casos 
 
 plantilla_finanzas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation (APA) y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
 
 Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. 
 
