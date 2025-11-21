@@ -2,205 +2,228 @@
 import streamlit as st
 import pandas as pd
 import gspread
-import plotly.express as px
 import datetime
+import plotly.express as px
+import os
+import sys
 
-# --- Configuración de la Página ---
-st.set_page_config(
-    page_title="KPIs Karla (USA)",
-    page_icon="🇺🇸",
-    layout="wide"
-)
+# --- Configuración Inicial ---
+st.set_page_config(layout="wide", page_title="KPIs Karla (USA)")
 
 st.title("📊 Dashboard de KPIs - Karla (USA)")
-st.markdown("Análisis de métricas semanales basado en la hoja **'United States - Karla' > pestaña 'Kpis'**.")
+st.markdown("Análisis de métricas semanales basado en la hoja **'United States - Karla' > 'Kpis'**.")
 
-# --- Funciones de Carga y Limpieza ---
-
-def parse_kpi_value(value):
-    """Limpia y convierte valores numéricos de KPIs."""
-    if pd.isna(value): return 0
-    s_val = str(value).strip().lower()
-    if s_val in ["", "nan", "none", "n/d"]: return 0
-    # Eliminar posibles símbolos extraños
+# --- Funciones de Procesamiento (Reutilizadas de KPIs.py) ---
+def parse_kpi_value(value_str, column_name=""):
+    cleaned_val = str(value_str).strip().lower()
+    if not cleaned_val: return 0.0
     try:
-        return float(s_val)
+        num_val = pd.to_numeric(cleaned_val, errors='raise')
+        return 0.0 if pd.isna(num_val) else float(num_val)
     except ValueError:
-        return 0
+        pass
+    
+    if column_name == "Sesiones agendadas": 
+        affirmative_session_texts = ['vc', 'si', 'sí', 'yes', 'true', '1', '1.0']
+        if cleaned_val in affirmative_session_texts: return 1.0
+        return 0.0
+    else:
+        first_part = cleaned_val.split('-')[0].strip()
+        if not first_part: return 0.0
+        try:
+            num_val_from_part = pd.to_numeric(first_part, errors='raise')
+            return 0.0 if pd.isna(num_val_from_part) else float(num_val_from_part)
+        except ValueError:
+            return 0.0
+
+def calculate_rate(numerator, denominator, round_to=1):
+    if denominator == 0: return 0.0
+    return round((numerator / denominator) * 100, round_to)
 
 @st.cache_data(ttl=300)
-def load_karla_data():
-    """Carga los datos desde la hoja de Karla especificada en secrets."""
+def load_karla_kpis_data():
     try:
-        creds = st.secrets["gcp_service_account"]
-        client = gspread.service_account_from_dict(creds)
-        
-        sheet_url = st.secrets["karla_sheet_url"]
-        workbook = client.open_by_url(sheet_url)
-        
-        # Intentamos cargar la pestaña "Kpis" (tal cual la imagen)
-        sheet = workbook.worksheet("Kpis")
-        
-        raw_data = sheet.get_all_values()
-        if not raw_data or len(raw_data) <= 1:
-            st.error("La pestaña 'Kpis' parece estar vacía.")
-            return pd.DataFrame()
-
-        headers = [str(h).strip() for h in raw_data[0]]
-        df = pd.DataFrame(raw_data[1:], columns=headers)
-        
-        return df
-
+        creds_from_secrets = st.secrets["gcp_service_account"] 
+        client = gspread.service_account_from_dict(creds_from_secrets)
     except Exception as e:
-        st.error(f"Error al cargar los datos de Karla: {e}")
-        return pd.DataFrame()
+        st.error(f"Error de credenciales: {e}")
+        st.stop()
 
-def process_karla_df(df):
-    """Procesa fechas y números."""
-    if df.empty: return df
+    # Usamos la URL específica de Karla definida en secrets
+    sheet_url = st.secrets.get("karla_sheet_url")
     
-    # 1. Procesar Fecha
-    if "Fecha" in df.columns:
-        df["Fecha_Dt"] = pd.to_datetime(df["Fecha"], format="%d/%m/%Y", errors="coerce")
-        # Eliminar filas sin fecha válida
-        df.dropna(subset=["Fecha_Dt"], inplace=True)
+    if not sheet_url:
+        st.error("No se encontró 'karla_sheet_url' en los secrets.")
+        st.stop()
+
+    try:
+        workbook = client.open_by_url(sheet_url)
+        # Cargamos específicamente la pestaña "Kpis"
+        sheet = workbook.worksheet("Kpis")
+        raw_data = sheet.get_all_values()
         
-        # Crear columnas derivadas
-        df["Año"] = df["Fecha_Dt"].dt.year
-        df["NumSemana"] = df["Fecha_Dt"].dt.isocalendar().week
-        df["Mes_Año"] = df["Fecha_Dt"].dt.strftime("%Y-%m")
-    else:
-        st.error("No se encontró la columna 'Fecha'. Verifica la hoja.")
-        return pd.DataFrame()
+        if not raw_data or len(raw_data) <= 1:
+            st.error(f"La hoja 'Kpis' parece estar vacía.")
+            return pd.DataFrame() 
+            
+        headers = raw_data[0]
+        rows = raw_data[1:]
+    except Exception as e:
+        st.error(f"Error al leer la hoja de Karla: {e}")
+        st.stop()
 
-    # 2. Procesar Columnas Numéricas (KPIs)
-    # Nombres exactos basados en tu imagen:
-    # 'Mensajes Enviados', 'Respuestas', 'Invites enviadas', 'Sesiones agendadas'
-    cols_numericas = ["Mensajes Enviados", "Respuestas", "Invites enviadas", "Sesiones agendadas"]
-    
-    for col in cols_numericas:
-        if col in df.columns:
-            df[col] = df[col].apply(parse_kpi_value)
+    cleaned_headers = [str(h).strip() for h in headers]
+    df = pd.DataFrame(rows, columns=cleaned_headers)
+
+    # Procesamiento de Fechas
+    if "Fecha" in df.columns:
+        df["Fecha"] = pd.to_datetime(df["Fecha"], format='%d/%m/%Y', errors='coerce')
+        df.dropna(subset=["Fecha"], inplace=True)
+        if not df.empty:
+            df['Año'] = df['Fecha'].dt.year
+            df['NumSemana'] = df['Fecha'].dt.isocalendar().week.astype(int)
+            df['MesNum'] = df['Fecha'].dt.month
+            df['AñoMes'] = df['Fecha'].dt.strftime('%Y-%m')
+    else:
+        st.warning("Columna 'Fecha' no encontrada.")
+
+    # Procesamiento de Columnas Numéricas (Misma estructura que KPIs general)
+    kpi_columns_ordered = ["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]
+    for col_name in kpi_columns_ordered:
+        if col_name not in df.columns:
+            # Si por alguna razón falta una columna, la creamos en 0 para no romper el código
+            df[col_name] = 0
         else:
-            # Si no existe (ej. error de typo en el sheet), la creamos con 0
-            df[col] = 0
+            df[col_name] = df[col_name].apply(lambda x: parse_kpi_value(x, column_name=col_name)).astype(int)
+
+    # Limpieza de columnas de texto
+    string_cols_kpis = ["Mes", "Semana", "Analista", "Región"]
+    for col_str in string_cols_kpis:
+        if col_str in df.columns:
+            df[col_str] = df[col_str].astype(str).str.strip().fillna("N/D")
             
     return df
 
-def calculate_rate(num, den):
-    return (num / den * 100) if den > 0 else 0
+# --- Carga de Datos ---
+df_raw = load_karla_kpis_data()
 
-# --- Carga Principal ---
-df_raw = load_karla_data()
-df_kpis = process_karla_df(df_raw)
-
-if df_kpis.empty:
-    st.warning("No hay datos disponibles para mostrar.")
+if df_raw.empty:
     st.stop()
 
-# --- Filtros (Sidebar) ---
-st.sidebar.header("🔍 Filtros Karla")
+# --- Filtros (Adaptado: Sin filtro de Analista) ---
+st.sidebar.header("🔍 Filtros")
 
-# Filtro de Fecha
-min_date = df_kpis["Fecha_Dt"].min().date()
-max_date = df_kpis["Fecha_Dt"].max().date()
+# 1. Filtro Fecha
+min_date = df_raw["Fecha"].min().date() if "Fecha" in df_raw.columns and not df_raw["Fecha"].empty else None
+max_date = df_raw["Fecha"].max().date() if "Fecha" in df_raw.columns and not df_raw["Fecha"].empty else None
 
-start_date = st.sidebar.date_input("Desde", value=min_date, min_value=min_date, max_value=max_date, key="k_start")
-end_date = st.sidebar.date_input("Hasta", value=max_date, min_value=min_date, max_value=max_date, key="k_end")
+col1, col2 = st.sidebar.columns(2)
+start_date = col1.date_input("Desde", value=min_date, min_value=min_date, max_value=max_date)
+end_date = col2.date_input("Hasta", value=max_date, min_value=min_date, max_value=max_date)
 
-# Filtro de Año y Semana
-all_years = sorted(df_kpis["Año"].unique(), reverse=True)
-selected_year = st.sidebar.selectbox("Año", ["Todos"] + list(all_years), key="k_year")
+# 2. Filtro Año y Semana
+st.sidebar.markdown("---")
+year_opts = ["Todos"] + sorted([int(x) for x in df_raw["Año"].unique()]) if "Año" in df_raw.columns else ["Todos"]
+sel_year = st.sidebar.selectbox("Año", year_opts)
 
-# Lógica de filtrado
-df_filtered = df_kpis.copy()
+# Lógica de Filtrado
+df_filtered = df_raw.copy()
 
-# 1. Filtro Rango Fechas
-if start_date and end_date:
+if start_date and end_date and "Fecha" in df_filtered.columns:
     df_filtered = df_filtered[
-        (df_filtered["Fecha_Dt"].dt.date >= start_date) &
-        (df_filtered["Fecha_Dt"].dt.date <= end_date)
+        (df_filtered["Fecha"].dt.date >= start_date) & 
+        (df_filtered["Fecha"].dt.date <= end_date)
     ]
 
-# 2. Filtro Año
-if selected_year != "Todos":
-    df_filtered = df_filtered[df_filtered["Año"] == selected_year]
+if sel_year != "Todos":
+    df_filtered = df_filtered[df_filtered["Año"] == sel_year]
 
+# --- Visualización (Componentes reutilizados y simplificados) ---
 
-# --- Dashboard Visual ---
+def display_kpi_summary(df):
+    st.markdown("### 🧮 Resumen de KPIs Totales")
+    
+    kpi_cols = ["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]
+    icons = ["📧", "📤", "💬", "🤝"]
+    
+    metrics = {col: df[col].sum() for col in kpi_cols if col in df.columns}
+    
+    # Fila 1: Absolutos
+    cols = st.columns(4)
+    for i, col in enumerate(kpi_cols):
+        cols[i].metric(f"{icons[i]} {col}", f"{metrics.get(col, 0):,}")
+        
+    st.markdown("---")
+    
+    # Fila 2: Tasas
+    invites = metrics.get("Invites enviadas", 0)
+    mensajes = metrics.get("Mensajes Enviados", 0)
+    respuestas = metrics.get("Respuestas", 0)
+    sesiones = metrics.get("Sesiones agendadas", 0)
+    
+    tasa_msj = calculate_rate(mensajes, invites)
+    tasa_resp = calculate_rate(respuestas, mensajes)
+    tasa_cita = calculate_rate(sesiones, respuestas)
+    tasa_global = calculate_rate(sesiones, invites)
+    
+    cols_tasas = st.columns(4)
+    cols_tasas[0].metric("📨 Tasa Msj/Invite", f"{tasa_msj:.1f}%")
+    cols_tasas[1].metric("📤 Tasa Resp/Msj", f"{tasa_resp:.1f}%")
+    cols_tasas[2].metric("💬 Tasa Cita/Resp", f"{tasa_cita:.1f}%")
+    cols_tasas[3].metric("🤝 Tasa Global (Cita/Inv)", f"{tasa_global:.1f}%")
 
-# 1. Métricas Totales (Sumas)
-total_invites = df_filtered["Invites enviadas"].sum()
-total_mensajes = df_filtered["Mensajes Enviados"].sum()
-total_respuestas = df_filtered["Respuestas"].sum()
-total_sesiones = df_filtered["Sesiones agendadas"].sum()
+def display_time_evolution(df, time_col, label, title):
+    st.markdown(f"### 📈 {title}")
+    
+    kpis = ["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]
+    present_kpis = [k for k in kpis if k in df.columns]
+    
+    if not present_kpis: return
 
-# 2. Tasas de Conversión
-tasa_msj_inv = calculate_rate(total_mensajes, total_invites)
-tasa_resp_msj = calculate_rate(total_respuestas, total_mensajes)
-tasa_cita_resp = calculate_rate(total_sesiones, total_respuestas)
-tasa_global = calculate_rate(total_sesiones, total_invites)
+    # Agrupación
+    if time_col == "NumSemana":
+        df_agg = df.groupby(["Año", "NumSemana"]).sum(numeric_only=True).reset_index()
+        df_agg["Periodo"] = df_agg["Año"].astype(str) + "-S" + df_agg["NumSemana"].astype(str).str.zfill(2)
+        df_agg = df_agg.sort_values(["Año", "NumSemana"])
+    else:
+        df_agg = df.groupby(time_col).sum(numeric_only=True).reset_index()
+        df_agg["Periodo"] = df_agg[time_col]
+        df_agg = df_agg.sort_values(time_col)
+        
+    fig = px.line(df_agg, x="Periodo", y=present_kpis, markers=True, title=title)
+    st.plotly_chart(fig, use_container_width=True)
 
-st.subheader("📈 Resumen de Rendimiento")
-
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("📧 Invites Enviadas", f"{total_invites:,.0f}")
-col2.metric("📤 Msj Enviados", f"{total_mensajes:,.0f}", f"{tasa_msj_inv:.1f}% de Inv.")
-col3.metric("💬 Respuestas", f"{total_respuestas:,.0f}", f"{tasa_resp_msj:.1f}% de Msj")
-col4.metric("🤝 Sesiones Agendadas", f"{total_sesiones:,.0f}", f"{tasa_cita_resp:.1f}% de Resp.")
-
-# Métrica extra: Global
-st.caption(f"**Tasa de Conversión Global (Sesiones / Invites): {tasa_global:.2f}%**")
-
-st.markdown("---")
-
-# 3. Gráficos de Evolución
-st.subheader("📅 Evolución Temporal")
+# --- Renderizado Principal ---
 
 if not df_filtered.empty:
-    # Agrupar por Semana para el gráfico
-    # Creamos una columna ordenable Año-Semana
-    df_filtered["Año-Semana"] = df_filtered["Año"].astype(str) + "-S" + df_filtered["NumSemana"].astype(str).str.zfill(2)
+    display_kpi_summary(df_filtered)
     
-    df_grouped = df_filtered.groupby("Año-Semana")[["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]].sum().reset_index()
-    df_grouped = df_grouped.sort_values("Año-Semana")
+    st.markdown("---")
+    
+    # Gráfico de Barras por Región (si hay datos de región distintos)
+    if "Región" in df_filtered.columns and df_filtered["Región"].nunique() > 1:
+        st.subheader("🌎 Desglose por Región")
+        df_region = df_filtered.groupby("Región")[["Invites enviadas", "Sesiones agendadas"]].sum().reset_index()
+        fig_reg = px.bar(df_region, x="Región", y=["Invites enviadas", "Sesiones agendadas"], barmode="group", text_auto=True)
+        st.plotly_chart(fig_reg, use_container_width=True)
+        st.markdown("---")
 
-    tab_evol, tab_funnel = st.tabs(["📈 Tendencia Semanal", "🔻 Embudo del Periodo"])
+    display_time_evolution(df_filtered, "NumSemana", "Semana", "Evolución Semanal")
+    st.markdown("---")
+    display_time_evolution(df_filtered, "AñoMes", "Mes", "Evolución Mensual")
+    
+    st.markdown("---")
+    with st.expander("📝 Ver Tabla de Datos Detallada"):
+        cols_show = ["Fecha", "Mes", "Semana", "Región", "Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]
+        # Filtramos para mostrar solo las que existen
+        cols_final = [c for c in cols_show if c in df_filtered.columns]
+        
+        # Formato de fecha para la tabla
+        df_table = df_filtered.copy()
+        if "Fecha" in df_table.columns:
+            df_table["Fecha"] = df_table["Fecha"].dt.strftime('%d/%m/%Y')
+            
+        st.dataframe(df_table[cols_final], use_container_width=True)
 
-    with tab_evol:
-        # Gráfico de líneas
-        fig_evol = px.line(
-            df_grouped, 
-            x="Año-Semana", 
-            y=["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"],
-            markers=True,
-            title="Evolución de KPIs por Semana"
-        )
-        st.plotly_chart(fig_evol, use_container_width=True)
-
-    with tab_funnel:
-        # Gráfico de Embudo
-        funnel_data = pd.DataFrame({
-            "Etapa": ["Invites", "Mensajes", "Respuestas", "Sesiones"],
-            "Valor": [total_invites, total_mensajes, total_respuestas, total_sesiones]
-        })
-        fig_funnel = px.funnel(funnel_data, x='Valor', y='Etapa', title="Embudo de Conversión Total")
-        st.plotly_chart(fig_funnel, use_container_width=True)
 else:
-    st.info("No hay datos suficientes en el periodo seleccionado para graficar.")
-
-st.markdown("---")
-
-# 4. Tabla de Datos
-with st.expander("📝 Ver Tabla de Datos Detallada"):
-    # Formateamos la fecha para que se vea bonita
-    df_display = df_filtered.copy()
-    df_display["Fecha_Dt"] = df_display["Fecha_Dt"].dt.strftime("%d/%m/%Y")
-    
-    # Seleccionamos y ordenamos columnas clave
-    cols_order = ["Fecha_Dt", "Mes", "Semana", "Analista", "Región", "Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]
-    # Filtramos solo las que existen
-    cols_final = [c for c in cols_order if c in df_display.columns]
-    
-    st.dataframe(df_display[cols_final], use_container_width=True)
-
+    st.info("No hay datos para mostrar con los filtros seleccionados.")
