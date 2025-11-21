@@ -11,7 +11,7 @@ import sys
 st.set_page_config(layout="wide", page_title="KPIs Karla (USA)")
 
 st.title("📊 Dashboard de KPIs - Karla (USA)")
-st.markdown("Análisis detallado de métricas y embudo de conversión (United States - Karla).")
+st.markdown("Análisis detallado de métricas y embudo de conversión United States - Karla.")
 
 # --- Gestión de Estado ---
 DETAILED_VIEW_WEEKS_KEY = "karla_detailed_view_weeks_v2"
@@ -182,7 +182,7 @@ with st.expander("📝 Datos Detallados Filtrados (Vista General)", expanded=Tru
 st.markdown("---")
 
 # 3. CONTROL DE VISTA DETALLADA SEMANAL (CORREGIDO EL ERROR Y NOMENCLATURA IGUAL AL ORIGINAL)
-st.markdown("### 🔬 Control de Vista Detallada Semanal por Analista")
+st.markdown("### 🔬 Control de Vista Detallada Semanal")
 st.caption("Selecciona semanas específicas para ver el embudo completo y todas las tasas de conversión intermedias.")
 
 if not df_filtered.empty:
