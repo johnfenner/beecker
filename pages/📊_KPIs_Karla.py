@@ -264,7 +264,7 @@ if not df_filtered.empty:
 st.markdown("---")
 
 # 4. Evolución Temporal
-st.markdown("### 📈 Evolución Temporal de KPIs")
+st.markdown("### 📈 Evolución de KPIs")
 if not df_filtered.empty:
     tab_w, tab_m = st.tabs(["Semanas", "Meses"])
     
