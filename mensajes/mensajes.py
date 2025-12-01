@@ -286,43 +286,40 @@ plantillas_karen = {
 
 plantilla_h2r_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/hire-to-retire/. Nos especializamos en Agentic Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
+Me presento: soy {avatar}, Gerente de Transformación Digital en [https://beecker.ai/hire-to-retire/](https://beecker.ai/hire-to-retire/). Nos especializamos en Agentic Process Automation y el motivo de mi mensaje es compartirte una propuesta de valor enfocada en la optimización del ciclo Hire-to-Retire en {empresa}.
 
-Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. 
+Actualmente desarrollamos agentes digitales de IA que impulsan distintas etapas del proceso. Por ejemplo:
 
-Por ejemplo, en tu caso para el ciclo Hire-to-Retire:
+— Fer: agente de publicación de vacantes
+— Lucas: agente de reclutamiento
+— Isa: agente de onboarding
+— Luke: gestión de dudas y tickets
+— Ben: agente de desempeño del empleado
+— Lily: agente de remuneración y prestaciones
+— Lisa: agente de gestión de viáticos
+— Cleo: agente de jubilación
 
-— Fer: Agente de Publicación de Vacantes
-— Lucas: Agente de Reclutamiento 
-— Isa: Agente de Onboarding 
-— Luke: Gestión de dudas y tickets
-— Ben: Agente de Desempeño del empleado
-— Lily: Agente de Remuneración y Prestaciones
-— Lisa: Agente de Gestión de viáticos
-— Cleo: Agente de Jubilación
-
-Nuestros agentes reducen significativamente los errores y se adaptan con facilidad a las necesidades de cada equipo. Si te suena interesante, me gustaría invitarte a una breve sesión para mostrarte ejemplos concretos de resultados y explorar cómo este enfoque podría beneficiar tu operación.
+Estos agentes están diseñados para reducir errores, acelerar tareas operativas y adaptarse a las necesidades de cada equipo. Si te parece interesante, me gustaría proponerte una breve sesión para presentarte los casos de éxito y los resultados que líderes de tu sector están obteniendo con estas soluciones.
 
 ¿Tendrías disponibilidad esta o la próxima semana para conversarlo con nuestro equipo?
 """
 
 plantilla_p2p_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/procure-to-pay-automation/. Nos especializamos en Agentic Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
+Me presento: soy {avatar}, Gerente de Transformación Digital en [https://beecker.ai/procure-to-pay-automation/](https://beecker.ai/procure-to-pay-automation/). Nos especializamos en Agentic Process Automation y me gustaría compartirte una propuesta de valor orientada a fortalecer el flujo Procure-to-Pay en {empresa}.
 
-Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. 
+Actualmente desarrollamos agentes digitales de IA que eliminan tareas repetitivas y aumentan la precisión en cada etapa del proceso. Por ejemplo:
 
-Por ejemplo, en tu caso:
+– Jessica: agente de selección de proveedor
+– Elsa: agente de alta de proveedores
+– Olivia: agente de procesamiento de órdenes de compra
+– Daniel: agente de procesamiento de facturas
+– David: agente de órdenes de pago
 
-- Jessica: Agente de Selección de proveedor.
-- Elsa: Agente de alta de proveedores.
-- Olivia: Agente de procesamiento de órdenes de compra.
-- Daniel: Agente de procesamiento de facturas.
-- David: Agente de procesamiento de órdenes de pago.
-
-Nuestros agentes reducen significativamente los errores y se adaptan con facilidad a las necesidades de cada equipo. Si te suena interesante, me gustaría invitarte a una breve sesión para mostrarte ejemplos concretos de resultados y explorar cómo este enfoque podría beneficiar tu operación.
+Estos agentes ayudan a reducir errores, acelerar aprobaciones y mejorar la trazabilidad del proceso completo. Si te parece interesante, me gustaría proponerte una breve sesión para presentarte los casos de éxito y los resultados que líderes de tu sector están obteniendo con estas soluciones.
 
 ¿Tendrías disponibilidad esta o la próxima semana para conversarlo con nuestro equipo?
+
 """
 
 plantilla_o2c_john_mejorado = """Hola {nombre}, un gusto saludarte.
@@ -344,7 +341,7 @@ Por ejemplo, en tu caso:
 — Nina: Agente de Cuentas por cobrar.
 — Aaron: Agente de facturación.
 
-Nuestros agentes reducen significativamente los errores y se adaptan con facilidad a las necesidades de cada equipo. Si te suena interesante, me gustaría invitarte a una breve sesión para mostrarte ejemplos concretos de resultados y explorar cómo este enfoque podría beneficiar tu operación.
+Nuestros agentes reducen significativamente los errores y se adaptan con facilidad a las necesidades de cada equipo. Si te suena interesante, me gustaría invitarte a una breve sesión para mostrarte cómo este enfoque podría beneficiar tu operación.
 
 ¿Tendrías disponibilidad esta o la próxima semana para conversarlo con nuestro equipo?
 """
@@ -353,68 +350,65 @@ plantilla_ti_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
 Gracias por permitirme ser parte de tu red profesional. Me presento: soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/robots-as-a-service-raas/. 
 
-Con más de 12 años de experiencia en automatización inteligente e inteligencia artificial, Contamos con un equipo de más de 200 expertos certificados que acompañan a nuestros clientes a identificar oportunidades reales de mejora y optimizar procesos que actualmente les estén generando demoras o dificultades.
+Llevamos más de 12 años trabajando en automatización inteligente, apoyando a diversas empresas en la identificación de oportunidades reales de mejora en procesos que, en el día a día, suelen generar demoras, retrabajos o fricción. 
 
-Con base en la experiencia que ya hemos tenido, y para que puedan conocer mejor nuestro enfoque de Agentic Process Automation, vemos viable aplicar este mismo modelo para identificar oportunidades similares en {empresa}. 
+Nuestro equipo más de 200 especialistas certificados acompaña todo el proceso de análisis y ejecución. Dicho de esta manera y con base en lo que hacemos y en lo que he visto de {empresa}, considero que podría ser interesante explorar si nuestro modelo de Agentic Process Automation puede aportar valor en áreas específicas de su operación.
 
-¿Tendrías disponibilidad para conversarlo en una breve sesión con nuestro equipo?
+Si te parece, podemos coordinar un espacio corto entre nuestros equipos para mostrarte el enfoque y evaluar si es algo que podría ser útil para ustedes.
 
-Quedo atenta a tu respuesta, saludos. 
+Quedo atenta a tu respuesta, saludos.  
 """
 
 plantilla_aduanas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para transformar la eficiencia de {empresa} en el proceso aduanal:
+Me presento: soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Me gustaría compartirte una propuesta de valor enfocada en optimizar el proceso aduanal en {empresa} a través de nuestro enfoque de Agentic Process Automation.
 
-Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. 
+Desarrollamos agentes digitales de IA diseñados para acelerar y dar mayor precisión al control aduanero. En tu caso, nuestro Agente Digital Pedro puede gestionar el flujo completo en minutos:
 
-Por ejemplo, en tu caso, para el control de aduanas, nuestro Agente Digital Pedro, procesa todo el flujo aduanero en minutos: 
+— Revisión de manifiestos: validación de documentos e impuestos
+— Validación: cotejo de facturas, órdenes de compra y pedimentos
+— Clasificación: asignación de regímenes y costos según normativa
+— Expedientes digitales: generación de archivos auditables en tiempo real
 
-— Revisión de manifiestos: verifican documentos y determinan impuestos.  
-— Validación: cotejan facturas contra órdenes de compra y pedimentos.  
-— Clasificación: asignan regímenes y costos cumpliendo normativas.  
-— Expedientes digitales: generan archivos auditables en tiempo real.  
-
-Este agente no sólo extrae y clasifica datos desde documentos, sino que también detecta inconsistencias, valida cuentas internas y genera reportes contables en minutos.
-
-Me gustaría coordinar una breve sesión contigo para mostrarte casos de éxito y explorar oportunidades que podrían ser útiles para tu equipo.
+Además de extraer y clasificar datos, detecta inconsistencias, valida información interna y genera reportes contables de manera inmediata. Me gustaría coordinar una breve sesión contigo para mostrarte casos de éxito y explorar oportunidades que podrían ser útiles para tu equipo.
 
 ¿Tendrías disponibilidad esta o la próxima semana para conversarlo con nuestro equipo?
 """
 
 plantilla_general_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
+Soy {avatar}, Gerente de Transformación Digital en [https://beecker.ai/agentic-ai/](https://beecker.ai/agentic-ai/). Me gustaría compartirte una propuesta de valor orientada a la optimización de procesos en {empresa}, aprovechando nuestro enfoque de Agentic Process Automation.
 
-Actualmente, implementamos soluciones que potencian distintas líneas de negocio. Por ejemplo:
+Actualmente implementamos soluciones que apoyan distintas líneas de negocio, como:
 
-— Compras y proveedores: alta de proveedores, órdenes de compra y conciliaciones.  
-— Finanzas: conciliaciones bancarias, facturación y pagos automáticos.  
-— Recursos Humanos: reclutamiento, onboarding, nómina y atención interna.  
-— Atención al cliente: gestión de consultas y soporte en tiempo real.  
-— Cadena de suministro: pedidos, inventarios y logística optimizada.  
+— Compras y proveedores: alta de proveedores, órdenes de compra y conciliaciones
+— Finanzas: conciliaciones bancarias, facturación y pagos automáticos
+— Recursos Humanos: reclutamiento, onboarding, nómina y atención interna
+— Atención al cliente: gestión de consultas y soporte en tiempo real
+— Cadena de suministro: pedidos, inventarios y logística optimizada
 
-Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y brindar una visibilidad completa de cada proceso. Además, podemos adaptarlas fácilmente a las necesidades específicas de tu área.
+Estas soluciones están diseñadas para reducir costos, mejorar la eficiencia operativa y adaptarse fácilmente a las necesidades específicas de cada área.
 
-Me encantaría coordinar una breve sesión contigo para mostrarte algunos casos de éxito recientes y explorar cómo podrían aplicarse a tu operación.
+Si te interesa, con gusto puedo coordinar una breve sesión para mostrarte casos de éxito recientes y explorar cómo podríamos apoyar tus procesos.
 
 ¿Tendrías disponibilidad esta o la próxima semana para conversarlo con nuestro equipo?
+
 """
 
 plantilla_finanzas_john_mejorado = """Hola {nombre}, un gusto saludarte.
 
-Soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Nos especializamos en Agentic Process Automation y el motivo de mi mensaje es presentarte una propuesta de valor concreta para la optimización de procesos en {empresa}.
+Me presento: soy {avatar}, Gerente de Transformación Digital en https://beecker.ai/agentic-ai/. Me gustaría compartirte una propuesta de valor enfocada en fortalecer los procesos financieros dentro de {empresa}.
 
-Actualmente, desarrollamos agentes digitales de IA que potencian distintas líneas de negocio. 
+Actualmente desarrollamos agentes digitales de IA que pueden apoyar tareas como:
 
-Por ejemplo, en tu caso para Finanzas:
+— Presupuestos: generación y consolidación automatizada
+— Forecastings: proyecciones dinámicas y precisas en tiempo real
+— Alertas: detección temprana de desviaciones y riesgos
+— Dashboards: reportes completos listos para análisis inmediato
 
-— Presupuestos: automatizan la generación y consolidación de cifras.  
-— Forecastings: generan proyecciones dinámicas y precisas en tiempo real.  
-— Alertas: detectan desviaciones y riesgos antes de que escalen.  
-— Dashboards: producen reportes completos y listos para análisis inmediato.  
+Estos agentes ayudan a reducir errores, mejorar la eficiencia y proporcionar datos claros para la toma de decisiones. 
 
-Nuestros agentes reducen significativamente los errores y se adaptan con facilidad a las necesidades de cada equipo. Si te suena interesante, me gustaría invitarte a una breve sesión para mostrarte ejemplos concretos de resultados y explorar cómo este enfoque podría beneficiar tu operación.
+Si te suena interesante, me gustaría invitarte a una breve sesión para mostrarte ejemplos concretos de resultados y explorar cómo este enfoque podría beneficiar tu operación.
 
 ¿Tendrías disponibilidad esta o la próxima semana para conversarlo con nuestro equipo?
 """
