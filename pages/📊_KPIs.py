@@ -89,7 +89,6 @@ def load_weekly_kpis_data():
         df['AñoMes'] = pd.Series(dtype='str')
 
     # Orden de KPIs deseado para el procesamiento y como referencia
-    # (Aunque el orden de parseo no impacta, las columnas deben existir)
     kpi_columns_ordered = ["Invites enviadas", "Mensajes Enviados", "Respuestas", "Sesiones agendadas"]
     for col_name in kpi_columns_ordered: # Usar el orden definido para asegurar que se procesan si existen
         if col_name not in df.columns:
@@ -286,8 +285,7 @@ def display_kpi_summary(df_filtered):
 
     col_metrics_abs = st.columns(len(kpi_cols_funnel_order))
     for i, col_name in enumerate(kpi_cols_funnel_order):
-        # Usar el nombre completo para 'Invites enviadas' y 'Sesiones agendadas' para mayor claridad
-        display_name = col_name # Por defecto usa el nombre de la columna
+        display_name = col_name 
         if col_name == "Invites enviadas":
             display_name = "Invites Enviadas"
         elif col_name == "Mensajes Enviados":
@@ -460,7 +458,7 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
             
     # Asegurar que las columnas se muestren en el orden del funnel
     df_display_time_cols_ordered = [time_col_label if time_col_label in df_agg_time.columns else time_col_agg] + \
-                                   [col for col in kpi_cols_to_sum_time if col in df_agg_time.columns] # Usa kpi_cols_present_time para asegurar que existen
+                                   [col for col in kpi_cols_to_sum_time if col in df_agg_time.columns] 
     
     df_display_time = df_agg_time[df_display_time_cols_ordered].copy()
 
@@ -482,7 +480,7 @@ def display_time_evolution(df_filtered, time_col_agg, time_col_label, chart_titl
 
 
 def display_detailed_weekly_analyst_view(df_filtered, semanas_seleccionadas_para_vista):
-    st.markdown("### 📋 Vista Detallada Semanal por Analista") # Título ajustado
+    st.markdown("### 📋 Vista Detallada Semanal por Analista") 
 
     if df_filtered.empty:
         st.info("No hay datos filtrados generales para mostrar esta vista detallada.")
@@ -513,7 +511,7 @@ def display_detailed_weekly_analyst_view(df_filtered, semanas_seleccionadas_para
     }
     df_analyst_weekly = df_work.groupby(
         ['Año', 'NumSemana', 'Analista', 'Región'], as_index=False
-    ).agg(**agg_dict) # Usar ** para desempacar el diccionario de agregación
+    ).agg(**agg_dict) 
 
     # Renombrar columnas agregadas para claridad y mantener referencia al funnel
     df_analyst_weekly.rename(columns={
@@ -607,7 +605,7 @@ def display_detailed_weekly_analyst_view(df_filtered, semanas_seleccionadas_para
         st.markdown("---") 
 
 # --- Flujo Principal de la Página ---
-if "kpis_page_filtro_Semana_v6" in st.session_state: # Eliminar el mensaje de "The widget with key..."
+if "kpis_page_filtro_Semana_v6" in st.session_state: 
     del st.session_state["kpis_page_filtro_Semana_v6"]
 
 start_date_val_kpis, end_date_val_kpis, year_val_kpis, week_val_kpis_sidebar, analista_val_kpis, region_val_kpis = sidebar_filters_kpis(df_kpis_semanales_raw) 
@@ -618,7 +616,7 @@ if "Analista" in df_kpis_filtered_page.columns and analista_val_kpis and "– To
         df_kpis_filtered_page = df_kpis_filtered_page[~df_kpis_filtered_page["Analista"].isin(['N/D', ''])]
 
 # --- Presentación del Dashboard ---
-display_kpi_summary(df_kpis_filtered_page) # Mostrar el resumen primero, ya ordenado según el funnel
+display_kpi_summary(df_kpis_filtered_page) 
 st.markdown("---")
 
 # Desgloses por Analista y Región
@@ -664,9 +662,6 @@ display_time_evolution(df_kpis_filtered_page, 'NumSemana', 'Año-Semana', "Evolu
 st.markdown("---")
 display_time_evolution(df_kpis_filtered_page, 'AñoMes', 'AñoMes', "Evolución Mensual de KPIs", "Mes (Año-Mes)", chart_icon="📈")
 
-st.markdown("---")
-st.info(
-    "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊"
-)
+
 
 
