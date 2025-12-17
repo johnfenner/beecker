@@ -1,4 +1,3 @@
-# componentes/analisis_avatars.py
 import streamlit as st
 from utils.limpieza import limpiar_valor_kpi, estandarizar_avatar
 import pandas as pd
@@ -6,7 +5,7 @@ import plotly.express as px
 
 
 def mostrar_analisis_por_avatar(
-        df):  # df aquí es df_kpis (ya filtrado por sidebar)
+        df):  
     st.markdown("---")
     st.markdown(
         "### 👤 Análisis de Rendimiento por Avatar (Enfoque Agendamiento)")
@@ -86,7 +85,7 @@ def mostrar_analisis_por_avatar(
             color="Tasa Sesiones (vs Resp.) (%)",
             text="Tasa Sesiones (vs Resp.) (%)",
             color_continuous_scale=px.colors.sequential.
-            Emrld  # Un verde diferente
+            Emrld 
         )
         fig_tasa_sesion_resp.update_traces(texttemplate='%{text:.1f}%',
                                            textposition='outside')
