@@ -1,4 +1,3 @@
-# componentes/analisis_prospectadores.py
 import streamlit as st
 from utils.limpieza import limpiar_valor_kpi
 import pandas as pd
@@ -63,7 +62,7 @@ def mostrar_analisis_por_prospectador(df):
             title="Tasa de Agendamiento Global por Prospectador",
             color="Tasa Sesiones Global (vs Prosp.) (%)",
             text="Tasa Sesiones Global (vs Prosp.) (%)",
-            color_continuous_scale=px.colors.sequential.Plasma # Un color diferente para distinguirlo
+            color_continuous_scale=px.colors.sequential.Plasma 
         )
         fig_tasa_sesion_global.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
         fig_tasa_sesion_global.update_layout(xaxis_tickangle=-45)
