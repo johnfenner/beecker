@@ -1,4 +1,3 @@
-# componentes/top_industrias_paises.py
 import streamlit as st
 import plotly.express as px
 import pandas as pd
@@ -10,7 +9,7 @@ def mostrar_analisis_dimension_agendamiento_flexible(
     titulo_dimension,
     top_n_grafico=10,
     mostrar_tabla_completa=False,
-    min_prospectados_para_significancia=3 # Umbral mínimo de prospectados para mostrar en gráficos/tasas
+    min_prospectados_para_significancia=3 
 ):
     st.markdown("---")
     titulo_seccion = f"Análisis de {titulo_dimension}: Volumen Prospectado y Tasa de Agendamiento"
@@ -35,8 +34,8 @@ def mostrar_analisis_dimension_agendamiento_flexible(
         resumen_dimension_completo = df_filtrado.groupby(dimension_col, as_index=False).agg(
             Total_Prospectados=(dimension_col, 'count')
         )
-        resumen_dimension_completo["Sesiones_Agendadas"] = 0 # Placeholder
-        resumen_dimension_completo["Tasa Agendamiento (%)"] = 0.0 # Placeholder
+        resumen_dimension_completo["Sesiones_Agendadas"] = 0 
+        resumen_dimension_completo["Tasa Agendamiento (%)"] = 0.0 
 
     resumen_dimension_completo.rename(columns={resumen_dimension_completo.columns[0]: dimension_col}, inplace=True)
 
@@ -53,7 +52,7 @@ def mostrar_analisis_dimension_agendamiento_flexible(
     else:
         col_graf_volumen, col_graf_tasa = st.columns(2) # Columnas para poner gráficos lado a lado
 
-        # GRÁFICO TOP N POR VOLUMEN PROSPECTADO (Como el original)
+        # GRÁFICO TOP N POR VOLUMEN PROSPECTADO
         with col_graf_volumen:
             st.markdown(f"#### Top {top_n_grafico} por Volumen")
             df_grafico_volumen = resumen_para_graficos.sort_values(by="Total_Prospectados", ascending=False).head(top_n_grafico)
@@ -62,7 +61,7 @@ def mostrar_analisis_dimension_agendamiento_flexible(
                 fig_volumen = px.bar(
                     df_grafico_volumen, x="Total_Prospectados", y=dimension_col, orientation='h',
                     title=f'Mayor Volumen (Top {len(df_grafico_volumen)})', color="Total_Prospectados",
-                    text="Total_Prospectados", color_continuous_scale='Blues', # O 'Viridis' como el original
+                    text="Total_Prospectados", color_continuous_scale='Blues', 
                     category_orders={dimension_col: category_order_vol}
                 )
                 fig_volumen.update_traces(texttemplate='%{text:,}', textposition='outside')
@@ -72,7 +71,7 @@ def mostrar_analisis_dimension_agendamiento_flexible(
                 st.caption(f"No hay {titulo_dimension.lower()} con suficiente volumen para el gráfico.")
 
         # GRÁFICO TOP N POR TASA DE AGENDAMIENTO
-        if "Tasa Agendamiento (%)" in resumen_para_graficos.columns: # Solo si se pudo calcular la tasa
+        if "Tasa Agendamiento (%)" in resumen_para_graficos.columns: 
             with col_graf_tasa:
                 st.markdown(f"#### Top {top_n_grafico} por Tasa Agendamiento")
                 df_grafico_tasa = resumen_para_graficos.sort_values(by="Tasa Agendamiento (%)", ascending=False).head(top_n_grafico)
@@ -96,10 +95,7 @@ def mostrar_analisis_dimension_agendamiento_flexible(
 
     # --- TABLA PAGINADA COMPLETA (Condicional) ---
     if mostrar_tabla_completa:
-        # (La lógica de la tabla paginada que ya teníamos se mantiene aquí sin cambios)
-        # ... (código de la tabla paginada que ya está en tu versión anterior de este archivo) ...
-        # Asegúrate de que el ordenamiento de `tabla_completa_ordenada` sea el que deseas para la tabla.
-        # Por ejemplo, podrías ordenarla por "Total_Prospectados" si eso tiene más sentido para la tabla detallada.
+     
         with st.expander(f"Ver Tabla Detallada Completa de {titulo_dimension} ({len(resumen_dimension_completo)} categorías)"):
             # Decide el ordenamiento para la tabla
             tabla_completa_ordenada = resumen_dimension_completo.sort_values(by="Total_Prospectados", ascending=False) # Ejemplo: Ordenar tabla por volumen
@@ -172,3 +168,4 @@ def mostrar_analisis_dimension_agendamiento_flexible(
 
             if num_paginas_total_tabla > 1:
                 st.caption(f"Mostrando registros del {inicio_idx_tabla + 1} al {min(fin_idx_tabla, num_total_registros_tabla)} de un total de {num_total_registros_tabla} {titulo_dimension.lower()} en la tabla.")
+
