@@ -300,6 +300,5 @@ if st.session_state.mostrar_tabla_mensajes:
                         with st.expander(expander_title):
                             st.code(mensaje_alternativo, language=None)
 
-st.markdown("---")
-st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")
+
 
