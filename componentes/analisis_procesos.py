@@ -1,12 +1,8 @@
-# componentes/analisis_procesos.py
 import streamlit as st
 import plotly.express as px
 import pandas as pd
 from utils.limpieza import limpiar_valor_kpi
 
-# Reutilizamos la función flexible, adaptando el nombre para claridad si se desea
-# O simplemente llamamos a la función de top_industrias_paises directamente.
-# Aquí la copiamos y renombramos para mantener la lógica separada si evoluciona diferente.
 
 
 def mostrar_analisis_procesos_con_prospectador(df_filtrado,
@@ -83,20 +79,11 @@ def mostrar_analisis_procesos_con_prospectador(df_filtrado,
 
     # Tabla Paginada Procesos (si mostrar_tabla_proceso es True)
     if mostrar_tabla_proceso:
-        # (Aquí iría la misma lógica de paginación que en la función flexible, adaptada para 'Proceso')
-        # Por brevedad, omito la repetición del código de paginación aquí, pero sería idéntico
-        # cambiando 'dimension_col' por 'dimension_col_proceso', etc.
-        # Puedes copiarlo de la función mostrar_analisis_dimension_agendamiento_flexible
-        # y ponerlo dentro de un st.expander.
+     
         with st.expander(
                 f"Ver Tabla Detallada Completa de {titulo_dimension_proceso} ({len(resumen_proceso_completo)} categorías)"
         ):
-            # ... LÓGICA DE PAGINACIÓN PARA PROCESOS AQUÍ ...
-            # Asegúrate de usar claves de session_state únicas para la paginación de procesos.
-            # Ejemplo: key_registros_por_pagina_tabla = f"tabla_registros_por_pagina_{dimension_col_proceso}"
-            #          key_pagina_actual_tabla = f"tabla_pagina_actual_{dimension_col_proceso}"
-
-            # --- Inicio de la lógica de paginación copiada y adaptada ---
+       
             tabla_completa_ordenada_proc = resumen_proceso_completo.sort_values(
                 by="Tasa Agendamiento (%)", ascending=False)
             tabla_completa_ordenada_proc.reset_index(drop=True, inplace=True)
@@ -190,5 +177,3 @@ def mostrar_analisis_procesos_con_prospectador(df_filtrado,
                 st.caption(
                     f"Mostrando registros del {inicio_idx_proc + 1} al {min(fin_idx_proc, num_total_registros_tabla_proc)} de un total de {num_total_registros_tabla_proc} procesos en la tabla."
                 )
-            # --- Fin de la lógica de paginación ---
-
