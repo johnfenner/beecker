@@ -51,7 +51,7 @@ def mostrar_kpis(df_kpis, base_kpis_counts, limpiar_valor_kpi):
     tasa_sesion_filtrado_vs_respuestas_filtrado = (
         sesiones / resp_primer * 100) if resp_primer > 0 else 0
     tasa_sesion_filtrado_vs_aceptados_filtrado = (
-        sesiones / inv_acept * 100) if inv_acept > 0 else 0  # Nueva tasa
+        sesiones / inv_acept * 100) if inv_acept > 0 else 0  
 
     # Conteos base
     base_inv_acept_count = base_kpis_counts["inv_acept"]
@@ -103,17 +103,17 @@ def mostrar_kpis(df_kpis, base_kpis_counts, limpiar_valor_kpi):
 
     with col5:
         st.metric(
-            "🔥 Oportunidades Agendar",  # Nuevo KPI
+            "🔥 Oportunidades Agendar", 
             oportunidades_para_agendar,
             help="Aceptaron y Respondieron, pero SIN sesión agendada (Filtro)."
         )
-        # Podrías añadir un delta si este número sube o baja mucho respecto a un periodo anterior
 
     return (
         total_filtered,
-        primeros_mensajes_enviados_count,  # Se mantiene por si se usa en el embudo
+        primeros_mensajes_enviados_count,  
         inv_acept,
         resp_primer,
         sesiones,
-        base_kpis_counts  # Retornamos los conteos base también
+        base_kpis_counts 
     )
+
