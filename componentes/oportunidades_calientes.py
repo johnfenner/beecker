@@ -43,9 +43,6 @@ def mostrar_oportunidades_calientes(df_prospectos):
             "Nombre", "Apellido", "Empresa", "Puesto", "Avatar",
             "¿Quién Prospecto?"
         ]
-        # Si tienes una columna con el link de LinkedIn que quieras mostrar, añádela aquí:
-        # if "LinkedIn" in oportunidades.columns:
-        #     columnas_a_mostrar.append("LinkedIn")
 
         # Filtrar para mostrar solo columnas existentes en el DataFrame 'oportunidades'
         columnas_existentes = [
@@ -54,11 +51,8 @@ def mostrar_oportunidades_calientes(df_prospectos):
 
         # Añadir una columna simple que indique la fecha del primer mensaje si existe, sin calcular días
         if "Fecha Primer Mensaje" in oportunidades.columns:
-            if "Fecha Primer Mensaje" not in columnas_existentes:  # Evitar duplicados si ya estaba
+            if "Fecha Primer Mensaje" not in columnas_existentes:  # Evitar duplicados 
                 columnas_existentes.append("Fecha Primer Mensaje")
-            # Formatear la fecha si es necesario para visualización, pero no es crítico para esta versión
-            # oportunidades["Fecha Primer Mensaje Display"] = pd.to_datetime(oportunidades["Fecha Primer Mensaje"], errors='coerce').dt.strftime('%d/%m/%Y')
-            # st.dataframe(oportunidades[columnas_existentes_con_fecha_display], ...)
 
         if not columnas_existentes:
             st.warning(
@@ -77,4 +71,3 @@ def mostrar_oportunidades_calientes(df_prospectos):
 
     except Exception as e:
         st.error(f"Ocurrió un error al procesar las oportunidades clave: {e}")
-        # Opcional: st.exception(e) para más detalles en el log si estás depurando
