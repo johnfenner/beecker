@@ -6,7 +6,6 @@ import sys
 import os
 import shutil
 
-# Copiar secrets.toml en Render si es necesario
 if os.environ.get("RENDER") == "true":
     src = "/etc/secrets/secrets.toml"
     dst_dir = "/opt/render/project/src/.streamlit"
@@ -32,7 +31,6 @@ from componentes.resumen_ejecutivo import mostrar_resumen_ejecutivo
 from componentes.top_industrias_paises import mostrar_analisis_dimension_agendamiento_flexible
 from componentes.analisis_procesos import mostrar_analisis_procesos_con_prospectador
 from componentes.analisis_avatars import mostrar_analisis_por_avatar
-# --- NUEVA LÍNEA ---
 from componentes.analisis_prospectadores import mostrar_analisis_por_prospectador 
 from componentes.oportunidades_calientes import mostrar_oportunidades_calientes
 
@@ -121,7 +119,7 @@ if busqueda_texto:
                  mask |= df_tabla_detalle[col].astype(str).str.lower().str.contains(busq_term, na=False)
         df_tabla_detalle = df_tabla_detalle[mask]
 
-# --- RENDERIZADO DEL DASHBOARD ---
+# --- RENDERIZADO ---
 
 # 1. Tablas Visuales Separadas
 st.header("📊 Detalle de Prospectos Filtrados")
@@ -172,16 +170,10 @@ if "Proceso" in df_kpis.columns:
 else:
     st.caption("Columna 'Proceso' no encontrada para análisis de procesos.")
 
-# --- SECCIÓN DE ANÁLISIS DE RENDIMIENTO (MODIFICADA) ---
-# Se añade la llamada a la nueva función justo antes de la de Avatares.
+# --- SECCIÓN DE ANÁLISIS DE RENDIMIENTO  ---
 mostrar_analisis_por_prospectador(df_kpis)
 mostrar_analisis_por_avatar(df_kpis)
 
 mostrar_resumen_ejecutivo(df_kpis, limpiar_valor_kpi, base_kpis_counts, filtered_sesiones)
 
-# --- PIE DE PÁGINA ---
-st.markdown("---")
-st.info(
-    "Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊 '."
-)
 
