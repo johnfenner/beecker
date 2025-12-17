@@ -2,8 +2,7 @@ import streamlit as st
 import plotly.express as px
 import pandas as pd
 
-# Modificamos la firma para aceptar todos los conteos necesarios (filtrados y base)
-# para decidir qué embudo mostrar.
+
 def mostrar_embudo(
     total_filtered, inv_acept_filtered, resp_primer_filtered, sesiones_filtered, primeros_mensajes_enviados_count_filtered,
     base_total, base_inv_acept, base_primeros_mensajes_enviados_count, base_resp_primer, base_sesiones
@@ -12,9 +11,7 @@ def mostrar_embudo(
     st.markdown("---")
     st.markdown("## 🚀 Embudo de Conversión")
 
-    # Decidir qué conjunto de datos usar para el embudo: filtrado o base
-    # Usamos los datos filtrados si el total filtrado es diferente del total base.
-    # Si son iguales, usamos los datos base.
+
     if total_filtered != base_total:
         # Usar datos filtrados
         display_total = total_filtered
@@ -37,7 +34,7 @@ def mostrar_embudo(
 
     # Definimos las etapas del embudo
     etapas = [
-        "Prospectos (Inicio)", # Nombre más neutral para la primera etapa del embudo
+        "Prospectos (Inicio)", 
         "Invites Aceptadas",
         "1er Msj Enviado",
         "Respuesta 1er Mensaje",
@@ -90,3 +87,4 @@ def mostrar_embudo(
 
     # Mostrar la descripción debajo del embudo
     st.caption(descripcion_embudo)
+
