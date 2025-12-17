@@ -66,9 +66,8 @@ def load_sdr_kpi_data():
     
     try:
         workbook = client.open_by_url(sheet_url_kpis)
-        # --- LÍNEA MODIFICADA ---
-        # Se cambia el apóstrofo para que coincida con el de tu hoja.
-        sheet = workbook.worksheet("KPI´s SDR") # <-- CAMBIO CLAVE
+     
+        sheet = workbook.worksheet("KPI´s SDR") 
         
         raw_data = sheet.get_all_values()
         if not raw_data or len(raw_data) <= 1:
@@ -77,14 +76,12 @@ def load_sdr_kpi_data():
         headers = raw_data[0]
         rows = raw_data[1:]
     except gspread.exceptions.WorksheetNotFound:
-        # Este mensaje de error seguirá siendo útil si el nombre vuelve a cambiar.
         st.error(f"Error: No se encontró la hoja de cálculo 'KPI´s SDR' en el Google Sheet.")
         st.stop()
     except Exception as e:
         st.error(f"Error al leer la hoja 'KPI´s SDR': {e}")
         st.stop()
 
-    # El resto de la función permanece igual...
     cleaned_headers = [str(h).strip() for h in headers]
     df = pd.DataFrame(rows, columns=cleaned_headers)
 
@@ -160,8 +157,7 @@ def sidebar_filters_sdr(df_options):
     st.sidebar.header("🔍 Filtros de KPIs de SDR")
     st.sidebar.markdown("---")
     
-    # Lógica de filtros (es la misma que en KPIs.py)
-    # Por Fecha
+   
     st.sidebar.subheader("🗓️ Por Fecha")
     min_date_data, max_date_data = None, None
     if "Fecha" in df_options.columns and pd.api.types.is_datetime64_any_dtype(df_options["Fecha"]) and not df_options["Fecha"].dropna().empty:
@@ -175,7 +171,7 @@ def sidebar_filters_sdr(df_options):
 
     # Por Año y Semana
     st.sidebar.subheader("📅 Por Año y Semana")
-    # ... (código idéntico a KPIs.py para filtros de año y semana)
+
     raw_year_options_int = []
     if "Año" in df_options.columns and not df_options["Año"].dropna().empty:
         raw_year_options_int = sorted(df_options["Año"].dropna().astype(int).unique(), reverse=True)
@@ -219,7 +215,7 @@ def apply_sdr_filters(df, start_dt, end_dt, year_val, week_list, analista_list, 
         
     return df_f
 
-# --- Componentes de Visualización (Reutilizados de KPIs.py) ---
+# --- Componentes de Visualización  ---
 def display_kpi_summary(df_filtered):
     st.markdown("### 🧮 Resumen de KPIs Totales (Periodo Filtrado)")
     
