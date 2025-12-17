@@ -1,11 +1,8 @@
-# componentes/resumen_ejecutivo.py
-
 import streamlit as st
 import pandas as pd
-from utils.limpieza import limpiar_valor_kpi  # Asegúrate de que esta función se importe
+from utils.limpieza import limpiar_valor_kpi  
 
 
-# La firma de la función modificada para aceptar los conteos base
 def mostrar_resumen_ejecutivo(df_kpis, limpiar_valor_kpi, base_kpis_counts,
                               sesiones_filtered):
     st.markdown("---")
@@ -46,7 +43,7 @@ def mostrar_resumen_ejecutivo(df_kpis, limpiar_valor_kpi, base_kpis_counts,
     # --- Calculamos Tasas de Conversión ---
 
     # Tasas del conjunto FILTRADO (vs etapa anterior del conjunto FILTRADO)
-    # La tasa de aceptación filtrada vs la base total sigue siendo útil
+
     tasa_aceptacion_filtrado_vs_base_total = (inv_acept_filtered / base_total *
                                               100) if base_total > 0 else 0
     tasa_respuesta_filtrado_vs_aceptados_filtrado = (
@@ -64,17 +61,10 @@ def mostrar_resumen_ejecutivo(df_kpis, limpiar_valor_kpi, base_kpis_counts,
     tasa_sesion_base = (base_sesiones / base_resp_primer *
                         100) if base_resp_primer > 0 else 0
 
-    # ... (dentro de mostrar_resumen_ejecutivo, después de los análisis de pérdidas) ...
-
-    # Insight Accionable (ejemplo conceptual, necesitaría datos de análisis de avatares/industrias)
-    # Para esto, necesitarías pasarle los resultados de los análisis de top_dimension o avatar,
-    # o recalcular aquí una versión simplificada.
 
     # Ejemplo simplificado:
     if not df_kpis.empty and "Industria" in df_kpis.columns and "Sesion Agendada?" in df_kpis.columns:
-        # Este es un cálculo similar al de mostrar_analisis_dimension_agendamiento
-        # Deberías refactorizar para no duplicar lógica.
-        # O idealmente, la función de análisis de dimensión retorna su top resultado y lo usas aquí.
+  
         try:
             resumen_industria = df_kpis.groupby("Industria").agg(
                 Total_Prospectados=("Industria", 'count'),
@@ -97,10 +87,9 @@ def mostrar_resumen_ejecutivo(df_kpis, limpiar_valor_kpi, base_kpis_counts,
                     f"💡 **Insight Rápido:** La industria **{nombre_top_industria}** está mostrando una alta tasa de agendamiento del **{tasa_top_industria:.1f}%**. ¡Considera enfocar esfuerzos allí!"
                 )
         except Exception:
-            pass  # Evitar que el dashboard se rompa si hay algún problema con este cálculo rápido
-    # --- Mostramos el Resumen basado en si hay filtros aplicados ---
+            pass  
 
-    if total_filtered > 0:  # Asegurarse de que haya datos en el conjunto filtrado
+    if total_filtered > 0: 
         st.markdown("### 📈 Indicadores Clave (Conjunto Filtrado)")
         col1, col2, col3 = st.columns(3)
 
@@ -133,7 +122,7 @@ def mostrar_resumen_ejecutivo(df_kpis, limpiar_valor_kpi, base_kpis_counts,
         - ❌ Aproximadamente **{100 - tasa_sesion_filtrado_vs_respuestas_filtrado:.1f}%** de los que respondieron no agendan.
         """)
 
-        # Opcional: Añadir una pequeña referencia a las tasas base si se está filtrando
+
         if total_filtered != base_total:
             st.markdown("---")
             st.markdown(
@@ -179,3 +168,4 @@ def mostrar_resumen_ejecutivo(df_kpis, limpiar_valor_kpi, base_kpis_counts,
         st.info(
             "⚠️ No hay datos suficientes para generar el resumen ejecutivo en el conjunto filtrado ni en la base completa."
         )
+
