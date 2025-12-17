@@ -1,15 +1,13 @@
-# -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
 import gspread
-# from oauth2client.service_account import ServiceAccountCredentials # Comentado, gspread >= 5 usa dict
 import datetime
 import plotly.express as px
 import os
 import sys
 import io
 import re
-from collections import OrderedDict # Para eliminar duplicados manteniendo orden
+from collections import OrderedDict 
 
 # --- Configuración Inicial del Proyecto y Título de la Página ---
 try:
@@ -17,7 +15,7 @@ try:
         os.path.join(os.path.dirname(__file__), os.pardir))
     if project_root not in sys.path:
         sys.path.insert(0, project_root)
-except NameError: # Esto ocurre si __file__ no está definido (ej. en un notebook interactivo)
+except NameError: 
     project_root = os.getcwd()
     if project_root not in sys.path:
         sys.path.insert(0, project_root)
@@ -33,7 +31,7 @@ SHEET_URL_SESIONES_PRINCIPAL_DEFAULT = "https://docs.google.com/spreadsheets/d/1
 SHEET_NAME_SESIONES_PRINCIPAL = "Sesiones 2024-2025"
 
 SHEET_URL_SESIONES_SURAMERICA_DEFAULT = "https://docs.google.com/spreadsheets/d/1MoTUg0sZ76168k4VNajzyrxAa5hUHdWNtGNu9t0Nqnc/edit?gid=278542854#gid=278542854"
-SHEET_NAME_SESIONES_SURAMERICA = "SesionesSA 2024-2025" # Asegúrate que este nombre sea EXACTO
+SHEET_NAME_SESIONES_SURAMERICA = "SesionesSA 2024-2025" 
 
 COLUMNAS_CENTRALES = [
     "Fecha", "Empresa", "País", "Nombre", "Apellido", "Puesto", "SQL", "SQL_Estandarizado",
@@ -44,7 +42,7 @@ SQL_ORDER_OF_IMPORTANCE = ['SQL1', 'SQL2', 'MQL', 'NA', 'SIN CALIFICACIÓN SQL']
 DF_FINAL_STRUCTURE_EMPTY = pd.DataFrame(columns=COLUMNAS_CENTRALES)
 
 # --- Gestión de Estado de Sesión para Filtros ---
-FILTER_KEYS_PREFIX = "sesiones_sql_lg_pais_page_v6_" # Incrementar versión por cambio en manejo de default
+FILTER_KEYS_PREFIX = "sesiones_sql_lg_pais_page_v6_"
 SES_START_DATE_KEY = f"{FILTER_KEYS_PREFIX}start_date"
 SES_END_DATE_KEY = f"{FILTER_KEYS_PREFIX}end_date"
 SES_AE_FILTER_KEY = f"{FILTER_KEYS_PREFIX}ae"
@@ -61,7 +59,7 @@ default_filters_config = {
     SES_PAIS_FILTER_KEY: ["– Todos –"], SES_YEAR_FILTER_KEY: "– Todos –",
     SES_WEEK_FILTER_KEY: ["– Todas –"], SES_SQL_FILTER_KEY: ["– Todos –"], SES_PROCESO_FILTER_KEY: ["– Todos –"]
 }
-# Inicializar el estado de sesión si no existe para cada clave
+
 for key, value in default_filters_config.items():
     if key not in st.session_state:
         st.session_state[key] = value
@@ -313,7 +311,7 @@ def sidebar_filters_sesiones(df_options):
         else: year_options_ses = ["(No hay años)"]; current_year_selection_ses = year_options_ses[0]; selected_year_index_ses = 0
         st.session_state[SES_YEAR_FILTER_KEY] = current_year_selection_ses # Asegurar estado actualizado
 
-    selected_year_str_ses = st.sidebar.selectbox("Año", options=year_options_ses, index=selected_year_index_ses, key=SES_YEAR_FILTER_KEY) # No se usa default
+    selected_year_str_ses = st.sidebar.selectbox("Año", options=year_options_ses, index=selected_year_index_ses, key=SES_YEAR_FILTER_KEY) 
     sel_y = None
     if selected_year_str_ses != "– Todos –":
         try: sel_y = int(selected_year_str_ses)
@@ -335,15 +333,15 @@ def sidebar_filters_sesiones(df_options):
     valid_week_selection_ses = [s for s in current_week_selection_from_state if s in week_options_ses]
     if not valid_week_selection_ses:
         if "– Todas –" in week_options_ses: valid_week_selection_ses = ["– Todas –"]
-        elif week_options_ses and week_options_ses[0] != "– Todas –": valid_week_selection_ses = [] # O [week_options_ses[0]]
+        elif week_options_ses and week_options_ses[0] != "– Todas –": valid_week_selection_ses = [] 
         else: valid_week_selection_ses = []
     st.session_state[SES_WEEK_FILTER_KEY] = valid_week_selection_ses # Actualizar estado ANTES del widget
-    st.sidebar.multiselect("Semanas", options=week_options_ses, key=SES_WEEK_FILTER_KEY) # No default
+    st.sidebar.multiselect("Semanas", options=week_options_ses, key=SES_WEEK_FILTER_KEY) 
 
     st.sidebar.markdown("---")
     st.sidebar.subheader("👥 Por Analistas, País y Calificación")
 
-    def create_multiselect_options_and_set_state(df_col_series, session_key): # Renombrado para claridad
+    def create_multiselect_options_and_set_state(df_col_series, session_key): 
         options_list = ["– Todos –"]
         if df_col_series is not None and not df_col_series.dropna().empty:
             unique_vals = df_col_series.astype(str).str.strip().replace('', 'N/D', regex=False).unique()
@@ -613,9 +611,7 @@ def display_evolucion_sql(df_filtered, time_agg_col, display_label_col_name, cha
         st.plotly_chart(fig_evol_sql, use_container_width=True)
     except Exception as e_evol_sql: st.warning(f"No se pudo generar gráfico de evolución para {x_axis_label}: {e_evol_sql}")
 
-# ==============================================================================
-# ========= INICIO: FUNCIÓN DE TRAZABILIDAD DE AE (COMPLETAMENTE REDISEÑADA) =========
-# ==============================================================================
+
 def display_ae_monthly_assignments(df_filtered):
     st.markdown("### 📅 Trazabilidad Mensual de Asignaciones por AE")
     
@@ -629,11 +625,11 @@ def display_ae_monthly_assignments(df_filtered):
         st.info("No hay datos con 'AñoMes' y 'AE' válidos para mostrar.")
         return
 
-    # --- 1. GRÁFICO DE BARRAS CON TOTALES (NUEVO) ---
+    # --- 1. GRÁFICO DE BARRAS CON TOTALES ---
     st.markdown("##### Total de Sesiones por AE (Periodo Filtrado)")
     total_ae_counts = df_assignments['AE'].value_counts().reset_index()
     total_ae_counts.columns = ['AE', 'Total de Sesiones']
-    total_ae_counts = total_ae_counts.sort_values('Total de Sesiones', ascending=True) # Ascendente para gráfico horizontal
+    total_ae_counts = total_ae_counts.sort_values('Total de Sesiones', ascending=True) 
 
     fig_total_ae = px.bar(total_ae_counts,
                           x='Total de Sesiones',
@@ -645,7 +641,7 @@ def display_ae_monthly_assignments(df_filtered):
     st.plotly_chart(fig_total_ae, use_container_width=True)
 
 
-    # --- 2. GRÁFICO DE LÍNEAS DE TENDENCIA (EXISTENTE) ---
+    # --- 2. GRÁFICO DE LÍNEAS DE TENDENCIA  ---
     st.markdown("##### Evolución Mensual de Sesiones Asignadas por AE")
     monthly_assignments = df_assignments.groupby(['AñoMes', 'AE']).size().reset_index(name='Cantidad de Sesiones')
     monthly_assignments = monthly_assignments.sort_values('AñoMes')
@@ -678,13 +674,12 @@ def display_ae_monthly_assignments(df_filtered):
                                                      aggfunc='sum')
 
     if not pivot_table_ae.empty:
-        # ===== INICIO DE LA CORRECCIÓN DE ORDEN (INVERSO) =====
-        # Ordenar meses del más reciente al más antiguo
+   
         sorted_months = sorted(monthly_assignments['AñoMes'].unique(), reverse=True)
         
         existing_months_in_pivot = [m for m in sorted_months if m in pivot_table_ae.columns]
         pivot_table_ae = pivot_table_ae[existing_months_in_pivot]
-        # ===== FIN DE LA CORRECCIÓN DE ORDEN =====
+  
 
         pivot_table_ae['Total General'] = pivot_table_ae.sum(axis=1)
         pivot_table_ae = pivot_table_ae.sort_values(by='Total General', ascending=False)
@@ -694,9 +689,7 @@ def display_ae_monthly_assignments(df_filtered):
     else:
         st.info("No hay datos para construir la tabla de trazabilidad.")
 
-# ============================================================================
-# ========= FIN: FUNCIÓN DE TRAZABILIDAD DE AE (COMPLETAMENTE REDISEÑADA) ==========
-# ============================================================================
+
 
 def display_tabla_sesiones_detalle(df_filtered):
     st.markdown("### 📝 Tabla Detallada de Sesiones")
@@ -721,7 +714,7 @@ def display_tabla_sesiones_detalle(df_filtered):
             st.download_button(label="⬇️ Descargar Detalle (Excel)", data=output.getvalue(), file_name="detalle_sesiones_sql.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key=f"{FILTER_KEYS_PREFIX}btn_download_detalle")
         except Exception as e_excel: st.error(f"Error al generar archivo Excel: {e_excel}")
 
-# --- Flujo Principal de la Página ---
+
 try:
     df_sesiones_base = load_sesiones_data()
 except Exception as e:
@@ -747,28 +740,13 @@ st.markdown("---")
 display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="Proceso", dimension_label="Proceso", top_n=10)
 st.markdown("---")
 
-# === LLAMADA A LA NUEVA SECCIÓN DE TRAZABILIDAD POR AE ===
+
 display_ae_monthly_assignments(df_sesiones_filtered)
 st.markdown("---")
-# ========================================================
-
-# Las siguientes dos líneas estaban comentadas en tu código original, las mantengo comentadas.
-# display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="Puesto", dimension_label="Cargo (Puesto)", top_n=10)
-# st.markdown("---")
-# display_analisis_por_dimension(df_filtered=df_sesiones_filtered, dimension_col="Empresa", dimension_label="Empresa", top_n=10)
-# st.markdown("---")
 
 display_evolucion_sql(df_sesiones_filtered, 'NumSemana', 'Año-Semana', "Evolución Semanal por Calificación SQL", "Semana del Año")
 st.markdown("---")
 display_evolucion_sql(df_sesiones_filtered, 'AñoMes', 'Año-Mes', "Evolución Mensual por Calificación SQL", "Mes del Año")
 st.markdown("---")
 display_tabla_sesiones_detalle(df_sesiones_filtered)
-
-st.markdown("---")
-st.info("Esta maravillosa, caótica y probablemente sobrecafeinada plataforma ha sido realizada por Johnsito ✨ 😊")
-
-
-
-
-
 
